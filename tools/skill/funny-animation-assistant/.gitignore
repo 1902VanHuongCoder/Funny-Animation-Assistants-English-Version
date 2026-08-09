@@ -1,0 +1,15 @@
+node_modules/
+npm-debug.log*
+.DS_Store
+Thumbs.db
+
+# Local bridge and export artifacts
+*.log
+_faa_multiframe_export_*/
+*.bak
+*.tmp
+
+# Large generated animation/export outputs
+exports/
+out/
+dist/

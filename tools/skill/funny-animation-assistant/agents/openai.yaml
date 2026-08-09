@@ -1,0 +1,4 @@
+interface:
+  display_name: "Funny Animation Assistant"
+  short_description: "Inspect and export Adobe Animate FLA assets through a guarded local bridge"
+  default_prompt: "Inspect this Adobe Animate project and safely export the requested assets without modifying or saving the source FLA."

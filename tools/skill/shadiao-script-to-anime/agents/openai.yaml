@@ -1,0 +1,4 @@
+interface:
+  display_name: "Script To Anime"
+  short_description: "Build validated .anime episodes from production scripts"
+  default_prompt: "Convert this production script into editable .anime episodes using existing project assets, location-based scene structure, lightweight camera_follow and set_anim actions, preserved voices, and refined-profile validation."

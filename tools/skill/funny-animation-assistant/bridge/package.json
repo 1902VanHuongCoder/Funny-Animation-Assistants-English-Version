@@ -1,0 +1,17 @@
+{
+  "name": "funny-animation-assistant-skill-bridge",
+  "version": "0.2.0",
+  "description": "Local WebSocket bridge for the Funny Animation Assistant Codex skill and Adobe Animate plugin.",
+  "license": "MIT",
+  "main": "server.js",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test test/*.test.js"
+  },
+  "files": [
+    "server.js"
+  ]
+}
