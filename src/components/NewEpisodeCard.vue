@@ -7,7 +7,7 @@
       <span class="plus-icon">+</span>
     </div>
     <p class="card-text">
-      新建动画
+      New Episode
     </p>
   </div>
 </template>

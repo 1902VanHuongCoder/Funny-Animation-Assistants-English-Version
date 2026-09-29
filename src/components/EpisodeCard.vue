@@ -4,7 +4,7 @@
       <img
         v-if="episode.thumbnail"
         :src="episode.thumbnail"
-        alt="缩略图"
+        alt="Thumbnail"
       >
       <div
         v-else
@@ -19,7 +19,7 @@
         {{ episode.name }}
       </h3>
       <div class="episode-info">
-        <span class="info-text">第 {{ episode.episodeNumber }} 个动画</span>
+        <span class="info-text">Episode {{ episode.episodeNumber }}</span>
         <span class="info-text">{{ formatDuration(episode.duration) }}</span>
       </div>
     </div>
@@ -29,13 +29,13 @@
         class="action-btn primary"
         @click="$emit('edit', episode.id)"
       >
-        ✏️ 编辑
+        ✏️ Edit
       </button>
       <button
         class="action-btn danger"
         @click="$emit('delete', episode.id)"
       >
-        🗑️ 删除
+        🗑️ Delete
       </button>
     </div>
   </div>
@@ -54,7 +54,7 @@ defineEmits<{
 }>()
 
 function formatDuration(seconds: number): string {
-  if (seconds === 0) return '未计算'
+  if (seconds === 0) return 'Not calculated'
   const minutes = Math.floor(seconds / 60)
   const secs = seconds % 60
   return `${minutes}:${secs.toString().padStart(2, '0')}`

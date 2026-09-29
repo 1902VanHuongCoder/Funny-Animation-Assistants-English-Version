@@ -60,5 +60,6 @@ export default {
             .include('./src/**/*.ts', './src/**/*.tsx')
             // 👇 这里也可以添加 exclude
             .exclude(/\.test\.tsx?$/)        // 忽略 .test.ts 和 .test.tsx
-            .exclude(/\.spec\.tsx?$/),       // 忽略 .spec.ts 和 .spec.tsx
+            .exclude(/\.spec\.tsx?$/)        // 忽略 .spec.ts 和 .spec.tsx
+            .exclude(/src\/router\//),       // 忽略 router 目录，避免 vanilla tsc 对 .vue 动态 import 报模块缺失
 };

@@ -17,6 +17,8 @@ export default tseslint.config(
             'node_modules/**',
             'dist/**',
             'public/**',
+            '.betterer.ts',
+            '.betterer.results',
             '*.config.js',
             '*.config.ts',
             '**/*.d.ts',

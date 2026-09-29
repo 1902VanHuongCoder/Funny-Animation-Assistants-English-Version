@@ -181,7 +181,7 @@
         </div>
          
         <h1 class="welcome-title">
-          沙雕动画小助手
+          Funny Animation Assistant
         </h1>
 
         <div class="welcome-actions">
@@ -190,14 +190,14 @@
             @click="handleNewProject"
           >
             <span class="btn-icon">📄</span>
-            <span class="btn-text">新建项目</span>
+            <span class="btn-text">New Project</span>
           </button>
           <button
             class="action-btn outline"
             @click="handleOpenProject"
           >
             <span class="btn-icon">📂</span>
-            <span class="btn-text">打开项目文件夹</span>
+            <span class="btn-text">Open Project Folder</span>
           </button>
         </div>
 
@@ -211,10 +211,10 @@
               Community Edition
             </p>
             <p class="support-group-desc">
-              本地优先的开源创作器，不内置远程账号、运营后台或私有服务依赖。
+              A local-first open-source creator with no remote accounts, operations backend, or private service dependencies.
             </p>
             <p class="support-group-number">
-              技术讨论QQ群809574217
+              Technical discussion QQ group: 809574217
             </p>
           </div>
         </div>
@@ -226,8 +226,8 @@
               🎬
             </div>
             <div class="feature-text">
-              <h3>场景编辑</h3>
-              <p>可视化剧本编辑</p>
+              <h3>Scene Editing</h3>
+              <p>Visual script editing</p>
             </div>
           </div>
           <div class="feature-item">
@@ -235,8 +235,8 @@
               👥
             </div>
             <div class="feature-text">
-              <h3>角色管理</h3>
-              <p>灵活的角色系统</p>
+              <h3>Character Management</h3>
+              <p>Flexible character system</p>
             </div>
           </div>
           <div class="feature-item">
@@ -244,8 +244,8 @@
               🎨
             </div>
             <div class="feature-text">
-              <h3>素材管理</h3>
-              <p>完善的素材组织</p>
+              <h3>Asset Management</h3>
+              <p>Organized asset library</p>
             </div>
           </div>
           <div class="feature-item">
@@ -253,8 +253,8 @@
               🎵
             </div>
             <div class="feature-text">
-              <h3>智能配音</h3>
-              <p>语音合成技术</p>
+              <h3>Smart Voiceover</h3>
+              <p>Speech synthesis</p>
             </div>
           </div>
         </div>
@@ -289,24 +289,24 @@
     @cancel="showFileSelectorDialog = false"
   />
   
-  <!-- 确认关闭项目对话框(新建项目) -->
+  <!-- Confirm closing before creating a new project. -->
   <ConfirmDialog
     v-if="showCloseConfirmDialog"
-    title="创建新项目"
-    :message="`将保存并关闭「${projectStore.projectName}」项目，然后创建新项目。`"
-    confirm-text="继续"
-    cancel-text="取消"
+    title="Create New Project"
+    :message="`The project '${projectStore.projectName}' will be saved and closed before creating a new project.`"
+    confirm-text="Continue"
+    cancel-text="Cancel"
     @confirm="handleConfirmCloseForNew"
     @cancel="showCloseConfirmDialog = false"
   />
   
-  <!-- 确认关闭项目对话框(打开项目) -->
+  <!-- Confirm closing before opening another project. -->
   <ConfirmDialog
     v-if="showOpenConfirmDialog"
-    title="打开项目"
-    :message="`将保存并关闭「${projectStore.projectName}」项目，然后打开新项目。`"
-    confirm-text="继续"
-    cancel-text="取消"
+    title="Open Project"
+    :message="`The project '${projectStore.projectName}' will be saved and closed before opening another project.`"
+    confirm-text="Continue"
+    cancel-text="Cancel"
     @confirm="handleConfirmOpenProject"
     @cancel="showOpenConfirmDialog = false"
   />
@@ -314,9 +314,9 @@
   <!-- 删除动画确认对话框 -->
   <ConfirmDialog
     v-if="showDeleteEpisodeConfirm"
-    title="删除动画"
+    title="Delete Episode"
     :message="deleteEpisodeMessage"
-    confirm-text="删除"
+    confirm-text="Delete"
     :is-danger="true"
     @confirm="confirmDeleteEpisode"
     @cancel="showDeleteEpisodeConfirm = false"
@@ -369,19 +369,19 @@ const deleteEpisodeMessage = ref('')
 const currentTab = ref('episodes')
 
 const tabs = [
-  { label: '剧集列表', value: 'episodes', icon: '🎬' },
-  { label: '场景模板', value: 'sceneTemplates', icon: '🧩' },
-  { label: '人物库', value: 'characters', icon: '👤' },
-  { label: '表情库', value: 'expressions', icon: '😊' },
-  { label: '背景库', value: 'backgrounds', icon: '🖼️' },
-  { label: '道具库', value: 'props', icon: '📦' },
+  { label: 'Episodes', value: 'episodes', icon: '🎬' },
+  { label: 'Scene Templates', value: 'sceneTemplates', icon: '🧩' },
+  { label: 'Characters', value: 'characters', icon: '👤' },
+  { label: 'Expressions', value: 'expressions', icon: '😊' },
+  { label: 'Backgrounds', value: 'backgrounds', icon: '🖼️' },
+  { label: 'Props', value: 'props', icon: '📦' },
   // v7.3: 特效库已移除，特效已合并到道具库
-  { label: '音效库', value: 'sounds', icon: '🔊' },
-  { label: '关于', value: 'about', icon: 'ℹ️', link: '/about' },
+  { label: 'Sounds', value: 'sounds', icon: '🔊' },
+  { label: 'About', value: 'about', icon: 'ℹ️', link: '/about' },
 ]
 
 function getTabLabel(value: string) {
-  return tabs.find(t => t.value === value)?.label || '该模块'
+  return tabs.find(t => t.value === value)?.label || 'This module'
 }
 
 // ----------------------------------------------------------------
@@ -397,10 +397,10 @@ function handleRename(name: string) {
 // Episode Logic (Moved from original)
 // ----------------------------------------------------------------
 
-// 新建动画
+// Create an episode.
 function handleCreateEpisode() {
   // 自动生成动画名称
-  const defaultName = `动画${episodeStore.episodes.length + 1}`
+  const defaultName = `Episode ${episodeStore.episodes.length + 1}`
   const episode = episodeStore.createEpisode(defaultName)
   // 创建后跳转到剧本编辑页面,用户可在该页面修改名称
   void router.push(`/screenplay/${episode.id}`)
@@ -442,7 +442,7 @@ async function handleConfirmCloseForNew() {
     await proceedWithNewProject()
   } catch (error: unknown) {
     console.error(error)
-    alert('操作失败：' + ((error as Error).message || '未知错误'))
+    alert('Operation failed: ' + ((error as Error).message || 'Unknown error'))
   }
 }
 
@@ -461,9 +461,9 @@ async function proceedWithNewProject() {
     showNewProjectDialog.value = true
   } catch (error: unknown) {
     const err = error as Error
-    if (err.name !== 'AbortError' && err.message !== '用户取消操作') {
+    if (err.name !== 'AbortError' && err.message !== 'The user cancelled the operation') {
       console.error(error)
-      alert('选择目录失败：' + (err.message || '未知错误'))
+      alert('Failed to select a folder: ' + (err.message || 'Unknown error'))
     }
   }
 }
@@ -473,14 +473,14 @@ async function handleConfirmNewProject(data: { fileName: string; projectName: st
     showNewProjectDialog.value = false
     
     if (!selectedDirectory.value) {
-      throw new Error('未选择目录')
+      throw new Error('No folder selected')
     }
     
     // 使用选择的目录句柄创建项目
     await projectStore.newProject(data.projectName, data.fileName, selectedDirectory.value)
   } catch (error: unknown) {
     console.error(error)
-    alert('创建项目失败：' + ((error as Error).message || '未知错误'))
+    alert('Failed to create project: ' + ((error as Error).message || 'Unknown error'))
   }
 }
 

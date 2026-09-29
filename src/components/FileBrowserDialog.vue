@@ -5,7 +5,7 @@
   >
     <div class="file-browser-dialog">
       <div class="dialog-header">
-        <h2>{{ title || '选择文件' }}</h2>
+        <h2>{{ title || 'Select Files' }}</h2>
         <button
           class="close-btn"
           @click="$emit('close')"
@@ -28,7 +28,7 @@
         <span
           v-if="pathParts.length === 0"
           class="path-part is-current"
-        >项目根目录</span>
+        >Project Root</span>
       </div>
       
       <!-- 工具栏 -->
@@ -37,21 +37,21 @@
           <input
             v-model="searchQuery"
             type="text"
-            placeholder="搜索文件..."
+            placeholder="Search files..."
             class="search-input"
           >
         </div>
         <div class="view-mode-toggle">
           <button
             :class="['view-btn', { active: viewMode === 'thumbnail' }]"
-            title="缩略图"
+            title="Thumbnails"
             @click="viewMode = 'thumbnail'"
           >
             🖼️
           </button>
           <button
             :class="['view-btn', { active: viewMode === 'list' }]"
-            title="列表"
+            title="List"
             @click="viewMode = 'list'"
           >
             📋
@@ -69,7 +69,7 @@
           class="loading-state"
         >
           <div class="spinner" />
-          <p>加载中...</p>
+          <p>Loading...</p>
         </div>
         
         <div
@@ -132,7 +132,7 @@
                     </template>
                   </div>
                   <div class="thumbnail-name">
-                    {{ item.isParentDir ? '返回上级' : truncateMiddle(item.name, 20, 8, 8) }}
+                    {{ item.isParentDir ? 'Parent Directory' : truncateMiddle(item.name, 20, 8, 8) }}
                   </div>
                 </div>
 
@@ -164,7 +164,7 @@
                   <span
                     v-if="item.kind === 'directory'"
                     class="file-type"
-                  >{{ item.isParentDir ? '返回上级' : '文件夹' }}</span>
+                  >{{ item.isParentDir ? 'Parent Directory' : 'Folder' }}</span>
                   <span
                     v-if="item.kind === 'file' && isSelected(item.path)"
                     class="check-mark"
@@ -177,7 +177,7 @@
             v-if="filteredItemsWithParent.length === 0"
             class="empty-state"
           >
-            {{ searchQuery ? '未找到匹配的文件' : '此目录为空' }}
+            {{ searchQuery ? 'No matching files found' : 'This folder is empty' }}
           </div>
         </div>
       </div>
@@ -186,31 +186,31 @@
       <div class="dialog-footer">
         <div class="selected-count-info">
           <template v-if="selectMode === 'directory'">
-            <span v-if="selectedDirectory">已选择文件夹: {{ selectedDirectory.name }}</span>
-            <span v-else>请选择一个文件夹</span>
+            <span v-if="selectedDirectory">Selected folder: {{ selectedDirectory.name }}</span>
+            <span v-else>Please select a folder</span>
           </template>
           <template v-else>
-            <span v-if="selectedFiles.length > 0">已选择 {{ selectedFiles.length }} 个文件</span>
-            <span v-else>未选择文件</span>
+            <span v-if="selectedFiles.length > 0">{{ selectedFiles.length }} file(s) selected</span>
+            <span v-else>No file selected</span>
           </template>
         </div>
         <div class="actions">
           <button
             class="btn btn-cancel"
             @click="$emit('close')"
-          >取消</button>
+          >Cancel</button>
           <button
             v-if="selectMode === 'directory'"
             :disabled="!selectedDirectory"
             class="btn btn-confirm"
             @click="handleConfirm"
-          >选择此文件夹</button>
+          >Select this folder</button>
           <button
             v-else
             :disabled="selectedFiles.length === 0"
             class="btn btn-confirm"
             @click="handleConfirm"
-          >确定 ({{ selectedFiles.length }})</button>
+          >Confirm ({{ selectedFiles.length }})</button>
         </div>
       </div>
     </div>
@@ -235,7 +235,7 @@ const props = withDefaults(defineProps<{
   multiple?: boolean
   selectMode?: 'file' | 'directory'
 }>(), {
-  title: '选择文件',
+  title: 'Select Files',
   fileFilter: () => true,
   multiple: true,
   selectMode: 'file'
@@ -271,7 +271,7 @@ const THUMBNAIL_HEIGHT = 144
 const LIST_HEIGHT = 44
 const ROW_GAP = 12 // 与 CSS .virtual-content { gap: 12px } 保持一致
 
-const pathParts = computed(() => ['项目根目录', ...currentPath.value])
+const pathParts = computed(() => ['Project Root', ...currentPath.value])
 
 const filteredItemsWithParent = computed(() => {
   const items = [...currentItems.value]

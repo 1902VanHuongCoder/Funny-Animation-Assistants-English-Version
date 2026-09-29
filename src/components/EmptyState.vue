@@ -4,10 +4,10 @@
       🎬️
     </div>
     <h3 class="empty-title">
-      还没有创建任何动画
+      No Episodes Created Yet
     </h3>
     <p class="empty-description">
-      点击“新建动画”按钮开始创作你的第一个动画吧！
+      Click "Create First Episode" to start creating your animation!
     </p>
   </div>
 </template>

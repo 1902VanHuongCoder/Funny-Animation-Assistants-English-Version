@@ -5,7 +5,7 @@
   >
     <div class="dialog-card">
       <div class="dialog-header">
-        <h2>选择项目文件</h2>
+        <h2>Select Project File</h2>
         <button
           class="close-btn"
           @click="$emit('cancel')"
@@ -16,7 +16,7 @@
 
       <div class="dialog-body">
         <p class="description">
-          在文件夹中发现 {{ files.length }} 个项目文件:
+          Found {{ files.length }} project file(s) in this folder:
         </p>
 
         <div class="file-list">
@@ -52,14 +52,14 @@
           class="btn btn-outline"
           @click="$emit('cancel')"
         >
-          取消
+          Cancel
         </button>
         <button
           class="btn btn-primary"
           :disabled="!selectedFile"
           @click="handleSelect"
         >
-          打开
+          Open
         </button>
       </div>
     </div>

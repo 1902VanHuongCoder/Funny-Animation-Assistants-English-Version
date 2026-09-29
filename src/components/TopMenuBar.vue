@@ -2,7 +2,7 @@
   <div class="top-menu-bar">
     <div
       class="logo"
-      title="返回项目主页"
+      title="Back to project home"
       @click="router.push('/project')"
     >
       <svg
@@ -88,18 +88,18 @@
         </g>
       </svg>
       <h1 class="logo-text">
-        沙雕动画小助手
+        Funny Animation Assistant
       </h1>
     </div>
     
-    <!-- 项目菜单 -->
+    <!-- Project menu -->
     <div v-if="shouldShowProjectElements" class="menu-group">
       <div class="dropdown">
         <button
           class="menu-btn"
           @click="toggleProjectMenu"
         >
-          📁 项目 ▼
+          📁 Project ▼
         </button>
         <div
           v-if="showProjectMenu"
@@ -109,31 +109,31 @@
             class="menu-item"
             @click="handleNewProject"
           >
-            📄 新建项目
+            📄 New Project
           </button>
           <button
             class="menu-item"
             @click="handleOpenProject"
           >
-            📂 打开项目文件夹
+            📂 Open Project Folder
           </button>
           <button
             class="menu-item"
             @click="handleSaveProject"
           >
-            💾 保存项目
+            💾 Save Project
           </button>
           <button
             class="menu-item"
             @click="handleCloseProject"
           >
-            ❌ 关闭项目
+            ❌ Close Project
           </button>
         </div>
       </div>
     </div>
     
-    <!-- 项目名称 - 面包屑样式 -->
+    <!-- Project name breadcrumb -->
     <div v-if="shouldShowProjectElements" class="project-info">
       <span class="divider">/</span>
       <span
@@ -144,7 +144,7 @@
       </span>
     </div>
 
-    <!-- 隐藏的文件输入（降级方案，用于不支持 File System API 的情况） -->
+    <!-- Hidden file input fallback for browsers without the File System API. -->
     <input 
       ref="fileInput" 
       type="file" 
@@ -154,7 +154,7 @@
     >
     
     
-    <!-- 新建项目对话框 -->
+    <!-- New project dialog -->
     <NewProjectDialog
       v-if="showNewProjectDialog"
       :directory-handle="selectedDirectory!"
@@ -163,29 +163,29 @@
       @cancel="showNewProjectDialog = false"
     />
     
-    <!-- 确认关闭项目对话框(新建项目) -->
+    <!-- Confirm closing the current project before creating a new one. -->
     <ConfirmDialog
       v-if="showCloseConfirmDialog"
-      title="创建新项目"
-      :message="`将保存并关闭「${projectStore.projectName}」项目，然后创建新项目。`"
-      confirm-text="继续"
-      cancel-text="取消"
+      title="Create New Project"
+      :message="`The project '${projectStore.projectName}' will be saved and closed before creating a new project.`"
+      confirm-text="Continue"
+      cancel-text="Cancel"
       @confirm="handleConfirmClose"
       @cancel="showCloseConfirmDialog = false"
     />
     
-    <!-- 确认关闭项目对话框(打开项目) -->
+    <!-- Confirm closing the current project before opening another one. -->
     <ConfirmDialog
       v-if="showOpenConfirmDialog"
-      title="打开项目"
-      :message="`将保存并关闭「${projectStore.projectName}」项目，然后打开新项目。`"
-      confirm-text="继续"
-      cancel-text="取消"
+      title="Open Project"
+      :message="`The project '${projectStore.projectName}' will be saved and closed before opening another project.`"
+      confirm-text="Continue"
+      cancel-text="Cancel"
       @confirm="handleConfirmOpenProject"
       @cancel="showOpenConfirmDialog = false"
     />
     
-    <!-- 文件选择对话框 -->
+    <!-- Project file selector dialog -->
     <ProjectFileSelectorDialog
       v-if="showFileSelectorDialog"
       :files="availableFiles"

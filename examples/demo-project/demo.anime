@@ -15,13 +15,6 @@
     "musics": []
   },
   "expressions": {},
-  "actors": [],
-  "narrator": {
-    "voice": {}
-  },
-  "sceneTemplates": [],
-  "compositeCharacters": [],
-  "customPresetAnimations": [],
   "episodes": [
     {
       "id": "episode_demo_001",
@@ -33,6 +26,21 @@
       "createdAt": 1767225600000,
       "modifiedAt": 1767225600000,
       "version": "6.0"
+    },
+    {
+      "id": "episode_1790683015666_j5cebmv",
+      "episodeNumber": 2,
+      "name": "Episode 2",
+      "scenes": [],
+      "bgmTracks": [],
+      "duration": 0,
+      "createdAt": 1790683015666,
+      "modifiedAt": 1790683015666,
+      "version": "6.0"
     }
-  ]
+  ],
+  "actors": [],
+  "narrator": {
+    "voice": {}
+  }
 }

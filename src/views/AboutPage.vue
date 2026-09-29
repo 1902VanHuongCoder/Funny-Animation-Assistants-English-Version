@@ -6,40 +6,40 @@
           to="/project"
           class="back-link"
         >
-          ← 返回
+          ← Back
         </router-link>
-        <h1>关于 沙雕动画小助手</h1>
+        <h1>About Funny Animation Assistant</h1>
         <p class="subtitle">
-          版本信息与第三方许可证
+          Version information and third-party licenses
         </p>
       </header>
 
       <section class="about-section">
-        <h2>应用信息</h2>
+        <h2>Application Information</h2>
         <div class="info-card">
           <div class="info-row">
-            <span class="info-label">产品名称</span>
-            <span class="info-value">沙雕动画小助手</span>
+            <span class="info-label">Product Name</span>
+            <span class="info-value">Funny Animation Assistant</span>
           </div>
           <div class="info-row">
-            <span class="info-label">版本</span>
+            <span class="info-label">Version</span>
             <span class="info-value">ver2.0.0</span>
           </div>
         </div>
       </section>
 
       <section class="about-section">
-        <h2>第三方字体许可证</h2>
+        <h2>Third-Party Font Licenses</h2>
         <p class="section-desc">
-          本产品使用以下开源字体，均基于 SIL Open Font License 1.1 许可证授权。
-          点击「查看许可证全文」可查看各字体的完整许可证文本。
+          This product uses the open-source fonts below under the SIL Open Font License 1.1.
+          Select "View Full License" to read the complete license text for each font.
         </p>
 
         <div
           v-if="loading"
           class="loading"
         >
-          加载中...
+          Loading...
         </div>
 
         <div
@@ -57,7 +57,7 @@
               rel="noopener noreferrer"
               class="font-link"
             >
-              官方页面 ↗
+              Official page ↗
             </a>
           </div>
 
@@ -78,7 +78,7 @@
               class="license-toggle"
               @click="toggleLicense(font.name)"
             >
-              {{ expandedLicenses.has(font.name) ? '收起许可证全文' : '查看许可证全文' }}
+              {{ expandedLicenses.has(font.name) ? 'Hide Full License' : 'View Full License' }}
             </button>
           </div>
 
@@ -91,7 +91,7 @@
               v-else
               class="license-loading"
             >
-              加载许可证...
+              Loading license...
             </div>
           </div>
         </div>
@@ -99,7 +99,7 @@
 
       <footer class="about-footer">
         <p>
-          所有字体均遵循各自的开源许可证条款。如有版权疑问，请联系我们。
+          All fonts are used under their respective open-source license terms. Please contact us with any copyright questions.
         </p>
       </footer>
     </div>
@@ -124,13 +124,13 @@ const loading = ref(true)
 const expandedLicenses = reactive(new Set<string>())
 const licenseTexts = reactive<Record<string, string>>({})
 
-// 加载字体许可证数据
+// Load font license metadata.
 async function loadFontLicenses() {
     try {
         const res = await fetch('/fonts/font-licenses.json')
         fonts.value = await res.json() as FontLicense[]
     } catch (e) {
-        console.error('[AboutPage] 加载字体许可证失败:', e)
+        console.error('[AboutPage] Failed to load font licenses:', e)
     } finally {
         loading.value = false
     }
@@ -152,8 +152,8 @@ async function toggleLicense(fontName: string) {
                 const res = await fetch(font.licenseFile)
                 licenseTexts[fontName] = await res.text()
             } catch (e) {
-                licenseTexts[fontName] = '无法加载许可证文本'
-                console.error(`[AboutPage] 加载 ${fontName} OFL.txt 失败:`, e)
+                licenseTexts[fontName] = 'Unable to load license text.'
+                console.error(`[AboutPage] Failed to load ${fontName} OFL.txt:`, e)
             }
         }
     }

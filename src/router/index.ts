@@ -9,31 +9,31 @@ const routes = [
     path: '/project',
     name: 'ProjectHome',
     component: () => import('@/views/ProjectHomePage.vue'),
-    meta: { title: '项目主页' }
+    meta: { title: 'Project Home' }
   },
   {
     path: '/episode/:id/edit',
     name: 'EpisodeEdit',
     component: () => import('@/views/EpisodeEditPage.vue'),
-    meta: { title: '编辑动画' }
+    meta: { title: 'Edit Animation' }
   },
   {
     path: '/assets/:type',
     name: 'AssetManager',
     component: () => import('@/views/AssetManagerPage.vue'),
-    meta: { title: '素材管理' }
+    meta: { title: 'Asset Manager' }
   },
   {
     path: '/screenplay/:episodeId',
     name: 'ScreenplayEditor',
     component: () => import('@/views/ScreenplayEditorPage.vue'),
-    meta: { title: '剧本编辑' }
+    meta: { title: 'Script Editor' }
   },
   {
     path: '/about',
     name: 'About',
     component: () => import('@/views/AboutPage.vue'),
-    meta: { title: '关于', requiresAuth: false }
+    meta: { title: 'About', requiresAuth: false }
   }
 ]
 

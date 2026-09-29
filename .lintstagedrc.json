@@ -1,9 +1,9 @@
 {
     "*.{ts,tsx,vue}": [
-        "eslint --fix"
+        "eslint --fix --no-warn-ignored"
     ],
     "*.{js,jsx}": [
-        "eslint --fix"
+        "eslint --fix --no-warn-ignored"
     ],
     "*": [
         "betterer precommit"

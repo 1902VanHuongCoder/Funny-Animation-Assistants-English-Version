@@ -21,12 +21,12 @@ const projectStore = useProjectStore()
 const router = useRouter()
 const route = useRoute()
 
-// 启用自动保存（30秒间隔）
+// Enable autosave at a 30-second interval.
 useAutoSave(30000)
 
 const autoSavePromptRoutes = new Set(['ProjectHome', 'EpisodeEdit', 'ScreenplayEditor'])
 
-// 启动时检查自动保存
+// Check for recoverable autosave data on startup.
 onMounted(async () => {
   await router.isReady()
   if (!autoSavePromptRoutes.has(String(route.name ?? ''))) return
@@ -34,30 +34,30 @@ onMounted(async () => {
   const hasAutoSaveData = projectStore.hasAutoSave()
   if (hasAutoSaveData) {
     const saveTime = projectStore.getAutoSaveTime()
-    const timeStr = saveTime ? saveTime.toLocaleString() : '未知时间'
+    const timeStr = saveTime ? saveTime.toLocaleString() : 'an unknown time'
     
-    if (confirm(`检测到自动保存的项目数据 (${timeStr})，是否恢复？`)) {
+    if (confirm(`Autosaved project data found (${timeStr}). Restore it?`)) {
       const success = projectStore.restoreFromAutoSave()
       if (!success) {
-        alert('恢复自动保存失败')
+        alert('Failed to restore the autosaved project.')
       }
     }
   }
 })
 
-// 页面刷新前提示保存
+// Warn before leaving with unsaved changes.
 onMounted(() => {
   const handleBeforeUnload = (e: BeforeUnloadEvent) => {
     if (projectStore.hasUnsavedChanges && projectStore.isProjectOpen) {
-      // 标准方式：显示浏览器默认提示
+      // Use the browser's standard before-unload prompt.
       e.preventDefault()
-      e.returnValue = '当前项目有未保存的修改，确定要离开吗？'
+      e.returnValue = 'The current project has unsaved changes. Are you sure you want to leave?'
     }
   }
 
   window.addEventListener('beforeunload', handleBeforeUnload)
 
-  // 清理函数
+  // Clean up the event listener.
   onBeforeUnmount(() => {
     window.removeEventListener('beforeunload', handleBeforeUnload)
   })

@@ -1,11 +1,11 @@
-﻿<template>
+<template>
   <div
     class="dialog-overlay"
     @click.self="$emit('cancel')"
   >
     <div class="dialog-card">
       <div class="dialog-header">
-        <h2>🔴 新建项目 (对话框已显示)</h2>
+        <h2>New Project</h2>
         <button
           class="close-btn"
           @click="$emit('cancel')"
@@ -17,7 +17,7 @@
       <div class="dialog-body">
         <!-- 文件夹路径 -->
         <div class="form-group">
-          <label>📁 项目文件夹</label>
+          <label>📁 Project Folder</label>
           <div class="folder-path">
             {{ directoryHandle.name }}
           </div>
@@ -25,7 +25,7 @@
 
         <!-- 项目文件名 -->
         <div class="form-group">
-          <label>📄 项目文件名</label>
+          <label>📄 File Name</label>
           <div class="filename-input-group">
             <input
               v-model="fileName"
@@ -46,13 +46,13 @@
             v-else-if="fileName.trim()"
             class="validation-success"
           >
-            ✓ 该名称可用
+            ✓ Name is available
           </div>
         </div>
 
         <!-- 项目名称(可选) -->
         <div class="form-group">
-          <label>项目名称 (可选)</label>
+          <label>Project Name (Optional)</label>
           <input
             v-model="projectName"
             type="text"
@@ -67,7 +67,7 @@
           class="existing-files"
         >
           <p class="info-text">
-            ⚠ 该文件夹已有 {{ existingFiles.length }} 个项目文件:
+            ⚠ This folder already contains {{ existingFiles.length }} project file(s):
           </p>
           <ul class="file-list">
             <li
@@ -85,14 +85,14 @@
           class="btn btn-outline"
           @click="$emit('cancel')"
         >
-          取消
+          Cancel
         </button>
         <button
           class="btn btn-primary"
           :disabled="!isValid"
           @click="handleConfirm"
         >
-          创建
+          Create
         </button>
       </div>
     </div>
@@ -132,14 +132,14 @@ function validateFileName() {
   const name = fileName.value.trim()
   
   if (!name) {
-    validationError.value = '文件名不能为空'
+    validationError.value = 'File name cannot be empty'
     return
   }
 
   // 检查非法字符
   const invalidChars = /[<>:"/\\|?*]/
   if (invalidChars.test(name)) {
-    validationError.value = '文件名包含非法字符'
+    validationError.value = 'File name contains invalid characters'
     return
   }
 
@@ -149,7 +149,7 @@ function validateFileName() {
     existingFile => existingFile.toLowerCase() === fullName.toLowerCase()
   )
   if (existsIgnoreCase) {
-    validationError.value = '文件名已存在,请修改'
+    validationError.value = 'File name already exists, please choose another'
     return
   }
 
