@@ -1,42 +1,42 @@
 <template>
   <div class="screenplay-stream">
-    <!-- 嵌入式工具栏 -->
+    <!-- Embedded toolbar -->
     <div class="embedded-toolbar">
-      <!-- 左侧：返回按钮 + 动画名称 -->
+      <!-- Left: Back button + Episode name -->
       <div class="toolbar-left">
         <button
           class="toolbar-btn back-btn"
-          title="返回剧集列表"
+          title="Back to Episode List"
           @click="$emit('back')"
         >
-          ← 返回剧集列表
+          ← Back to Episodes
         </button>
         
         <div class="toolbar-divider" />
         
         <div class="episode-name-editor">
-          <label class="name-label">动画名称:</label>
+          <label class="name-label">Episode Name:</label>
           <input 
             type="text" 
             :value="episodeName" 
             class="name-input"
-            placeholder="请输入动画名称"
+            placeholder="Enter episode name"
             @input="$emit('update:episode-name', ($event.target as HTMLInputElement).value)"
           >
         </div>
       </div>
       
-      <!-- 中间：添加按钮组 -->
+      <!-- Center: Add buttons group -->
       <div class="toolbar-center">
         <div class="add-button-wrapper">
           <button
             class="toolbar-btn"
-            title="添加内容"
+            title="Add Item"
             @click="showAddMenu"
           >
-            ➕ 添加
+            ➕ Add
           </button>
-          <!-- 添加菜单 -->
+          <!-- Add menu -->
           <div
             v-if="addMenuVisible"
             class="add-menu"
@@ -46,7 +46,7 @@
               class="menu-item"
               @click="handleAddMenuItem('scene')"
             >
-              🎬 场景
+              🎬 Scene
             </button>
             <button 
               class="menu-item" 
@@ -54,7 +54,7 @@
               :class="{ disabled: !hasAnyScene }"
               @click="handleAddMenuItem('dialogue')"
             >
-              💬 对话
+              💬 Dialogue
             </button>
             <button 
               class="menu-item" 
@@ -62,7 +62,7 @@
               :class="{ disabled: !hasAnyScene }"
               @click="handleAddMenuItem('narration')"
             >
-              📢 旁白
+              📢 Narration
             </button>
           </div>
         </div>
@@ -71,54 +71,54 @@
         
         <button
           class="toolbar-btn"
-          title="旁白配置"
+          title="Narrator Settings"
           @click="$emit('edit-narrator')"
         >
-          🎙️ 旁白配置
+          🎙️ Narrator
         </button>
         <button
           class="toolbar-btn"
-          title="演员管理"
+          title="Actor Management"
           @click="$emit('manage-actors')"
         >
-          👥 演员管理
+          👥 Actors
         </button>
         <button
           class="toolbar-btn"
-          title="配乐管理"
+          title="BGM Management"
           @click="$emit('manage-bgm')"
         >
-          🎵 配乐管理
+          🎵 BGM
         </button>
       </div>
       
-      <!-- 右侧：操作按钮 -->
+      <!-- Right: Action buttons -->
       <div class="toolbar-right">
         <button
           class="toolbar-btn"
-          title="保存 (Ctrl+S)"
+          title="Save (Ctrl+S)"
           @click="$emit('save')"
         >
-          💾 保存
+          💾 Save
         </button>
         <button
           class="toolbar-btn btn-preview"
-          title="预览"
+          title="Preview"
           @click="$emit('preview')"
         >
-          ▶️ 预览
+          ▶️ Preview
         </button>
         <button
           class="toolbar-btn btn-primary"
-          title="导出"
+          title="Export"
           @click="$emit('export')"
         >
-          📤 导出
+          📤 Export
         </button>
       </div>
     </div>
     
-    <!-- 场景容器列表 -->
+    <!-- Scenes container list -->
     <div
       ref="containerRef"
       class="scenes-container"
@@ -131,10 +131,10 @@
           📝
         </p>
         <p class="empty-text">
-          暂无剧本内容
+          No Screenplay Content
         </p>
         <p class="empty-hint">
-          点击工具栏按钮添加场景
+          Click the toolbar button to add a scene
         </p>
       </div>
 
@@ -142,7 +142,7 @@
         v-for="(scene, sceneIndex) in scenes"
         :key="scene.id"
       >
-        <!-- 场景容器头部 -->
+        <!-- Scene container header -->
         <div :data-scene-id="scene.id">
           <SceneContainerHeader
             :scene="scene"
@@ -162,7 +162,7 @@
           />
         </div>
 
-        <!-- 场景容器下方的+按钮及菜单 (仅在选中且展开时显示) -->
+        <!-- + button and menu under scene container (shown when selected and expanded) -->
         <div
           v-if="selectedSceneId === scene.id && isSceneExpanded(scene.id)"
           class="insert-button-wrapper bottom"
@@ -173,7 +173,7 @@
           >
             ➕
           </button>
-          <!-- 场景级添加菜单（包含场景选项） -->
+          <!-- Scene-level add menu (includes scene option) -->
           <div
             v-if="sceneAddMenuVisible === scene.id"
             class="insert-menu scene-menu"
@@ -183,30 +183,30 @@
               class="menu-item"
               @click="handleSceneAddMenuItem(scene.id, 'scene')"
             >
-              🎬 场景
+              🎬 Scene
             </button>
             <button
               class="menu-item"
               @click="handleSceneAddMenuItem(scene.id, 'dialogue')"
             >
-              💬 对话
+              💬 Dialogue
             </button>
             <button
               class="menu-item"
               @click="handleSceneAddMenuItem(scene.id, 'narration')"
             >
-              📢 旁白
+              📢 Narration
             </button>
           </div>
         </div>
 
-        <!-- 脚本块列表（仅在展开时显示） -->
+        <!-- Script block list (only shown when expanded) -->
         <template v-if="isSceneExpanded(scene.id)">
           <template
             v-for="block in scene.script"
             :key="block.id"
           >
-            <!-- Block上方的+按钮 (仅在选中时显示) -->
+            <!-- + button above block (shown only when selected) -->
             <div
               v-if="selectedBlockId === block.id"
               class="insert-button-wrapper top"
@@ -219,7 +219,7 @@
               </button>
             </div>
 
-            <!-- Block组件 -->
+            <!-- Block component -->
             <div
               class="block-container"
               :data-block-id="block.id"
@@ -240,7 +240,7 @@
               />
             </div>
 
-            <!-- Block下方的+按钮 (仅在选中时显示) -->
+            <!-- + button below block (shown only when selected) -->
             <div
               v-if="selectedBlockId === block.id"
               class="insert-button-wrapper bottom"
@@ -255,18 +255,18 @@
           </template>
         </template>
 
-        <!-- 场景之间的分隔 -->
+        <!-- Scene divider -->
         <div
           v-if="sceneIndex < scenes.length - 1"
           class="scene-divider"
         />
       </template>
 
-      <!-- 底部半屏空白 -->
+      <!-- Bottom spacer -->
       <div class="bottom-spacer" />
     </div>
 
-    <!-- 插入菜单（block级别，不包含场景选项）-->
+    <!-- Insert menu (block-level, does not contain scene option) -->
     <div 
       v-if="insertMenuVisible" 
       class="insert-menu" 
@@ -277,17 +277,17 @@
         class="menu-item"
         @click="handleInsertBlock('dialogue')"
       >
-        💬 对话
+        💬 Dialogue
       </button>
       <button
         class="menu-item"
         @click="handleInsertBlock('narration')"
       >
-        📢 旁白
+        📢 Narration
       </button>
     </div>
 
-    <!-- 点击其他地方关闭菜单 -->
+    <!-- Click outside overlay to close menu -->
     <div
       v-if="insertMenuVisible"
       class="menu-overlay"
@@ -304,7 +304,7 @@
       @click="sceneAddMenuVisible = null"
     />
 
-    <!-- 新建场景对话框 -->
+    <!-- New scene dialog -->
     <SceneCreationDialog
       v-if="sceneCreationState.visible"
       :scenes="scenes"
@@ -313,23 +313,23 @@
       @confirm="handleConfirmCreateScene"
     />
 
-    <!-- 删除场景确认对话框 -->
+    <!-- Delete scene confirmation dialog -->
     <ConfirmDialog
       v-if="deleteSceneConfirm.visible"
-      title="删除场景"
+      title="Delete Scene"
       :message="deleteSceneConfirm.message"
-      confirm-text="删除"
+      confirm-text="Delete"
       :is-danger="true"
       @confirm="confirmDeleteScene"
       @cancel="deleteSceneConfirm.visible = false"
     />
 
-    <!-- 删除 Block 确认对话框 -->
+    <!-- Delete block confirmation dialog -->
     <ConfirmDialog
       v-if="deleteBlockConfirm.visible"
-      title="删除确认"
-      message="确定要删除这个 Block 吗?"
-      confirm-text="删除"
+      title="Confirm Delete"
+      message="Are you sure you want to delete this block?"
+      confirm-text="Delete"
       :is-danger="true"
       @confirm="confirmDeleteBlock"
       @cancel="deleteBlockConfirm.visible = false"
@@ -343,7 +343,7 @@ import { useRoute } from 'vue-router'
 
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import { CAMERA_BASE_HEIGHT,CAMERA_BASE_WIDTH, CANVAS_CENTER_X, CANVAS_CENTER_Y } from '@/constants/canvas'
-// v6.0: 使用 episodeStore 和 projectStore 替代 screenplayStore
+// v6.0: Use episodeStore and projectStore instead of screenplayStore
 import { useEpisodeStore } from '@/stores/episodeStore'
 import type { Action, SceneContainer, SceneSetup, ScriptBlock, ScriptBlockType } from '@/types/screenplay'
 import { createInheritedSetup } from '@/utils/sceneStateCalculator'
@@ -377,36 +377,36 @@ const emit = defineEmits<{
   'preview-scene': [sceneId: string]
 }>()
 
-// v6.0: 使用新的 store
+// v6.0: Use new store
 const route = useRoute()
 const episodeStore = useEpisodeStore()
 const episodeId = route.params['episodeId'] as string
 
 const containerRef = ref<HTMLElement>()
 
-// 场景折叠状态
+// Scene collapse state
 const sceneExpandedMap = ref<Record<string, boolean>>({})
 
-// v6.0: 从当前 episode 获取数据
+// v6.0: Get data from current episode
 const currentEpisode = computed(() => episodeStore.getEpisode(episodeId))
 const scenes = computed(() => currentEpisode.value?.scenes || [])
 const selectedBlockId = ref<string | null>(null)
 const selectedSceneId = ref<string | null>(null)
 
-// 判断是否有任何场景（只要有场景就可以添加对话、旁白、演出）
+// Determine if any scenes exist (scenes allow adding dialogue, narration, performance)
 const hasAnyScene = computed(() => {
   return scenes.value.length > 0
 })
 
-// 判断场景是否应该显示为选中状态
-// 规则：只有当场景被选中，且该场景内没有任何子 Block 被选中时，才显示为选中
+// Determine if scene should display as selected
+// Rule: scene selected only if selected and no child Block within it is selected
 function isSceneSelected(sceneId: string): boolean {
-  // 如果场景本身没有被选中，直接返回 false
+  // If scene itself not selected, return false directly
   if (selectedSceneId.value !== sceneId) {
     return false
   }
   
-  // 如果场景被选中，但该场景内有子 Block 被选中，则不显示为选中
+  // If scene selected but child Block selected within it, do not display as selected
   const scene = scenes.value.find((s) => s.id === sceneId)
   if (scene && selectedBlockId.value) {
     const hasSelectedBlock = scene.script.some((block) => block.id === selectedBlockId.value)
@@ -418,7 +418,7 @@ function isSceneSelected(sceneId: string): boolean {
   return true
 }
 
-// 获取 Block 组件
+// Get Block component
 function getBlockComponent(type: ScriptBlockType) {
   switch (type) {
     case 'dialogue':
@@ -430,42 +430,42 @@ function getBlockComponent(type: ScriptBlockType) {
   }
 }
 
-// v7.0: 获取角色实例名称（从场景对象中获取 alias）
+// v7.0: Get actor instance name (alias from scene object)
 function getActorName(block: ScriptBlock, scene: SceneContainer): string | undefined {
   if (block.type === 'dialogue') {
-    // v7.0: 从场景对象中查找实例
+    // v7.0: Find instance from scene objects
     const instance = scene?.setup?.objects?.find((obj) => obj.id === block.instanceId)
     if (instance) {
-      return instance.alias || '未命名'
+      return instance.alias || 'Unnamed'
     }
-    return '选择演员实例'
+    return 'Select Actor Instance'
   }
   return undefined
 }
 
-// v7.0: 获取角色实例对应的人物ID
+// v7.0: Get character ID corresponding to actor instance
 function getCharacterId(block: ScriptBlock, scene: SceneContainer): string | undefined {
   if (block.type === 'dialogue') {
-    // v7.0: 从场景对象中查找实例
+    // v7.0: Find instance from scene objects
     const instance = scene?.setup?.objects?.find((obj) => obj.id === block.instanceId)
     return instance?.refId
   }
   return undefined
 }
 
-// 切换场景展开/折叠状态
+// Toggle scene expand/collapse state
 function toggleSceneExpanded(sceneId: string) {
   sceneExpandedMap.value[sceneId] = !sceneExpandedMap.value[sceneId]
 }
 
-// 获取场景展开状态（默认展开）
+// Get scene expand state (expanded by default)
 function isSceneExpanded(sceneId: string): boolean {
   return sceneExpandedMap.value[sceneId] !== false
 }
 
-// 选中场景
+// Select scene
 function handleSelectScene(sceneId: string) {
-  // v6.0: 直接修改 ref
+  // v6.0: Modify ref directly
   const scene = scenes.value.find((s) => s.id === sceneId)
   if (scene && selectedBlockId.value) {
     const hasSelectedBlock = scene.script.some((block) => block.id === selectedBlockId.value)
@@ -477,7 +477,7 @@ function handleSelectScene(sceneId: string) {
   selectedSceneId.value = sceneId
 }
 
-// 删除场景确认对话框状态
+// Delete scene confirmation dialog state
 const deleteSceneConfirm = ref<{
   visible: boolean
   sceneId: string
@@ -488,14 +488,14 @@ const deleteSceneConfirm = ref<{
   message: ''
 })
 
-// 删除场景
+// Delete scene
 function handleDeleteScene(sceneId: string) {
-  // v6.0: 从 episodes 查找场景
+  // v6.0: Find scene from episodes
   const scene = scenes.value.find((s) => s.id === sceneId)
   if (!scene) return
   
-  // 构建提示信息
-  let message = `确定要删除场景「${scene.title}」吗？`
+  // Build prompt message
+  let message = `Are you sure you want to delete scene "${scene.title}"?`
   
   if (scene.script.length > 0) {
     const blockCounts = {
@@ -511,11 +511,11 @@ function handleDeleteScene(sceneId: string) {
     })
     
     const parts: string[] = []
-    if (blockCounts.dialogue > 0) parts.push(`${blockCounts.dialogue}个对话块`)
-    if (blockCounts.narration > 0) parts.push(`${blockCounts.narration}个旁白块`)
-    if (blockCounts.action > 0) parts.push(`${blockCounts.action}个演出块`)
+    if (blockCounts.dialogue > 0) parts.push(`${blockCounts.dialogue} dialogue block(s)`)
+    if (blockCounts.narration > 0) parts.push(`${blockCounts.narration} narration block(s)`)
+    if (blockCounts.action > 0) parts.push(`${blockCounts.action} action block(s)`)
     
-    message += `\n\n该场景包含：${parts.join('、')}\n删除后将无法恢复！`
+    message += `\n\nThis scene contains: ${parts.join(', ')}\nThis action cannot be undone!`
   }
   
   deleteSceneConfirm.value = {
@@ -525,42 +525,42 @@ function handleDeleteScene(sceneId: string) {
   }
 }
 
-// 确认删除场景
+// Confirm scene deletion
 function confirmDeleteScene() {
   const { sceneId } = deleteSceneConfirm.value
   episodeStore.deleteScene(episodeId, sceneId)
   deleteSceneConfirm.value.visible = false
 }
 
-// 更新场景标题
+// Update scene title
 function handleUpdateSceneTitle(sceneId: string, title: string) {
-  // v6.0: 使用 episodeStore 更新场景
+  // v6.0: Update scene via episodeStore
   episodeStore.updateScene(episodeId, sceneId, { title })
 }
 
-// 移动场景顺序（上移/下移）
+// Move scene order (up/down)
 function handleMoveScene(sceneId: string, direction: 'up' | 'down') {
   episodeStore.moveScene(episodeId, sceneId, direction)
 }
 
-// 进入 Setup Mode - v6.10: 使用 Overlay 模式，组件不会被卸载，无需保存状态
+// Enter Setup Mode - v6.10: Overlay mode, component not unmounted, no need to save state
 function handleEnterSetupMode(sceneId: string) {
   emit('enter-setup-mode', sceneId)
 }
 
-// 进入 Action Mode - v6.10: 使用 Overlay 模式，组件不会被卸载，无需保存状态
+// Enter Action Mode - v6.10: Overlay mode, component not unmounted, no need to save state
 function handleEnterActionMode(sceneId: string, blockId: string) {
   emit('enter-action-mode', sceneId, blockId)
 }
 
-// 预览场景
+// Preview scene
 function handlePreviewScene(sceneId: string) {
   emit('preview-scene', sceneId)
 }
 
-// 选中 Block
+// Select Block
 function handleSelectBlock(blockId: string) {
-  // v6.0: 直接修改 ref
+  // v6.0: Modify ref directly
   selectedBlockId.value = blockId
   
   if (selectedSceneId.value) {
@@ -568,7 +568,7 @@ function handleSelectBlock(blockId: string) {
   }
 }
 
-// 删除 Block 确认对话框状态
+// Delete Block confirmation dialog state
 const deleteBlockConfirm = ref<{
   visible: boolean
   sceneId: string
@@ -579,7 +579,7 @@ const deleteBlockConfirm = ref<{
   blockId: ''
 })
 
-// 删除 Block
+// Delete Block
 function handleDeleteBlock(sceneId: string, blockId: string) {
   deleteBlockConfirm.value = {
     visible: true,
@@ -588,51 +588,51 @@ function handleDeleteBlock(sceneId: string, blockId: string) {
   }
 }
 
-// 确认删除 Block
+// Confirm Block deletion
 function confirmDeleteBlock() {
   const { sceneId, blockId } = deleteBlockConfirm.value
   episodeStore.deleteBlockFromScene(episodeId, sceneId, blockId)
   deleteBlockConfirm.value.visible = false
 }
 
-// 更新 Block
+// Update Block
 function handleUpdateBlock(sceneId: string, blockId: string, updates: Partial<ScriptBlock>) {
-  // v6.0: 使用 episodeStore 更新 block
+  // v6.0: Update block via episodeStore
   episodeStore.updateBlockInScene(episodeId, sceneId, blockId, updates)
 }
 
-// 显示添加菜单
+// Show add menu
 function showAddMenu() {
   addMenuVisible.value = !addMenuVisible.value
 }
 
-// 显示场景级添加菜单
+// Show scene-level add menu
 function showSceneAddMenu(sceneId: string, event: MouseEvent) {
   event.stopPropagation()
-  // 切换菜单状态
+  // Toggle menu state
   sceneAddMenuVisible.value = sceneAddMenuVisible.value === sceneId ? null : sceneId
 }
 
-// 处理场景级添加菜单项点击
+// Handle scene-level add menu item click
 function handleSceneAddMenuItem(sceneId: string, type: 'scene' | 'dialogue' | 'narration' | 'action') {
   sceneAddMenuVisible.value = null
   
   if (type === 'scene') {
-    // 在当前场景之后插入新场景
+    // Insert new scene after current scene
     selectedSceneId.value = null
     selectedBlockId.value = null
     
-    // 查找当前场景索引
+    // Find current scene index
     const currentSceneIndex = scenes.value.findIndex(s => s.id === sceneId)
     
-    // 打开新建场景弹窗
+    // Open create scene dialog
     sceneCreationState.value = {
       visible: true,
       insertIndex: currentSceneIndex !== -1 ? currentSceneIndex + 1 : -1,
       defaultSourceId: sceneId
     }
   } else {
-    // 在场景开头添加 block
+    // Add block at start of scene
     const scene = scenes.value.find((s) => s.id === sceneId)
     if (!scene) return
 
@@ -642,7 +642,7 @@ function handleSceneAddMenuItem(sceneId: string, type: 'scene' | 'dialogue' | 'n
         newBlock = {
           id: generateId(),
           type: 'dialogue' as const,
-          instanceId: '',  // 留空，等用户手动选择演员实例
+          instanceId: '',  // Leave empty for manual actor instance selection
           text: '',
           actions: [] as Action[]
         }
@@ -679,7 +679,7 @@ function handleSceneAddMenuItem(sceneId: string, type: 'scene' | 'dialogue' | 'n
   }
 }
 
-// 处理添加菜单项点击
+// Handle add menu item click
 function handleAddMenuItem(type: 'scene' | 'dialogue' | 'narration' | 'action') {
   addMenuVisible.value = false
   
@@ -694,7 +694,7 @@ function handleAddMenuItem(type: 'scene' | 'dialogue' | 'narration' | 'action') 
   }
 }
 
-// v6.0: 创建场景辅助函数
+// v6.0: Create scene helper function
 function createEmptySetup(): SceneSetup {
   return {
     camera: {
@@ -710,19 +710,19 @@ function createEmptySetup(): SceneSetup {
 }
 
 function createScene(title?: string, setup?: SceneSetup): SceneContainer {
-  // 如果有传入 setup 则复制，否则创建空的
+  // Copy setup if passed, otherwise create empty
   const newSetup = setup ? JSON.parse(JSON.stringify(setup)) as SceneSetup : createEmptySetup()
   
   return {
     id: generateId('scene'),
     type: 'scene_container',
-    title: title || `场景 ${scenes.value.length + 1}`,
+    title: title || `Scene ${scenes.value.length + 1}`,
     setup: newSetup,
     script: []
   }
 }
 
-// 确认创建场景
+// Confirm scene creation
 async function handleConfirmCreateScene(payload: { mode: 'copy' | 'empty' | 'inherit', sourceId?: string }) {
   sceneCreationState.value.visible = false
   
@@ -743,10 +743,10 @@ async function handleConfirmCreateScene(payload: { mode: 'copy' | 'empty' | 'inh
   const newScene = createScene(undefined, setup)
   
   if (sceneCreationState.value.insertIndex !== -1) {
-    // 插入到指定位置
+    // Insert at specified position
     episodeStore.insertScene(episodeId, newScene, sceneCreationState.value.insertIndex)
   } else {
-    // 添加到末尾
+    // Add to end
     episodeStore.addScene(episodeId, newScene)
   }
   
@@ -766,12 +766,12 @@ async function handleConfirmCreateScene(payload: { mode: 'copy' | 'empty' | 'inh
   }, 100)
 }
 
-// 添加场景（点击底部添加按钮）
+// Add scene (click bottom add button)
 function handleAddScene() {
   selectedSceneId.value = null
   selectedBlockId.value = null
   
-  // 默认复制最后一个场景
+  // Copy last scene by default
   const lastScene = scenes.value.length > 0 ? scenes.value[scenes.value.length - 1] : undefined
   
   sceneCreationState.value = {
@@ -781,7 +781,7 @@ function handleAddScene() {
   }
 }
 
-// 添加对话块到最后一个场景
+// Add dialogue block to last scene
 function handleAddDialogue() {
   if (scenes.value.length === 0) {
     handleAddScene()
@@ -794,7 +794,7 @@ function handleAddDialogue() {
   const newBlock = {
     id: generateId('block'),
     type: 'dialogue' as const,
-    instanceId: '',  // 留空，等用户手动选择演员实例
+    instanceId: '',  // Leave empty for manual actor instance selection
     text: '',
     actions: [] as Action[]
   }
@@ -803,7 +803,7 @@ function handleAddDialogue() {
   void scrollToBottom()
 }
 
-// 添加旁白块到最后一个场景
+// Add narration block to last scene
 function handleAddNarration() {
   if (scenes.value.length === 0) {
     handleAddScene()
@@ -824,7 +824,7 @@ function handleAddNarration() {
   void scrollToBottom()
 }
 
-// 添加演出块
+// Add performance block
 function handleAddAction() {
   if (scenes.value.length === 0) {
     handleAddScene()
@@ -845,43 +845,43 @@ function handleAddAction() {
   void scrollToBottom()
 }
 
-// 选择演员
+// Select actor
 function handleSelectActor(sceneId: string, blockId: string) {
   emit('select-actor', sceneId, blockId)
 }
 
-// 选择状态
+// Select state
 function handleSelectState(sceneId: string, blockId: string) {
   emit('select-state', sceneId, blockId)
 }
 
-// 选择表情
+// Select expression
 function handleSelectExpression(sceneId: string, blockId: string) {
   emit('select-expression', sceneId, blockId)
 }
 
-// 工具栏添加菜单状态
+// Toolbar add menu state
 const addMenuVisible = ref(false)
 
-// 场景级添加菜单状态（记录当前显示菜单的场景ID）
+// Scene-level add menu state (records scene ID currently showing menu)
 const sceneAddMenuVisible = ref<string | null>(null)
 
-// 插入菜单状态
+// Insert menu state
 const insertMenuVisible = ref(false)
 const insertMenuPosition = ref({ x: 0, y: 0 })
 const insertMenuContext = ref<{ sceneId: string; blockId: string; position: 'before' | 'after' } | null>(null)
 
-// 新建场景弹窗状态
+// Create scene dialog state
 const sceneCreationState = ref<{
   visible: boolean
-  insertIndex: number // -1 表示添加到末尾
+  insertIndex: number // -1 indicates add to end
   defaultSourceId?: string
 }>({
   visible: false,
   insertIndex: -1
 })
 
-// 显示插入菜单（block级别）
+// Show insert menu (block-level)
 function showInsertMenu(sceneId: string, blockId: string, position: 'before' | 'after', event: MouseEvent) {
   const button = event.target as HTMLElement
   const rect = button.getBoundingClientRect()
@@ -893,7 +893,7 @@ function showInsertMenu(sceneId: string, blockId: string, position: 'before' | '
   insertMenuVisible.value = true
 }
 
-// 处理插入block（仅处理 block 级别的插入）
+// Handle insert block (block-level insert only)
 function handleInsertBlock(type: 'dialogue' | 'narration' | 'action') {
   if (!insertMenuContext.value) return
 
@@ -912,7 +912,7 @@ function handleInsertBlock(type: 'dialogue' | 'narration' | 'action') {
       newBlock = {
         id: generateId('block'),
         type: 'dialogue',
-        instanceId: '',  // 留空，等用户手动选择演员实例
+        instanceId: '',  // Leave empty for manual actor instance selection
         text: '',
         actions: []
       }
@@ -952,7 +952,7 @@ function handleInsertBlock(type: 'dialogue' | 'narration' | 'action') {
 }
 
 function handleKeyDown(event: KeyboardEvent) {
-  // 如果在输入框中,不处理快捷键
+  // Do not process shortcuts when inside input
   const target = event.target as HTMLElement
   if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
     return
@@ -966,10 +966,10 @@ function handleKeyDown(event: KeyboardEvent) {
     }
     const lastScene = scenes.value[scenes.value.length - 1]
     if (!lastScene) return
-    // v7.0: 使用场景中的第一个对象实例
+    // v7.0: Use first object instance in scene
     const firstInstance = lastScene.setup?.objects?.[0]
     if (!firstInstance) {
-      alert('场景中没有对象，请先在Setup模式中添加对象')
+      alert('No objects found in scene. Please add objects in Setup mode first.')
       return
     }
     selectedSceneId.value = null
@@ -977,7 +977,7 @@ function handleKeyDown(event: KeyboardEvent) {
     const newBlock = {
       id: generateId('block'),
       type: 'dialogue' as const,
-      instanceId: firstInstance.id,  // v7.0: 使用实例ID
+      instanceId: firstInstance.id,  // v7.0: Use instance ID
       text: '',
       actions: [] as Action[]
     }
@@ -1007,7 +1007,7 @@ function handleKeyDown(event: KeyboardEvent) {
     void scrollToBottom()
   }
   
-  // Shift+Enter: 添加演出块
+  // Shift+Enter: Add performance block
   if (event.key === 'Enter' && event.shiftKey) {
     event.preventDefault()
     handleAddAction()
@@ -1028,7 +1028,7 @@ function handleKeyDown(event: KeyboardEvent) {
 onMounted(() => {
   // console.log('[ScreenplayStream] onMounted, episodeId:', episodeId)
   document.addEventListener('keydown', handleKeyDown)
-  // v6.10: 使用 Overlay 模式后，组件不会被卸载，无需恢复状态
+  // v6.10: Overlay mode avoids unmounting, no need to restore state
 })
 
 onBeforeUnmount(() => {
@@ -1043,42 +1043,42 @@ async function scrollToBlock(blockId: string) {
     sceneExpandedMap.value[scene.id] = true
   }
   
-  // 2. 等待 Vue 渲染 DOM
+  // 2. Wait for Vue to render DOM
   await nextTick()
   
-  // 3. 查找 DOM 元素
+  // 3. Find DOM element
   if (!containerRef.value) {
     console.warn('scrollToBlock: containerRef is null')
     return
   }
   
-  // 使用更稳健的查找逻辑，配合简单的延时重试
-  // 减少等待时间，提升响应感，但增加检查频次
+  // Use robust lookup logic with delay retries
+  // Reduce wait time, enhance responsiveness with frequent checks
   const findElement = () => containerRef.value?.querySelector(`[data-block-id="${blockId}"]`)
   
   let blockElement = findElement()
   let attempts = 0
   
-  // 如果找不到，尝试轮询几次（解决异步渲染延迟）
+  // If not found, poll several times (handles async render latency)
   while (!blockElement && attempts < 5) {
-    await new Promise(resolve => setTimeout(resolve, 50)) // 50ms 检查一次
+    await new Promise(resolve => setTimeout(resolve, 50)) // Check every 50ms
     blockElement = findElement()
     attempts++
   }
   
   if (blockElement) {
-    // ✅ 核心修改：使用原生 API，且 block: 'center' 确保新元素在视野中间或可见
+    // Core fix: use native API with block: 'center' to ensure new element visible
     blockElement.scrollIntoView({ 
       behavior: 'smooth', 
-      block: 'center',  // 垂直方向居中
+      block: 'center',  // Centered vertically
       inline: 'nearest' 
     })
     
-    // 给一点高亮反馈（可选，提升体验）
+    // Provide highlight feedback (optional)
     blockElement.classList.add('highlight-flash')
     setTimeout(() => blockElement.classList.remove('highlight-flash'), 1000)
   } else {
-    // 兜底方案：如果实在找不到元素（极其罕见），则滚动到底部
+    // Fallback: scroll to bottom if element not found
     console.warn(`scrollToBlock: element not found for ${blockId}, falling back to bottom`)
     containerRef.value.scrollTo({
       top: containerRef.value.scrollHeight,
@@ -1087,29 +1087,29 @@ async function scrollToBlock(blockId: string) {
   }
 }
 
-// 滚动到最后一个内容
+// Scroll to last content
 async function scrollToBottom() {
-  // 1. 找到最后一个场景
+  // 1. Find last scene
   if (scenes.value.length === 0) return
   const lastScene = scenes.value[scenes.value.length - 1]
   if (!lastScene) return
   
-  // 2. 确保最后一个场景展开
+  // 2. Ensure last scene expanded
   sceneExpandedMap.value[lastScene.id] = true
   
   await nextTick()
 
-  // 3. 判断最后场景是否有 Block
+  // 3. Determine if last scene has Block
   if (lastScene.script.length > 0) {
-    // 如果有 Block，滚动到最后一个 Block
+    // If Block exists, scroll to last Block
     const lastBlock = lastScene.script[lastScene.script.length - 1]
     if (lastBlock) {
       await scrollToBlock(lastBlock.id)
     }
   } else {
-    // 如果没有 Block (空场景)，滚动到场景头部
-    // 我们可以给 SceneContainerHeader 加一个 id 或者 data 属性来定位
-    // 这里使用兜底的 scrollHeight，但在 nextTick 后通常是准的
+    // If no Block (empty scene), scroll to scene header
+    // Can assign id or data attribute to SceneContainerHeader for positioning
+    // Use fallback scrollHeight, typically accurate after nextTick
     setTimeout(() => {
       if (containerRef.value) {
         containerRef.value.scrollTo({
@@ -1121,7 +1121,7 @@ async function scrollToBottom() {
   }
 }
 
-// 暴露给父组件调用
+// Expose for parent component invocation
 defineExpose({
   scrollToBottom
 })
@@ -1138,7 +1138,7 @@ defineExpose({
   overflow: hidden;
 }
 
-/* 嵌入式工具栏 */
+/* Embedded toolbar */
 .embedded-toolbar {
   display: flex;
   align-items: center;
@@ -1279,7 +1279,7 @@ defineExpose({
   font-size: 14px;
 }
 
-/* 底部悬浮栏 */
+/* Bottom floating bar */
 .floating-action-bar {
   position: absolute;
   bottom: 0;
@@ -1318,7 +1318,7 @@ defineExpose({
   transform: translateY(0);
 }
 
-/* 滚动条样式 */
+/* Scrollbar styles */
 .blocks-container::-webkit-scrollbar {
   width: 8px;
 }
@@ -1404,7 +1404,7 @@ defineExpose({
   transform: translateX(-50%);
 }
 
-/* 场景级菜单（相对于+按钮定位） */
+/* Scene-level menu (positioned relative to + button) */
 .insert-menu.scene-menu {
   position: absolute;
   top: calc(100% + 5px);
@@ -1489,13 +1489,13 @@ defineExpose({
   background: #f3f4f6;
 }
 
-/* 新增 Block 高亮动画 */
+/* New Block highlight animation */
 .highlight-flash {
   animation: flash-bg 1s ease-out;
 }
 
 @keyframes flash-bg {
-  0% { background-color: #dbeafe; } /* 浅蓝色高亮 */
+  0% { background-color: #dbeafe; } /* Light blue highlight */
   100% { background-color: transparent; }
 }
 

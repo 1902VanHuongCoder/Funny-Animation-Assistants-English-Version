@@ -1,6 +1,6 @@
 <template>
   <div class="screenplay-editor-page">
-    <!-- 剧本流（内置工具栏） -->
+    <!-- Screenplay stream (built-in toolbar) -->
     <ScreenplayStream
       ref="screenplayStreamRef"
       :episode-name="episodeName"
@@ -21,7 +21,7 @@
       @preview-scene="handlePreviewScene"
     />
     
-    <!-- v6.10: 场景编辑器 Overlay 覆盖层 -->
+    <!-- v6.10: Scene editor Overlay layer -->
     <Transition name="scene-editor-overlay">
       <div
         v-if="sceneEditorState.visible"
@@ -38,7 +38,7 @@
       </div>
     </Transition>
     
-    <!-- 旁白配置对话框 -->
+    <!-- Narration config dialog -->
     <NarratorConfigDialog
       v-if="narratorConfigVisible"
       :narrator="projectStore.narrator"
@@ -46,7 +46,7 @@
       @save="handleSaveNarrator"
     />
     
-    <!-- 演员管理对话框 -->
+    <!-- Actor management dialog -->
     <ActorManagementDialog
       v-if="actorManagementVisible"
       :actors="projectStore.actors"
@@ -56,7 +56,7 @@
       @delete-actor="handleDeleteActorFromManagement"
     />
     
-    <!-- BGM 管理对话框 -->
+    <!-- BGM management dialog -->
     <div
       v-if="soundManagerVisible"
       class="modal-overlay"
@@ -65,7 +65,7 @@
       <div class="sound-manager-modal">
         <div class="modal-header">
           <h3 class="modal-title">
-            背景音乐管理
+            Background Music Management
           </h3>
           <button
             class="btn-close"
@@ -80,14 +80,14 @@
       </div>
     </div>
 
-    <!-- 剧本配乐管理对话框 (v7.5) -->
+    <!-- Screenplay soundtrack management dialog (v7.5) -->
     <BGMManagerDialog
       v-if="bgmManagerVisible"
       :episode-id="episodeId"
       @close="bgmManagerVisible = false"
     />
 
-    <!-- v7.0: 实例选择对话框（选择场景中的角色实例） -->
+    <!-- v7.0: Instance selector dialog (select character instance in scene) -->
     <InstanceSelectorDialog
       v-if="instanceSelectorState.visible"
       :scene-objects="instanceSelectorState.sceneObjects"
@@ -98,7 +98,7 @@
     
 
     
-    <!-- 表情选择对话框 -->
+    <!-- Expression selector dialog -->
     <ExpressionSelectorDialog
       v-if="expressionSelectorState.visible"
       v-bind="expressionSelectorState.currentExpression ? { 'current-expression': expressionSelectorState.currentExpression } : {}"
@@ -106,7 +106,7 @@
       @select="handleExpressionSelect"
     />
     
-    <!-- 场景预览对话框 -->
+    <!-- Scene preview dialog -->
     <ScenePreviewDialog
       v-if="scenePreviewState.visible && currentEpisode"
       :visible="scenePreviewState.visible"
@@ -116,7 +116,7 @@
       @close="scenePreviewState.visible = false"
     />
     
-    <!-- 剧本预览对话框 -->
+    <!-- Script preview dialog -->
     <ScriptPreviewDialog
       v-if="scriptPreviewState.visible && currentEpisode"
       :visible="scriptPreviewState.visible"
@@ -127,7 +127,7 @@
     
 
     
-    <!-- 导出确认对话框 -->
+    <!-- Export confirm dialog -->
     <ExportConfirmDialog
       v-if="showConfirmDialog"
       :episode-id="episodeId"
@@ -136,7 +136,7 @@
       @cancel="cancelExport"
     />
     
-    <!-- 导出进度对话框 -->
+    <!-- Export progress dialog -->
     <ExportProgressDialog
       v-if="showProgressDialog"
       :status="exportState.status"
@@ -146,7 +146,7 @@
       @close="showProgressDialog = false"
     />
     
-    <!-- 导出结果对话框 -->
+    <!-- Export result dialog -->
     <ExportResultDialog
       v-if="showResultDialog && exportResult"
       :result="exportResult"
@@ -155,12 +155,12 @@
       @retry="retryExport"
     />
 
-    <!-- 返回确认对话框 -->
+    <!-- Return confirm dialog -->
     <ConfirmDialog
       v-if="showBackConfirm"
-      title="未保存的修改"
-      message="当前有未保存的修改，确定要返回吗？"
-      confirm-text="返回"
+      title="Unsaved Changes"
+      message="There are unsaved changes. Are you sure you want to go back?"
+      confirm-text="Leave"
       :is-danger="true"
       @confirm="confirmBack"
       @cancel="showBackConfirm = false"
@@ -200,7 +200,7 @@ const projectStore = useProjectStore()
 const screenplayStreamRef = ref<ComponentPublicInstance | null>(null)
 const { success, error } = useToast()
 
-// 视频导出
+// Video export
 const { 
   exportState, 
   exportSettings, 
@@ -218,12 +218,12 @@ const {
 
 const episodeId = route.params['episodeId'] as string
 
-// v6.0: 从 episodeStore 获取当前剧集
+// v6.0: Get current episode from episodeStore
 const currentEpisode = computed(() => episodeStore.getEpisode(episodeId))
 const episodeName = computed(() => currentEpisode.value?.name || '')
 const scenes = computed(() => currentEpisode.value?.scenes || [])
 
-// v7.0: 实例选择对话框状态（替代原来的演员选择）
+// v7.0: Instance selector dialog state (replaces original actor selection)
 const instanceSelectorState = ref<{
   visible: boolean
   sceneId: string | null
@@ -239,14 +239,14 @@ const instanceSelectorState = ref<{
 
 
 
-// 演员管理对话框状态
+// Actor management dialog state
 const actorManagementVisible = ref(false)
 
-// BGM 管理对话框状态
+// BGM management dialog state
 const soundManagerVisible = ref(false)
 const bgmManagerVisible = ref(false)
 
-// BGM 选择对话框状态 (v7.5)
+// BGM selector dialog state (v7.5)
 // const bgmSelectorState = ref<{
 //   visible: boolean
 //   sceneId: string | null
@@ -256,10 +256,10 @@ const bgmManagerVisible = ref(false)
 //   sceneId: null
 // })
 
-// 旁白配置对话框状态
+// Narration config dialog state
 const narratorConfigVisible = ref(false)
 
-// 表情选择对话框状态
+// Expression selector dialog state
 const expressionSelectorState = ref<{
   visible: boolean
   sceneId: string | null
@@ -271,7 +271,7 @@ const expressionSelectorState = ref<{
   blockId: null
 })
 
-// 场景预览对话框状态
+// Scene preview dialog state
 const scenePreviewState = ref<{
   visible: boolean
   sceneId: string
@@ -280,14 +280,14 @@ const scenePreviewState = ref<{
   sceneId: ''
 })
 
-// 剧本预览对话框状态
+// Script preview dialog state
 const scriptPreviewState = ref<{
   visible: boolean
 }>({
   visible: false
 })
 
-// v6.10: 场景编辑器 Overlay 状态
+// v6.10: Scene editor Overlay state
 const sceneEditorState = ref<{
   visible: boolean
   mode: 'setup' | 'action'
@@ -300,35 +300,35 @@ const sceneEditorState = ref<{
   blockId: null
 })
 
-// 自动保存状态
+// Auto save state
 const lastSaveTime = ref<number>(0)
 let autoSaveTimer: number | null = null
 
-// 返回确认对话框
+// Return confirmation dialog
 const showBackConfirm = ref(false)
 
-// 初始化剧本
+// Initialize screenplay
 onMounted(() => {
-  // v6.0: 不再需要初始化 screenplay，直接使用 episode
+  // v6.0: No longer need to initialize screenplay, directly use episode
   if (!currentEpisode.value) {
     void router.replace('/project')
     return
   }
   
-  // 设置当前剧集ID到Store，供子组件(如BGMManagerDialog)使用
+  // Set current episode ID to Store for child components (such as BGMManagerDialog)
   episodeStore.setCurrentEpisode(episodeId)
   
-  // 初始化 lastSaveTime 为当前 episode 的 modifiedAt，避免误判为有未保存修改
+  // Initialize lastSaveTime to current episode modifiedAt to avoid false positives for unsaved changes
   lastSaveTime.value = currentEpisode.value.modifiedAt || Date.now()
   
-  // 启动自动保存
+  // Start auto save
   startAutoSave()
   
-  // 添加快捷键监听
+  // Add keyboard shortcut listener
   document.addEventListener('keydown', handleGlobalKeyDown)
 })
 
-// 组件销毁时清理
+// Clean up when component unmounts
 onBeforeUnmount(() => {
   if (autoSaveTimer) {
     clearTimeout(autoSaveTimer)
@@ -336,19 +336,19 @@ onBeforeUnmount(() => {
   document.removeEventListener('keydown', handleGlobalKeyDown)
 })
 
-// 启动自动保存
+// Start auto save
 function startAutoSave() {
-  // v6.0: 监听 episode 的 modifiedAt 变化
+  // v6.0: Watch episode modifiedAt changes
   watch(
     () => currentEpisode.value?.modifiedAt,
     (newTime) => {
       if (newTime && newTime > lastSaveTime.value) {
-        // 清除之前的定时器
+        // Clear previous timer
         if (autoSaveTimer) {
           clearTimeout(autoSaveTimer)
         }
         
-        // 3秒后自动保存
+        // Auto save after 3 seconds
         autoSaveTimer = window.setTimeout(() => {
           void autoSave()
         }, 3000)
@@ -357,7 +357,7 @@ function startAutoSave() {
   )
 }
 
-// 自动保存
+// Auto save
 async function autoSave() {
   if (!currentEpisode.value) return
   if (!projectStore.isProjectOpen) {
@@ -368,22 +368,22 @@ async function autoSave() {
     await projectStore.saveProject()
     lastSaveTime.value = Date.now()
   } catch (error) {
-    console.error('[自动保存] 失败:', error)
+    console.error('[AutoSave] Failed:', error)
   }
 }
 
-// 全局快捷键处理
+// Global keyboard shortcut handling
 function handleGlobalKeyDown(event: KeyboardEvent) {
-  // Ctrl+S / Cmd+S: 保存
+  // Ctrl+S / Cmd+S: Save
   if ((event.ctrlKey || event.metaKey) && event.key === 's') {
     event.preventDefault()
     void handleSave()
   }
 }
 
-// 返回剧集列表
+// Return to episode list
 function handleBack() {
-  // v6.0: 检查 episode 的修改时间
+  // v6.0: Check episode modification time
   const lastModified = currentEpisode.value?.modifiedAt || 0
   const hasUnsavedChanges = lastModified > lastSaveTime.value
   
@@ -395,43 +395,43 @@ function handleBack() {
   void router.push('/project')
 }
 
-// 确认返回（放弃未保存的修改）
+// Confirm return (discard unsaved changes)
 function confirmBack() {
   showBackConfirm.value = false
   void router.push('/project')
 }
 
-// 注意：添加和插入 Block 的逻辑现在由 ScreenplayStream 组件内部处理
+// Note: Logic for adding and inserting Blocks is now handled internally by ScreenplayStream component
 
-// 保存
+// Save
 async function handleSave() {
-  // v6.0: 检查当前 episode 是否有场景
+  // v6.0: Check if current episode has scenes
   if (scenes.value.length === 0) {
-    error('剧本必须至少包含一个场景！请先添加场景。', 3000)
+    error('The screenplay must contain at least one scene! Please add a scene first.', 3000)
     return
   }
   
   if (!projectStore.isProjectOpen) {
-    error('项目未打开，无法保存剧本！', 3000)
+    error('Project is not open. Unable to save screenplay!', 3000)
     return
   }
   
   try {
     await projectStore.saveProject()
     lastSaveTime.value = Date.now()
-    success('剧本已保存!')
+    success('Screenplay saved successfully!')
   } catch (err: unknown) {
-    console.error('[手动保存] 失败:', err)
-    const message = err instanceof Error ? err.message : '未知错误'
-    error('保存失败：' + message, 3000)
+    console.error('[Manual Save] Failed:', err)
+    const message = err instanceof Error ? err.message : 'Unknown error'
+    error('Save failed: ' + message, 3000)
   }
 }
 
-// 预览
+// Preview
 function handlePreview() {
-  // v6.0: 检查当前 episode 是否有场景
+  // v6.0: Check if current episode has scenes
   if (scenes.value.length === 0) {
-    alert('剧本必须至少包含一个场景！请先添加场景。')
+    alert('The screenplay must contain at least one scene! Please add a scene first.')
     return
   }
   
@@ -440,63 +440,63 @@ function handlePreview() {
   }
 }
 
-// 导出
+// Export
 function handleExport() {
-  // v6.0: 检查当前 episode 是否有场景
+  // v6.0: Check if current episode has scenes
   if (scenes.value.length === 0) {
-    alert('剧本必须至少包含一个场景！请先添加场景。')
+    alert('The screenplay must contain at least one scene! Please add a scene first.')
     return
   }
   
-  // 调用导出功能
+  // Call export functionality
   void startExport(episodeId)
 }
 
-// 编辑旁白配置
+// Edit narration configuration
 function handleEditNarrator() {
   narratorConfigVisible.value = true
 }
 
-// 保存旁白配置
+// Save narration configuration
 function handleSaveNarrator(narrator: NarratorConfig) {
   projectStore.updateNarrator(narrator)
   narratorConfigVisible.value = false
 }
 
-// 打开演员管理对话框
+// Open actor management dialog
 function handleManageActors() {
   actorManagementVisible.value = true
 }
 
-// 打开 BGM 管理对话框
+// Open BGM management dialog
 function handleManageBGM() {
   bgmManagerVisible.value = true
 }
 
-// 从演员管理添加演员
+// Add actor from actor management
 function handleAddActorFromManagement(actor: ActorConfig) {
   projectStore.addActor(actor)
 }
 
-// 从演员管理更新演员
+// Update actor from actor management
 function handleUpdateActorFromManagement(alias: string, actor: ActorConfig) {
   projectStore.updateActor(alias, actor)
 }
 
-// 从演员管理删除演员
+// Delete actor from actor management
 function handleDeleteActorFromManagement(alias: string) {
   projectStore.deleteActor(alias)
 }
 
-// v7.0: 选择角色实例(对话块) - 使用场景中的实例而不是演员
+// v7.0: Select character instance (dialogue block) - use instances in scene rather than actors
 function handleSelectActor(sceneId: string, blockId: string) {
-  // 获取当前场景
+  // Get current scene
   const scene = episodeStore.getScene(episodeId, sceneId)
   if (!scene) return
   
   const block = scene.script.find((b: ScriptBlock) => b.id === blockId)
   if (block?.type === 'dialogue') {
-    // v20: 计算截至当前 Block 的 runtime objects（包含 spawned 状态）
+    // v20: Compute runtime objects up to current Block (including spawned state)
     const runtimeSetup = applyBlockActionsToState(
       calculatePrevContext(scene, blockId),
       block,
@@ -513,29 +513,29 @@ function handleSelectActor(sceneId: string, blockId: string) {
   }
 }
 
-// v7.0: 角色实例选择确认
+// v7.0: Character instance selection confirmation
 function handleInstanceSelect(instanceId: string) {
   const { sceneId, blockId } = instanceSelectorState.value
   if (sceneId && blockId) {
-    // v7.0: 更新 instanceId 而不是 actorAlias
+    // v7.0: Update instanceId rather than actorAlias
     episodeStore.updateBlockInScene(episodeId, sceneId, blockId, { instanceId })
   }
   instanceSelectorState.value.visible = false
 }
 
-// 姿态选择功能已随人物系统移除
+// Pose selection functionality has been removed with character system
 function handleSelectState(_sceneId: string, _blockId: string) {
   // no-op: character pose selection removed
 }
 
-/* 已废弃的 BGM 处理逻辑
-// 选择 BGM (v5.0: 从场景的 setup.objects 中获取和更新)
+/* Deprecated BGM handling logic
+// Select BGM (v5.0: Get and update from setup.objects of scene)
 function handleSelectBGM(sceneId: string) {
 ...
 }
 */
 
-// 选择表情
+// Select expression
 function handleSelectExpression(sceneId: string, blockId: string) {
   const scene = episodeStore.getScene(episodeId, sceneId)
   if (!scene) return
@@ -551,7 +551,7 @@ function handleSelectExpression(sceneId: string, blockId: string) {
   }
 }
 
-// 表情选择确认
+// Expression selection confirmation
 function handleExpressionSelect(expressionId: string) {
   const { sceneId, blockId } = expressionSelectorState.value
   if (sceneId && blockId) {
@@ -560,7 +560,7 @@ function handleExpressionSelect(expressionId: string) {
   expressionSelectorState.value.visible = false
 }
 
-// 进入 Setup Mode (编辑初始布局) - v6.10: 使用 Overlay 模式
+// Enter Setup Mode (edit initial layout) - v6.10: Use Overlay mode
 function handleEnterSetupMode(sceneId: string) {
   sceneEditorState.value = {
     visible: true,
@@ -570,7 +570,7 @@ function handleEnterSetupMode(sceneId: string) {
   }
 }
 
-// 进入 Action Mode (编排动作) - v6.10: 使用 Overlay 模式
+// Enter Action Mode (choreograph actions) - v6.10: Use Overlay mode
 function handleEnterActionMode(sceneId: string, blockId: string) {
   sceneEditorState.value = {
     visible: true,
@@ -580,33 +580,33 @@ function handleEnterActionMode(sceneId: string, blockId: string) {
   }
 }
 
-// v6.10: 退出场景编辑 (Overlay 模式)
+// v6.10: Exit scene edit (Overlay mode)
 function handleExitSceneEdit() {
-  sceneEditorState.value.visible = false
+  sceneEditorState.value = { visible: false, mode: 'setup', sceneId: '', blockId: null }
 }
 
-// v6.10: 保存 Setup 后退出 (Overlay 模式)
+// v6.10: Exit after saving Setup (Overlay mode)
 function handleSaveSetup(_savedSceneId: string, _setup: SceneSetup) {
-  // SceneEditMode 已经调用了 episodeStore.updateScene，这里只需要关闭 Overlay
-  sceneEditorState.value.visible = false
+  // SceneEditMode has already called episodeStore.updateScene; only need to close Overlay here
+  sceneEditorState.value = { visible: false, mode: 'setup', sceneId: '', blockId: null }
 }
 
-// 编辑画面(兼容旧接口，已废弃)
+// Edit visual (compatible with legacy interface, deprecated)
 function handleEditSetup(sceneId: string, blockId: string) {
-  // 对于脚本块，进入 Action Mode
+  // For script blocks, enter Action Mode
   handleEnterActionMode(sceneId, blockId)
 }
 
-// 预览场景
+// Preview scene
 function handlePreviewScene(sceneId: string) {
   const scene = episodeStore.getScene(episodeId, sceneId)
   if (!scene) {
-    error('场景不存在')
+    error('Scene does not exist')
     return
   }
   
   if (scene.script.length === 0) {
-    error('场景中没有内容，无法预览')
+    error('Scene has no content to preview')
     return
   }
   
@@ -616,7 +616,7 @@ function handlePreviewScene(sceneId: string) {
   }
 }
 
-// 更新动画名称
+// Update animation name
 function handleUpdateEpisodeName(name: string) {
   if (currentEpisode.value) {
     episodeStore.updateEpisode(episodeId, { name })
@@ -632,7 +632,7 @@ function handleUpdateEpisodeName(name: string) {
   position: relative;
 }
 
-/* v6.10: 场景编辑器 Overlay 样式 */
+/* v6.10: Scene editor Overlay styles */
 .scene-editor-overlay {
   position: fixed;
   top: 0;
@@ -643,7 +643,7 @@ function handleUpdateEpisodeName(name: string) {
   background: #1a1a1a;
 }
 
-/* Overlay 过渡动画 */
+/* Overlay transition animation */
 .scene-editor-overlay-enter-active {
   animation: overlay-slide-up 0.3s ease-out;
 }

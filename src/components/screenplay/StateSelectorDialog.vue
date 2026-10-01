@@ -6,7 +6,7 @@
     <div class="state-selector-dialog">
       <div class="dialog-header">
         <h3 class="dialog-title">
-          选择人物姿态
+          Select Character Pose
         </h3>
         <button
           class="btn-close"
@@ -21,9 +21,9 @@
           v-if="stateList.length === 0"
           class="empty-state"
         >
-          <p>暂无人物姿态定义</p>
+          <p>No pose definitions found</p>
           <p class="empty-hint">
-            请在项目设置中定义人物姿态
+            Please define character poses in project settings
           </p>
         </div>
         <div class="state-list">
@@ -48,13 +48,13 @@
           class="btn-cancel"
           @click="$emit('close')"
         >
-          取消
+          Cancel
         </button>
         <button
           class="btn-confirm"
           @click="handleConfirm"
         >
-          确定
+          Confirm
         </button>
       </div>
     </div>
@@ -80,12 +80,12 @@ const emit = defineEmits<{
   select: [state: string]
 }>()
 
-// TODO: 从项目配置获取状态列表
+// TODO: Get state list from project config
 const stateList = ref<CharacterState[]>([
-  { id: 'normal', name: '正常', icon: '🧍', description: '站立姿势' },
-  { id: 'sit', name: '坐下', icon: '🪑', description: '坐姿' },
-  { id: 'walk', name: '行走', icon: '🚶', description: '行走状态' },
-  { id: 'run', name: '奔跑', icon: '🏃', description: '快速奔跑' },
+  { id: 'normal', name: 'Normal', icon: '🧍', description: 'Standing pose' },
+  { id: 'sit', name: 'Sitting', icon: '🪑', description: 'Sitting pose' },
+  { id: 'walk', name: 'Walking', icon: '🚶', description: 'Walking state' },
+  { id: 'run', name: 'Running', icon: '🏃', description: 'Fast running' },
 ])
 
 const selectedState = ref<string>(props.currentState || 'normal')

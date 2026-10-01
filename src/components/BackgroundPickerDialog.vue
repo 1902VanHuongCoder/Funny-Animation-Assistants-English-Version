@@ -1,10 +1,10 @@
 <template>
   <AssetBrowser
-    title="选择背景"
+    title="Select Background"
     :assets="backgroundStore.backgrounds"
     :all-tags="backgroundStore.allTags"
     :type-filter-options="typeFilterOptions"
-    empty-text="暂无背景素材，请先在素材管理中添加背景"
+    empty-text="No background assets yet. Please add backgrounds in Asset Manager first"
     :load-image="loadImage"
     :load-all-frames="loadAllFrames"
     @select="handleSelect"
@@ -28,25 +28,25 @@ const backgroundStore = useBackgroundStore()
 const { getImageUrl, loadImageUrl } = useAssetImage()
 
 const typeFilterOptions = [
-  { label: '全部', value: 'all' },
-  { label: '静态', value: 'static' },
-  { label: '动态', value: 'animation' }
+  { label: 'All', value: 'all' },
+  { label: 'Static', value: 'static' },
+  { label: 'Animated', value: 'animation' }
 ]
 
 function handleSelect(asset: { id: string; [key: string]: unknown }) {
-  // 从 store 获取完整的 Background 对象
+  // Get full Background object from store
   const background = backgroundStore.getBackground(asset.id)
   if (background) {
     emit('select', background)
   }
 }
 
-// 加载背景图片
+// Load background image
 async function loadImage(id: string): Promise<string> {
   const bg = backgroundStore.getBackground(id)
   if (!bg) return ''
 
-  // 1. 静态背景
+  // 1. Static background
   if (bg.type === 'static') {
     if (bg._runtimeUrl) {
       return bg._runtimeUrl
@@ -58,8 +58,8 @@ async function loadImage(id: string): Promise<string> {
     return ''
   }
   
-  // 2. 动态背景：使用静止帧配置
-  // 2.1 自定义静止帧
+  // 2. Dynamic background: use still frame config
+  // 2.1 Custom still frame
   if (bg.stillFrameSource === 'custom') {
     if (bg._runtimeStillUrl) {
       return bg._runtimeStillUrl
@@ -70,7 +70,7 @@ async function loadImage(id: string): Promise<string> {
     }
   }
 
-  // 2.2 使用指定帧索引（默认第一帧）
+  // 2.2 Use specified frame index (default first frame)
   const frameIndex = bg.stillFrameIndex ?? 0
   const frame = bg.frames?.[frameIndex]
   if (frame) {
@@ -86,7 +86,7 @@ async function loadImage(id: string): Promise<string> {
   return ''
 }
 
-// 加载所有帧 URL - 用于 Hover 动画预览
+// Load all frame URLs - for hover animation preview
 async function loadAllFrames(id: string): Promise<string[]> {
   const bg = backgroundStore.getBackground(id)
   if (bg?.type !== 'animation' || !bg?.frames?.length) {

@@ -1,89 +1,89 @@
 <template>
   <div class="global-toolbar">
-    <!-- 左侧:标题 + 添加按钮 -->
+    <!-- Left: Title + Add button -->
     <div class="toolbar-left">
       <h2 class="page-title">
-        剧本编辑
+        Script Editor
       </h2>
       
       <div class="toolbar-divider" />
       
       <button
         class="toolbar-btn"
-        title="添加场景"
+        title="Add Scene"
         @click="$emit('addScene')"
       >
-        ➕ 场景
+        ➕ Scene
       </button>
       <button
         class="toolbar-btn"
-        title="添加对话"
+        title="Add Dialogue"
         @click="$emit('addDialogue')"
       >
-        ➕ 对话
+        ➕ Dialogue
       </button>
       <button
         class="toolbar-btn"
-        title="添加旁白"
+        title="Add Narration"
         @click="$emit('addNarration')"
       >
-        ➕ 旁白
+        ➕ Narration
       </button>
       
       <div class="toolbar-divider" />
       
       <button
         class="toolbar-btn"
-        title="旁白设置"
+        title="Narrator Settings"
         @click="$emit('editNarrator')"
       >
-        👤 旁白设置
+        👤 Narrator
       </button>
       <button
         class="toolbar-btn"
-        title="演员设置"
+        title="Actor Settings"
         @click="$emit('manageActors')"
       >
-        👥 演员设置
+        👥 Actors
       </button>
       
       <div class="toolbar-divider" />
       
-      <!-- 动画名称编辑 -->
+      <!-- Animation name editing -->
       <div class="episode-name-editor">
-        <label class="name-label">动画名称:</label>
+        <label class="name-label">Episode Name:</label>
         <input 
           type="text" 
           :value="episodeName" 
           class="name-input"
-          placeholder="请输入动画名称"
+          placeholder="Enter episode name"
           @input="$emit('update:episodeName', ($event.target as HTMLInputElement).value)"
         >
       </div>
     </div>
 
-    <!-- 右侧:操作按钮 -->
+    <!-- Right: Action buttons -->
     <div class="toolbar-right">
       <button
         class="toolbar-btn"
-        title="保存 (Ctrl+S)"
+        title="Save (Ctrl+S)"
         @click="$emit('save')"
       >
-        💾 保存
+        💾 Save
       </button>
       <button
         class="toolbar-btn"
-        title="预览"
+        title="Preview"
         @click="$emit('preview')"
       >
-        🎬 预览
+        🎬 Preview
       </button>
       <button
         class="toolbar-btn btn-primary"
-        title="导出"
+        title="Export"
         @click="$emit('export')"
       >
-        📤 导出
+        📤 Export
       </button>
     </div>
   </div>

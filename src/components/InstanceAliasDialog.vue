@@ -6,7 +6,7 @@
     <div class="instance-alias-dialog">
       <div class="dialog-header">
         <h3 class="dialog-title">
-          设置{{ objectTypeLabel }}名称
+          Set {{ objectTypeLabel }} Name
         </h3>
         <button
           class="btn-close"
@@ -26,18 +26,18 @@
               {{ actorName }}
             </div>
             <div class="actor-hint">
-              {{ isEditMode ? `编辑${objectTypeLabel}名称` : `正在添加此${objectTypeLabel}到场景` }}
+              {{ isEditMode ? `Edit ${objectTypeLabel} name` : `Adding this ${objectTypeLabel} to scene` }}
             </div>
           </div>
         </div>
 
         <div class="form-group">
-          <label>{{ objectTypeLabel }}名称</label>
+          <label>{{ objectTypeLabel }} Name</label>
           <input
             ref="aliasInput"
             v-model="aliasValue"
             type="text"
-            :placeholder="`输入${objectTypeLabel}在场景中的名称`"
+            :placeholder="`Enter ${objectTypeLabel} name in scene`"
             @input="validateAlias"
             @keyup.enter="handleConfirm"
           >
@@ -48,7 +48,7 @@
             {{ errorMessage }}
           </div>
           <div class="hint-text">
-            名称用于在场景中识别对象，同一场景内不能重复
+            Names are used to identify objects in the scene and must be unique within the same scene
           </div>
         </div>
       </div>
@@ -58,14 +58,14 @@
           class="btn-cancel"
           @click="handleCancel"
         >
-          取消
+          Cancel
         </button>
         <button
           class="btn-confirm"
           :disabled="!!errorMessage || !aliasValue.trim()"
           @click="handleConfirm"
         >
-          确定
+          Confirm
         </button>
       </div>
     </div>
@@ -79,8 +79,8 @@ const props = defineProps<{
   actorName: string
   suggestedAlias: string
   existingAliases: string[]
-  currentAlias?: string  // v7.0: 编辑模式时的当前别名
-  objectType?: 'character' | 'background' | 'bgm' | 'prop' | 'text'  // v7.1: 对象类型
+  currentAlias?: string  // v7.0: Current alias in edit mode
+  objectType?: 'character' | 'background' | 'bgm' | 'prop' | 'text'  // v7.1: Object type
 }>()
 
 const emit = defineEmits<{
@@ -92,19 +92,19 @@ const aliasInput = ref<HTMLInputElement>()
 const aliasValue = ref('')
 const errorMessage = ref('')
 
-// v7.0: 判断是否为编辑模式
+// v7.0: Determine if in edit mode
 const isEditMode = computed(() => !!props.currentAlias)
 
-// v7.1: 根据对象类型获取标签和图标
+// v7.1: Get label and icon based on object type
 const objectTypeLabel = computed(() => {
   const labels: Record<string, string> = {
-    character: '角色',
-    background: '背景',
-    bgm: '背景音乐',
-    prop: '道具',
-    text: '文本'
+    character: 'Character',
+    background: 'Background',
+    bgm: 'Background Music',
+    prop: 'Prop',
+    text: 'Text'
   }
-  return labels[props.objectType ?? 'character'] ?? '对象'
+  return labels[props.objectType ?? 'character'] ?? 'Object'
 })
 
 const objectTypeIcon = computed(() => {
@@ -120,7 +120,7 @@ const objectTypeIcon = computed(() => {
 
 onMounted(() => {
   aliasValue.value = props.suggestedAlias
-  // 自动聚焦并选中
+  // Auto focus and select
   setTimeout(() => {
     aliasInput.value?.focus()
     aliasInput.value?.select()
@@ -135,17 +135,17 @@ function validateAlias() {
   const trimmed = aliasValue.value.trim()
   
   if (!trimmed) {
-    errorMessage.value = '名称不能为空'
+    errorMessage.value = 'Name cannot be empty'
     return false
   }
   
-  // v7.0: 检查是否与现有别名重复（编辑模式时排除当前别名）
+  // v7.0: Check if duplicate with existing aliases (exclude current alias in edit mode)
   const aliasesToCheck = isEditMode.value 
     ? props.existingAliases.filter(a => a !== props.currentAlias)
     : props.existingAliases
   
   if (aliasesToCheck.includes(trimmed)) {
-    errorMessage.value = `名称"${trimmed}"已被使用，请换一个`
+    errorMessage.value = `Name "${trimmed}" is already in use, please choose another`
     return false
   }
   

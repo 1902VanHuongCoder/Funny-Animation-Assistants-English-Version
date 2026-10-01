@@ -14,7 +14,7 @@
         </button>
       </div>
       
-      <!-- 路径导航栏 -->
+      <!-- Path navigation bar -->
       <div class="path-bar">
         <button 
           v-for="(part, index) in pathParts" 
@@ -31,7 +31,7 @@
         >Project Root</span>
       </div>
       
-      <!-- 工具栏 -->
+      <!-- Toolbar -->
       <div class="toolbar">
         <div class="search-bar">
           <input
@@ -59,7 +59,7 @@
         </div>
       </div>
       
-      <!-- 文件列表 -->
+      <!-- File list -->
       <div
         class="file-list-container"
         :class="`view-${viewMode}`"
@@ -95,7 +95,7 @@
                 v-for="item in visibleItems"
                 :key="item.path"
               >
-                <!-- 缩略图模式 Item -->
+                <!-- Thumbnail mode Item -->
                 <div
                   v-if="viewMode === 'thumbnail'"
                   class="file-item-thumbnail"
@@ -136,7 +136,7 @@
                   </div>
                 </div>
 
-                <!-- 列表模式 Item -->
+                <!-- List mode Item -->
                 <div
                   v-else
                   class="file-item"
@@ -182,7 +182,7 @@
         </div>
       </div>
       
-      <!-- 底部操作栏 -->
+      <!-- Bottom action bar -->
       <div class="dialog-footer">
         <div class="selected-count-info">
           <template v-if="selectMode === 'directory'">
@@ -269,7 +269,7 @@ const THUMBNAIL_WIDTH = 120
 const THUMBNAIL_GAP = 12
 const THUMBNAIL_HEIGHT = 144
 const LIST_HEIGHT = 44
-const ROW_GAP = 12 // 与 CSS .virtual-content { gap: 12px } 保持一致
+const ROW_GAP = 12 // Keep aligned with CSS .virtual-content { gap: 12px }
 
 const pathParts = computed(() => ['Project Root', ...currentPath.value])
 
@@ -340,7 +340,7 @@ onUnmounted(() => {
 async function loadCurrentDirectory() {
   if (!projectStore.projectHandle) return
   isLoading.value = true
-  // 重置滚动位置（响应式变量和 DOM 都要重置）
+  // Reset scroll position (both reactive state and DOM)
   scrollTop.value = 0
   if (containerRef.value) {
     containerRef.value.scrollTop = 0
@@ -379,7 +379,7 @@ async function loadCurrentDirectory() {
 }
 
 async function navigateToPath(index: number) {
-  // 记住要返回的子目录名称
+  // Remember subdirectory name to return to
   const childDirName = currentPath.value[index] || null
   if (index === 0) currentPath.value = []
   else currentPath.value = currentPath.value.slice(0, index)
@@ -387,7 +387,7 @@ async function navigateToPath(index: number) {
   lastSelectedIndex.value = -1
   await loadCurrentDirectory()
   saveLastPath()
-  // 滚动到子目录位置
+  // Scroll to subdirectory position
   if (childDirName) {
     await nextTick()
     scrollToItem(childDirName)
@@ -396,14 +396,14 @@ async function navigateToPath(index: number) {
 
 async function navigateUp() {
   if (currentPath.value.length > 0) {
-    // 记住当前子目录名称
+    // Remember current subdirectory name
     const childDirName = currentPath.value[currentPath.value.length - 1]
     currentPath.value.pop()
     selectedItemPath.value = null
     lastSelectedIndex.value = -1
     await loadCurrentDirectory()
     saveLastPath()
-    // 滚动到子目录位置
+    // Scroll to subdirectory position
     if (childDirName) {
       await nextTick()
       scrollToItem(childDirName)
@@ -413,13 +413,13 @@ async function navigateUp() {
 
 function scrollToItem(itemName: string) {
   const index = filteredItemsWithParent.value.findIndex(item => item.name === itemName)
-  if (index <= 0) return // 没找到或是第一项，不需要滚动
+  if (index <= 0) return // Not found or first item, no scrolling needed
 
-  // 使用 setTimeout 确保容器已完全渲染
+  // Use setTimeout to ensure container rendered completely
   setTimeout(() => {
     if (!containerRef.value) return
     
-    // 实时获取容器宽度来计算每行项目数
+    // Get container width in real time to calculate items per row
     const actualWidth = containerRef.value.clientWidth
     const actualItemsPerRow = viewMode.value === 'list' 
       ? 1 
@@ -427,7 +427,7 @@ function scrollToItem(itemName: string) {
     
     const currentItemHeight = viewMode.value === 'list' ? LIST_HEIGHT + ROW_GAP : THUMBNAIL_HEIGHT + ROW_GAP
     
-    // 计算目标滚动位置
+    // Calculate target scroll position
     const rowIndex = Math.floor(index / actualItemsPerRow)
     const targetScrollTop = rowIndex * currentItemHeight
     
@@ -440,7 +440,7 @@ async function handleItemClick(item: FileNode, event: MouseEvent) {
   if (item.isParentDir) { await navigateUp(); return }
   const itemIndex = filteredItemsWithParent.value.findIndex(i => i.path === item.path)
   
-  // 目录选择模式：单击选中目录
+  // Directory selection mode: click to select directory
   if (props.selectMode === 'directory') {
     if (item.kind === 'directory') {
       const normalizedPath = normalizePath(item.path)
@@ -454,7 +454,7 @@ async function handleItemClick(item: FileNode, event: MouseEvent) {
     return
   }
   
-  // 文件选择模式（原有逻辑）
+  // File selection mode (existing logic)
   if (event.shiftKey && props.multiple && lastSelectedIndex.value >= 0 && item.kind === 'file') {
     selectRange(lastSelectedIndex.value, itemIndex)
     return

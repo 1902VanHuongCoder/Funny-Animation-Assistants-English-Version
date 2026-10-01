@@ -9,13 +9,13 @@
       @mouseleave="handleMouseUp"
     />
     <div v-if="loading" class="loading-overlay">
-      <span>加载中...</span>
+      <span>Loading...</span>
     </div>
     <div v-if="error" class="error-overlay">
       <span>{{ error }}</span>
     </div>
     <div v-if="!loading && !error && !hasImage" class="empty-placeholder">
-      <span>{{ objectId ? '无法加载预览' : '请选择目标对象' }}</span>
+      <span>{{ objectId ? 'Unable to load preview' : 'Please select target object' }}</span>
     </div>
   </div>
 </template>
@@ -39,7 +39,7 @@ interface PivotPoint {
 const props = defineProps<{
   objectId?: string | undefined
   pivot: PivotPoint
-  currentPoseId?: string  // 当前姿态 Key（Action Mode 评估后的 pose）
+  currentPoseId?: string  // Current pose key (evaluated pose in Action Mode)
 }>()
 
 const emit = defineEmits<{
@@ -106,7 +106,7 @@ watch(() => props.objectId, async () => {
   await loadObjectData()
 })
 
-// 当 currentPoseId 变化时重新加载角色数据
+// Reload character data when currentPoseId changes
 watch(() => props.currentPoseId, async () => {
   await loadObjectData()
 })
@@ -145,7 +145,7 @@ async function loadObjectData() {
   
   const obj = sceneObjectStore.objects.find(o => o.id === props.objectId)
   if (!obj) {
-    error.value = '对象不存在'
+    error.value = 'Object does not exist'
     hasImage.value = false
     return
   }
@@ -170,7 +170,7 @@ async function loadObjectData() {
     } else if (objType === 'expression') {
       await loadExpressionData(obj as ExpressionObject)
     } else {
-      error.value = '不支持的对象类型'
+      error.value = 'Unsupported object type'
       return
     }
     
@@ -183,7 +183,7 @@ async function loadObjectData() {
     }
   } catch (e) {
     console.error('Failed to load object data', e)
-    error.value = '加载失败: ' + (e instanceof Error ? e.message : String(e))
+    error.value = 'Load failed: ' + (e instanceof Error ? e.message : String(e))
   } finally {
     loading.value = false
   }
@@ -192,7 +192,7 @@ async function loadObjectData() {
 
 
 // ═══════════════════════════════════════════════════════════════════
-// 纯函数：按对象类型解析缩略图（无副作用，可被多处复用）
+// Pure function: resolve thumbnail by object type (no side effects)
 // ═══════════════════════════════════════════════════════════════════
 
 async function resolvePropImage(refId: string): Promise<HTMLImageElement | undefined> {
@@ -283,8 +283,8 @@ async function resolveExpressionImage(obj: ExpressionObject): Promise<HTMLImageE
 
 
 /**
- * 通用入口：根据对象类型加载一张缩略图
- * 纯函数，不修改组件状态
+ * Generic entry: load a thumbnail based on object type
+ * Pure function, does not modify component state
  */
 async function resolveObjectThumbnail(obj: SceneObject): Promise<HTMLImageElement | undefined> {
   switch (obj.type) {
@@ -297,7 +297,7 @@ async function resolveObjectThumbnail(obj: SceneObject): Promise<HTMLImageElemen
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// 有副作用的 loader（写入 singleImage / renderParts）
+// Loader with side effects (writes singleImage / renderParts)
 // ═══════════════════════════════════════════════════════════════════
 
 async function loadPropData(obj: SceneObject) {
@@ -319,16 +319,16 @@ async function loadExpressionData(obj: ExpressionObject) {
 }
 
 /**
- * 解析 composite 的有效 renderChain
- * - entity composite: 使用自身的 renderChain
- * - union composite: 沿 parentId 向上查找最近的 entity 祖先的 renderChain；
- *   若无 entity 祖先，回退到场景根级 sceneRenderChain
+ * Resolve effective renderChain for composite
+ * - entity composite: uses own renderChain
+ * - union composite: looks up closest entity ancestor renderChain along parentId;
+ *   if no entity ancestor, fallbacks to scene-level sceneRenderChain
  */
 function resolveRenderChain(compositeObj: CompositeObject): string[] | undefined {
   if (compositeObj.compositeMode === 'entity') {
     return compositeObj.renderChain
   }
-  // union: 沿 parentId 向上查找最近的 entity composite 的 renderChain
+  // union: look up closest entity composite renderChain along parentId
   let currentParentId = compositeObj.parentId
   while (currentParentId) {
     const parent = sceneObjectStore.objects.find(o => o.id === currentParentId)
@@ -338,26 +338,26 @@ function resolveRenderChain(compositeObj: CompositeObject): string[] | undefined
       if (parentComp.compositeMode === 'entity' && parentComp.renderChain && parentComp.renderChain.length > 0) {
         return parentComp.renderChain
       }
-      // union: 继续向上
+      // union: continue upward
       currentParentId = parentComp.parentId
     } else {
       break
     }
   }
-  // 无 entity 祖先 → 场景根级 renderChain
+  // No entity ancestor -> scene-level renderChain
   const sceneChain = sceneObjectStore.getSceneRenderChain()
   return sceneChain.length > 0 ? sceneChain : undefined
 }
 
 /**
- * 将单个叶子对象（非 composite）解析为 RenderPart
- * 处理表情对象的特殊锚点和缩放
+ * Resolve single leaf object (non-composite) as RenderPart
+ * Handle special anchor and scale for expression objects
  */
 async function resolveLeafRenderPart(child: SceneObject): Promise<RenderPart | undefined> {
   const childImage = await resolveObjectThumbnail(child)
   if (!childImage) return undefined
 
-  // 表情对象特殊处理：使用 expression 定义的 anchor 和 defaultScale
+  // Special expression object handling: use anchor and defaultScale from expression definition
   let anchorX = 0.5
   let anchorY = 0.5
   let extraScaleX = 1
@@ -392,11 +392,11 @@ async function resolveLeafRenderPart(child: SceneObject): Promise<RenderPart | u
 }
 
 /**
- * 递归收集 composite 的所有可渲染部件
- * - 叶子对象 → 直接加载图片
- * - 子 composite（含 union）→ 递归展平其后代，累加坐标偏移
- * @param offsetX 父级累计 X 偏移（父 composite 的局部坐标）
- * @param offsetY 父级累计 Y 偏移
+ * Recursively collect all renderable parts of composite
+ * - Leaf object -> load image directly
+ * - Sub-composite (incl union) -> recursively flatten descendants, accumulating coordinate offsets
+ * @param offsetX Parent cumulative X offset (local coords of parent composite)
+ * @param offsetY Parent cumulative Y offset
  */
 async function collectRenderParts(
   compositeObj: CompositeObject,
@@ -414,7 +414,7 @@ async function collectRenderParts(
 
     try {
       if (child.type === 'composite') {
-        // 递归展平子 composite：累加该 composite 自身的坐标偏移
+        // Recursively flatten sub-composite: accumulate coordinate offset of composite itself
         const subParts = await collectRenderParts(
           child as CompositeObject,
           offsetX + child.x,
@@ -424,7 +424,7 @@ async function collectRenderParts(
       } else {
         const part = await resolveLeafRenderPart(child)
         if (part) {
-          // 应用父级累计偏移
+          // Apply parent cumulative offset
           part.x += offsetX
           part.y += offsetY
           parts.push(part)
@@ -439,14 +439,14 @@ async function collectRenderParts(
 }
 
 /**
- * 组合对象渲染：递归遍历所有后代，加载缩略图并合成渲染。
- * 子 composite（含 union）的后代会被展平到同一渲染列表中。
+ * Composite object rendering: recursively traverse all descendants, load thumbnails and composite.
+ * Descendants of sub-composites (including union) flattened into same render list.
  */
 async function loadCompositeData(compositeObj: CompositeObject) {
   const partsToRender = await collectRenderParts(compositeObj)
   if (partsToRender.length === 0) return
 
-  // 排序：按 renderChain 排序以与主画布渲染一致
+  // Sort: order by renderChain to match main canvas rendering
   const renderChain = resolveRenderChain(compositeObj)
   if (renderChain && renderChain.length > 0) {
     const posMap = new Map<string, number>()

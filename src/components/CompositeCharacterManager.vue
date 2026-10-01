@@ -4,22 +4,22 @@
     <div class="toolbar">
       <div class="toolbar-left">
         <h2 class="page-title">
-          人物管理
+          Character Management
         </h2>
 
-        <!-- 标签筛选按钮 -->
+        <!-- Tag filter button -->
         <div class="filter-controls">
           <button
             class="btn-filter"
             :class="{ active: selectedTags.length > 0 }"
             @click="showFilterModal = true"
           >
-            筛选 <span v-if="selectedTags.length > 0">({{ selectedTags.length }})</span>
+            Filter <span v-if="selectedTags.length > 0">({{ selectedTags.length }})</span>
             <span class="icon">▼</span>
           </button>
         </div>
 
-        <!-- 性别标签页 -->
+        <!-- Gender tabs -->
         <div class="type-filters">
           <button
             v-for="opt in genderOptions"
@@ -40,10 +40,10 @@
             class="sort-select"
           >
             <option value="newest">
-              📅 最新创建
+              📅 Newest First
             </option>
             <option value="oldest">
-              📅 最早创建
+              📅 Oldest First
             </option>
           </select>
         </div>
@@ -52,7 +52,7 @@
           <input
             v-model="searchKeyword"
             type="text"
-            placeholder="搜索人物..."
+            placeholder="Search characters..."
             class="search-input"
           >
         </div>
@@ -61,7 +61,7 @@
           class="btn-batch"
           @click="toggleBatchMode"
         >
-          {{ isBatchMode ? '退出批量' : '⚙️ 批量管理' }}
+          {{ isBatchMode ? 'Exit Batch' : '⚙️ Batch Manage' }}
         </button>
 
         <template v-if="isBatchMode">
@@ -69,20 +69,20 @@
             class="btn-secondary"
             @click="selectAll"
           >
-            全选
+            Select All
           </button>
           <button
             class="btn-secondary"
             @click="deselectAll"
           >
-            全不选
+            Deselect All
           </button>
           <button
             class="btn-delete-batch"
             :disabled="selectedIds.size === 0"
             @click="batchDelete"
           >
-            删除 ({{ selectedIds.size }})
+            Delete ({{ selectedIds.size }})
           </button>
         </template>
 
@@ -91,7 +91,7 @@
           class="btn-create"
           @click="handleCreateCharacter"
         >
-          ➕ 新建人物
+          ➕ New Character
         </button>
       </div>
     </div>
@@ -104,9 +104,9 @@
           v-if="filteredCharacters.length === 0"
           class="empty-state"
         >
-          <p>📭 暂无人物</p>
+          <p>📭 No characters found</p>
           <p class="hint">
-            点击"新建人物"创建人物角色
+            Click "New Character" to create a character
           </p>
         </div>
 
@@ -147,9 +147,9 @@
                 👤
               </div>
               <div class="object-count-badge">
-                {{ char.objects.length }} 个对象
+                {{ char.objects.length }} objects
               </div>
-              <!-- 性别标记 -->
+              <!-- Gender badge -->
               <div class="gender-badge">
                 {{ getGenderIcon(char.gender) }}
               </div>
@@ -188,14 +188,14 @@
             >
               <button
                 class="btn-icon edit"
-                title="编辑"
+                title="Edit"
                 @click.stop="editingCharacterId = char.id"
               >
                 ✏️
               </button>
               <button
                 class="btn-icon delete"
-                title="删除"
+                title="Delete"
                 @click.stop="deleteCharacter(char.id)"
               >
                 🗑️
@@ -206,7 +206,7 @@
       </div>
     </div>
 
-    <!-- 标签筛选对话框 -->
+    <!-- Tag Select Dialog -->
     <TagSelectDialog
       v-model:visible="showFilterModal"
       :available-tags="allTags"
@@ -224,7 +224,7 @@
       @cancel="showDeleteConfirm = false"
     />
 
-    <!-- 编辑器 (overlay 对话框模式) -->
+    <!-- Editor (overlay dialog mode) -->
     <CompositeCharacterEditor
       v-if="editingCharacterId"
       v-bind="editingCharacterId !== '__new__' ? { 'character-id': editingCharacterId } : {}"
@@ -248,12 +248,12 @@ import ConfirmDialog from './ConfirmDialog.vue'
 
 const characterStore = useCompositeCharacterStore()
 
-// 性别筛选选项
+// Gender filter options
 const genderOptions: { label: string; value: Gender | 'all' }[] = [
-  { label: '全部', value: 'all' },
-  { label: '男', value: 'male' },
-  { label: '女', value: 'female' },
-  { label: '其他', value: 'other' },
+  { label: 'All', value: 'all' },
+  { label: 'Male', value: 'male' },
+  { label: 'Female', value: 'female' },
+  { label: 'Other', value: 'other' },
 ]
 
 // State
@@ -265,7 +265,7 @@ const isBatchMode = ref(false)
 const selectedIds = ref<Set<string>>(new Set())
 const showFilterModal = ref(false)
 
-// 编辑器状态
+// Editor state
 const editingCharacterId = ref<string | null>(null)
 
 const allTags = computed(() => characterStore.allTags)
@@ -283,21 +283,21 @@ function getGenderIcon(gender: Gender): string {
 }
 
 const filteredCharacters = computed(() => {
-  // 1. 性别筛选
+  // 1. Gender filter
   let list = characterStore.getCharactersByGender(currentGender.value)
 
-  // 2. 标签筛选
+  // 2. Tag filter
   if (selectedTags.value.length > 0) {
     list = list.filter(c => c.tags?.some(tag => selectedTags.value.includes(tag)))
   }
 
-  // 3. 关键词搜索
+  // 3. Keyword search
   if (searchKeyword.value.trim()) {
     const kw = searchKeyword.value.toLowerCase()
     list = list.filter(c => c.name.toLowerCase().includes(kw))
   }
 
-  // 4. 排序
+  // 4. Sort
   return [...list].sort((a, b) => {
     if (sortOrder.value === 'newest') {
       return b.createdAt - a.createdAt
@@ -315,9 +315,9 @@ function handleImageError(e: Event) {
 function formatTimeAgo(timestamp: number): string {
   const diff = Date.now() - timestamp
   const hours = Math.floor(diff / (1000 * 60 * 60))
-  if (hours < 1) return '刚刚'
-  if (hours < 24) return `${hours}小时前`
-  return `${Math.floor(hours / 24)}天前`
+  if (hours < 1) return 'Just now'
+  if (hours < 24) return `${hours}h ago`
+  return `${Math.floor(hours / 24)}d ago`
 }
 
 function handleCardClick(char: CompositeCharacter) {
@@ -342,8 +342,8 @@ function handleEditorCreated(newCharacterId: string) {
 
 function deleteCharacter(id: string) {
   pendingDeleteIds.value = [id]
-  deleteConfirmTitle.value = '删除人物'
-  deleteConfirmMessage.value = '确定要删除这个人物吗？此操作不可恢复。'
+  deleteConfirmTitle.value = 'Delete Character'
+  deleteConfirmMessage.value = 'Are you sure you want to delete this character? This action cannot be undone.'
   showDeleteConfirm.value = true
 }
 
@@ -376,8 +376,8 @@ function toggleSelect(id: string) {
 
 function batchDelete() {
   pendingDeleteIds.value = Array.from(selectedIds.value)
-  deleteConfirmTitle.value = '批量删除人物'
-  deleteConfirmMessage.value = `确定要删除选中的 ${selectedIds.value.size} 个人物吗？此操作不可恢复。`
+  deleteConfirmTitle.value = 'Batch Delete Characters'
+  deleteConfirmMessage.value = `Are you sure you want to delete ${selectedIds.value.size} characters? This action cannot be undone.`
   showDeleteConfirm.value = true
 }
 
@@ -420,7 +420,7 @@ function deselectAll() {
   color: #111827;
 }
 
-/* 性别标签页 */
+/* Gender tabs */
 .type-filters {
   display: flex;
   background: #f3f4f6;

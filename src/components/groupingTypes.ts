@@ -1,4 +1,4 @@
-/** 成组对象树节点（由消费方构建） */
+/** Grouping object tree node (constructed by consumer) */
 export interface GroupingTreeNode {
   id: string
   name: string
@@ -8,7 +8,7 @@ export interface GroupingTreeNode {
   children: GroupingTreeNode[]
 }
 
-/** 扁平化节点（用于渲染） */
+/** Flattened node (for rendering) */
 export interface FlatGroupingNode {
   id: string
   name: string
@@ -18,7 +18,7 @@ export interface FlatGroupingNode {
   hasChildren: boolean
 }
 
-/** 将树结构扁平化为渲染列表 */
+/** Flatten tree structure into a render list */
 export function flattenGroupingTree(
   roots: GroupingTreeNode[],
   expandedIds: Set<string>,

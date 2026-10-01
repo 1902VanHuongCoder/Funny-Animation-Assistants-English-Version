@@ -1,19 +1,19 @@
 <!--
-  AnimationListPanel.vue - Workbench 左侧面板
+  AnimationListPanel.vue - Workbench left panel
   
-  功能：动画列表 + 动作库 Tab + 新建/删除/保存模板
-  从 AnimationManager.vue 提取而来，适配 Workbench 窄面板布局
+  Features: Animation list + Action library Tab + New/Delete/Save template
+  Extracted from AnimationManager.vue, adapted for Workbench narrow panel layout
 -->
 <template>
   <div class="animation-list-panel">
-    <!-- Tab 头部（composite 模式才显示动作库 Tab） -->
+    <!-- Tab header (action library Tab shown in composite mode only) -->
     <div class="panel-tab-header">
       <button
         class="panel-tab-btn"
         :class="{ active: activeTab === 'track' }"
         @click="activeTab = 'track'"
       >
-        📐 动画列表
+        📐 Animations
         <span v-if="trackAnimations.length > 0" class="tab-count">{{ trackAnimations.length }}</span>
       </button>
       <button
@@ -22,31 +22,31 @@
         :class="{ active: activeTab === 'preset' }"
         @click="activeTab = 'preset'"
       >
-        🎬 动作库
+        🎬 Action Library
       </button>
     </div>
 
-    <!-- ═══ 我的动画 Tab ═══ -->
+    <!-- === My Animations Tab === -->
     <div v-show="activeTab === 'track'" class="tab-content">
-      <!-- 操作栏 -->
+      <!-- Operation bar -->
       <div class="action-bar">
-        <button class="btn-action" @click="createAnimationInline">+ 新建</button>
-        <button v-if="!isObjectMode" class="btn-action" :disabled="trackAnimations.length === 0" @click="emit('copy-from-self')">📋 复制</button>
+        <button class="btn-action" @click="createAnimationInline">+ New</button>
+        <button v-if="!isObjectMode" class="btn-action" :disabled="trackAnimations.length === 0" @click="emit('copy-from-self')">📋 Duplicate</button>
         <button
           v-if="isCompositeMode"
           class="btn-action btn-action-primary"
           :disabled="!currentAnimationId"
-          title="把当前选中的动画保存到动作库，之后可复用到同类人物"
+          title="Save currently selected animation to action library for reuse on similar characters"
           @click="emit('save-as-preset')"
         >
-          存为预定义
+          Save as Preset
         </button>
       </div>
 
-      <!-- 动画列表 -->
+      <!-- Animation list -->
       <div class="anim-list">
         <div v-if="trackAnimations.length === 0" class="empty-hint">
-          暂无动画，点击 + 新建 开始创建
+          No animations yet, click + New to create
         </div>
 
         <div
@@ -82,7 +82,7 @@
                 :checked="anim.loop"
                 @change="onAnimationLoopChange(anim.id, $event)"
               >
-              <span class="badge" :class="anim.loop ? 'loop' : 'once'">循环</span>
+              <span class="badge" :class="anim.loop ? 'loop' : 'once'">Loop</span>
             </label>
             <label class="anim-fill-toggle" @click.stop>
               <input
@@ -90,25 +90,25 @@
                 :checked="(anim.fillMode ?? 'none') === 'forwards'"
                 @change="onAnimationFillModeChange(anim.id, $event)"
               >
-              <span class="badge" :class="(anim.fillMode ?? 'none') === 'forwards' ? 'fill-on' : 'fill-off'">定格末帧</span>
+              <span class="badge" :class="(anim.fillMode ?? 'none') === 'forwards' ? 'fill-on' : 'fill-off'">Hold Last Frame</span>
             </label>
-            <span class="meta-tracks">{{ anim.tracks.length }}条轨道</span>
-            <span v-if="anim.origin === 'auto'" class="badge auto">自动</span>
+            <span class="meta-tracks">{{ anim.tracks.length }} tracks</span>
+            <span v-if="anim.origin === 'auto'" class="badge auto">Auto</span>
           </div>
           <div v-if="anim.origin !== 'auto'" class="anim-item-actions">
-            <button class="btn-icon danger" title="删除" @click.stop="emit('delete', anim.id)">🗑️</button>
+            <button class="btn-icon danger" title="Delete" @click.stop="emit('delete', anim.id)">🗑️</button>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- ═══ 动作库 Tab ═══ -->
+    <!-- === Action Library Tab === -->
     <div v-if="isCompositeMode && activeTab === 'preset'" class="tab-content">
       <div v-if="!rootCompositeId" class="preset-hint">
-        💡 未识别到角色根复合对象，无法应用预定义动作。
+        💡 Character root composite object not identified, cannot apply predefined actions.
       </div>
 
-      <!-- 过滤器 -->
+      <!-- Filter -->
       <div class="preset-filters">
         <button
           v-for="src in presetSourceFilters"
@@ -119,7 +119,7 @@
         >{{ src.label }}</button>
       </div>
 
-      <!-- 模板列表 -->
+      <!-- Template list -->
       <div class="preset-list">
         <div
           v-for="item in filteredPresets"
@@ -130,39 +130,39 @@
           <div class="preset-card-top">
             <span class="preset-name">{{ item.template.name }}</span>
             <div class="preset-badges">
-              <span v-if="item.template.origin === 'user'" class="preset-origin">自定</span>
-              <span class="preset-kind">{{ item.template.expectedTargets.length }}部位</span>
+              <span v-if="item.template.origin === 'user'" class="preset-origin">Custom</span>
+              <span class="preset-kind">{{ item.template.expectedTargets.length }} parts</span>
             </div>
           </div>
           <div v-if="item.template.description" class="preset-desc">{{ item.template.description }}</div>
           <div v-if="item.blockingMissing.length > 0" class="preset-missing">
-            缺少: {{ item.blockingMissing.map(m => m.recommendedName).join(', ') }}
+            Missing: {{ item.blockingMissing.map(m => m.recommendedName).join(', ') }}
           </div>
           <div v-if="item.diagnostics.ambiguous.length > 0" class="preset-missing">
-            歧义: {{ item.diagnostics.ambiguous.map(a => a.recommendedName).join(', ') }}
+            Ambiguous: {{ item.diagnostics.ambiguous.map(a => a.recommendedName).join(', ') }}
           </div>
           <div class="preset-card-actions">
             <button class="btn-preset-apply" @click="handlePresetApply(item.template)">
-              {{ item.applicable ? '使用' : '使用（需指定）' }}
+              {{ item.applicable ? 'Apply' : 'Apply (Requires Selection)' }}
             </button>
-            <button v-if="item.template.origin === 'user'" class="btn-icon danger" title="删除" @click="handleDeleteCustomPreset(item.template.id)">🗑️</button>
+            <button v-if="item.template.origin === 'user'" class="btn-icon danger" title="Delete" @click="handleDeleteCustomPreset(item.template.id)">🗑️</button>
           </div>
         </div>
 
         <div v-if="filteredPresets.length === 0" class="empty-hint">
-          没有符合筛选条件的动作模板。
+          No action templates match the filter criteria.
         </div>
       </div>
     </div>
 
-    <!-- ═══ 预制动画确认弹窗 ═══ -->
+    <!-- === Preset Animation Confirmation Modal === -->
     <div v-if="showPresetConfirm" class="create-overlay" @click.self="showPresetConfirm = false">
       <div class="create-dialog preset-confirm-dialog">
-        <h4>确认使用动作模板</h4>
+        <h4>Confirm Preset Action Application</h4>
 
-        <!-- 自动匹配部位 -->
+        <!-- Automatically matched parts -->
         <div v-if="applyTargetPreview.length > 0" class="preset-section">
-          <div class="preset-section-title">自动匹配 ({{ applyTargetPreview.length }})</div>
+          <div class="preset-section-title">Auto Matched ({{ applyTargetPreview.length }})</div>
           <div class="rig-preview">
             <div v-for="item in applyTargetPreview" :key="item.targetKey" class="rig-preview-row">
               <span class="rig-name">{{ item.recommendedName }}</span>
@@ -172,9 +172,9 @@
           </div>
         </div>
 
-        <!-- 歧义部位：必须从候选中选 -->
+        <!-- Ambiguous parts: must select from candidates -->
         <div v-if="pendingAmbiguousTargets.length > 0" class="preset-section">
-          <div class="preset-section-title warn">存在歧义 ({{ pendingAmbiguousTargets.length }})，请选择</div>
+          <div class="preset-section-title warn">Ambiguous ({{ pendingAmbiguousTargets.length }}), please select</div>
           <div class="override-list">
             <div v-for="amb in pendingAmbiguousTargets" :key="amb.targetKey" class="override-row">
               <span class="rig-name">{{ amb.recommendedName }}</span>
@@ -184,7 +184,7 @@
                 :value="pendingOverrides[amb.targetKey] ?? ''"
                 @change="pendingOverrides = { ...pendingOverrides, [amb.targetKey]: ($event.target as HTMLSelectElement).value }"
               >
-                <option value="" disabled>-- 选择候选对象 --</option>
+                <option value="" disabled>-- Select candidate object --</option>
                 <option v-for="cid in amb.candidates" :key="cid" :value="cid">
                   {{ objectDisplayLabel(cid) }}
                 </option>
@@ -193,9 +193,9 @@
           </div>
         </div>
 
-        <!-- 缺失部位：从整个子树选一个 -->
+        <!-- Missing parts: select one from entire subtree -->
         <div v-if="pendingMissingTargets.length > 0" class="preset-section">
-          <div class="preset-section-title warn">缺失部位 ({{ pendingMissingTargets.length }})，请手动指定</div>
+          <div class="preset-section-title warn">Missing Parts ({{ pendingMissingTargets.length }}), please specify manually</div>
           <div class="override-list">
             <div v-for="miss in pendingMissingTargets" :key="miss.targetKey" class="override-row">
               <span class="rig-name">{{ miss.recommendedName }}</span>
@@ -205,7 +205,7 @@
                 :value="pendingOverrides[miss.targetKey] ?? ''"
                 @change="pendingOverrides = { ...pendingOverrides, [miss.targetKey]: ($event.target as HTMLSelectElement).value }"
               >
-                <option value="" disabled>-- 选择场景对象 --</option>
+                <option value="" disabled>-- Select scene object --</option>
                 <option v-for="opt in subtreeObjectOptions" :key="opt.id" :value="opt.id">
                   {{ opt.label }}
                 </option>
@@ -214,10 +214,10 @@
           </div>
         </div>
 
-        <div class="preset-warn">⚠️ 同名动画如已存在将被覆盖。</div>
+        <div class="preset-warn">⚠️ Existing animation with the same name will be overwritten.</div>
         <div class="create-actions">
-          <button class="btn-cancel" @click="showPresetConfirm = false">取消</button>
-          <button class="btn-confirm" :disabled="!canConfirmApply" @click="confirmPresetApply">确认使用</button>
+          <button class="btn-cancel" @click="showPresetConfirm = false">Cancel</button>
+          <button class="btn-confirm" :disabled="!canConfirmApply" @click="confirmPresetApply">Confirm Application</button>
         </div>
       </div>
     </div>
@@ -265,7 +265,7 @@ const emit = defineEmits<{
 const projectStore = useProjectStore()
 const sceneObjectStore = useSceneObjectStore()
 
-// ===== 动画列表 =====
+// ===== Animation List =====
 
 const trackAnimations = computed((): AnimationDefinition[] =>
   props.animations.filter(a => a.type === 'track')
@@ -279,11 +279,11 @@ function getAnimationIcon(animation: AnimationDefinition): string {
   return '🔄'
 }
 
-// ===== Tab 状态 =====
+// ===== Tab State =====
 
 const activeTab = ref<'track' | 'preset'>('track')
 
-// ===== 新建 / 重命名 =====
+// ===== New / Rename =====
 
 const editingAnimationId = ref<string | null>(null)
 const draftNames = ref<Record<string, string>>({})
@@ -317,7 +317,7 @@ function buildNextAnimationName(): string {
   const existingNames = new Set(props.animations.map(a => a.name))
   let index = 1
   while (true) {
-    const candidate = index === 1 ? '新动画' : `新动画 ${index}`
+    const candidate = index === 1 ? 'New Animation' : `New Animation ${index}`
     if (!existingNames.has(candidate)) return candidate
     index += 1
   }
@@ -373,7 +373,7 @@ function commitNameEdit(animationId: string) {
   if (duplicated) {
     draftNames.value = { ...draftNames.value, [animationId]: anim.name }
     editingAnimationId.value = null
-    alert(`动画名称 "${nextName}" 已存在，请使用其他名称`)
+    alert(`Animation name "${nextName}" already exists, please use another name`)
     return
   }
 
@@ -411,14 +411,14 @@ function onAnimationFillModeChange(animationId: string, event: Event) {
   emit('update:animations', updatedAnimations)
 }
 
-// ===== 动作库 =====
+// ===== Action Library =====
 
 const presetSourceFilter = ref<string>('all')
 
 const presetSourceFilters = [
-  { value: 'all', label: '全部' },
-  { value: 'system', label: '系统' },
-  { value: 'user', label: '自定义' },
+  { value: 'all', label: 'All' },
+  { value: 'system', label: 'System' },
+  { value: 'user', label: 'Custom' },
 ]
 
 interface PresetItem {
@@ -462,14 +462,14 @@ const filteredPresets = computed((): PresetItem[] => {
   })
 })
 
-// ===== 预制动画应用 =====
+// ===== Preset Animation Application =====
 
 const showPresetConfirm = ref(false)
 const pendingPreset = ref<PresetAnimationTemplate | null>(null)
-/** targetKey → objectId 手动覆盖，用于解决 missing / ambiguous */
+/** targetKey -> objectId manual override to resolve missing / ambiguous */
 const pendingOverrides = ref<Record<string, string>>({})
 
-/** 根据当前 overrides 实时重算诊断 */
+/** Recalculate diagnostics in real-time based on current overrides */
 const pendingDiagnostics = computed((): InstantiationDiagnostics | null => {
   const template = pendingPreset.value
   const rootId = props.rootCompositeId ?? props.sceneObject?.id
@@ -477,7 +477,7 @@ const pendingDiagnostics = computed((): InstantiationDiagnostics | null => {
   return canApplyPreset(template, rootId, buildSceneObjectsMap(), pendingOverrides.value)
 })
 
-/** 可供 override 选择的子树对象（展平） */
+/** Flattened subtree objects available for override selection */
 const subtreeObjectOptions = computed((): { id: string; label: string }[] => {
   const rootId = props.rootCompositeId ?? props.sceneObject?.id
   if (!rootId) return []
@@ -495,7 +495,7 @@ const subtreeObjectOptions = computed((): { id: string; label: string }[] => {
   return out
 })
 
-/** 自动唯一命中 */
+/** Auto unique hit */
 const applyTargetPreview = computed((): { targetKey: string; recommendedName: string; objectName: string }[] => {
   const diagnostics = pendingDiagnostics.value
   if (!diagnostics) return []
@@ -509,21 +509,21 @@ const applyTargetPreview = computed((): { targetKey: string; recommendedName: st
   })
 })
 
-/** 需要用户手动指定的缺失项（非 optional） */
+/** Missing items requiring manual specification by user (non-optional) */
 const pendingMissingTargets = computed(() => {
   const diagnostics = pendingDiagnostics.value
   if (!diagnostics) return []
   return diagnostics.missing.filter(m => !m.optional)
 })
 
-/** 歧义项 */
+/** Ambiguous items */
 const pendingAmbiguousTargets = computed(() => {
   const diagnostics = pendingDiagnostics.value
   if (!diagnostics) return []
   return diagnostics.ambiguous
 })
 
-/** 确认按钮是否可用：无 blocking missing 且无 ambiguous */
+/** Whether confirm button is enabled: no blocking missing and no ambiguous */
 const canConfirmApply = computed((): boolean => {
   return pendingMissingTargets.value.length === 0 && pendingAmbiguousTargets.value.length === 0
 })
@@ -567,7 +567,7 @@ function confirmPresetApply(): void {
     activeTab.value = 'track'
     emit('preset-applied', JSON.parse(JSON.stringify(result.animation)) as AnimationDefinition)
   } catch (error) {
-    console.error('[AnimationListPanel] 应用预制动画失败:', error)
+    console.error('[AnimationListPanel] Failed to apply preset animation:', error)
   }
 
   showPresetConfirm.value = false
@@ -576,7 +576,7 @@ function confirmPresetApply(): void {
 }
 
 function handleDeleteCustomPreset(templateId: string): void {
-  if (confirm('确定要删除这个自定义动作模板吗？')) {
+  if (confirm('Are you sure you want to delete this custom action template?')) {
     projectStore.deleteCustomPreset(templateId)
   }
 }

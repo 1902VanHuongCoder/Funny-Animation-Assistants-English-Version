@@ -13,7 +13,7 @@ const props = defineProps<{
   direction: 'horizontal' | 'vertical'
   minSize?: number
   maxSize?: number
-  target?: 'prev' | 'next' // 指定目标元素：前一个或下一个兄弟元素
+  target?: 'prev' | 'next' // Target element: previous or next sibling
 }>()
 
 const emit = defineEmits<(e: 'resize', size: number) => void>()
@@ -24,7 +24,7 @@ function startResize(event: MouseEvent) {
   const startX = event.pageX
   const startY = event.pageY
   
-  // 根据 target 属性获取目标元素
+  // Get target element based on target property
   const handle = event.currentTarget as HTMLElement
   const targetElement = (props.target === 'next' 
     ? handle.nextElementSibling 
@@ -41,7 +41,7 @@ function startResize(event: MouseEvent) {
       ? e.pageX - startX 
       : e.pageY - startY
     
-    // 如果目标是下一个元素，delta 需要取反（向右拖动应该减小宽度）
+    // If target is next element, delta must be inverted (dragging right decreases width)
     const adjustedDelta = props.target === 'next' ? -delta : delta
     let newSize = startSize + adjustedDelta
     

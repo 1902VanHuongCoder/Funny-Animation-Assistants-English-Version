@@ -9,16 +9,16 @@ export interface ToastMessage {
     duration: number
 }
 
-// 全局 toast 状态
+// Global toast state
 const toasts = ref<ToastMessage[]>([])
 let toastIdCounter = 0
 
 export function useToast() {
     /**
-     * 显示 toast 消息
-     * @param message 消息内容
-     * @param type 消息类型
-     * @param duration 显示时长（毫秒），0 表示不自动关闭
+     * Show toast message
+     * @param message Message content
+     * @param type Message type
+     * @param duration Duration (ms), 0 means do not auto close
      */
     function showToast(
         message: string,
@@ -35,7 +35,7 @@ export function useToast() {
 
         toasts.value.push(toast)
 
-        // 自动移除
+        // Auto remove
         if (duration > 0) {
             setTimeout(() => {
                 removeToast(id)
@@ -46,7 +46,7 @@ export function useToast() {
     }
 
     /**
-     * 移除指定的 toast
+     * Remove specified toast
      */
     function removeToast(id: string) {
         const index = toasts.value.findIndex(t => t.id === id)
@@ -56,13 +56,13 @@ export function useToast() {
     }
 
     /**
-     * 清除所有 toast
+     * Clear all toasts
      */
     function clearAllToasts() {
         toasts.value = []
     }
 
-    // 便捷方法
+    // Convenience methods
     function success(message: string, duration = 2000) {
         return showToast(message, 'success', duration)
     }

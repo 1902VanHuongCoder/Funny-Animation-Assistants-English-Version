@@ -1,6 +1,6 @@
 /**
- * 组合式人物 Store
- * 参照 sceneTemplateStore 实现，额外支持性别筛选
+ * Composite Character Store
+ * Implemented based on sceneTemplateStore, additionally supports gender filtering
  */
 
 import { defineStore } from 'pinia'
@@ -15,14 +15,14 @@ export const useCompositeCharacterStore = defineStore('compositeCharacter', () =
     const characters = ref<CompositeCharacter[]>([])
 
     /**
-     * 生成唯一 ID
+     * Generate unique ID
      */
     function generateId(): string {
         return `cchar_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
     }
 
     /**
-     * 获取所有已使用的标签
+     * Get all used tags
      */
     const allTags = computed(() => {
         const tags = new Set<string>()
@@ -31,7 +31,7 @@ export const useCompositeCharacterStore = defineStore('compositeCharacter', () =
     })
 
     /**
-     * 添加人物
+     * Add character
      */
     function addCharacter(character: CompositeCharacter): void {
         characters.value.push(character)
@@ -40,14 +40,14 @@ export const useCompositeCharacterStore = defineStore('compositeCharacter', () =
     }
 
     /**
-     * 获取单个人物
+     * Get single character
      */
     function getCharacter(id: string): CompositeCharacter | undefined {
         return characters.value.find(c => c.id === id)
     }
 
     /**
-     * 更新人物
+     * Update character
      */
     function updateCharacter(id: string, updates: Partial<CompositeCharacter>): boolean {
         const character = getCharacter(id)
@@ -61,13 +61,13 @@ export const useCompositeCharacterStore = defineStore('compositeCharacter', () =
     }
 
     /**
-     * 删除人物
+     * Delete character
      */
     function deleteCharacter(id: string): boolean {
         const index = characters.value.findIndex(c => c.id === id)
         if (index !== -1) {
             const character = characters.value[index]
-            // 释放运行时缩略图 Blob URL
+            // Release runtime thumbnail Blob URL
             if (character?._runtimeThumbnailUrl?.startsWith('blob:')) {
                 URL.revokeObjectURL(character._runtimeThumbnailUrl)
             }
@@ -80,7 +80,7 @@ export const useCompositeCharacterStore = defineStore('compositeCharacter', () =
     }
 
     /**
-     * 按性别筛选
+     * Filter by gender
      */
     function getCharactersByGender(gender: Gender | 'all'): CompositeCharacter[] {
         if (gender === 'all') return characters.value
@@ -88,14 +88,14 @@ export const useCompositeCharacterStore = defineStore('compositeCharacter', () =
     }
 
     /**
-     * 按标签筛选
+     * Filter by tag
      */
     function getCharactersByTag(tag: string): CompositeCharacter[] {
         return characters.value.filter(c => c.tags?.includes(tag))
     }
 
     /**
-     * 搜索人物（按名称模糊匹配）
+     * Search characters (fuzzy matching by name)
      */
     function searchCharacters(query: string): CompositeCharacter[] {
         const q = query.toLowerCase()
@@ -103,14 +103,14 @@ export const useCompositeCharacterStore = defineStore('compositeCharacter', () =
     }
 
     /**
-     * 设置人物列表（用于加载项目）
+     * Set characters list (used for loading project)
      */
     function setCharacters(list: CompositeCharacter[]): void {
         characters.value = list
     }
 
     /**
-     * 清空所有人物
+     * Clear all characters
      */
     function clearAll(): void {
         characters.value.forEach(c => {

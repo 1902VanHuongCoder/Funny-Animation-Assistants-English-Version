@@ -23,7 +23,7 @@ export function resolveTrackTargetDisplay(options: TrackTargetDisplayOptions): T
   if (!targetId || targetId === TARGET_SELF) {
     const selfName = sceneObject?.alias?.trim() ?? sceneObject?.name?.trim()
     return {
-      primary: '自身',
+      primary: 'Self',
       ...(selfName ? { secondary: selfName } : {}),
       ...(selfName ? { objectName: selfName } : {}),
       targetId,

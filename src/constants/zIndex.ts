@@ -1,36 +1,36 @@
 /**
  * Scene Object Z-Index Constants
- * 定义场景对象的默认层级常量
+ * Defines default z-index constants for scene objects
  * 
- * 层级顺序 (从底到顶):
- * -10: 背景
- *  -5: 相机边框
- *   0: Ghost 对象
- *  10: 普通对象 (角色、道具)
- * 100: 文本
+ * Layer order (from bottom to top):
+ * -10: Background
+ *  -5: Camera border
+ *   0: Ghost object
+ *  10: Normal objects (characters, props)
+ * 100: Text
  */
 
-// 背景层级 - 最底层
+// Background layer - bottom-most layer
 export const Z_INDEX_BACKGROUND = -10
 
-// 相机层级 - 略高于背景，低于普通对象
+// Camera layer - slightly above background, below normal objects
 export const Z_INDEX_CAMERA = -5
 
-// Ghost 层级 - 在背景和相机之上，但在普通对象之下
+// Ghost layer - above background and camera, but below normal objects
 export const Z_INDEX_GHOST = 0
 
-// 普通对象层级 (角色、道具)
+// Normal object layer (characters, props)
 export const Z_INDEX_DEFAULT = 10
 
-// 文本层级 - 较高
+// Text layer - higher priority
 export const Z_INDEX_TEXT = 100
 
-// 画面特效层级 - 在所有普通场景对象之上 (Phase 1)
+// Screen effect layer - above all normal scene objects (Phase 1)
 export const Z_INDEX_SCREEN_EFFECT = 1000
 
-// 相机置顶层级 - Setup 编辑器中「显示相机」模式使用
+// Camera overlay layer - used by "Show Camera" mode in Setup editor
 export const Z_INDEX_CAMERA_OVERLAY = 10000
 
-// 光源指示器层级 - 与画面特效同级
+// Light indicator layer - same level as screen effects
 export const Z_INDEX_LIGHT = 1000
 export const Z_INDEX_LIGHT_OVERLAY = 10001

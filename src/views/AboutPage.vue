@@ -144,7 +144,7 @@ async function toggleLicense(fontName: string) {
 
     expandedLicenses.add(fontName)
 
-    // 懒加载 OFL.txt
+    // Lazy load OFL.txt
     if (!licenseTexts[fontName]) {
         const font = fonts.value.find(f => f.name === fontName)
         if (font?.licenseFile) {

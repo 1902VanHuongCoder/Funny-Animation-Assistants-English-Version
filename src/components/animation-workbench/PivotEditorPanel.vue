@@ -1,30 +1,30 @@
 <!--
-  PivotEditorPanel.vue — 变换点可视化编辑面板
+  PivotEditorPanel.vue — Transform pivot visual editing panel
 
-  设计要点（由 Phase 3 PRD 锁定）：
-  1. 使用独立 PIXI 子 app（复用 LightweightCanvas + useSceneRenderer），不与主画布共享状态；
-  2. 仅显示目标对象本身（无父级上下文）；
-  3. 对象处于"裸姿态"——不应用任何动画评估，便于用户精确定位变换点；
-  4. 画布上的橙色变换点手柄是可拖拽的；主画布上的同手柄为灰色只读 gizmo。
+  Design key points (locked by Phase 3 PRD):
+  1. Use independent PIXI sub-app (reuse LightweightCanvas + useSceneRenderer), no shared state with main canvas;
+  2. Show target object only (no parent context);
+  3. Object is in 'raw pose' — no animation evaluation applied, convenient for precise pivot positioning;
+  4. Orange pivot handle on canvas is draggable; same handle on main canvas is grey read-only gizmo.
 
-  数据流：
-  用户拖动 → LightweightCanvas 内部 useSceneRenderer(mode='setup', storeOverride=隔离 store)
+  Data flow:
+  User drags -> LightweightCanvas internal useSceneRenderer(mode='setup', storeOverride=isolated store)
            → onSetupChange(type='origin', pivot)
-           → 本组件 emit('pivot-change', pivot)
-           → 父组件（AnimationWorkbench）做逐关键帧补偿 + ctx.updatePivot
+           -> This component emit('pivot-change', pivot)
+           -> Parent component (AnimationWorkbench) performs per-keyframe compensation + ctx.updatePivot
 -->
 <template>
   <div class="pivot-editor-panel">
     <div class="header">
-      <span class="title">变换点编辑</span>
+      <span class="title">Pivot Editor</span>
       <button
         v-if="canReset"
         type="button"
         class="reset-btn"
-        title="恢复默认变换点"
+        title="Reset to default pivot"
         @click="onResetClick"
       >
-        重置
+        Reset
       </button>
     </div>
     <div class="canvas-wrap">
@@ -43,7 +43,7 @@
       />
     </div>
     <p class="hint">
-      拖动橙色十字可调整变换点；{{ pivotSetHint }}
+      Drag orange cross to adjust pivot; {{ pivotSetHint }}
     </p>
   </div>
 </template>
@@ -60,11 +60,11 @@ export interface PivotEditorPanelProps {
     resourceType: 'prop' | 'background' | 'symbol' | 'composite' | 'expression'
     resourceId: string
   sceneObjectId?: string | undefined
-    /** 当前 active track 的 targetObjectId——决定面板编辑哪个子对象 */
+    /** targetObjectId of current active track — determines which child object panel edits */
   targetObjectId?: string | undefined
-    /** 当前 track.pivot 是否已被显式设置（决定是否显示"重置"按钮） */
+    /** Whether current track.pivot has been explicitly set (determines whether 'Reset' button is shown) */
     hasPivotSet: boolean
-    /** 当前轨道正在使用的有效 pivot（自定义 pivot 或对象默认 pivot），像素本地坐标。 */
+    /** Effective pivot currently used by track (custom pivot or object default pivot), pixel local coordinates. */
     effectivePivot: { x: number; y: number }
 }
 
@@ -72,11 +72,11 @@ const props = defineProps<PivotEditorPanelProps>()
 
 const emit = defineEmits<{
     /**
-     * 用户在面板画布上拖拽变换点结束时触发。
-     * payload 携带的是对象本地坐标系的像素值，与 track.pivot / container.pivot 同坐标系。
+     * Triggered when user finishes dragging pivot on panel canvas.
+     * payload carries pixel values in object local coordinate system, same as track.pivot / container.pivot.
      */
     'pivot-change': [pivot: { x: number; y: number }, objectId: string]
-    /** 用户点击"重置"按钮——将 track.pivot 清除为默认值。 */
+    /** User clicks 'Reset' button — clears track.pivot to default value. */
     'pivot-reset': []
 }>()
 
@@ -84,7 +84,7 @@ const panelCanvasRef = ref<InstanceType<typeof LightweightCanvas> | null>(null)
 
 const canReset = computed(() => props.hasPivotSet)
 const pivotSetHint = computed(() =>
-    props.hasPivotSet ? '已设定自定义变换点' : '当前使用对象默认变换点'
+    props.hasPivotSet ? 'Custom pivot is set' : 'Using object default pivot'
 )
 
 watch(
@@ -100,9 +100,9 @@ function resolvePanelObjectId(): string | undefined {
 }
 
 /**
- * LightweightCanvas 通过 defineExpose 暴露的 getter 属性，
- * Vue 的 InstanceType 推断会将其标注为 error 类型。
- * 此处显式声明窄接口以保证类型安全。
+ * Getter properties exposed by LightweightCanvas via defineExpose,
+ * Vue InstanceType inference would mark them as error type.
+ * Explicitly declare narrow interface here for type safety.
  */
 interface LightweightCanvasExposed {
     renderer: ReturnType<typeof useSceneRenderer> | null
@@ -138,8 +138,8 @@ function applyEffectivePivotToPanel(): void {
         return
     }
 
-    // 这里写入的是面板内部隔离 store，仅用于定位小画布 gizmo；
-    // track.pivot 的持久化与主画布 runtime 同步由 AnimationWorkbench 处理。
+    // Written to panel internal isolated store, used only for positioning small canvas gizmo;
+    // Persistence of track.pivot and sync with main canvas runtime handled by AnimationWorkbench.
     store.updateObject(objectId, {
         transformOriginX: nextOriginX,
         transformOriginY: nextOriginY,
@@ -151,8 +151,8 @@ function applyEffectivePivotToPanel(): void {
 
 function onPanelSetupChange(change: SetupChangePayload): void {
     if (change.type !== 'origin') {
-        // 面板仅关心变换点编辑；对象整体的 transform 变更由主画布处理。
-        // 这里忽略即可，面板用户不期望在小窗里做整体拖拽。
+        // Panel cares only about pivot editing; overall object transform changes handled by main canvas.
+        // Ignore here; panel users do not expect overall drags inside small window.
         return
     }
     emit('pivot-change', { x: change.pivot.x, y: change.pivot.y }, change.objectId)

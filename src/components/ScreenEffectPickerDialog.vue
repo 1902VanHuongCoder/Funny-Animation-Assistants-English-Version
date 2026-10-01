@@ -1,16 +1,16 @@
 <template>
   <div class="screen-effect-picker-overlay" @click.self="$emit('close')">
     <div class="screen-effect-picker-dialog">
-      <!-- 标题栏 -->
+      <!-- Title bar -->
       <div class="dialog-header">
-        <h3>🌟 选择视觉效果</h3>
+        <h3>🌟 Select Visual Effect</h3>
         <button class="close-btn" @click="$emit('close')">×</button>
       </div>
 
-      <!-- 滚动内容区 -->
+      <!-- Scrollable content area -->
       <div class="dialog-body">
-        <!-- 分组：画面特效 -->
-        <div class="effect-group-title">画面特效</div>
+        <!-- Group: Screen Effects -->
+        <div class="effect-group-title">Screen Effects</div>
         <div class="effect-grid">
           <div
             v-for="effect in effects"
@@ -19,7 +19,7 @@
             :class="{ selected: selectedKind === 'effect' && selectedEffectId === effect.id }"
             @click="selectEffect(effect)"
           >
-            <!-- 预览缩略图 -->
+            <!-- Preview canvas -->
             <div class="card-preview">
               <canvas
                 :ref="(el) => { if (el) canvasRefs[effect.id] = el as HTMLCanvasElement }"
@@ -28,15 +28,15 @@
                 height="100"
               />
             </div>
-            <!-- 名称 -->
+            <!-- Name -->
             <div class="card-name">{{ effect.name }}</div>
-            <!-- 描述 -->
+            <!-- Description -->
             <div class="card-desc">{{ effect.description }}</div>
           </div>
         </div>
 
-        <!-- 分组：裁切蒙版 -->
-        <div class="effect-group-title">裁切蒙版</div>
+        <!-- Group: Clipping Masks -->
+        <div class="effect-group-title">Clipping Masks</div>
         <div class="effect-grid">
           <div
             v-for="mask in maskPresets"
@@ -57,15 +57,15 @@
         </div>
       </div>
 
-      <!-- 底部按钮 -->
+      <!-- Bottom buttons -->
       <div class="dialog-footer">
-        <button class="cancel-btn" @click="$emit('close')">取消</button>
+        <button class="cancel-btn" @click="$emit('close')">Cancel</button>
         <button
           class="confirm-btn"
           :disabled="!canConfirm"
           @click="handleConfirm"
         >
-          {{ selectedKind === 'mask' ? '添加蒙版' : '添加特效' }}
+          {{ selectedKind === 'mask' ? 'Add Mask' : 'Add Effect' }}
         </button>
       </div>
     </div>
@@ -83,19 +83,19 @@ const emit = defineEmits<{
   close: []
 }>()
 
-// === 状态 ===
+// === State ===
 const selectedKind = ref<'effect' | 'mask' | null>(null)
 const selectedEffectId = ref<string | null>(null)
 const selectedMaskShape = ref<'rectangle' | 'ellipse' | null>(null)
 const canvasRefs: Record<string, HTMLCanvasElement> = {}
 
-// === 蒙版预设 ===
+// === Mask Presets ===
 const maskPresets: { shape: 'rectangle' | 'ellipse'; name: string; description: string }[] = [
-  { shape: 'rectangle', name: '矩形蒙版', description: '矩形区域裁切' },
-  { shape: 'ellipse', name: '椭圆蒙版', description: '椭圆区域裁切' },
+  { shape: 'rectangle', name: 'Rectangle Mask', description: 'Rectangular region clipping' },
+  { shape: 'ellipse', name: 'Ellipse Mask', description: 'Elliptical region clipping' },
 ]
 
-// === 特效注册表 ===
+// === Effects Registry ===
 
 type ModuleType = 'base_cover' | 'hole_shape' | 'follow_target'
 
@@ -107,14 +107,14 @@ interface EffectDef {
   effectClass: string
   modules: ModuleType[]
   defaults: ScreenEffectParams
-  defaultAlpha: number  // 覆盖不透明度，传递给调用端设置到 SceneObject.alpha
+  defaultAlpha: number
 }
 
 const effects: EffectDef[] = [
   {
     id: 'black_cover',
-    name: '黑幕',
-    description: '纯黑色全屏覆盖',
+    name: 'Black Screen',
+    description: 'Solid black full-screen overlay',
     icon: '⬛',
     effectClass: 'fullscreen_cover',
     modules: ['base_cover'],
@@ -123,8 +123,8 @@ const effects: EffectDef[] = [
   },
   {
     id: 'eye_iris',
-    name: '眼睛开合',
-    description: '水平椭圆孔洞模拟眨眼',
+    name: 'Blink / Iris',
+    description: 'Horizontal ellipse aperture simulating eye blink',
     icon: '👁️',
     effectClass: 'iris_mask',
     modules: ['base_cover', 'hole_shape'],
@@ -137,8 +137,8 @@ const effects: EffectDef[] = [
   },
   {
     id: 'spotlight_center',
-    name: '中心聚光',
-    description: '聚焦画面中心的聚光灯',
+    name: 'Center Spotlight',
+    description: 'Spotlight focused at screen center',
     icon: '💡',
     effectClass: 'spotlight',
     modules: ['base_cover', 'hole_shape'],
@@ -151,7 +151,7 @@ const effects: EffectDef[] = [
   },
 ]
 
-// === 计算属性 ===
+// === Computed Properties ===
 
 const selectedEffect = computed<EffectDef | null>(() => {
   if (!selectedEffectId.value) return null
@@ -164,7 +164,7 @@ const canConfirm = computed<boolean>(() => {
   return false
 })
 
-// === 方法 ===
+// === Methods ===
 
 function selectEffect(effect: EffectDef) {
   selectedKind.value = 'effect'
@@ -191,7 +191,6 @@ function handleConfirm() {
 
   if (modules.includes('base_cover')) {
     params.baseColor = effect.defaults.baseColor ?? '#000000'
-    // coverOpacity 已删除，不透明度由 defaultAlpha 传递给调用端
   }
   if (modules.includes('hole_shape')) {
     params.holeShape = effect.defaults.holeShape ?? 'circle'
@@ -204,7 +203,7 @@ function handleConfirm() {
     params.offsetX = effect.defaults.offsetX ?? 0
     params.offsetY = effect.defaults.offsetY ?? 0
   }
-  // 光照模式参数
+  // Light mode parameters
   if (effect.defaults.lightMode) {
     params.lightMode = effect.defaults.lightMode
     params.lightColor = effect.defaults.lightColor ?? '#ffffff'
@@ -219,7 +218,7 @@ function handleConfirm() {
   })
 }
 
-// === 缩略图预览绘制 ===
+// === Thumbnail Preview Drawing ===
 
 function drawPreview(canvas: HTMLCanvasElement, effect: EffectDef) {
   const ctx = canvas.getContext('2d')
@@ -229,7 +228,7 @@ function drawPreview(canvas: HTMLCanvasElement, effect: EffectDef) {
   const h = canvas.height
   const d = effect.defaults
 
-  // 画棋盘格背景（代表透明）
+  // Draw checkerboard background (transparent indicator)
   ctx.fillStyle = '#f0f0f0'
   ctx.fillRect(0, 0, w, h)
   const gridSize = 8
@@ -242,10 +241,10 @@ function drawPreview(canvas: HTMLCanvasElement, effect: EffectDef) {
     }
   }
 
-  // 画覆盖层
+  // Draw overlay layer
   const opacity = effect.defaultAlpha
 
-  // 光照预设：绘制彩色径向渐变（不绘制黑色覆盖）
+  // Lighting preset: Draw colored radial gradient
   if (d.lightMode) {
     const cx = w / 2
     const cy = h / 2
@@ -263,21 +262,21 @@ function drawPreview(canvas: HTMLCanvasElement, effect: EffectDef) {
     return
   }
 
-  // 非光照模式：绘制黑色覆盖
+  // Non-light mode: Draw solid color overlay
   const color = d.baseColor ?? '#000000'
   ctx.fillStyle = color
   ctx.globalAlpha = opacity
   ctx.fillRect(0, 0, w, h)
   ctx.globalAlpha = 1
 
-  // 画孔洞
+  // Draw aperture / hole
   if (d.holeShape && (d.openRatio ?? 0) > 0) {
     const cx = w / 2
     const cy = h / 2
     const ratio = d.openRatio ?? 1
     const baseW = ((d.holeWidth ?? 400) / 1600) * w / 2
     const baseH = ((d.holeHeight ?? 300) / 900) * h / 2
-    // 按形状方向缩放（与 screenEffectRenderer 一致）
+    // Scale according to shape orientation
     let holeW: number
     let holeH: number
     if (d.holeShape === 'horizontal_ellipse') {
@@ -293,7 +292,7 @@ function drawPreview(canvas: HTMLCanvasElement, effect: EffectDef) {
     const feather = ((d.feather ?? 0) / 1600) * w
 
     if (feather > 0) {
-      // 用径向渐变模拟羽化
+      // Simulate feathering with radial gradient
       const maxR = Math.max(holeW, holeH) + feather
       const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, maxR)
       const innerRatio = Math.max(0, Math.min(holeW, holeH) / maxR)
@@ -314,7 +313,7 @@ function drawPreview(canvas: HTMLCanvasElement, effect: EffectDef) {
       }
       ctx.globalCompositeOperation = 'source-over'
     } else {
-      // 硬边孔洞
+      // Hard edge aperture
       ctx.globalCompositeOperation = 'destination-out'
       ctx.fillStyle = 'white'
       ctx.beginPath()
@@ -344,7 +343,7 @@ onMounted(() => {
   void nextTick(() => renderAllPreviews())
 })
 
-// 在组件更新后重新绘制预览（canvasRefs 是普通对象，不能作为 watch 源）
+// Redraw previews on update
 onUpdated(() => {
   void nextTick(() => renderAllPreviews())
 })
@@ -371,7 +370,7 @@ onUpdated(() => {
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
 }
 
-/* 标题栏 */
+/* Title bar */
 .dialog-header {
   display: flex;
   align-items: center;
@@ -407,14 +406,14 @@ onUpdated(() => {
   color: #374151;
 }
 
-/* 滚动内容区 */
+/* Scrollable content */
 .dialog-body {
   flex: 1;
   overflow-y: auto;
   padding: 16px 20px;
 }
 
-/* 卡片网格 */
+/* Card grid */
 .effect-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -422,7 +421,7 @@ onUpdated(() => {
   margin-bottom: 8px;
 }
 
-/* 分组标题 */
+/* Group title */
 .effect-group-title {
   font-size: 13px;
   font-weight: 600;
@@ -435,7 +434,7 @@ onUpdated(() => {
   margin-top: 16px;
 }
 
-/* 蒙版预览 */
+/* Mask preview */
 .card-preview.mask-preview {
   display: flex;
   align-items: center;
@@ -455,7 +454,7 @@ onUpdated(() => {
   border-radius: 2px;
 }
 
-/* 卡片 */
+/* Cards */
 .effect-card {
   border: 2px solid #e5e7eb;
   border-radius: 10px;
@@ -482,7 +481,7 @@ onUpdated(() => {
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
 }
 
-/* 预览区域 */
+/* Preview area */
 .card-preview {
   width: 100%;
   height: 80px;
@@ -499,7 +498,7 @@ onUpdated(() => {
   object-fit: cover;
 }
 
-/* 卡片文字 */
+/* Card typography */
 .card-name {
   font-size: 13px;
   font-weight: 600;
@@ -513,7 +512,7 @@ onUpdated(() => {
   line-height: 1.3;
 }
 
-/* 底部按钮 */
+/* Bottom buttons */
 .dialog-footer {
   display: flex;
   justify-content: flex-end;

@@ -5,7 +5,7 @@
       class="preview-canvas"
     />
     
-    <!-- 加载/错误状态 -->
+    <!-- Loading/Error state -->
     <div
       v-if="isLoading"
       class="loading-overlay"
@@ -21,7 +21,7 @@
       <span>{{ errorMessage }}</span>
     </div>
     
-    <!-- 字幕显示 -->
+    <!-- Subtitle display -->
     <div
       v-if="currentSubtitle"
       class="subtitle-overlay"
@@ -111,7 +111,7 @@ const props = withDefaults(defineProps<{
   autoPlay?: boolean
   seamless?: boolean
   currentSlotIndex?: number
-  blockId?: string  // 单 Block 播放模式（ActionPreviewDialog 使用）
+  blockId?: string  // Single Block playback mode (used by ActionPreviewDialog)
 }>(), {
   currentSlotIndex: 0,
   blockId: ''
@@ -138,7 +138,7 @@ const expressionStore = useExpressionStore()
 const soundStore = useSoundStore()
 const projectStore = useProjectStore()
 
-// v14.x: 统一渲染器实例
+// v14.x: Unified renderer instance
 const scenePlayerTextureProvider: TextureProvider = {
   getTexture: (url: string) => {
     const tex = getTexture(url)
@@ -153,18 +153,18 @@ const sceneObjectRenderer = new SceneObjectRenderer(
   { propStore, backgroundStore, expressionStore }
 )
 
-// P0: ObjectStateHost — 桥接本地缓存给统一渲染器
+// P0: ObjectStateHost — Bridge local cache to unified renderer
 const objectStateHost: ObjectStateHost = {
   getObjectDimensions: (id: string) => objectDimensions.get(id),
   setObjectDimensions: (id: string, dims: { width: number; height: number }) => objectDimensions.set(id, dims),
 }
 
-// 画布引用
+// Canvas reference
 const previewCanvas = ref<HTMLElement | null>(null)
 
-// 状态
+// State
 const isLoading = ref(true)
-const loadingMessage = ref('正在准备预览...')
+const loadingMessage = ref('Preparing preview...')
 const errorMessage = ref<string | null>(null)
 const isPlaying = ref(false)
 const currentTime = ref(0)
@@ -172,15 +172,15 @@ const currentBlockIndex = ref(-1)
 let previousBlockIndex = -1
 const currentSubtitle = ref('')
 
-// PIXI 相关
+// PIXI related
 let pixiApp: PIXI.Application | null = null
 let stage: PIXI.Container | null = null
 let sceneLoadGeneration = 0
 const objectContainers = new Map<string, PIXI.Container>()
 const audioInstances = new Map<string, AudioInstance>()
-const audioInstancePlayTimes = new Map<string, number>()  // 追踪每个实例对应的 playTime，用于检测 play action 切换
+const audioInstancePlayTimes = new Map<string, number>()  // Track playTime per instance to detect play action switch
 const pendingAudioPlays = new Set<string>()
-const pendingAudioPlayTimes = new Map<string, number>()  // 追踪 pending play 对应的 playTime
+const pendingAudioPlayTimes = new Map<string, number>()  // Track playTime for pending play
 const audioStopping = new Set<string>()
 
 function isCurrentSceneLoad(generation: number): boolean {
@@ -188,35 +188,35 @@ function isCurrentSceneLoad(generation: number): boolean {
 }
 
 
-// v11.60: Animation Player 注册表（统一 Map，消除按类型分发的 if/else 分支）
+// v11.60: Animation Player registry (unified Map eliminating type dispatch branches)
 const objectAnimationPlayers = new Map<string, GenericAnimationPlayer>()
 const triggeredAnimations = new Set<string>()
 
 
-// P2: Composite own 模式离屏渲染目标
+// P2: Composite own mode offscreen render target
 const compositeRenderTargets = new Map<string, CompositeRenderTarget>()
 
-// v25: 光照滤镜缓存（复用实例避免每帧创建）
+// v25: Lighting filter cache (reuse instances to avoid creating every frame)
 const lightingFilterCache: LightingFilterCache = {}
 
-// Clip-Mask Phase 1：每帧渲染前应用所有 mask 关系
+// Clip-Mask Phase 1: Apply all mask relations before rendering each frame
 const maskRendererResources: MaskRendererResources = createMaskRendererResources()
 
 function applyMasksBeforeRender(states: SceneObject[]): void {
   if (!stage) return
-  // 确保 mask container / target container 的 worldTransform 已是最新（applyObjectState 之后、render 之前）
-  // 根 stage parent 为 null，stage.updateTransform() 会 NPE，逐子节点刷新。
+  // Ensure worldTransform is up to date (after applyObjectState, before render)
+  // Root stage parent is null, update children individually to avoid NPE.
   for (const child of stage.children) {
     child.updateTransform()
   }
   applyAllMasks(states, (id) => objectContainers.get(id), maskRendererResources)
 }
 
-// 方案B: camera_follow 首帧 BBox 偏移量缓存
-// key = action.id, value = { dx, dy } = BBox 中心 - pivot 中心
+// Approach B: camera_follow first frame BBox offset cache
+// key = action.id, value = { dx, dy } = BBox center - pivot center
 const followBBoxOffsets = new Map<string, { dx: number, dy: number }>()
 
-// ═══ RenderHost 桥接（共享渲染管线依赖注入） ═══
+// === RenderHost Bridge (Shared Render Pipeline DI) ===
 const renderHost: RenderHost = {
   sceneObjectRenderer,
   objectContainers,
@@ -227,7 +227,7 @@ const renderHost: RenderHost = {
   getSceneObjects: () => sceneSetup?.objects ?? [],
 }
 
-// ═══ AnimationController 集成 ═══
+// === AnimationController Integration ===
 const scenePlayerAnimationHost: AnimationHost = {
 
   getAnimationPlayer: (id: string) => objectAnimationPlayers.get(id) ?? null,
@@ -235,15 +235,15 @@ const scenePlayerAnimationHost: AnimationHost = {
   getSceneObjects: () => sceneSetup?.objects ?? [],
   getAnimationDefinition: (objectId: string, animName: string) => {
     const animationStore = useAnimationStore()
-    // v16: 统一从 SceneObject.animations 查找（hydrate 保证已填充）
+    // v16: Look up from SceneObject.animations uniformly (hydration guaranteed populated)
     const obj = sceneSetup?.objects.find(o => o.id === objectId)
     if (!obj) return null
     return animationStore.getObjectAnimationByName(obj, animName) ?? null
   },
-  // 手动帧动画驱动钩子：
-  // 1. 重置累积器，确保帧序列动画从第 0 帧开始
-  // 2. 设置 _shouldPlay 标志，替代之前由 fallbackPlayPropSprite 完成的 gotoAndPlay(0)
-  //    （提供 onAnimationTriggered 后 fallbackPlayPropSprite 不再执行，需由此钩子接管）
+  // Manual frame animation drive hooks:
+  // 1. Reset accumulator, ensure frame sequence starts from frame 0
+  // 2. Set _shouldPlay flag, replacing previous gotoAndPlay(0)
+  //    (fallbackPlayPropSprite no longer runs after onAnimationTriggered, handled by hook)
   onAnimationTriggered: (objectId: string, _animName: string, cmd: 'play' | 'stop') => {
     const container = objectContainers.get(objectId)
     if (!container) return
@@ -264,24 +264,24 @@ const scenePlayerAnimationHost: AnimationHost = {
 }
 const animationController = new AnimationController(scenePlayerAnimationHost, triggeredAnimations)
 
-// 手动帧动画推进累积器（替代 PIXI Ticker 自动更新）
+// Manual frame animation advance accumulator (replaces PIXI Ticker auto-update)
 const spriteAnimTimeAccumulator = new WeakMap<PIXI.AnimatedSprite, number>()
 
-// 相机视口相关
+// Camera viewport related
 let contentViewport: PIXI.Container | null = null
 let scaleContainer: PIXI.Container | null = null
 let blackBackground: PIXI.Graphics | null = null
 
-// 画布尺寸和相机视口（从统一常量文件导入）
+// Canvas dimensions and camera viewport (imported from constants file)
 
-// 缓存相机信息
+// Cache camera info
 let cachedCameraInfo: { x: number; y: number; width: number; height: number; zoom: number } | null = null
 
-// v7.3: camera_follow 最后跟随位置缓存（用于相机状态计算）
+// v7.3: camera_follow last followed position cache (for camera state calculation)
 let lastFollowPosition: { x: number; y: number } | null = null
 let lastEvaluatedCameraState: RuntimeCameraState | null = null
 
-// Block 播放相关 — 使用共享 BlockPlayInfo 类型（types/screenplay.ts）
+// Block playback related — using shared BlockPlayInfo type (types/screenplay.ts)
 
 function cloneSceneObject<T extends SceneObject>(obj: T): T {
   return JSON.parse(JSON.stringify(obj)) as T
@@ -354,20 +354,20 @@ function applyPreviewSceneStructureAction(
   }
 }
 
-const blockPlayInfos = ref<BlockPlayInfo[]>([])  // 改为响应式
+const blockPlayInfos = ref<BlockPlayInfo[]>([])  // Made reactive
 const ttsTimingCache = new Map<string, TTSTimingFile | null>()
 const pendingTTSTimingLoads = new Map<string, Promise<TTSTimingFile | null>>()
 let animationFrame: number | null = null
 let playStartTime = 0
 let playStartOffset = 0
 let lastAnimationUpdateTime: number | null = null
-const audioPlayRequestId = ref(0) // 播放请求ID，用于解决竞态
-const audioPlayGeneration = ref(0) // 音频播放代数，用于解决 Seek 竞态
+const audioPlayRequestId = ref(0) // Playback request ID for race condition resolution
+const audioPlayGeneration = ref(0) // Audio playback generation for Seek race condition resolution
 
-// 场景初始配置副本（从 setup 复制，作为只读基准）
+// Scene initial config copy (copied from setup, read-only baseline)
 let sceneSetup: SceneSetup | null = null
 
-// 缓存对象原始尺寸 (用于修正视觉中心计算)
+// Cache object original size (for visual center correction)
 const objectDimensions = new Map<string, { 
   width: number
   height: number
@@ -377,11 +377,11 @@ const objectDimensions = new Map<string, {
   boundsY?: number
 }>()
 
-// v14.2: 追踪每个角色最后一次测量 bounds 时的姿态
-// 只有姿态变更时才重新测量，避免动画播放期间每帧测量导致跳动
+// v14.2: Track pose of each character when measuring bounds last time
+// Remeasure only on pose change, avoiding jitters during animation playback
 const lastMeasuredPose = new Map<string, string>()
 
-// 待清理的音频实例
+// Audio instances pending cleanup
 const trackedAudioInstances = new Set<AudioInstance>()
 
 function syncProgressState() {
@@ -459,38 +459,38 @@ async function reconcileBlockAudioDurations() {
         updateBlockTimelineFrom(i, Math.max(info.duration, actualDurationMs))
       }
     } catch (err) {
-      console.warn('[ScenePlayer] 音频时长校正失败:', err)
+      console.warn('[ScenePlayer] Failed to correct audio duration:', err)
     }
   }
 }
 
-// 计算当前场景
+// Compute current scene
 const currentScene = computed((): SceneContainer | null => {
   if (!props.episode) return null
   return props.episode.scenes.find(s => s.id === props.sceneId) || null
 })
 
-// blockId 模式标志
+// blockId mode flag
 const blockIdMode = computed(() => !!props.blockId)
 
-// blockId 模式下的当前 Block
+// Current Block in blockId mode
 const targetBlock = computed(() => {
   if (!blockIdMode.value || !currentScene.value) return null
   return currentScene.value.script.find(b => b.id === props.blockId) ?? null
 })
 
-// blockId 模式下的 prevContext
+// prevContext in blockId mode
 const prevContext = computed((): RuntimeSceneSnapshot | null => {
   if (!blockIdMode.value || !currentScene.value || !props.blockId) return null
   return calculatePrevContext(currentScene.value, props.blockId)
 })
 
-// 总时长
+// Total duration
 const totalDuration = computed(() => {
   return blockPlayInfos.value.reduce((sum, info) => sum + info.duration, 0)
 })
 
-// 暴露给父组件的方法
+// Methods exposed to parent component
 defineExpose({
   play,
   pause,
@@ -502,7 +502,7 @@ defineExpose({
 })
 
 /**
- * 获取默认相机状态
+ * Get default camera state
  */
 function getDefaultCameraState(): RuntimeCameraState {
   const camera = cachedCameraInfo || {
@@ -520,41 +520,41 @@ function getDefaultCameraState(): RuntimeCameraState {
 }
 
 /**
- * 初始化 PIXI App (仅执行一次)
+ * Initialize PIXI App (once only)
  */
 async function initPixiApp() {
   if (pixiApp) return
 
   if (!previewCanvas.value) {
     console.error('previewCanvas ref is null')
-    errorMessage.value = '画布容器初始化失败'
+    errorMessage.value = 'Failed to initialize canvas container'
     return
   }
 
   try {
     const containerRect = previewCanvas.value.getBoundingClientRect()
-    // 等待容器尺寸
+    // Wait for container size
     if (containerRect.height < 100) {
       await new Promise(resolve => setTimeout(resolve, 100))
     }
     
-    // 重新获取尺寸
+    // Re-fetch dimensions
     const finalRect = previewCanvas.value.getBoundingClientRect()
     
-    // 计算缩放比例：让相机视口区域适配容器，留 5% 边距
+    // Calculate display scale: fit camera viewport to container with 5% margin
     const scaleX = finalRect.width / CAMERA_BASE_WIDTH
     const scaleY = finalRect.height / CAMERA_BASE_HEIGHT
     const displayScale = Math.min(scaleX, scaleY) * 0.95
     
-    // 显示尺寸 = 相机视口尺寸 * displayScale
+    // Display size = camera viewport size * displayScale
     const displayWidth = CAMERA_BASE_WIDTH * displayScale
     const displayHeight = CAMERA_BASE_HEIGHT * displayScale
     
-    // 初始化 AudioContext
+    // Initialize AudioContext
     await audioKit.init()
 
-    // v12: Direct Projection 架构（与 FrameCapture 保持一致）
-    // 画布尺寸 = 相机视口尺寸，不再使用超大画布 + 遮罩裁剪
+    // v12: Direct Projection architecture (aligned with FrameCapture)
+    // Canvas size = camera viewport size, no large canvas + mask clipping
     pixiApp = new PIXI.Application({
       width: CAMERA_BASE_WIDTH,
       height: CAMERA_BASE_HEIGHT,
@@ -564,8 +564,8 @@ async function initPixiApp() {
       autoDensity: true
     });
 
-    // 禁用 PIXI 内部 Ticker 自动渲染，改为 updateFrame() 末尾手动 render
-    // 消除「PIXI Ticker 先于 updateFrame 渲染旧状态」导致的 1 帧延迟
+    // Disable PIXI internal Ticker auto-render, manually render at end of updateFrame()
+    // Eliminate 1-frame latency where Ticker renders stale state before updateFrame
     pixiApp.ticker.autoStart = false
     pixiApp.ticker.stop()
 
@@ -573,7 +573,7 @@ async function initPixiApp() {
     canvas.style.width = `${displayWidth}px`
     canvas.style.height = `${displayHeight}px`
     
-    // 简化的容器布局：画布直接显示相机视口，无需裁剪
+    // Simplified layout: canvas directly displays camera viewport without clipping
     const clipWrapper = document.createElement('div')
     clipWrapper.style.width = `${displayWidth}px`
     clipWrapper.style.height = `${displayHeight}px`
@@ -584,7 +584,7 @@ async function initPixiApp() {
     clipWrapper.style.transform = 'translate(-50%, -50%)'
     clipWrapper.style.borderRadius = '4px'
     
-    // 画布与容器完全对齐，不需要负偏移
+    // Canvas aligns with container, no negative offset needed
     canvas.style.position = 'absolute'
     canvas.style.left = '0px'
     canvas.style.top = '0px'
@@ -592,8 +592,8 @@ async function initPixiApp() {
     clipWrapper.appendChild(canvas)
     previewCanvas.value.appendChild(clipWrapper)
     
-    // v12: 创建视口结构（与 FrameCapture 一致）
-    // 1. 黑色背景层
+    // v12: Create viewport structure (aligned with FrameCapture)
+    // 1. Black background layer
     blackBackground = new PIXI.Graphics()
     blackBackground.beginFill(0x000000)
     blackBackground.drawRect(0, 0, CAMERA_BASE_WIDTH, CAMERA_BASE_HEIGHT)
@@ -601,73 +601,73 @@ async function initPixiApp() {
     blackBackground.zIndex = -1
     pixiApp.stage.addChild(blackBackground)
     
-    // 2. 创建 scaleContainer
+    // 2. Create scaleContainer
     scaleContainer = new PIXI.Container()
     scaleContainer.scale.set(1, 1)
     pixiApp.stage.addChild(scaleContainer)
     
-    // 3. 创建内容视口容器
+    // 3. Create content viewport container
     contentViewport = new PIXI.Container()
     contentViewport.sortableChildren = true
     contentViewport.zIndex = 0
     scaleContainer.addChild(contentViewport)
     
-    // v12: 不再需要 cameraMask，内容自然在画布边界裁剪
+    // v12: cameraMask no longer needed, content clipped naturally at canvas boundary
     
     pixiApp.stage.sortableChildren = true
     
   } catch (err) {
     console.error('[ScenePlayer] PIXI Init Failed:', err)
-    errorMessage.value = '渲染引擎初始化失败'
+    errorMessage.value = 'Failed to initialize rendering engine'
   }
 }
 
 /**
- * 加载当前场景
- * v11.66: 改为 async，await renderInitialFrame
+ * Load current scene
+ * v11.66: Changed to async, await renderInitialFrame
  */
 async function loadScene() {
   if (!pixiApp || !contentViewport) return
   const loadGeneration = ++sceneLoadGeneration
   
   try {
-    // 只有非无缝模式才显示加载遮罩
+    // Show loading mask only in non-seamless mode
     if (!props.seamless) {
       isLoading.value = true
-      loadingMessage.value = '正在准备场景...'
+      loadingMessage.value = 'Preparing scene...'
     }
     errorMessage.value = null
     
     const scene = currentScene.value
     if (!scene) {
       if (isCurrentSceneLoad(loadGeneration)) {
-        errorMessage.value = '场景不存在'
+        errorMessage.value = 'Scene does not exist'
         isLoading.value = false
       }
       return
     }
     
-    // P1: blockId 模式下使用 prevContext 作为初始状态
+    // P1: In blockId mode use prevContext as initial state
     if (blockIdMode.value && prevContext.value) {
       sceneSetup = JSON.parse(JSON.stringify(prevContext.value)) as SceneSetup
     } else {
-      // 使用场景的 setup 作为初始状态
+      // Use scene setup as initial state
       sceneSetup = JSON.parse(JSON.stringify(scene.setup)) as SceneSetup
     }
 
-    // v16: animations 已持久化，不再需要运行时 hydrate
+    // v16: animations persisted, no runtime hydration needed
     
-    // 准备新的 Stage
+    // Prepare new Stage
     const newStage = new PIXI.Container()
     newStage.sortableChildren = true
     
-    // 清理旧状态 (保留 PIXI App 和 Viewport)
+    // Clean old state (keep PIXI App and Viewport)
     stopAllAudio()
 
     objectContainers.clear()
     blockPlayInfos.value = []
     
-    // 将 stage 指向新的容器
+    // Point stage to new container
     if (stage) {
       contentViewport.removeChild(stage)
       stage.destroy({ children: true })
@@ -675,8 +675,8 @@ async function loadScene() {
     stage = newStage
     contentViewport.addChild(stage)
     
-    // 初始化相机信息
-    // P1: blockId 模式下从 prevContext 的 camera 获取相机初始状态
+    // Initialize camera info
+    // P1: Get camera initial state from prevContext.camera in blockId mode
     const cameraSource = blockIdMode.value && prevContext.value
       ? prevContext.value.camera
       : sceneSetup?.camera
@@ -697,10 +697,10 @@ async function loadScene() {
     const rendered = await renderInitialFrame(loadGeneration)
     if (!rendered || !isCurrentSceneLoad(loadGeneration)) return
     
-    // 准备 Block 信息
+    // Prepare Block info
     prepareBlockPlayInfos()
     if (!isCurrentSceneLoad(loadGeneration)) return
-    loadingMessage.value = '正在准备 TTS timing...'
+    loadingMessage.value = 'Preparing TTS timing...'
     await preloadTTSTimingsForBlockInfos()
     if (!isCurrentSceneLoad(loadGeneration)) return
     renderCurrentFrameWithoutAudio()
@@ -709,7 +709,7 @@ async function loadScene() {
     renderCurrentFrameWithoutAudio()
     syncProgressState()
     
-    // 完成
+    // Done
     isLoading.value = false
     emit('ready')
     
@@ -720,7 +720,7 @@ async function loadScene() {
   } catch (err) {
     if (!isCurrentSceneLoad(loadGeneration)) return
     console.error('[ScenePlayer] Load Scene Failed:', err)
-    errorMessage.value = `场景加载失败: ${err instanceof Error ? err.message : '未知错误'}`
+    errorMessage.value = `Failed to load scene: ${err instanceof Error ? err.message : 'Unknown error'}`
     isLoading.value = false
   }
 }
@@ -731,7 +731,7 @@ async function initRenderer() {
 }
 
 /**
- * 准备 Block 播放信息
+ * Prepare Block playback info
  */
 function prepareBlockPlayInfos() {
   const scene = currentScene.value
@@ -743,7 +743,7 @@ function prepareBlockPlayInfos() {
   ttsTimingCache.clear()
   pendingTTSTimingLoads.clear()
   
-  // P1: blockId 模式下只为目标 Block 生成播放信息
+  // P1: In blockId mode generate playback info for target Block only
   const blocksToProcess = blockIdMode.value && targetBlock.value
     ? [targetBlock.value]
     : scene.script
@@ -761,20 +761,20 @@ function prepareBlockPlayInfos() {
   })) as RuntimeSceneSnapshot
 
   for (const block of blocksToProcess) {
-    // 确保 TTS 已生成
+    // Ensure TTS is generated
     let duration = 0
     let audioUrl: string | undefined
 
-    // ScriptBlock 类型 (DialogueBlock | NarrationBlock) 都有 ttsConfig 属性
+    // ScriptBlock types have ttsConfig property
     if (block.type === 'action') {
       duration = block.duration
     } else if (block.ttsConfig) {
       duration = block.ttsConfig.duration || 0
-      // v12.8: audioPath 替代 audio，使用懒加载
+      // v12.8: audioPath replaces audio, using lazy loading
       audioUrl = block.ttsConfig.audioPath ? getAudioUrl(block.ttsConfig.audioPath) : undefined
     }
     
-    // 如果没有时长，给一个默认值
+    // If duration missing, provide default
     if (duration <= 0) {
       duration = 1000
     }
@@ -863,7 +863,7 @@ async function loadTTSTimingForAudioPath(audioPath: string): Promise<TTSTimingFi
       return timing
     })
     .catch(error => {
-      console.warn('[ScenePlayer] 加载 TTS timing 失败，降级为连续播放:', audioPath, error)
+      console.warn('[ScenePlayer] Failed to load TTS timing, fallback to continuous playback:', audioPath, error)
       ttsTimingCache.set(audioPath, null)
       return null
     })
@@ -878,9 +878,9 @@ async function loadTTSTimingForAudioPath(audioPath: string): Promise<TTSTimingFi
 
 
 /**
- * 渲染初始帧（使用五阶段管线）
- * 与 updateFrame 保持一致的渲染逻辑
- * v11.66: 改为 async，与 ActionPreviewDialog.resetToPrev 流程一致
+ * Render initial frame (using 5-phase pipeline)
+ * Render logic consistent with updateFrame
+ * v11.66: Changed to async, consistent with ActionPreviewDialog.resetToPrev
  */
 async function renderInitialFrame(loadGeneration: number): Promise<boolean> {
   if (!stage) {
@@ -892,25 +892,25 @@ async function renderInitialFrame(loadGeneration: number): Promise<boolean> {
   const renderStage = stage
   const renderSetup = sceneSetup
 
-  // 清理旧状态
+  // Clean old state
   renderStage.removeChildren()
   objectContainers.clear()
   objectDimensions.clear()
 
-  // P2: 先清理离屏渲染目标，避免内存泄漏和重复渲染旧纹理
+  // P2: Clean offscreen render targets first to prevent leaks and re-renders
   compositeRenderTargets.forEach(crt => crt.destroy())
   compositeRenderTargets.clear()
 
   lastMeasuredPose.clear()
   
-  // P1: blockId 模式下使用 getActiveObjects 包含 Shadow Objects
+  // P1: Use getActiveObjects in blockId mode to include Shadow Objects
   const objectsToRender = getActiveObjects()
   if (objectsToRender.length === 0) {
       console.warn('[ScenePlayer] renderInitialFrame warning: no objects to render')
       return true
   }
   
-  // Phase 1: 资源同步（创建所有对象，await 确保角色完全初始化）
+  // Phase 1: Resource sync (create all objects, await character initialization)
   const synced = await syncResources(loadGeneration, renderStage, renderSetup)
   if (!synced || !isCurrentSceneLoad(loadGeneration) || stage !== renderStage || sceneSetup !== renderSetup) {
     return false
@@ -918,17 +918,17 @@ async function renderInitialFrame(loadGeneration: number): Promise<boolean> {
   
 
   
-  // Phase 1.5: 应用初始动画状态（在测量之前，确保角色状态正确）
+  // Phase 1.5: Apply initial animation state (ensure character state before measuring)
   applyInitialAnimationStates()
   
-  // P1: blockId 模式下重播跨 Block 持续播放的动画
+  // P1: Replay cross-block animations in blockId mode
   replayCarriedOverAnimations()
   
-  // Phase 2: 实时测量（现在角色状态已确定）
+  // Phase 2: Real-time measurement (character state now determined)
   measureObjects()
   sharedSyncObjectBoundsToPlayers(objectDimensions, objectAnimationPlayers)
   
-  // Phase 3: 评估状态 (构建初始状态)
+  // Phase 3: Evaluate state (build initial state)
   const states = new Map<string, SceneObject>()
   for (const objSetup of objectsToRender) {
     const state = buildObjectStateSnapshot(objSetup)
@@ -936,9 +936,9 @@ async function renderInitialFrame(loadGeneration: number): Promise<boolean> {
     states.set(objSetup.id, state)
   }
   
-  // Phase 3.5: Parent 容器迁移（确保 PIXI 父子关系与数据层 parentId 一致）
-  // v22: renderObject 使用 renderChain 遍历子对象时，union 容器可能未在正确位置创建，
-  // 此步骤根据 state.parentId 将 PIXI 容器迁移到正确的父级（与 layoutObjects 保持一致）
+  // Phase 3.5: Parent container migration (align PIXI hierarchy with data parentId)
+  // v22: union containers may not be created in right place when renderChain walks children,
+  // this step migrates PIXI containers to correct parent based on state.parentId
   for (const objSetup of objectsToRender) {
     const container = objectContainers.get(objSetup.id)
     if (!container) continue
@@ -958,7 +958,7 @@ async function renderInitialFrame(loadGeneration: number): Promise<boolean> {
     }
   }
   
-  // Phase 4: 布局对象 (应用状态)
+  // Phase 4: Layout objects (apply state)
   const visualCenters = new Map<string, { x: number, y: number }>()
   
   for (const objSetup of objectsToRender) {
@@ -968,14 +968,14 @@ async function renderInitialFrame(loadGeneration: number): Promise<boolean> {
     const state = states.get(objSetup.id)
     if (!state) continue
     
-    // 应用状态
+    // Apply state
     const visualCenter = applyObjectState(container, state, objSetup, states)
     if (visualCenter) {
       visualCenters.set(objSetup.id, visualCenter)
     }
-      // 灯光对象的容器需要参与 updateTransform（toGlobal 依赖准确的 worldTransform），
-    // 但不应渲染可见像素。使用 renderable=false（不阻止 transform 更新），
-    // 而非 visible=false（会导致 PIXI 跳过 updateTransform）。
+      // Light object containers need to participate in updateTransform (toGlobal relies on accurate worldTransform),
+    // but should not render visible pixels. Use renderable=false (does not block transform updates),
+    // instead of visible=false (which causes PIXI to skip updateTransform).
     if (objSetup.type === 'light') {
       container.renderable = false
     }
@@ -983,8 +983,8 @@ async function renderInitialFrame(loadGeneration: number): Promise<boolean> {
     objectAnimationPlayers.get(objSetup.id)?.cacheBaseTransform()
   }
   
-  // v23: 为根级 stage 安装 renderChain 驱动的渲染逻辑
-  // 渲染顺序完全由 renderChain + sortRenderChainByZIndex 决定
+  // v23: Install renderChain-driven rendering logic for the root stage
+  // Render order is entirely determined by renderChain + sortRenderChainByZIndex
   if (renderSetup.renderChain && renderSetup.renderChain.length > 0) {
     const setupChain = reconcileRenderChain(
       renderSetup.renderChain,
@@ -999,20 +999,20 @@ async function renderInitialFrame(loadGeneration: number): Promise<boolean> {
       (id) => objectContainers.get(id),
     )
   }
-  // 递归排序组合容器（entity 内部 renderChain）
-  // v22: 传入 getZIndex 以排序 entity 内部 renderChain
+  // Recursively sort composite containers (entity internal renderChain)
+  // v22: Pass getZIndex to sort entity internal renderChain
   sharedSortCompositeContainers(renderSetup.objects, objectContainers, compositeRenderTargets,
     (id) => states.get(id)?.zIndex ?? renderSetup.objects.find(o => o.id === id)?.zIndex ?? 0
   )
   
-  // v19 Fix: 初始帧 CRT 更新 — syncResources 中 crt.enable() 时子对象尚未定位，
-  // Phase 4 定位完成后必须刷新 CRT 的 RenderTexture
+  // v19 Fix: Initial frame CRT update - child objects were not positioned when crt.enable() was called in syncResources,
+  // CRT's RenderTexture must be refreshed after Phase 4 positioning completes
   updateCompositeRenderTargetsInOrder(compositeRenderTargets, [...states.values()])
   
-  // Phase 5: 相机更新
+  // Phase 5: Camera update
   applyCameraTransform(getDefaultCameraState())
 
-  // Phase 6: 光照滤镜
+  // Phase 6: Lighting filter
   if (contentViewport && isCurrentSceneLoad(loadGeneration) && stage === renderStage && sceneSetup === renderSetup) {
     contentViewport.updateTransform()
     applyLightingFilter(
@@ -1029,10 +1029,10 @@ async function renderInitialFrame(loadGeneration: number): Promise<boolean> {
     )
   }
 
-  // Clip-Mask Phase 1：在 render 之前更新 worldTransform 并应用所有蒙版
+  // Clip-Mask Phase 1: Update worldTransform and apply all masks before render
   applyMasksBeforeRender([...states.values()])
 
-  // 手动渲染初始帧（Ticker 已禁用）
+  // Manually render initial frame (Ticker is disabled)
   if (pixiApp) {
     pixiApp.renderer.render(pixiApp.stage)
   }
@@ -1042,17 +1042,17 @@ async function renderInitialFrame(loadGeneration: number): Promise<boolean> {
 function applyInitialAnimationStates() {
   if (!sceneSetup) return
   
-  // v16: 初始动画统一委托给 AnimationController 处理。
-  // 这样 spawned=false 的对象会延迟到真正可见时才启动初始动画，避免“未出生先播放”。
+  // v16: Initial animations are delegated uniformly to AnimationController.
+  // This allows spawned=false objects to delay starting initial animations until truly visible, avoiding "playing before spawn".
   animationController.processInitialAnimationStates()
   
-  // ScenePlayer 特有：仅处理“无初始动画”时的 stillFrame 恢复。
+  // ScenePlayer specific: Only handle stillFrame restoration when "no initial animation".
   for (const objSetup of sceneSetup.objects) {
     if (objSetup.type !== 'prop') continue
     const container = objectContainers.get(objSetup.id)
     if (!container) continue
     
-    // v16: 直接访问 SceneObjectBase.initialAnimations
+    // v16: Directly access SceneObjectBase.initialAnimations
     const initialAnims = objSetup.initialAnimations
     
     if (!initialAnims || initialAnims.length === 0) {
@@ -1070,8 +1070,8 @@ function applyInitialAnimationStates() {
 }
 
 /**
- * P1: 获取活跃对象列表（blockId 模式下包含 Shadow Objects）
- * Shadow Object: 在场景 Setup 中定义但 spawned=false，在当前 Block 中被 set_lifecycle { spawned: true } 激活的对象
+ * P1: Get active object list (includes Shadow Objects in blockId mode)
+ * Shadow Object: Objects defined in scene Setup with spawned=false, activated in current Block by set_lifecycle { spawned: true }
  */
 function getActiveObjects(): SceneObject[] {
   if (!blockIdMode.value || !sceneSetup) {
@@ -1085,7 +1085,7 @@ function getActiveObjects(): SceneObject[] {
   const prevObjIds = new Set(sceneSetup.objects.map(o => o.id))
   const activeObjects = [...sceneSetup.objects]
   
-  // 收集当前 Block 动作的所有目标 ID
+  // Collect all target IDs of current Block actions
   const actionTargets = new Set<string>()
   for (const action of block.actions ?? []) {
     if (action.target && action.target !== 'camera') {
@@ -1093,12 +1093,12 @@ function getActiveObjects(): SceneObject[] {
     }
   }
   
-  // 从场景 Setup 中查找不在 prevContext 但被当前 Block 动作引用的对象
+  // Look up objects from scene Setup that are not in prevContext but referenced by current Block actions
   for (const objSetup of scene.setup.objects) {
     if (actionTargets.has(objSetup.id) && !prevObjIds.has(objSetup.id)) {
       const shadowObj: SceneObject = {
         ...objSetup,
-        spawned: false  // Shadow Object 默认未 spawn
+        spawned: false  // Shadow Object unspawned by default
       }
       activeObjects.push(shadowObj)
     }
@@ -1108,10 +1108,10 @@ function getActiveObjects(): SceneObject[] {
 }
 
 /**
- * P1: 重播跨 Block 持续播放的动画
- * 回溯当前 Block 之前所有 Block 的 set_anim actions，
- * 找出 autoStopOnBlockEnd === false 且未被后续 stop 覆盖的动画，
- * 在 Block 预览初始化时重新触发这些动画。
+ * P1: Replay animations persisting across Blocks
+ * Trace back set_anim actions from all Blocks before current Block,
+ * find animations with autoStopOnBlockEnd === false not overridden by subsequent stops,
+ * and re-trigger these animations during Block preview initialization.
  */
 function replayCarriedOverAnimations() {
   if (!blockIdMode.value) return
@@ -1123,7 +1123,7 @@ function replayCarriedOverAnimations() {
   if (!script || script.length === 0) return
 
   const blockIndex = script.findIndex(b => b.id === block.id)
-  if (blockIndex <= 0) return // 第一个 Block 无前置动画
+  if (blockIndex <= 0) return // First block has no preceding animations
 
   interface CarriedAnimation {
     targetId: string
@@ -1150,8 +1150,8 @@ function replayCarriedOverAnimations() {
         const key = `${targetId}:${animName}`
 
         if (cmd === 'play' && animItem.autoStopOnBlockEnd === false) {
-          // v16: 仅校验对象存在性，不再按类型白名单过滤
-          // 动画定义统一通过 AnimationHost.getAnimationDefinition(objectId, animName) 查找
+          // v16: Only validate object existence, no longer filter by type whitelist
+          // Animation definitions are uniformly looked up via AnimationHost.getAnimationDefinition(objectId, animName)
           const objSetup = scene.setup.objects.find(o => o.id === targetId)
           if (!objSetup) continue
 
@@ -1170,7 +1170,7 @@ function replayCarriedOverAnimations() {
   for (const carried of carriedAnimations.values()) {
     const { targetId, animName, loop } = carried
 
-    // v16: 统一通过 AnimationHost.getAnimationDefinition 查找（hydrate 保证 obj.animations 已填充）
+    // v16: Uniformly look up via AnimationHost.getAnimationDefinition (hydrate ensures obj.animations is populated)
     const definition = scenePlayerAnimationHost.getAnimationDefinition(targetId, animName)
     if (!definition) continue
     const player = objectAnimationPlayers.get(targetId)
@@ -1180,7 +1180,7 @@ function replayCarriedOverAnimations() {
 }
 
 /**
- * 统一对象渲染入口（委托给共享渲染管线）
+ * Unified object render entry (delegated to shared render pipeline)
  */
 async function renderObject(obj: SceneObject, parentContainer: PIXI.Container): Promise<void> {
   await sharedRenderObject(obj, parentContainer, renderHost)
@@ -1201,10 +1201,10 @@ async function syncResources(
 ): Promise<boolean> {
   if (!targetSetup || !targetStage) return false
   const activeIds = new Set<string>()
-  // P1: blockId 模式下使用 getActiveObjects 包含 Shadow Objects
+  // P1: Use getActiveObjects in blockId mode to include Shadow Objects
   const objectsToSync = blockIdMode.value ? getActiveObjects() : targetSetup.objects
 
-  // Text PRD Phase 0: 预加载 setup 字体，以及 Action Mode 的 set_text 字体切换
+  // Text PRD Phase 0: Preload setup fonts, and set_text font switching in Action Mode
   const blocksForFontPreload = blockIdMode.value && targetBlock.value
     ? [targetBlock.value]
     : (currentScene.value?.script ?? [])
@@ -1254,8 +1254,8 @@ function measureObjects() {
 }
 
 /**
- * 将 objectDimensions 同步到所有 GenericAnimationPlayer
- * 用于 pivot 位置补偿计算
+ * Sync objectDimensions to all GenericAnimationPlayer instances
+ * Used for pivot position compensation calculation
  */
 function syncObjectBoundsToPlayers() {
   sharedSyncObjectBoundsToPlayers(objectDimensions, objectAnimationPlayers)
@@ -1273,8 +1273,8 @@ function evaluateStates(currentInfo: BlockPlayInfo, blockLocalTime: number): Map
   )
   const currentSlotIndex = getSlotIndexAtTime(currentInfo.slots, blockLocalTime)
 
-  // 1) 构建当前 slot 开始前的 base state：
-  //    前置 point action 和已完成 duration action 只结算一次，冻结到 base 中。
+  // 1) Build base state before current slot starts:
+  //    Preceding point actions and completed duration actions are settled once and frozen into base.
   const baseStates = new Map<string, SceneObject>()
   for (const obj of currentInfo.startSnapshot.objects) {
     baseStates.set(obj.id, cloneSceneObject(obj))
@@ -1309,9 +1309,9 @@ function evaluateStates(currentInfo: BlockPlayInfo, blockLocalTime: number): Map
     }
   }
 
-  // 2) 仅应用当前 slot 的 point action：
-  //    姿态类动作先得到当前 slot 的最终画面，set_scene_structure 随后反算 local，
-  //    后续 slot 不会重新按新的 parent 世界矩阵反算。
+  // 2) Apply only current slot's point actions:
+  //    Pose actions first obtain the current slot's final frame, set_scene_structure then back-calculates local,
+  //    subsequent slots will not recompute according to new parent world matrix.
   const pointStates = new Map<string, SceneObject>()
   for (const [id, state] of baseStates) {
     pointStates.set(id, cloneSceneObject(state))
@@ -1339,18 +1339,18 @@ function evaluateStates(currentInfo: BlockPlayInfo, blockLocalTime: number): Map
   )
 
   // 2.5) Clip-Mask Phase 1 — D1.5 mask post-pass
-  //   applyPreviewObjectAction → SetMaskHandler 仅做单 mask 字段折叠，
-  //   缺少跨 mask 独占裁决 / 顺序无关转移 / "无隐式释放" 语义；
-  //   这里在 pointStates 上重跑一次共享 post-pass，保证 ScenePlayer 的实时预览
-  //   与 applyBlockActionsToState 计算的 block 终态一致。
-  //   仅处理 slotIndex <= currentSlotIndex 的 set_mask（已触发的那些）。
+  //   applyPreviewObjectAction -> SetMaskHandler only performs single mask field collapsing,
+  //   lacking cross-mask exclusive arbitration / order-independent transfer / "no implicit release" semantics;
+  //   here we rerun a shared post-pass on pointStates to ensure ScenePlayer's real-time preview
+  //   matches the block end state computed by applyBlockActionsToState.
+  //   Only process set_mask with slotIndex <= currentSlotIndex (those already triggered).
   if (currentSlotIndex !== -1) {
     const setMaskActionsThroughCurrentSlot = orderedBlockActions.filter(
       a => a.type === 'set_mask' && a.slotIndex <= currentSlotIndex,
     )
     if (setMaskActionsThroughCurrentSlot.length > 0) {
-      // 构造 RuntimeSceneSnapshot 兼容外壳；applyMaskPostPass 仅读 prevState.objects、
-      // 写 newState.objects 中 mask 对象的 targetIds / shape。
+      // Construct RuntimeSceneSnapshot compatible wrapper; applyMaskPostPass only reads prevState.objects,
+      // writes targetIds / shape of mask objects into newState.objects.
       const prevSnapshot = {
         ...currentInfo.startSnapshot,
         objects: currentInfo.startSnapshot.objects,
@@ -1361,12 +1361,12 @@ function evaluateStates(currentInfo: BlockPlayInfo, blockLocalTime: number): Map
         objects: newSnapshotObjects,
       }
       applyMaskPostPass(prevSnapshot, newSnapshot, setMaskActionsThroughCurrentSlot)
-      // newSnapshotObjects 元素引用与 pointStates 中相同；mutation 自动同步回 Map。
+      // newSnapshotObjects element references are identical to pointStates; mutations automatically sync back to Map.
     }
   }
 
-  // 3) 在 point state 基础上，仅对当前活跃的 duration action 做时间插值。
-  //    前置 slot 的 point action 不再参与每帧重算。
+  // 3) On the basis of point state, interpolate time only for currently active duration actions.
+  //    Point actions from preceding slots no longer participate in per-frame recomputation.
   const states = new Map<string, SceneObject>()
   for (const objSetup of sortedObjects) {
     const targetId = objSetup.id
@@ -1409,7 +1409,7 @@ function evaluateStates(currentInfo: BlockPlayInfo, blockLocalTime: number): Map
   rebuildCompositeChildIdsInStateMap(states)
   reconcileEntityRenderChainsInStateMap(states)
 
-  // Text reveal actions — 注入 revealProgress
+  // Text reveal actions - inject revealProgress
   for (const [, state] of states) {
     if (state.type !== 'text') continue
     const textState = state as import('@/types/sceneObject').TextObject
@@ -1450,11 +1450,11 @@ function layoutObjects(
 
   const visualCenters = new Map<string, { x: number, y: number }>()
 
-  // P1: blockId 模式下使用 getActiveObjects 包含 Shadow Objects
+  // P1: Use getActiveObjects in blockId mode to include Shadow Objects
   const objectsToLayout = getActiveObjects()
   
-  // P2: 检测 parentId 变化，迁移 PIXI 容器到正确的父级
-  // v20: union/entity 统一挂载到 parentId 对应的容器
+  // P2: Detect parentId change, migrate PIXI container to correct parent
+  // v20: union/entity uniformly mounted to container corresponding to parentId
   for (const objSetup of objectsToLayout) {
     const container = objectContainers.get(objSetup.id)
     if (!container) continue
@@ -1462,10 +1462,10 @@ function layoutObjects(
     if (!state) continue
     
     const newParentId = state.parentId ?? null
-    // 确定目标父容器
-    // P2: 如果目标 parent 是 own 模式 composite（拥有 CRT），
-    // 子容器应添加到 CRT 的 source（渲染子树）而非 outputContainer，
-    // 否则子对象不会被渲染到 RenderTexture 中。
+    // Determine target parent container
+    // P2: If target parent is own mode composite (owns CRT),
+    // child container should be added to CRT source (render subtree) instead of outputContainer,
+    // otherwise child objects will not be rendered into RenderTexture.
     let targetParent: PIXI.Container
     if (!newParentId) {
       targetParent = stage
@@ -1474,7 +1474,7 @@ function layoutObjects(
       targetParent = parentCrt?.getSourceContainer() ?? (objectContainers.get(newParentId) ?? stage)
     }
     
-    // 如果当前父容器不匹配，则迁移
+    // Migrate if current parent container does not match
     if (container.parent !== targetParent) {
       if (container.parent) container.parent.removeChild(container)
       targetParent.addChild(container)
@@ -1489,7 +1489,7 @@ function layoutObjects(
     
     const visualCenter = applyObjectState(container, state, objSetup, states)
     if (visualCenter) visualCenters.set(objSetup.id, visualCenter)
-    // 灯光对象：renderable=false 隐藏渲染，但保留 transform 更新
+    // Light objects: renderable=false hides rendering, but preserves transform updates
     if (objSetup.type === 'light') {
       container.renderable = false
     }
@@ -1497,8 +1497,8 @@ function layoutObjects(
     objectAnimationPlayers.get(objSetup.id)?.cacheBaseTransform()
   }
 
-  // P2: 将子对象的本地坐标 visual center 转换为场景世界坐标
-  // applyObjectState 返回的是父容器本地坐标，camera_follow 需要世界坐标
+  // P2: Convert child object local visual center to scene world coordinates
+  // applyObjectState returns parent container local coordinates, camera_follow requires world coordinates
   if (contentViewport) {
     contentViewport.updateTransform()
     for (const objSetup of objectsToLayout) {
@@ -1518,8 +1518,8 @@ function layoutObjects(
     }
   }
 
-  // v23: 为根级 stage 安装/更新 renderChain 驱动的渲染逻辑
-  // 每帧使用最新的 activeRenderChain（包含运行时 zIndex）
+  // v23: Install/update renderChain-driven rendering logic for root stage
+  // Use latest activeRenderChain every frame (including runtime zIndex)
   const activeRenderChain = reconcileRenderChain(
     renderChain ?? sceneSetup?.renderChain ?? [],
     [...states.values()],
@@ -1535,9 +1535,9 @@ function layoutObjects(
       (id) => objectContainers.get(id),
     )
   }
-  // 关键：entity 内部排序必须基于当前帧 runtime 状态（set_scene_structure/set_lifecycle 已修改 parentId/childIds）
+  // Crucial: entity internal sorting must be based on current frame runtime state (set_scene_structure/set_lifecycle modified parentId/childIds)
   const runtimeObjectsToSort = objectsToLayout.map(obj => states.get(obj.id) ?? obj)
-  // 递归排序 entity composite 内部 renderChain
+  // Recursively sort entity composite internal renderChain
   sharedSortCompositeContainers(runtimeObjectsToSort, objectContainers, compositeRenderTargets,
     (id) => states.get(id)?.zIndex ?? objectsToLayout.find(o => o.id === id)?.zIndex ?? 0,
   )
@@ -1617,10 +1617,10 @@ function projectContainerLocalPointToScene(
 }
 
 /**
- * 方案B: 统一首帧 BBox 偏移量锁定
- * 对每个 camera_follow action 的跟随目标，首帧计算 BBox 中心与 pivot 中心的偏差并缓存，
- * 后续帧使用缓存偏移量 + 实时 pivot 位置，确保跟随点稳定不跳动。
- * 对简单对象 offset ≈ 0（等价于原 pivot 行为），对 composite 修正了视觉中心偏移。
+ * Solution B: Unified first-frame BBox offset locking
+ * For follow target of each camera_follow action, compute deviation between BBox center and pivot center on first frame and cache it,
+ * subsequent frames use cached offset + real-time pivot position to ensure follow point is stable without jumping.
+ * For simple objects offset ≈ 0 (equivalent to original pivot behavior); for composites it corrects visual center offset.
  */
 function computeFollowVisualCenters(
   pivotCenters: Map<string, { x: number, y: number }>,
@@ -1642,7 +1642,7 @@ function computeFollowVisualCenters(
     const pivotCenter = pivotCenters.get(followTarget)
     if (!pivotCenter) continue
 
-    // 检查缓存：已有首帧偏移量则直接使用
+    // Check cache: use directly if first-frame offset exists
     if (followBBoxOffsets.has(action.id)) {
       const offset = followBBoxOffsets.get(action.id)!
       result.set(followTarget, {
@@ -1652,7 +1652,7 @@ function computeFollowVisualCenters(
       continue
     }
 
-    // 首帧：从 PIXI 容器计算 BBox 中心偏移量
+    // First frame: compute BBox center offset from PIXI container
     const container = objectContainers.get(followTarget)
     if (!container) continue
 
@@ -1673,10 +1673,10 @@ function computeFollowVisualCenters(
     const dx = bboxSceneCenter.x - pivotCenter.x
     const dy = bboxSceneCenter.y - pivotCenter.y
 
-    // 缓存偏移量
+    // Cache offset
     followBBoxOffsets.set(action.id, { dx, dy })
 
-    // 应用偏移
+    // Apply offset
     result.set(followTarget, {
       x: pivotCenter.x + dx,
       y: pivotCenter.y + dy,
@@ -1686,7 +1686,7 @@ function computeFollowVisualCenters(
   return result
 }
 
-// P0: 委托给统一渲染器
+// P0: Delegate to unified renderer
 function applyObjectState(
   container: PIXI.Container,
   state: SceneObject,
@@ -1695,7 +1695,7 @@ function applyObjectState(
 ): { x: number, y: number } | null {
   const result = sceneObjectRenderer.applyObjectState(container, state, objSetup, objectStateHost)
 
-  // v20: union 子对象在容器内（真实 PIXI 父子关系），变换自动传播，无需 applyUnionProxyChain
+  // v20: union child objects are inside container (real PIXI parent-child relationship), transforms propagate automatically, no applyUnionProxyChain needed
 
   return result
 }
@@ -1763,8 +1763,8 @@ function applyAnimationControl(currentInfo: BlockPlayInfo, currentTime: number) 
 }
 
 /**
- * v11.88: Block 结束时自动停止动画
- * 遍历该 Block 的所有 set_anim actions，对 autoStopOnBlockEnd !== false 的动画执行停止
+ * v11.88: Automatically stop animations at Block end
+ * Traverse all set_anim actions of this Block, execute stop on animations with autoStopOnBlockEnd !== false
  */
 function applyAutoStopOnBlockEnd(prevBlockInfo: BlockPlayInfo): void {
     animationController.processAutoStopOnBlockEnd(prevBlockInfo.blockActions)
@@ -1777,7 +1777,7 @@ function updateAudio(currentInfo: BlockPlayInfo, blockLocalTime: number, states:
     for (const objSetup of sceneSetup.objects) {
         if (objSetup.type !== 'audio') continue
 
-        // 检查生命周期：如果对象已消亡，停止其音频并跳过
+        // Check lifecycle: if object has despawned, stop its audio and skip
         const objState = states.get(objSetup.id)
         if (objState?.spawned === false) {
             const instance = audioInstances.get(objSetup.id)
@@ -1791,23 +1791,23 @@ function updateAudio(currentInfo: BlockPlayInfo, blockLocalTime: number, states:
         }
 
         if (pendingAudioPlays.has(objSetup.id)) {
-            // 计算当前应有的 audioState 以检测 playTime 是否已切换
+            // Compute expected current audioState to detect if playTime has switched
             const pendingPlayTime = pendingAudioPlayTimes.get(objSetup.id)
             const peekState = computeAudioState(objSetup, blockPlayInfos.value, currentAbsTime, 0)
             if (peekState.shouldPlay && pendingPlayTime === peekState.playTime) {
-                continue  // 同一个 play action，等待 pending 完成
+                continue  // Same play action, wait for pending to finish
             }
-            // playTime 已切换或不再需要播放，废弃在途的 pending play
-            // 注意：这里不能递增全局 audioPlayGeneration，否则会误杀其他对象的在途加载
-            // 利用 audioInstancePlayTimes 做 per-object 失效：下方新建 play 会写入新 playTime，
-            // 旧 .then() 回调通过 capturedPlayTime 比对自动丢弃
+            // playTime switched or no longer needs to play, discard in-flight pending play
+            // Note: Cannot increment global audioPlayGeneration here, otherwise in-flight loads of other objects would be killed
+            // Use audioInstancePlayTimes for per-object invalidation: new play below writes new playTime,
+            // old .then() callback is automatically discarded via capturedPlayTime comparison
             pendingAudioPlays.delete(objSetup.id)
             pendingAudioPlayTimes.delete(objSetup.id)
             audioInstancePlayTimes.delete(objSetup.id)
-            // 继续执行下方逻辑
+            // Continue executing logic below
         }
         
-        // PA: 使用 computeAudioState 纯函数计算音频状态
+        // PA: Compute audio state using computeAudioState pure function
         let instance = audioInstances.get(objSetup.id)
         const audioDurationSec = instance?.duration ?? 0
         const audioState = computeAudioState(
@@ -1822,16 +1822,16 @@ function updateAudio(currentInfo: BlockPlayInfo, blockLocalTime: number, states:
         
         if (!isPlaying.value) if (shouldPlay) shouldPlay = false
 
-        // 检测 playTime 是否已切换（新的 play action 生效），如果是则停止旧实例
+        // Detect if playTime has switched (new play action effective), if so stop old instance
         if (shouldPlay && instance?.isPlaying) {
             const cachedPlayTime = audioInstancePlayTimes.get(objSetup.id)
             if (cachedPlayTime !== playTime) {
-                // 旧实例对应的 play action 已过期，停止并清除
+                // Play action corresponding to old instance expired, stop and clear
                 instance.stop()
                 audioInstances.delete(objSetup.id)
                 audioInstancePlayTimes.delete(objSetup.id)
                 audioStopping.delete(objSetup.id)
-                instance = undefined  // 让下方逻辑走新建分支
+                instance = undefined  // Let logic below take creation branch
             }
         }
 
@@ -1854,7 +1854,7 @@ function updateAudio(currentInfo: BlockPlayInfo, blockLocalTime: number, states:
                 }
                 
                 const currentGeneration = audioPlayGeneration.value
-                const capturedPlayTime = playTime  // per-object 失效令牌
+                const capturedPlayTime = playTime  // per-object invalidation token
                 pendingAudioPlays.add(objSetup.id)
                 pendingAudioPlayTimes.set(objSetup.id, playTime)
                 audioInstancePlayTimes.set(objSetup.id, playTime)
@@ -1864,13 +1864,13 @@ function updateAudio(currentInfo: BlockPlayInfo, blockLocalTime: number, states:
                     pendingAudioPlays.delete(objSetup.id)
                     pendingAudioPlayTimes.delete(objSetup.id)
 
-                    // 全局失效化：Seek/Stop 期间发起的请求一律丢弃
+                    // Global invalidation: requests initiated during Seek/Stop are discarded
                     if (currentGeneration !== audioPlayGeneration.value) {
                         inst?.stop()
                         return
                     }
 
-                    // per-object 失效化：另一个 play action 已替代本次请求
+                    // Per-object invalidation: another play action has replaced this request
                     if (audioInstancePlayTimes.get(objSetup.id) !== capturedPlayTime) {
                         inst?.stop()
                         return
@@ -1922,10 +1922,10 @@ function updateAudio(currentInfo: BlockPlayInfo, blockLocalTime: number, states:
 
 
 /**
- * 加载并解码音频 (已移除，ScenePlayer不负责加载)
+ * Load and decode audio (Removed, ScenePlayer is not responsible for loading)
  */
 // async function loadAndDecodeAudio(path: string) {
-//   // 1. 加载 Blob URL
+//   // 1. Load Blob URL
 //   await loadAudioUrl(path)
 //   const blobUrl = getAudioUrl(path)
 //   
@@ -1939,8 +1939,8 @@ function updateAudio(currentInfo: BlockPlayInfo, blockLocalTime: number, states:
 // }
 
 /**
- * 更新当前帧（主循环入口）
- * 遵循 5 阶段渲染管线：
+ * Update current frame (main loop entry)
+ * Follow 5-stage render pipeline:
  * ```mermaid
  * graph TD
  *     A[Start Frame] --> B[Phase 1: Sync Resources]
@@ -1960,7 +1960,7 @@ function updateFrame(time: number, options: { updateAudio?: boolean } = {}) {
     throw new Error('[ScenePlayer] updateFrame aborted: blockPlayInfos is empty')
   }
   
-  // 找到当前播放的 block
+  // Find currently playing block
   let currentInfo: BlockPlayInfo | null = null
   let blockLocalTime = 0
   
@@ -1981,54 +1981,54 @@ function updateFrame(time: number, options: { updateAudio?: boolean } = {}) {
   }
   
   if (!currentInfo) {
-    throw new Error(`[ScenePlayer] 无法找到当前时间对应的 Block 信息 (Time: ${time})`)
+    throw new Error(`[ScenePlayer] Failed to find valid block information (Time: ${time})`)
   }
   
-  // 检测 Block 切换
+  // Detect Block switch
   if (currentBlockIndex.value !== previousBlockIndex) {
-    // v11.88: 处理 autoStopOnBlockEnd - 停止上一个 Block 中需要自动停止的动画
+    // v11.88: Handle autoStopOnBlockEnd - stop animations from previous Block that need to auto-stop
     if (previousBlockIndex >= 0 && previousBlockIndex < blockPlayInfos.value.length) {
       const prevBlockInfo = blockPlayInfos.value[previousBlockIndex]
       if (prevBlockInfo) {
         applyAutoStopOnBlockEnd(prevBlockInfo)
       }
     }
-    // v11.88: Block 切换时清空动画触发状态，确保新 Block 中的动画能够正常触发
+    // v11.88: Clear animation trigger state on Block switch to ensure animations in new Block trigger normally
     triggeredAnimations.clear()
     followBBoxOffsets.clear()
     previousBlockIndex = currentBlockIndex.value
   }
   
-  // 更新字幕
+  // Update subtitles
   updateSubtitle(currentInfo, blockLocalTime)
   
-  // Phase 1: 资源同步 (已在 loadScene/renderInitialFrame 中完成，updateFrame 不重复执行)
-  // v11.66: 与 ActionPreviewDialog 保持一致
+  // Phase 1: Resource sync (Completed in loadScene/renderInitialFrame, not repeated in updateFrame)
+  // v11.66: Keep consistent with ActionPreviewDialog
   // syncResources()
   
-  // Phase 2: 实时测量 (已移至初始化阶段，不再每帧执行，确保位置锚点稳定)
+  // Phase 2: Real-time measurement (Moved to initialization phase, no longer executed per-frame, ensures stable position anchors)
   // measureObjects()
   
-  // Phase 3: 评估状态
+  // Phase 3: Evaluate state
   const states = evaluateStates(currentInfo, blockLocalTime)
   
-  // Phase 4: 布局对象
-  // v22: 从 snapshot 读取 renderChain
+  // Phase 4: Layout objects
+  // v22: Read renderChain from snapshot
   const pivotCenters = layoutObjects(states, currentInfo.startSnapshot.renderChain)
 
-  // Phase 4.5: 刚变为可见的对象立即补启动延迟的初始动画，
-  // 避免等到后续 set_anim 处理阶段才进入播放态。
+  // Phase 4.5: Objects that just became visible immediately trigger delayed initial animations,
+  // avoiding waiting until subsequent set_anim processing stage to enter playing state.
   animationController.syncDeferredInitialAnimations()
 
-  // Phase 5: 音频更新
+  // Phase 5: Audio update
   if (shouldUpdateAudio) {
     updateAudio(currentInfo, blockLocalTime, states)
   }
 
-  // Phase 6: 动画控制 (处理 set_anim 动作)
+  // Phase 6: Animation control (handle set_anim actions)
   applyAnimationControl(currentInfo, blockLocalTime)
 
-  // Phase 7: 更新动画 Player (v11.60)
+  // Phase 7: Update animation Player (v11.60)
   const deltaTime = isPlaying.value
     ? (lastAnimationUpdateTime === null ? 16.67 : Math.min(50, Math.max(0, time - lastAnimationUpdateTime)))
     : 0
@@ -2038,23 +2038,23 @@ function updateFrame(time: number, options: { updateAudio?: boolean } = {}) {
 
   objectAnimationPlayers.forEach(player => player.update(deltaTime))
 
-  // Phase 7.5: 手动推进所有 AnimatedSprite 帧索引
-  // 替代 PIXI Ticker 自动更新，确保出生帧同帧播放
+  // Phase 7.5: Manually advance all AnimatedSprite frame indices
+  // Replaces PIXI Ticker auto-update to ensure spawn frame plays on the same frame
   advanceAllObjectAnimations(objectContainers, deltaTime, spriteAnimTimeAccumulator)
 
-  // v20: union 子对象在容器内，动画变换自动传播，无需 sharedPropagateUnionAnimations
+  // v20: union child objects are inside container, animation transforms propagate automatically, no sharedPropagateUnionAnimations needed
 
-  // P2: 更新 composite own 模式的离屏渲染纹理（必须在 player.update 之后、renderer.render 之前）
+  // P2: Update offscreen render texture for composite own mode (must be after player.update and before renderer.render)
   updateCompositeRenderTargetsInOrder(compositeRenderTargets, [...states.values()])
 
-  // 方案B: 统一通过首帧 BBox 偏移量计算稳定的跟随点
+  // Solution B: Compute stable follow point uniformly via first-frame BBox offset
   const followCenters = computeFollowVisualCenters(pivotCenters, currentInfo.blockActions, states)
 
-  // Phase 8: 相机更新
+  // Phase 8: Camera update
   updateCamera(currentInfo, blockLocalTime, followCenters, deltaTime)
 
-  // Phase 9: 光照滤镜
-  // updateTransform 确保 worldTransform 是最新的，toGlobal 给出精确屏幕坐标
+  // Phase 9: Lighting filter
+  // updateTransform ensures worldTransform is up to date, toGlobal yields accurate screen coordinates
   if (stage && contentViewport) {
     contentViewport.updateTransform()
     applyLightingFilter(
@@ -2071,12 +2071,12 @@ function updateFrame(time: number, options: { updateAudio?: boolean } = {}) {
     )
   }
 
-  // Clip-Mask Phase 1：在 render 之前更新 worldTransform 并应用所有蒙版
+  // Clip-Mask Phase 1: Update worldTransform and apply all masks before render
   applyMasksBeforeRender([...states.values()])
 
-  // Phase 10: 手动渲染
-  // 禁用 PIXI Ticker 自动渲染后，由 updateFrame 末尾同步 render，
-  // 确保状态更新和渲染在同一调用栈内完成（与 FrameCapture 一致）
+  // Phase 10: Manual render
+  // After disabling PIXI Ticker auto-rendering, synchronously render at end of updateFrame,
+  // ensuring state update and rendering complete in same call stack (consistent with FrameCapture)
   if (pixiApp) {
     pixiApp.renderer.render(pixiApp.stage)
   }
@@ -2093,10 +2093,10 @@ function renderCurrentFrameWithoutAudio(): void {
 }
 
 /**
- * 停止所有音频
+ * Stop all audio
  */
 function stopAllAudio() {
-  // 增加 generation，使得正在路上的 BGM/SFX play 请求失效
+  // Increment generation to invalidate in-flight BGM/SFX play requests
   audioPlayGeneration.value++
 
   // Stop all tracked instances
@@ -2125,21 +2125,21 @@ function stopAllAudio() {
 }
 
 /**
- * 开始播放
+ * Start playback
  */
 async function play() {
   if (isPlaying.value) {
     return
   }
   
-  // 确保 AudioContext 已激活
+  // Ensure AudioContext is active
   await audioKit.init()
 
   if (blockPlayInfos.value.length === 0) {
     return
   }
   
-  // 如果已经播放完，重置
+  // If playback already finished, reset
   if (currentTime.value >= totalDuration.value) {
     currentTime.value = 0
   }
@@ -2148,18 +2148,18 @@ async function play() {
   emit('play-state-change', true)
   lastAnimationUpdateTime = currentTime.value
   
-  // 先尝试播放音频，等待音频就绪后再启动动画时间轴
+  // First attempt audio playback, start animation timeline after audio is ready
   await playCurrentBlockAudio()
   
   playStartTime = performance.now()
   playStartOffset = currentTime.value
   
-  // 启动动画循环
+  // Start animation loop
   startPlaybackLoop()
 }
 
 /**
- * 暂停
+ * Pause
  */
 function pause() {
   if (!isPlaying.value) return
@@ -2179,7 +2179,7 @@ function pause() {
 }
 
 /**
- * 重置
+ * Reset
  */
 function reset() {
   isPlaying.value = false
@@ -2196,10 +2196,10 @@ function reset() {
   
   stopCurrentAudio()
   
-  // 停止所有音频
+  // Stop all audio
   stopAllAudio()
   
-  // 不要挂起 AudioContext，否则再次播放时无声
+  // Do not suspend AudioContext, otherwise subsequent playback will be silent
   // const ctx = audioKit.getContext()
   // if (ctx) {
   //   await ctx.suspend()
@@ -2209,13 +2209,13 @@ function reset() {
   lastFollowPosition = null
   lastEvaluatedCameraState = null
   followBBoxOffsets.clear()
-  triggeredAnimations.clear()  // v11.60: 重置时清空动画触发状态
+  triggeredAnimations.clear()  // v11.60: Clear animation trigger state on reset
   // v11.66: resetSceneToSetup is now async, use void to avoid blocking
   void resetSceneToSetup()
 }
 
 /**
- * 跳转时间
+ * Seek time
  */
 async function seek(time: number) {
   currentTime.value = time
@@ -2227,18 +2227,18 @@ async function seek(time: number) {
   })
   trackedAudioInstances.clear()
   
-  // 停止所有音效
+  // Stop all sound effects
   stopAllAudio()
   
-  // 如果正在播放，重新同步
+  // If playing, resync
   if (isPlaying.value) {
     playStartTime = performance.now()
     playStartOffset = currentTime.value
     lastAnimationUpdateTime = currentTime.value
-    // 重新播放当前 Block 的音频
+    // Replay audio for current Block
     await playCurrentBlockAudio()
   } else {
-    // 如果暂停状态，仅更新画面
+    // If paused, update visual only
     try {
         updateFrame(time)
     } catch(e) {
@@ -2248,7 +2248,7 @@ async function seek(time: number) {
 }
 
 /**
- * 播放动画循环
+ * Animation playback loop
  */
 function startPlaybackLoop() {
   let lastBlockIndex = -1
@@ -2289,7 +2289,7 @@ function startPlaybackLoop() {
     currentTime.value = newTime
     emit('progress', currentTime.value, totalDuration.value)
     
-    // 检查是否切换到新的 block
+    // Check if switched to a new block
     const currentInfo = blockPlayInfos.value.find(
       i => newTime >= i.startTime && newTime < i.endTime
     )
@@ -2297,7 +2297,7 @@ function startPlaybackLoop() {
       const newBlockIndex = blockPlayInfos.value.indexOf(currentInfo)
       if (newBlockIndex !== lastBlockIndex) {
         lastBlockIndex = newBlockIndex
-        // 切换到新 block，播放新的音频
+        // Switched to new block, play new audio
         void playCurrentBlockAudio()
       }
     }
@@ -2315,7 +2315,7 @@ function startPlaybackLoop() {
 }
 
 /**
- * 播放当前 block 的音频
+ * Play current block audio
  */
 async function playCurrentBlockAudio() {
   audioPlayRequestId.value++
@@ -2338,13 +2338,13 @@ async function playCurrentBlockAudio() {
   try {
     const audioUrl = await resolvePlayableAudioUrl(info.audioUrl)
     if (!audioUrl) {
-      console.warn('[ScenePlayer] 无法解析音频路径:', info.audioUrl)
+      console.warn('[ScenePlayer] Unable to resolve audio path:', info.audioUrl)
       return
     }
 
     if (currentRequestId !== audioPlayRequestId.value) return
 
-    // 使用 AudioKit 播放
+    // Play with AudioKit
     const localTime = currentTime.value - info.startTime
     const startOffset = Math.max(0, localTime / 1000)
     
@@ -2365,19 +2365,19 @@ async function playCurrentBlockAudio() {
     
     if (instance) {
         trackedAudioInstances.add(instance)
-        // 监听结束以清理？AudioKit 实例会自动停止。
-        // 但我们需要 track 它以便 seek/pause 时停止。
+        // Listen for end to clean up? AudioKit instance stops automatically.
+        // But we need to track it so seek/pause can stop it.
     }
 
   } catch (err: unknown) {
     if ((err as Error).name !== 'AbortError') {
-      console.warn('[ScenePlayer] 音频播放失败:', err)
+      console.warn('[ScenePlayer] Audio playback failed:', err)
     }
   }
 }
 
 /**
- * 安全停止当前音频
+ * Safely stop current audio
  */
 function stopCurrentAudio() {
   trackedAudioInstances.forEach(inst => {
@@ -2387,13 +2387,13 @@ function stopCurrentAudio() {
 }
 
 /**
- * 将场景重置为 Setup 状态
- * v11.66: 改为 async，与 renderInitialFrame 流程一致
+ * Reset scene to Setup state
+ * v11.66: Changed to async, matching renderInitialFrame pipeline
  */
 async function resetSceneToSetup() {
   if (!sceneSetup) return
 
-  // v11.60: 重置动画触发状态
+  // v11.60: Reset animation trigger state
   triggeredAnimations.clear()
   objectDimensions.clear()
 
@@ -2402,17 +2402,17 @@ async function resetSceneToSetup() {
   
 
   
-  // 应用初始动画状态（在测量之前）
+  // Apply initial animation state (before measurement)
   applyInitialAnimationStates()
   
-  // P1: blockId 模式下重播跨 Block 持续播放的动画
+  // P1: Replay cross-block animations in blockId mode
   replayCarriedOverAnimations()
   
-  // 测量（现在角色状态已确定）
+  // Measure (character state is now determined)
   measureObjects()
   syncObjectBoundsToPlayers()
 
-  // P1: 使用 getActiveObjects 遍历对象
+  // P1: Traverse objects using getActiveObjects
   const objectsToApply = getActiveObjects()
   const states = new Map<string, SceneObject>()
 
@@ -2421,19 +2421,19 @@ async function resetSceneToSetup() {
     states.set(objSetup.id, getInitialObjectState(objSetup))
   }
 
-  // Phase 4: 布局对象 (与 updateFrame 完全一致的逻辑，包含 parent 迁移和排序)
-  // v22: 传入场景 setup 的 renderChain
+  // Phase 4: Layout objects (identical logic to updateFrame, including parent migration and sorting)
+  // v22: Pass scene setup renderChain
   layoutObjects(states, sceneSetup.renderChain)
 
   applyCameraTransform(getDefaultCameraState())
 
-  // P2: 更新 composite own 模式的离屏渲染纹理
+  // P2: Update offscreen render texture for composite own mode
   updateCompositeRenderTargetsInOrder(compositeRenderTargets, [...states.values()])
 
-  // Clip-Mask Phase 1：在 render 之前更新 worldTransform 并应用所有蒙版
+  // Clip-Mask Phase 1: Update worldTransform and apply all masks before render
   applyMasksBeforeRender([...states.values()])
 
-  // 手动渲染（Ticker 已禁用）
+  // Manual render (Ticker is disabled)
   if (pixiApp) {
     pixiApp.renderer.render(pixiApp.stage)
   }
@@ -2447,20 +2447,20 @@ function cleanup() {
     animationFrame = null
   }
 
-  // P2: 先清理离屏渲染目标（在 Player 之前，因为 Player.destroy 会还原容器层级）
+  // P2: Clean up offscreen render targets first (before Player, since Player.destroy restores container hierarchy)
   compositeRenderTargets.forEach(crt => crt.destroy())
   compositeRenderTargets.clear()
 
-  // Clip-Mask Phase 1：清理蒙版渲染资源（必须在容器销毁之前）
+  // Clip-Mask Phase 1: Clean up mask render resources (must be before container destruction)
   disposeMaskRendererResources(maskRendererResources)
 
-  // v11.60: 清理动画 Player（它们需要访问容器来移除滤镜）
+  // v11.60: Clean up animation Players (they need access to containers to remove filters)
   objectAnimationPlayers.forEach(player => player.destroy())
   objectAnimationPlayers.clear()
   triggeredAnimations.clear()
   followBBoxOffsets.clear()
 
-  // 再清理其他资源
+  // Clean up remaining resources
   if (pixiApp) {
     pixiApp.stop() // Stop ticker before destroy
     pixiApp.destroy(true, { children: true, texture: false, baseTexture: false })
@@ -2494,7 +2494,7 @@ onBeforeUnmount(() => {
 })
 
 watch(() => props.sceneId, () => {
-    // 切换场景时，只重置状态并加载新场景，不销毁 PIXI App
+    // When switching scenes, only reset state and load new scene without destroying PIXI App
     isPlaying.value = false
     currentTime.value = 0
     currentBlockIndex.value = -1
@@ -2503,7 +2503,7 @@ watch(() => props.sceneId, () => {
       cancelAnimationFrame(animationFrame)
       animationFrame = null
     }
-    // 异步切换
+    // Async switch
     void loadScene()
 })
 

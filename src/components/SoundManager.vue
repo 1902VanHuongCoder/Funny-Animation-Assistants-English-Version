@@ -4,7 +4,7 @@
     <div class="toolbar">
       <div class="toolbar-left">
         <h2 class="page-title">
-          音效库
+          Audio Library
         </h2>
         
         <div class="filter-controls">
@@ -13,7 +13,7 @@
             :class="{ active: selectedTags.length > 0 }"
             @click="showFilterModal = true"
           >
-            筛选 <span v-if="selectedTags.length > 0">({{ selectedTags.length }})</span>
+            Filter <span v-if="selectedTags.length > 0">({{ selectedTags.length }})</span>
             <span class="icon">▼</span>
           </button>
         </div>
@@ -24,21 +24,21 @@
             :class="{ active: currentType === 'all' }"
             @click="currentType = 'all'"
           >
-            全部
+            All
           </button>
           <button 
             class="btn-filter-type" 
             :class="{ active: currentType === 'bgm' }"
             @click="currentType = 'bgm'"
           >
-            背景音乐
+            Music
           </button>
           <button 
             class="btn-filter-type" 
             :class="{ active: currentType === 'sfx' }"
             @click="currentType = 'sfx'"
           >
-            音效
+            Sound Effect
           </button>
         </div>
       </div>
@@ -50,10 +50,10 @@
             class="sort-select"
           >
             <option value="newest">
-              📅 最新创建
+              📅 Newest
             </option>
             <option value="oldest">
-              📅 最早创建
+              📅 Oldest
             </option>
           </select>
         </div>
@@ -62,7 +62,7 @@
           <input 
             v-model="searchKeyword" 
             type="text" 
-            placeholder="搜索音效..." 
+            placeholder="Search audio..." 
             class="search-input"
           >
         </div>
@@ -71,7 +71,7 @@
           class="btn-batch"
           @click="toggleBatchMode"
         >
-          {{ isBatchMode ? '退出批量' : '⚙️ 批量管理' }}
+          {{ isBatchMode ? 'Exit Batch' : '⚙️ Batch Manage' }}
         </button>
 
         <template v-if="isBatchMode">
@@ -79,26 +79,26 @@
             class="btn-secondary"
             @click="selectAll"
           >
-            全选
+            Select All
           </button>
           <button
             class="btn-secondary"
             @click="deselectAll"
           >
-            全不选
+            Deselect All
           </button>
           <button
             class="btn-secondary"
             @click="invertSelection"
           >
-            反向选择
+            Invert Selection
           </button>
           <button
             class="btn-delete-batch"
             :disabled="selectedIds.size === 0"
             @click="batchDelete"
           >
-            删除 ({{ selectedIds.size }})
+            Delete ({{ selectedIds.size }})
           </button>
         </template>
 
@@ -107,14 +107,14 @@
           class="btn-create"
           @click="openEditor()"
         >
-          + 新建音效
+          + New Audio
         </button>
         <button
           v-if="!isBatchMode"
           class="btn-import"
           @click="showImportDialog = true"
         >
-          📁 导入音效
+          📁 Import Audio
         </button>
       </div>
     </div>
@@ -125,9 +125,9 @@
         v-if="filteredSounds.length === 0"
         class="empty-state"
       >
-        <p>📭 暂无音效数据</p>
+        <p>📭 No audio data yet</p>
         <p class="hint">
-          点击"新建音效"开始创建
+          Click "New Audio" to get started
         </p>
       </div>
       
@@ -201,12 +201,14 @@
               >
                 <button
                   class="btn-icon"
+                  title="Edit"
                   @click.stop="openEditor(sound.id)"
                 >
                   ✏️
                 </button>
                 <button
                   class="btn-icon danger"
+                  title="Delete"
                   @click.stop="handleDelete(sound.id)"
                 >
                   🗑️
@@ -229,7 +231,7 @@
       </div>
     </div>
 
-    <!-- 标签筛选对话框 -->
+    <!-- Tag filter dialog -->
     <TagSelectDialog
       v-model:visible="showFilterModal"
       :available-tags="soundStore.allTags"
@@ -252,12 +254,12 @@
       @imported="handleImported"
     />
 
-    <!-- 删除确认对话框 -->
+    <!-- Delete confirmation dialog -->
     <ConfirmDialog
       v-if="showDeleteConfirm"
-      title="删除确认"
+      title="Delete Confirmation"
       :message="deleteConfirmMessage"
-      confirm-text="删除"
+      confirm-text="Delete"
       :is-danger="true"
       @confirm="confirmDelete"
       @cancel="showDeleteConfirm = false"
@@ -302,7 +304,7 @@ const editorVisible = ref(false)
 const editingSoundId = ref<string | undefined>(undefined)
 const showImportDialog = ref(false)
 
-// 删除确认对话框
+// Delete confirmation dialog
 const showDeleteConfirm = ref(false)
 const pendingDeleteIds = ref<string[]>([])
 const deleteConfirmMessage = ref('')
@@ -324,7 +326,7 @@ const filteredSounds = computed(() => {
     result = result.filter(s => s.type === currentType.value)
   }
 
-  // 2. 多标签筛选：匹配任一选中标签
+  // 2. Tag filter: Match any selected tag
   if (selectedTags.value.length > 0) {
     result = result.filter(s => s.tags?.some(t => selectedTags.value.includes(t)))
   }
@@ -365,12 +367,12 @@ function handleSaved() {
 }
 
 function handleImported(count: number) {
-  console.log(`[SoundManager] 成功导入 ${count} 个音效`)
+  console.log(`[SoundManager] Successfully imported ${count} sounds`)
 }
 
 function handleDelete(id: string) {
   pendingDeleteIds.value = [id]
-  deleteConfirmMessage.value = '确定要删除这个音效吗？'
+  deleteConfirmMessage.value = 'Are you sure you want to delete this audio asset?'
   showDeleteConfirm.value = true
 }
 
@@ -388,12 +390,12 @@ async function togglePlay(id: string) {
   
   let url = sound._runtimeUrl
   if (!url) {
-    // 异步加载音频文件，确保 blob URL 就绪后再播放
+    // Asynchronously load audio file, ensure blob URL is ready before playing
     await loadImageUrl(sound.url)
     url = getImageUrl(sound.url)
-    // 如果仍然是占位符或空，说明加载失败
+    // If still placeholder or empty, loading failed
     if (!url || url.startsWith('data:image/')) {
-      console.warn('[SoundManager] 音频文件加载失败:', sound.url)
+      console.warn('[SoundManager] Audio file failed to load:', sound.url)
       return
     }
   }
@@ -447,7 +449,7 @@ function toggleSelect(id: string) {
 
 function batchDelete() {
   pendingDeleteIds.value = Array.from(selectedIds.value)
-  deleteConfirmMessage.value = `确定要删除选中的 ${selectedIds.value.size} 个音效吗？`
+  deleteConfirmMessage.value = `Are you sure you want to delete the selected ${selectedIds.value.size} sounds?`
   showDeleteConfirm.value = true
 }
 
@@ -457,13 +459,13 @@ function confirmDelete() {
     soundStore.deleteSound(id)
   })
   
-  // 如果是批量删除，清理批量状态
+  // If batch delete, reset batch mode
   if (pendingDeleteIds.value.length > 1) {
     selectedIds.value.clear()
     isBatchMode.value = false
   }
   
-  // 重置删除相关状态
+  // Reset delete state
   pendingDeleteIds.value = []
   showDeleteConfirm.value = false
 }

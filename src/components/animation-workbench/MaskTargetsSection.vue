@@ -17,25 +17,25 @@
         <circle cx="12" cy="12" r="5" />
         <circle cx="12" cy="12" r="1.6" fill="currentColor" />
       </svg>
-      <span>裁切目标</span>
+      <span>Clipping Targets</span>
       <span v-if="mask.targetIds.length > 0" class="target-count">
         {{ mask.targetIds.length }}
       </span>
     </h4>
 
-    <!-- 已选目标列表 -->
+    <!-- Selected targets list -->
     <div v-if="mask.targetIds.length === 0" class="empty-hint">
-      尚未指定任何目标，请从下方选择对象
+      No targets specified yet, please select objects below
     </div>
     <ul v-else class="target-list">
       <template v-for="targetId in mask.targetIds" :key="targetId">
-        <!-- 目标根行 -->
+        <!-- Target root row -->
         <li class="target-row">
           <button
             v-if="hasChildren(targetId)"
             type="button"
             class="tree-toggle-btn"
-            :title="isExpanded(targetId) ? '折叠' : '展开'"
+            :title="isExpanded(targetId) ? 'Collapse' : 'Expand'"
             @click="toggleExpand(targetId)"
           >
             {{ isExpanded(targetId) ? '▼' : '▶' }}
@@ -49,8 +49,8 @@
           <button
             type="button"
             class="remove-btn"
-            title="移除目标"
-            aria-label="移除目标"
+            title="Remove target"
+            aria-label="Remove target"
             @click="removeTarget(targetId)"
           >
             <svg
@@ -69,7 +69,7 @@
           </button>
         </li>
 
-        <!-- 子对象（仅展开后显示） -->
+        <!-- Child objects (shown only when expanded) -->
         <template v-if="isExpanded(targetId)">
           <li
             v-for="child in getDescendants(targetId)"
@@ -87,7 +87,7 @@
       </template>
     </ul>
 
-    <!-- 添加目标：树形下拉，支持组合对象折叠/展开 -->
+    <!-- Add target: tree dropdown, supports composite object collapse/expand -->
     <div class="add-row">
       <div class="tree-picker">
         <button
@@ -97,7 +97,7 @@
           @click="togglePicker"
         >
           <span class="trigger-plus">＋</span>
-          <span>{{ candidateTargets.length === 0 ? '暂无可选对象' : '添加目标…' }}</span>
+          <span>{{ candidateTargets.length === 0 ? 'No available objects' : 'Add Target…' }}</span>
           <span class="trigger-arrow">{{ pickerOpen ? '▲' : '▼' }}</span>
         </button>
         <div v-if="pickerOpen" class="tree-picker-menu">
@@ -112,7 +112,7 @@
             <span
               v-if="row.hasChildren"
               class="picker-toggle"
-              title="展开/折叠"
+              title="Expand/Collapse"
               @click.stop="togglePickerExpand(row.obj.id)"
             >
               {{ pickerExpandedIds.has(row.obj.id) ? '▼' : '▶' }}

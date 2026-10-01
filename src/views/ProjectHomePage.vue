@@ -1,26 +1,26 @@
 <template>
   <div class="project-home-page">
-    <!-- A. 项目已打开: 显示 Studio 界面 -->
+    <!-- A. Project open: Show Studio interface -->
     <div
       v-if="projectStore.isProjectOpen"
       class="studio-workspace"
     >
-      <!-- 项目信息卡片 -->
+      <!-- Project info card -->
       <ProjectInfoCard 
         :name="projectStore.projectName"
         :episode-count="episodeStore.episodes.length"
         @rename="handleRename"
       />
       
-      <!-- 导航标签栏 -->
+      <!-- Navigation tab bar -->
       <ProjectHomeTabs 
         v-model="currentTab"
         :tabs="tabs"
       />
       
-      <!-- 内容区域 -->
+      <!-- Content area -->
       <div class="hub-content">
-        <!-- 1. 动画列表 (Episodes) -->
+        <!-- 1. Animation list (Episodes) -->
         <div
           v-if="currentTab === 'episodes'"
           class="episodes-section"
@@ -29,10 +29,10 @@
             v-if="episodeStore.episodes.length > 0"
             class="episodes-grid"
           >
-            <!-- 新建动画卡片 -->
+            <!-- New animation card -->
             <NewEpisodeCard @click="handleCreateEpisode" />
             
-            <!-- 动画卡片列表 -->
+            <!-- Animation card list -->
             <EpisodeCard
               v-for="episode in episodeStore.sortedEpisodes"
               :key="episode.id"
@@ -42,7 +42,7 @@
             />
           </div>
           
-          <!-- 空状态 -->
+          <!-- Empty state -->
           <div
             v-else
             class="empty-container"
@@ -53,13 +53,13 @@
                 class="create-btn"
                 @click="handleCreateEpisode"
               >
-                ➕ 新建第一个动画
+                ➕ Create First Episode
               </button>
             </div>
           </div>
         </div>
 
-        <!-- 2. 素材管理器集成 -->
+        <!-- 2. Asset manager integration -->
         <div
           v-else
           class="asset-manager-container"
@@ -68,19 +68,19 @@
           <ExpressionManager v-else-if="currentTab === 'expressions'" />
           <BackgroundManager v-else-if="currentTab === 'backgrounds'" />
           <PropManager v-else-if="currentTab === 'props'" />
-          <!-- v7.3: EffectManager 已移除，特效已合并到道具 -->
+          <!-- v7.3: EffectManager removed, effects merged into props -->
           <SoundManager v-else-if="currentTab === 'sounds'" />
           <SceneTemplateManager v-else-if="currentTab === 'sceneTemplates'" />
           
-          <!-- 待开发模块 -->
+          <!-- Under development module -->
           <div
             v-else
             class="coming-soon"
           >
             <div class="placeholder-content">
               <span class="placeholder-icon">🚧</span>
-              <h3>{{ getTabLabel(currentTab) }} 管理功能开发中</h3>
-              <p>该模块将在后续版本中推出，敬请期待。</p>
+              <h3>{{ getTabLabel(currentTab) }} Management Coming Soon</h3>
+              <p>This module will be available in future releases. Stay tuned.</p>
             </div>
           </div>
         </div>
@@ -88,13 +88,13 @@
       
     </div>
 
-    <!-- B. 未打开项目: 欢迎界面 -->
+    <!-- B. No project open: Welcome interface -->
     <div
       v-else
       class="welcome-screen"
     >
       <div class="welcome-card">
-        <!-- Logo 图标 -->
+        <!-- Logo icon -->
         <div class="welcome-logo-container">
           <svg
             class="welcome-logo-icon"
@@ -201,7 +201,7 @@
           </button>
         </div>
 
-        <!-- 开源版说明 -->
+        <!-- Open source edition description -->
         <div class="support-group-banner">
           <div class="support-group-icon">
             ℹ️
@@ -219,7 +219,7 @@
           </div>
         </div>
          
-        <!-- 特性展示 -->
+        <!-- Feature display -->
         <div class="features-grid">
           <div class="feature-item">
             <div class="feature-icon">
@@ -262,7 +262,7 @@
 
       </div>
        
-      <!-- 隐藏的文件输入(降级方案) -->
+      <!-- Hidden file input (fallback) -->
       <input 
         ref="fileInput" 
         type="file" 
@@ -273,7 +273,7 @@
     </div>
   </div>
   
-  <!-- 全局对话框 - 不受 isProjectOpen 限制 -->
+  <!-- Global dialogs - not restricted by isProjectOpen -->
   <NewProjectDialog
     v-if="showNewProjectDialog"
     :directory-handle="selectedDirectory!"
@@ -311,7 +311,7 @@
     @cancel="showOpenConfirmDialog = false"
   />
 
-  <!-- 删除动画确认对话框 -->
+  <!-- Delete animation confirmation dialog -->
   <ConfirmDialog
     v-if="showDeleteEpisodeConfirm"
     title="Delete Episode"
@@ -339,7 +339,7 @@ import ProjectFileSelectorDialog from '@/components/ProjectFileSelectorDialog.vu
 // Components
 import ProjectInfoCard from '@/components/ProjectInfoCard.vue'
 import PropManager from '@/components/PropManager.vue'
-// v7.3: EffectManager 已移除
+// v7.3: EffectManager removed
 import SceneTemplateManager from '@/components/SceneTemplateManager.vue'
 import SoundManager from '@/components/SoundManager.vue'
 import ProjectHomeTabs from '@/components/studio/ProjectHomeTabs.vue'
@@ -356,11 +356,11 @@ const selectedDirectory = ref<FileSystemDirectoryHandle | null>(null)
 const existingAnimeFiles = ref<string[]>([])
 const availableFiles = ref<{ name: string; lastModified: Date }[]>([])
 
-// 确认关闭项目对话框状态
+// Confirm close project dialog state
 const showCloseConfirmDialog = ref(false)
 const showOpenConfirmDialog = ref(false)
 
-// 删除动画确认对话框状态
+// Delete animation confirmation dialog state
 const showDeleteEpisodeConfirm = ref(false)
 const pendingDeleteEpisodeId = ref<string | null>(null)
 const deleteEpisodeMessage = ref('')
@@ -375,7 +375,7 @@ const tabs = [
   { label: 'Expressions', value: 'expressions', icon: '😊' },
   { label: 'Backgrounds', value: 'backgrounds', icon: '🖼️' },
   { label: 'Props', value: 'props', icon: '📦' },
-  // v7.3: 特效库已移除，特效已合并到道具库
+  // v7.3: Effect library removed, effects merged into prop library
   { label: 'Sounds', value: 'sounds', icon: '🔊' },
   { label: 'About', value: 'about', icon: 'ℹ️', link: '/about' },
 ]
@@ -399,10 +399,10 @@ function handleRename(name: string) {
 
 // Create an episode.
 function handleCreateEpisode() {
-  // 自动生成动画名称
+  // Auto-generate animation name
   const defaultName = `Episode ${episodeStore.episodes.length + 1}`
   const episode = episodeStore.createEpisode(defaultName)
-  // 创建后跳转到剧本编辑页面,用户可在该页面修改名称
+  // Navigate to screenplay editor page after creation; user can modify name there
   void router.push(`/screenplay/${episode.id}`)
 }
 
@@ -413,32 +413,32 @@ function handleCreateEpisode() {
 const fileInput = ref<HTMLInputElement | null>(null)
 
 async function handleNewProject() {
-  // 如果有项目打开,先显示确认对话框
+  // If project is open, show confirmation dialog first
   if (projectStore.isProjectOpen) {
     showCloseConfirmDialog.value = true
     return
   }
   
-  // 没有项目打开,直接继续
+  // If no project is open, continue directly
   await proceedWithNewProject()
 }
 
-// 用户确认关闭当前项目后的处理
+// Handler when user confirms closing current project
 async function handleConfirmCloseForNew() {
   showCloseConfirmDialog.value = false
   
   try {
-    // 保存当前项目
+    // Save current project
     try {
       await projectStore.saveProject()
     } catch (saveError) {
-      // 保存失败，忽略
+      // Save failed, ignore
     }
     
-    // 关闭当前项目
+    // Close current project
     await projectStore.closeProject(true) // skipCheck = true
     
-    // 继续新建项目流程
+    // Continue new project workflow
     await proceedWithNewProject()
   } catch (error: unknown) {
     console.error(error)
@@ -446,17 +446,17 @@ async function handleConfirmCloseForNew() {
   }
 }
 
-// 选择目录并继续新建项目流程
+// Select directory and continue new project workflow
 async function proceedWithNewProject() {
   try {
-    // 让用户选择目录(必须在用户手势中)
+    // Prompt user to select directory (must be in user gesture)
     const handle = await projectStore.selectProjectDirectory()
     
-    // 扫描现有 .anime 文件
+    // Scan existing .anime files
     const files = await projectStore.scanAnimeFiles(handle)
     existingAnimeFiles.value = files.map(f => f.name)
     
-    // 保存目录句柄并显示对话框
+    // Save directory handle and show dialog
     selectedDirectory.value = handle
     showNewProjectDialog.value = true
   } catch (error: unknown) {
@@ -476,7 +476,7 @@ async function handleConfirmNewProject(data: { fileName: string; projectName: st
       throw new Error('No folder selected')
     }
     
-    // 使用选择的目录句柄创建项目
+    // Create project using selected directory handle
     await projectStore.newProject(data.projectName, data.fileName, selectedDirectory.value)
   } catch (error: unknown) {
     console.error(error)
@@ -485,66 +485,66 @@ async function handleConfirmNewProject(data: { fileName: string; projectName: st
 }
 
 async function handleOpenProject() {
-  // 如果有项目打开,先显示确认对话框
+  // If project is open, show confirmation dialog first
   if (projectStore.isProjectOpen) {
     showOpenConfirmDialog.value = true
     return
   }
   
-  // 没有项目打开,直接打开
+  // If no project is open, open directly
   await proceedWithOpenProject()
 }
 
-// 用户确认关闭当前项目后的处理(打开新项目)
+// Handler when user confirms closing current project (open new project)
 async function handleConfirmOpenProject() {
   showOpenConfirmDialog.value = false
   
   try {
-    // 保存当前项目
+    // Save current project
     try {
       await projectStore.saveProject()
     } catch (saveError) {
-      // 保存失败，忽略
+      // Save failed, ignore
     }
     
-    // 关闭当前项目
+    // Close current project
     await projectStore.closeProject(true) // skipCheck = true
     
-    // 继续打开项目流程 (用户确认是新的用户手势)
+    // Continue open project workflow (user confirmation is a new user gesture)
     await proceedWithOpenProject()
   } catch (error: unknown) {
     console.error(error)
-    alert('操作失败：' + ((error as Error).message || '未知错误'))
+    alert('Operation failed: ' + ((error as Error).message || 'Unknown error'))
   }
 }
 
-// 选择并打开项目
+// Select and open project
 async function proceedWithOpenProject() {
   try {
-    // 选择目录 (在用户手势中调用)
+    // Select directory (called in user gesture)
     const handle = await projectStore.selectProjectDirectory()
     
-    // 扫描现有文件
+    // Scan existing files
     const files = await projectStore.scanAnimeFiles(handle)
     
-    // 如果有多个文件,显示选择对话框
+    // If multiple files exist, show selection dialog
     if (files.length > 1) {
       availableFiles.value = files
       selectedDirectory.value = handle
       showFileSelectorDialog.value = true
     } else if (files.length === 1 && files[0]) {
-      // 单个文件,直接打开
+      // Single file, open directly
       await projectStore.openProject(files[0].name, handle)
     } else {
-      throw new Error('未找到 .anime 文件')
+      throw new Error('No .anime file found')
     }
   } catch (error: unknown) {
     const err = error as Error
-    if (err.name === 'AbortError' || err.message === '用户取消操作') {
+    if (err.name === 'AbortError' || err.message === 'Operation cancelled by user') {
       return
     }
     console.error(error)
-    alert('打开项目失败：' + (err.message || '未知错误'))
+    alert('Failed to open project: ' + (err.message || 'Unknown error'))
   }
 }
 
@@ -552,18 +552,18 @@ async function handleSelectFile(fileName: string) {
   try {
     showFileSelectorDialog.value = false
     
-    // 使用之前保存的目录句柄打开指定文件
+    // Open specified file using previously saved directory handle
     if (!selectedDirectory.value) {
-      throw new Error('未找到目录句柄')
+      throw new Error('Directory handle not found')
     }
     await projectStore.openProject(fileName, selectedDirectory.value)
   } catch (error: unknown) {
     const err = error as Error
-    if (err.name === 'AbortError' || err.message === '用户取消操作') {
+    if (err.name === 'AbortError' || err.message === 'Operation cancelled by user') {
       return
     }
     console.error(error)
-    alert('打开项目失败：' + (err.message ||'未知错误'))
+    alert('Failed to open project: ' + (err.message || 'Unknown error'))
   }
 }
 
@@ -571,37 +571,37 @@ async function handleFileSelect(e: Event) {
   const file = (e.target as HTMLInputElement).files?.[0]
   if (file) {
     if (!file.name.endsWith('.anime')) {
-      alert('请选择 .anime 格式的项目文件')
+      alert('Please select a project file in .anime format')
       return
     }
     
     const success = await projectStore.loadFromFile(file)
     if (success) {
       projectStore.isProjectOpen = true
-      alert(`项目「${projectStore.projectName}」加载成功！`)
+      alert(`Project "${projectStore.projectName}" loaded successfully!`)
     } else {
-      alert('项目加载失败，请检查文件格式')
+      alert('Failed to load project, please check the file format')
     }
   }
   if (e.target) (e.target as HTMLInputElement).value = ''
 }
 
-// 编辑剧本(点击编辑按钮)
+// Edit screenplay (click edit button)
 function handleEditScreenplay(id: string) {
   void router.push(`/screenplay/${id}`)
 }
 
-// 删除动画
+// Delete animation
 function handleDeleteEpisode(id: string) {
   const episode = episodeStore.getEpisode(id)
   if (episode) {
     pendingDeleteEpisodeId.value = id
-    deleteEpisodeMessage.value = `确定要删除「${episode.name}」吗？此操作无法撤销。`
+    deleteEpisodeMessage.value = `Are you sure you want to delete "${episode.name}"? This action cannot be undone.`
     showDeleteEpisodeConfirm.value = true
   }
 }
 
-// 确认删除动画
+// Confirm delete animation
 function confirmDeleteEpisode() {
   if (pendingDeleteEpisodeId.value) {
     episodeStore.deleteEpisode(pendingDeleteEpisodeId.value)
@@ -708,7 +708,7 @@ function confirmDeleteEpisode() {
   overflow: hidden;
 }
 
-/* 添加背景装饰 */
+/* Add background decoration */
 .welcome-screen::before {
   content: '';
   position: absolute;
@@ -887,7 +887,7 @@ function confirmDeleteEpisode() {
   z-index: 1;
 }
 
-/* 特性展示网格 */
+/* Feature display grid */
 .features-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -948,7 +948,7 @@ function confirmDeleteEpisode() {
   color: #6b7280;
 }
 
-/* 技术支持群引导 */
+/* Support group guide */
 .support-group-banner {
   display: flex;
   align-items: center;

@@ -1,6 +1,6 @@
 /**
- * Episode Store - 集管理
- * 负责管理项目中的多个集（Episode）
+ * Episode Store - Episode management
+ * Responsible for managing multiple Episodes in project
  */
 
 import { defineStore } from 'pinia'
@@ -11,56 +11,56 @@ import type { BGMTrack, SceneContainer, ScriptBlock } from '@/types/screenplay'
 import { useProjectStore } from './projectStore'
 
 /**
- * 演员配置
+ * Actor configuration
  */
 export interface Actor {
-  id: string                 // 脚本中引用的名字（如"小明"）
-  name: string               // 演员名称
-  characterId: string        // 关联的人物ID
-  voiceId: number            // TTS Provider 音色 ID
+  id: string                 // Name referenced in script (e.g. "Xiao Ming")
+  name: string               // Actor name
+  characterId: string        // Associated character ID
+  voiceId: number            // TTS Provider voice ID
 }
 
 /**
- * 旁白配置
+ * Narration configuration
  */
 export interface Narrator {
-  id: string      // 旁白ID
-  name: string    // 旁白名称（如"旁白1"）
-  voiceId: number // TTS Provider 音色 ID
+  id: string      // Narration ID
+  name: string    // Narration name (e.g. "Narrator 1")
+  voiceId: number // TTS Provider voice ID
 }
 
 /**
- * 集（Episode）
- * v6.0: 合并了Screenplay，直接包含剧本内容（scenes）
- * 演员和旁白配置已移至 Project 层级
+ * Episode
+ * v6.0: Merged Screenplay, directly contains screenplay content (scenes)
+ * Actor and narrator configurations have been moved to Project level
  */
 export interface Episode {
   id: string
-  episodeNumber: number      // 集号（1, 2, 3...）
-  name: string               // 集名字
+  episodeNumber: number      // Episode number (1, 2, 3...)
+  name: string               // Episode name
 
-  // 剧本内容（原 Screenplay.scenes）
-  scenes: SceneContainer[]   // 场景列表
+  // Screenplay content (formerly Screenplay.scenes)
+  scenes: SceneContainer[]   // Scene list
 
-  // 配乐管理 (v7.5)
+  // Soundtrack management (v7.5)
   bgmTracks: BGMTrack[]
 
-  // 元数据
-  duration: number           // 时长（秒）
-  thumbnail?: string         // 缩略图（Base64或Blob URL）
+  // Metadata
+  duration: number           // Duration (seconds)
+  thumbnail?: string         // Thumbnail (Base64 or Blob URL)
   createdAt: number
   modifiedAt: number
-  version?: string           // 数据版本
+  version?: string           // Data version
 }
 
 export const useEpisodeStore = defineStore('episode', () => {
   const projectStore = useProjectStore()
 
-  // 状态
+  // State
   const episodes = ref<Episode[]>([])
   const currentEpisodeId = ref<string | null>(null)
 
-  // 计算属性
+  // Computed properties
   const currentEpisode = computed(() => {
     if (!currentEpisodeId.value) return null
     return episodes.value.find(ep => ep.id === currentEpisodeId.value)
@@ -71,7 +71,7 @@ export const useEpisodeStore = defineStore('episode', () => {
   })
 
   /**
-   * 创建新动画
+   * Create new animation episode
    */
   function createEpisode(name: string): Episode {
     const maxEpisodeNumber = episodes.value.length > 0
@@ -81,9 +81,9 @@ export const useEpisodeStore = defineStore('episode', () => {
     const episode: Episode = {
       id: `episode_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
       episodeNumber: maxEpisodeNumber + 1,
-      name: name || `第${maxEpisodeNumber + 1}个动画`,
-      scenes: [],  // 初始化为空场景列表
-      bgmTracks: [], // 初始化为空配乐列表
+      name: name || `Episode ${maxEpisodeNumber + 1}`,
+      scenes: [],  // Initialized as empty scene list
+      bgmTracks: [], // Initialized as empty soundtrack list
       duration: 0,
       createdAt: Date.now(),
       modifiedAt: Date.now(),
@@ -97,14 +97,14 @@ export const useEpisodeStore = defineStore('episode', () => {
   }
 
   /**
-   * 获取集
+   * Get episode
    */
   function getEpisode(id: string): Episode | undefined {
     return episodes.value.find(ep => ep.id === id)
   }
 
   /**
-   * 更新集
+   * Update episode
    */
   function updateEpisode(id: string, data: Partial<Episode>): void {
     const index = episodes.value.findIndex(ep => ep.id === id)
@@ -120,14 +120,14 @@ export const useEpisodeStore = defineStore('episode', () => {
   }
 
   /**
-   * 删除集
+   * Delete episode
    */
   function deleteEpisode(id: string): void {
     const index = episodes.value.findIndex(ep => ep.id === id)
     if (index !== -1) {
       episodes.value.splice(index, 1)
 
-      // 如果删除的是当前集，清空当前集ID
+      // If deleting current episode, clear current episode ID
       if (currentEpisodeId.value === id) {
         currentEpisodeId.value = null
       }
@@ -137,7 +137,7 @@ export const useEpisodeStore = defineStore('episode', () => {
   }
 
   /**
-   * 设置当前编辑的集
+   * Set currently editing episode
    */
   function setCurrentEpisode(id: string): void {
     if (episodes.value.find(ep => ep.id === id)) {
@@ -147,17 +147,17 @@ export const useEpisodeStore = defineStore('episode', () => {
   }
 
   /**
-   * 清空所有集
+   * Clear all episodes
    */
   function clearAll(): void {
     episodes.value = []
     currentEpisodeId.value = null
   }
 
-  // ==================== 场景管理方法 ====================
+  // ==================== Scene Management Methods ====================
 
   /**
-   * 添加场景到剧集
+   * Add scene to episode
    */
   function addScene(episodeId: string, scene: SceneContainer): void {
     const episode = getEpisode(episodeId)
@@ -170,7 +170,7 @@ export const useEpisodeStore = defineStore('episode', () => {
   }
 
   /**
-   * 插入场景到指定位置
+   * Insert scene at specified index
    */
   function insertScene(episodeId: string, scene: SceneContainer, index: number): void {
     const episode = getEpisode(episodeId)
@@ -183,7 +183,7 @@ export const useEpisodeStore = defineStore('episode', () => {
   }
 
   /**
-   * 获取场景
+   * Get scene
    */
   function getScene(episodeId: string, sceneId: string): SceneContainer | undefined {
     const episode = getEpisode(episodeId)
@@ -191,7 +191,7 @@ export const useEpisodeStore = defineStore('episode', () => {
   }
 
   /**
-   * 更新场景
+   * Update scene
    */
   function updateScene(episodeId: string, sceneId: string, updates: Partial<SceneContainer>): void {
     const episode = getEpisode(episodeId)
@@ -206,7 +206,7 @@ export const useEpisodeStore = defineStore('episode', () => {
   }
 
   /**
-   * 删除场景
+   * Delete scene
    */
   function deleteScene(episodeId: string, sceneId: string): void {
     const episode = getEpisode(episodeId)
@@ -222,7 +222,7 @@ export const useEpisodeStore = defineStore('episode', () => {
   }
 
   /**
-   * 移动场景位置（上移/下移）
+   * Move scene position (move up / move down)
    */
   function moveScene(episodeId: string, sceneId: string, direction: 'up' | 'down'): void {
     const episode = getEpisode(episodeId)
@@ -234,7 +234,7 @@ export const useEpisodeStore = defineStore('episode', () => {
     const targetIndex = direction === 'up' ? index - 1 : index + 1
     if (targetIndex < 0 || targetIndex >= episode.scenes.length) return
 
-    // 交换相邻元素
+    // Swap adjacent elements
     const temp = episode.scenes[index]!
     episode.scenes[index] = episode.scenes[targetIndex]!
     episode.scenes[targetIndex] = temp
@@ -244,7 +244,7 @@ export const useEpisodeStore = defineStore('episode', () => {
   }
 
   /**
-   * 更新剧集的场景列表
+   * Update scene list for episode
    */
   function updateScenes(episodeId: string, scenes: SceneContainer[]): void {
     const episode = getEpisode(episodeId)
@@ -256,17 +256,17 @@ export const useEpisodeStore = defineStore('episode', () => {
   }
 
   /**
-   * 获取剧集的场景列表
+   * Get scene list for episode
    */
   function getScenes(episodeId: string): SceneContainer[] {
     const episode = getEpisode(episodeId)
     return episode?.scenes ?? []
   }
 
-  // ==================== Block 管理方法 ====================
+  // ==================== Block Management Methods ====================
 
   /**
-   * 添加 Block 到场景
+   * Add Block to scene
    */
   function addBlockToScene(episodeId: string, sceneId: string, block: ScriptBlock): void {
     const scene = getScene(episodeId, sceneId)
@@ -281,7 +281,7 @@ export const useEpisodeStore = defineStore('episode', () => {
   }
 
   /**
-   * 更新场景中的 Block
+   * Update Block in scene
    */
   function updateBlockInScene(episodeId: string, sceneId: string, blockId: string, updates: Partial<ScriptBlock>): void {
     const scene = getScene(episodeId, sceneId)
@@ -299,8 +299,8 @@ export const useEpisodeStore = defineStore('episode', () => {
   }
 
   /**
-   * 删除场景中的 Block
-   * v10: 同时清理该 Block 中出生的 Shadow Objects
+   * Delete Block in scene
+   * v10: Also clean up Shadow Objects born in this Block
    */
   function deleteBlockFromScene(episodeId: string, sceneId: string, blockId: string): void {
     const scene = getScene(episodeId, sceneId)
@@ -310,20 +310,20 @@ export const useEpisodeStore = defineStore('episode', () => {
         const block = scene.script[index]
         if (!block) return
 
-        // v10: 删除 block 前，清理关联的 shadow objects
+        // v10: Clean up associated shadow objects before deleting block
         if (block.actions && scene.setup?.objects) {
-          // 找出该 block 中所有 birth actions (set_lifecycle + spawned: true) 对应的对象 ID
+          // Find object IDs corresponding to all birth actions (set_lifecycle + spawned: true) in this block
           const birthTargetIds = block.actions
             .filter(a => a.type === 'set_lifecycle' && (a as { params: { spawned: boolean } }).params.spawned === true)
             .map(a => a.target)
 
           for (const targetId of birthTargetIds) {
-            // 只删除 shadow object（setup 中 spawned === false 的动态对象）
+            // Only delete shadow object (dynamic object with spawned === false in setup)
             const setupObj = scene.setup.objects.find(o => o.id === targetId)
             if (setupObj?.spawned === false) {
-              // 从 setup 中移除对象
+              // Remove object from setup
               scene.setup.objects = scene.setup.objects.filter(o => o.id !== targetId)
-              // 清理其他 block 中引用该对象的 actions
+              // Clean up actions referencing this object in other blocks
               for (const otherBlock of scene.script) {
                 if (otherBlock.id !== blockId && otherBlock.actions) {
                   otherBlock.actions = otherBlock.actions.filter(a => a.target !== targetId)
@@ -343,7 +343,7 @@ export const useEpisodeStore = defineStore('episode', () => {
     }
   }
 
-  // ==================== BGM 管理方法 (v7.5) ====================
+  // ==================== BGM Management Methods (v7.5) ====================
 
   function addBGMTrack(episodeId: string, track: BGMTrack): void {
     const episode = getEpisode(episodeId)
@@ -389,13 +389,13 @@ export const useEpisodeStore = defineStore('episode', () => {
   }
 
   return {
-    // 状态
+    // State
     episodes,
     currentEpisodeId,
     currentEpisode,
     sortedEpisodes,
 
-    // 剧集管理方法
+    // Episode management methods
     createEpisode,
     getEpisode,
     updateEpisode,
@@ -403,7 +403,7 @@ export const useEpisodeStore = defineStore('episode', () => {
     setCurrentEpisode,
     clearAll,
 
-    // 场景管理方法
+    // Scene management methods
     addScene,
     insertScene,
     getScene,
@@ -413,12 +413,12 @@ export const useEpisodeStore = defineStore('episode', () => {
     updateScenes,
     getScenes,
 
-    // Block 管理方法
+    // Block management methods
     addBlockToScene,
     updateBlockInScene,
     deleteBlockFromScene,
 
-    // BGM 管理
+    // BGM management
     addBGMTrack,
     updateBGMTrack,
     removeBGMTrack,

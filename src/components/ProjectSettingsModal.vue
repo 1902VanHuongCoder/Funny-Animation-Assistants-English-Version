@@ -5,7 +5,7 @@
   >
     <div class="modal-content">
       <div class="modal-header">
-        <h3>项目设置</h3>
+        <h3>Project Settings</h3>
         <button
           class="close-btn"
           @click="$emit('close')"
@@ -16,12 +16,12 @@
 
       <div class="modal-body">
         <div class="form-group">
-          <label>项目名称</label>
+          <label>Project Name</label>
           <input 
             v-model="form.name" 
             type="text" 
             class="form-input"
-            placeholder="请输入项目名称"
+            placeholder="Enter project name"
           >
         </div>
       </div>
@@ -31,13 +31,13 @@
           class="btn-cancel"
           @click="$emit('close')"
         >
-          取消
+          Cancel
         </button>
         <button
           class="btn-save"
           @click="save"
         >
-          保存设置
+          Save Settings
         </button>
       </div>
     </div>
@@ -65,7 +65,7 @@ watch(() => props.initialName, (val) => form.name = val)
 
 function save() {
   if (!form.name) {
-    alert('请填写项目名称')
+    alert('Please enter a project name')
     return
   }
   emit('save', { name: form.name })

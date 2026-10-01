@@ -10,14 +10,14 @@ export const useBackgroundStore = defineStore('background', () => {
   const backgrounds = ref<Background[]>([])
 
   /**
-   * 生成唯一ID
+   * Generate unique ID
    */
   function generateId(): string {
     return `bg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
   }
 
   /**
-   * 获取所有已使用的标签
+   * Get all used tags
    */
   const allTags = computed(() => {
     const tags = new Set<string>()
@@ -26,7 +26,7 @@ export const useBackgroundStore = defineStore('background', () => {
   })
 
   /**
-   * 创建新背景
+   * Create new background
    */
   function createBackground(name: string, type: 'static' | 'animation' = 'static'): Background {
     const bg: Background = {
@@ -47,12 +47,12 @@ export const useBackgroundStore = defineStore('background', () => {
   }
 
   /**
-   * 删除背景
+   * Delete background
    */
   function deleteBackground(id: string): boolean {
     const index = backgrounds.value.findIndex(p => p.id === id)
     if (index !== -1) {
-      // 释放 Blob URL
+      // Release Blob URL
       const bg = backgrounds.value[index]
       if (bg) {
         if (bg._runtimeUrl?.startsWith('blob:')) {
@@ -78,14 +78,14 @@ export const useBackgroundStore = defineStore('background', () => {
   }
 
   /**
-   * 获取背景
+   * Get background
    */
   function getBackground(id: string): Background | undefined {
     return backgrounds.value.find(p => p.id === id)
   }
 
   /**
-   * 更新背景信息
+   * Update background information
    */
   function updateBackground(id: string, updates: Partial<Background>): boolean {
     const bg = getBackground(id)
@@ -100,10 +100,10 @@ export const useBackgroundStore = defineStore('background', () => {
   }
 
   /**
-   * 清空所有背景
+   * Clear all backgrounds
    */
   function clearAll() {
-    // 释放所有资源
+    // Release all resources
     backgrounds.value.forEach(bg => {
       if (bg._runtimeUrl?.startsWith('blob:')) URL.revokeObjectURL(bg._runtimeUrl)
       if (bg._runtimeStillUrl?.startsWith('blob:')) URL.revokeObjectURL(bg._runtimeStillUrl)
@@ -115,7 +115,7 @@ export const useBackgroundStore = defineStore('background', () => {
   }
 
   /**
-   * 设置背景列表 (用于加载项目)
+   * Set background list (used for loading project)
    */
   function setBackgrounds(list: Background[]) {
     backgrounds.value = list

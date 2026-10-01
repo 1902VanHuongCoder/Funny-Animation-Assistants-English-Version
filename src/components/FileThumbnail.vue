@@ -39,7 +39,7 @@ onMounted(() => {
   void loadThumbnail()
 })
 
-// 监听 item 变化（因为虚拟滚动会复用组件实例）
+// Watch item changes (virtual scroll reuses component instances)
 watch(() => props.item.path, () => {
   void loadThumbnail()
 })
@@ -51,7 +51,7 @@ async function loadThumbnail() {
   }
 
   loading.value = true
-  src.value = '' // 重置以显示 loading
+  src.value = '' // Reset to show loading
 
   try {
     const fileHandle = props.item.handle as FileSystemFileHandle

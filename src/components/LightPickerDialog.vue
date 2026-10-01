@@ -2,17 +2,17 @@
   <div class="light-picker-overlay" @click.self="$emit('close')">
     <div class="light-picker-dialog">
       <div class="dialog-header">
-        <h3>💡 添加灯光</h3>
+        <h3>💡 Add Light</h3>
         <button class="close-btn" @click="$emit('close')">×</button>
       </div>
 
       <div class="dialog-body">
-        <!-- 点光源分组 -->
+        <!-- Point light group -->
         <div class="light-group">
           <div class="group-header">
             <span class="group-icon">💡</span>
-            <span class="group-title">点光源</span>
-            <span class="group-desc">全方向辐射光 — 适合灯泡、蜡烛、火把等</span>
+            <span class="group-title">Point Light</span>
+            <span class="group-desc">Omnidirectional radiated light — ideal for bulbs, candles, torches, etc.</span>
           </div>
           <div class="preset-grid">
             <button
@@ -30,17 +30,17 @@
                 <span class="preset-name">{{ preset.label }}</span>
                 <span class="preset-desc">{{ preset.description }}</span>
               </span>
-              <span v-if="preset.params.flicker > 0" class="preset-badge flicker">闪烁</span>
+              <span v-if="preset.params.flicker > 0" class="preset-badge flicker">Flicker</span>
             </button>
           </div>
         </div>
 
-        <!-- 聚光灯分组 -->
+        <!-- Spotlight group -->
         <div class="light-group">
           <div class="group-header">
             <span class="group-icon">🔦</span>
-            <span class="group-title">聚光灯</span>
-            <span class="group-desc">定向锥形光 — 适合手电、追光、壁灯等</span>
+            <span class="group-title">Spotlight</span>
+            <span class="group-desc">Directional cone light — ideal for flashlights, stage lights, wall sconces, etc.</span>
           </div>
           <div class="preset-grid">
             <button
@@ -58,16 +58,16 @@
                 <span class="preset-name">{{ preset.label }}</span>
                 <span class="preset-desc">{{ preset.description }}</span>
               </span>
-              <span v-if="preset.params.flicker > 0" class="preset-badge flicker">闪烁</span>
+              <span v-if="preset.params.flicker > 0" class="preset-badge flicker">Flicker</span>
             </button>
           </div>
         </div>
       </div>
 
       <div class="dialog-footer">
-        <button class="cancel-btn" @click="$emit('close')">取消</button>
+        <button class="cancel-btn" @click="$emit('close')">Cancel</button>
         <button class="confirm-btn" :disabled="!selectedPresetId" @click="handleConfirm">
-          添加灯光
+          Add Light
         </button>
       </div>
     </div>
@@ -84,26 +84,26 @@ import {
   SPOT_LIGHT_PRESETS,
 } from '@/utils/lightPresets'
 
-/** 对外暴露的选择结果 */
+/** Exposed selection result */
 export interface LightPickerResult {
-  /** 灯光类型 */
+  /** Light type */
   lightType: 'point' | 'spot'
-  /** 预设 ID */
+  /** Preset ID */
   presetId: string
-  /** 预设参数快照 */
+  /** Preset parameters snapshot */
   params: LightPresetParams
 }
 
 /**
- * 兼容旧接口 — 消费方可按 `.id` 读取灯型
- * @deprecated 新调用方应直接读取 LightPickerResult.lightType
- */
+  * Backward compatible interface — consumer can read light type by `.id`
+  * @deprecated New consumers should read LightPickerResult.lightType directly
+  */
 export interface LightPickerPreset {
   id: 'point' | 'spot'
   name: string
   icon: string
   description: string
-  /** 预设参数快照（新增） */
+  /** Preset parameter snapshot */
   presetId?: string
   params?: LightPresetParams
 }
@@ -209,7 +209,7 @@ function handleConfirm(): void {
   gap: 20px;
 }
 
-/* ── 分组 ── */
+/* ── Groups ── */
 .light-group {
   display: flex;
   flex-direction: column;
@@ -239,7 +239,7 @@ function handleConfirm(): void {
   margin-left: 4px;
 }
 
-/* ── 预设网格 ── */
+/* ── Preset Grid ── */
 .preset-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
@@ -316,7 +316,7 @@ function handleConfirm(): void {
   border: 1px solid #fde68a;
 }
 
-/* ── 按钮 ── */
+/* ── Buttons ── */
 .cancel-btn,
 .confirm-btn {
   min-width: 88px;

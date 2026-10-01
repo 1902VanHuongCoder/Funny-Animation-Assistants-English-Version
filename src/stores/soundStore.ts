@@ -10,7 +10,7 @@ export const useSoundStore = defineStore('sound', () => {
   const sounds = ref<SoundAsset[]>([])
 
   /**
-   * 获取所有已使用的标签
+   * Get all used tags
    */
   const allTags = computed(() => {
     const tags = new Set<string>()
@@ -19,21 +19,21 @@ export const useSoundStore = defineStore('sound', () => {
   })
 
   /**
-   * 获取所有 BGM
+   * Get all BGM
    */
   const bgms = computed(() => {
     return sounds.value.filter(s => s.type === 'bgm')
   })
 
   /**
-   * 获取所有 SFX
+   * Get all SFX
    */
   const sfxs = computed(() => {
     return sounds.value.filter(s => s.type === 'sfx')
   })
 
   /**
-   * 创建新音效
+   * Create new sound effect
    */
   function createSound(name: string, type: 'bgm' | 'sfx' = 'sfx'): SoundAsset {
     const sound: SoundAsset = {
@@ -41,11 +41,11 @@ export const useSoundStore = defineStore('sound', () => {
       name,
       type,
       tags: [],
-      url: '', // 初始为空，后续设置
+      url: '', // Initially empty, set later
       createdAt: Date.now(),
-      // 默认属性
+      // Default properties
       volume: 1.0,
-      loop: type === 'bgm', // BGM 默认循环
+      loop: type === 'bgm', // BGM loops by default
       fadeIn: 0,
       fadeOut: 0
     }
@@ -58,7 +58,7 @@ export const useSoundStore = defineStore('sound', () => {
   }
 
   /**
-   * 删除音效
+   * Delete sound effect
    */
   function deleteSound(id: string) {
     const index = sounds.value.findIndex(p => p.id === id)
@@ -70,14 +70,14 @@ export const useSoundStore = defineStore('sound', () => {
   }
 
   /**
-   * 获取音效
+   * Get sound effect
    */
   function getSound(id: string): SoundAsset | undefined {
     return sounds.value.find(p => p.id === id)
   }
 
   /**
-   * 更新音效信息
+   * Update sound effect information
    */
   function updateSound(id: string, updates: Partial<SoundAsset>): boolean {
     const sound = getSound(id)
@@ -92,14 +92,14 @@ export const useSoundStore = defineStore('sound', () => {
   }
 
   /**
-   * 清空所有数据
+   * Clear all data
    */
   function clearAll() {
     sounds.value = []
   }
 
   /**
-   * 设置音效列表 (用于加载项目)
+   * Set sound effects list (used for loading project)
    */
   function setSounds(list: SoundAsset[]) {
     sounds.value = list

@@ -10,7 +10,7 @@
     >
       <!-- Header -->
       <div class="modal-header">
-        <h3>{{ isNew ? '新建音效' : '编辑音效' }}</h3>
+        <h3>{{ isNew ? 'New Audio' : 'Edit Audio' }}</h3>
         <button
           class="close-btn"
           @click="close"
@@ -58,7 +58,7 @@
               v-if="!hasAudio"
               class="empty-hint"
             >
-              暂无音频文件
+              No audio file
             </div>
           </div>
           
@@ -67,7 +67,7 @@
               class="btn-upload"
               @click="triggerUpload"
             >
-              📂 选择音频文件...
+              📂 Select Audio File...
             </button>
           </div>
 
@@ -84,17 +84,17 @@
         <div class="config-column">
           <div class="form-section">
             <div class="form-group">
-              <label>名称 <span class="required">*</span></label>
+              <label>Name <span class="required">*</span></label>
               <input 
                 v-model="localSound.name" 
                 type="text" 
                 class="input-field" 
-                placeholder="请输入名称"
+                placeholder="Enter name"
               >
             </div>
 
             <div class="form-group">
-              <label>类型</label>
+              <label>Type</label>
               <div class="radio-group">
                 <label class="radio-label">
                   <input
@@ -103,7 +103,7 @@
                     value="auto"
                     @change="handleTypeChange"
                   >
-                  智能区分
+                  Smart Detect
                 </label>
                 <label class="radio-label">
                   <input
@@ -112,7 +112,7 @@
                     value="bgm"
                     @change="handleTypeChange"
                   >
-                  背景音乐 (BGM)
+                  Background Music (BGM)
                 </label>
                 <label class="radio-label">
                   <input
@@ -121,20 +121,20 @@
                     value="sfx"
                     @change="handleTypeChange"
                   >
-                  音效 (SFX)
+                  Sound Effect (SFX)
                 </label>
               </div>
               <div
                 v-if="importType === 'auto'"
                 class="type-hint"
               >
-                根据音频长度自动区分：>20秒为背景音乐，否则为音效
+                Auto-detect by length: >20s is BGM, otherwise SFX
               </div>
             </div>
 
             <!-- Tag Management -->
             <div class="form-group">
-              <label>标签</label>
+              <label>Tags</label>
               <div class="tags-input-container">
                 <div class="tags-list">
                   <span
@@ -153,7 +153,7 @@
                   v-model="tagInput"
                   type="text"
                   class="tag-input"
-                  placeholder="输入标签按回车添加..."
+                  placeholder="Type tag and press Enter..."
                   @keydown.enter.prevent="addTag"
                 >
               </div>
@@ -179,11 +179,11 @@
           <!-- Default Properties -->
           <div class="form-section">
             <div class="section-title">
-              默认属性
+              Default Properties
             </div>
             
             <div class="form-group">
-              <label>默认音量: {{ Math.round((localSound.volume || 1) * 100) }}%</label>
+              <label>Default Volume: {{ Math.round((localSound.volume || 1) * 100) }}%</label>
               <input 
                 v-model.number="localSound.volume" 
                 type="range" 
@@ -199,13 +199,13 @@
                 <input
                   v-model="localSound.loop"
                   type="checkbox"
-                > 默认循环播放
+                > Loop playback by default
               </label>
             </div>
             
             <div class="form-row">
               <div class="form-group half">
-                <label>淡入时长 (秒)</label>
+                <label>Fade In (s)</label>
                 <input
                   v-model.number="localSound.fadeIn"
                   type="number"
@@ -215,7 +215,7 @@
                 >
               </div>
               <div class="form-group half">
-                <label>淡出时长 (秒)</label>
+                <label>Fade Out (s)</label>
                 <input
                   v-model.number="localSound.fadeOut"
                   type="number"
@@ -236,14 +236,14 @@
           class="btn-cancel"
           @click="close"
         >
-          取消
+          Cancel
         </button>
         <button 
           class="btn-save" 
           :disabled="!isValid"
           @click="save"
         >
-          确定
+          Save
         </button>
       </div>
     </div>
@@ -333,7 +333,7 @@ const recommendedTags = computed(() => {
   return all.filter(t => !localSound.value.tags?.includes(t))
 })
 
-const fileBrowserTitle = computed(() => '选择音频文件')
+const fileBrowserTitle = computed(() => 'Select Audio File')
 
 const fileBrowserMultiple = computed(() => false)
 
@@ -504,7 +504,7 @@ async function handleFileSelect(files: SelectedFile[]) {
   const blob = await selectedFile.handle.getFile()
   localSound.value._runtimeUrl = URL.createObjectURL(blob)
   
-  // 自动设置名称：单个文件使用文件名
+  // Auto set name: use file name for single file
   if (isNew.value && !localSound.value.name) {
     const fileName = selectedFile.handle.name.replace(/\.[^/.]+$/, "")
     localSound.value.name = generateUniqueSoundName(fileName)
@@ -533,7 +533,7 @@ function audioFileFilter(file: FileSystemFileHandle): boolean {
 
 
 /**
- * 生成唯一的声音名称，如果已存在则添加数字后缀
+ * Generate unique sound name, add numeric suffix if exists
  */
 function generateUniqueSoundName(baseName: string): string {
   const existingNames = new Set(

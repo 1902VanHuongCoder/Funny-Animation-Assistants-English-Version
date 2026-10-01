@@ -6,7 +6,7 @@
       </div>
       
       <div class="dialog-body">
-        <!-- 进度条 -->
+        <!-- Progress bar -->
         <div class="progress-bar-container">
           <div class="progress-bar">
             <div
@@ -19,40 +19,40 @@
           </div>
         </div>
         
-        <!-- 状态信息 -->
+        <!-- Status info -->
         <div class="progress-info">
           <div class="info-item">
-            <span class="label">当前阶段:</span>
+            <span class="label">Current Stage:</span>
             <span class="value">{{ progress.stageMessage }}</span>
           </div>
           <div
             v-if="progress.totalFrames > 0"
             class="info-item"
           >
-            <span class="label">帧数:</span>
+            <span class="label">Frames:</span>
             <span class="value">{{ progress.currentFrame }} / {{ progress.totalFrames }}</span>
           </div>
           <div
             v-if="progress.currentScene"
             class="info-item"
           >
-            <span class="label">当前场景:</span>
+            <span class="label">Current Scene:</span>
             <span class="value">{{ progress.currentScene }} ({{ (progress.currentSceneIndex ?? 0) + 1 }}/{{ progress.totalScenes }})</span>
           </div>
           <div class="info-item">
-            <span class="label">已用时间:</span>
+            <span class="label">Elapsed Time:</span>
             <span class="value">{{ formatTime(progress.elapsedTime) }}</span>
           </div>
           <div
             v-if="progress.estimatedRemaining > 0 && status === 'encoding'"
             class="info-item"
           >
-            <span class="label">预估剩余:</span>
+            <span class="label">Estimated Remaining:</span>
             <span class="value">{{ formatTime(progress.estimatedRemaining) }}</span>
           </div>
         </div>
         
-        <!-- 错误信息 -->
+        <!-- Error message -->
         <div
           v-if="error"
           class="error-message"
@@ -61,13 +61,13 @@
           <span>{{ error.message }}</span>
         </div>
         
-        <!-- 成功信息 -->
+        <!-- Success message -->
         <div
           v-if="status === 'completed'"
           class="success-message"
         >
           <span class="success-icon">✓</span>
-          <span>导出成功！文件已自动下载</span>
+          <span>Export successful! The file has been automatically downloaded.</span>
         </div>
       </div>
       
@@ -77,14 +77,14 @@
           class="btn btn-secondary" 
           @click="$emit('cancel')"
         >
-          取消导出
+          Cancel Export
         </button>
         <button 
           v-if="status === 'completed' || status === 'error'" 
           class="btn btn-primary" 
           @click="$emit('close')"
         >
-          关闭
+          Close
         </button>
       </div>
     </div>
@@ -110,19 +110,19 @@ defineEmits<{
 const headerTitle = computed(() => {
   switch (props.status) {
     case 'preparing':
-      return '准备导出...'
+      return 'Preparing export...'
     case 'encoding':
-      return '正在导出视频...'
+      return 'Exporting video...'
     case 'muxing':
-      return '正在封装视频...'
+      return 'Multiplexing video...'
     case 'completed':
-      return '导出完成'
+      return 'Export Complete'
     case 'error':
-      return '导出失败'
+      return 'Export Failed'
     case 'cancelled':
-      return '导出已取消'
+      return 'Export Cancelled'
     default:
-      return '导出视频'
+      return 'Export Video'
   }
 })
 

@@ -15,24 +15,24 @@
       >
         <div class="object-info">
           <span class="object-icon">{{ getObjectIcon(obj) }}</span>
-          <!-- v7.1: 所有对象显示 alias，相机没有 alias 所以显示 name -->
+          <!-- v7.1: All objects display alias, camera has no alias so displays name -->
           <span class="object-name">{{ getDisplayName(obj) }}</span>
-          <!-- Clip-Mask Phase 1：被蒙版裁切的视觉提示 -->
+          <!-- Clip-Mask Phase 1: Visual indicator for objects clipped by mask -->
           <span
             v-if="getClippingMaskAlias(obj.id)"
             class="object-clipped-indicator"
-            :title="`被蒙版「${getClippingMaskAlias(obj.id)}」裁切`"
+            :title="`Clipped by mask &quot;${getClippingMaskAlias(obj.id)}&quot;`"
           >
             ✂
           </span>
         </div>
 
         <div class="object-actions">
-          <!-- v7.1: 所有非相机对象都可以编辑别名 -->
+          <!-- v7.1: All non-camera objects can edit alias -->
           <button
             v-if="obj.type !== 'camera' && obj.type !== 'light'"
             class="action-btn"
-            title="编辑别名"
+            title="Edit Alias"
             @click.stop="$emit('editAlias', obj.id)"
           >
             ✏️
@@ -40,7 +40,7 @@
 
           <button
             class="action-btn"
-            title="显示/隐藏"
+            title="Show/Hide"
             @click.stop="handleToggleVisible(obj.id)"
           >
             {{ obj.visible ? '👁️' : '🚫' }}
@@ -48,7 +48,7 @@
           <button
             v-if="obj.type !== 'camera' && !(obj.type === 'light' && (obj as any).lightType === 'ambient') && !hideDelete"
             class="action-btn danger"
-            title="删除"
+            title="Delete"
             @click.stop="$emit('deleteObject', obj.id)"
           >
             🗑️
@@ -60,9 +60,9 @@
         v-if="objectStore.objects.length === 0"
         class="empty-state"
       >
-        <p>暂无对象</p>
+        <p>No objects</p>
         <p class="hint">
-          点击工具栏按钮添加对象
+          Click toolbar buttons to add objects
         </p>
       </div>
     </div>
@@ -78,33 +78,33 @@ import type { SceneObjectType } from '@/types/sceneObject'
 
 const props = defineProps<{
   selectedObjectId: string | null
-  enableDrag?: boolean // 是否启用拖拽排序（仅Setup模式）
-  hideDelete?: boolean // 是否隐藏删除按钮（Action Mode）
+  enableDrag?: boolean // Enable drag-and-drop sorting (Setup mode only)
+  hideDelete?: boolean // Hide delete button (Action Mode)
 }>()
 
 const emit = defineEmits<{
   selectObject: [objectId: string]
   deleteObject: [objectId: string]
-  zIndexChanged: [] // 当zIndex变化时触发
-  editAlias: [objectId: string] // v7.0: 编辑实例别名
+  zIndexChanged: [] // Triggered when zIndex changes
+  editAlias: [objectId: string] // v7.0: Edit instance alias
 }>()
 
 const objectStore = useSceneObjectStore()
-const enableDrag = computed(() => props.enableDrag !== false) // 默认启用
+const enableDrag = computed(() => props.enableDrag !== false) // Enabled by default
 
-// 拖拽状态
+// Dragging state
 const dragState = ref<{
   draggedId: string | null
   targetId: string | null
 } | null>(null)
 
-// 按 zIndex 逆序排列（从上到下显示）
+// Sort by zIndex descending (displayed from top to bottom)
 const sortedObjects = computed(() => {
   return [...objectStore.objects].sort((a, b) => b.zIndex - a.zIndex)
 })
 
 /**
- * 获取对象类型图标
+ * Get object type icon
  */
 function getObjectIcon(obj: SceneObject): string {
   if (obj.type === 'light') {
@@ -134,27 +134,27 @@ function getObjectIcon(obj: SceneObject): string {
 }
 
 /**
- * v7.1: 获取对象显示名称（优先显示 alias）
+ * v7.1: Get object display name (prioritizes alias)
  */
 function getDisplayName(obj: SceneObject): string {
-  // 相机没有 alias，直接显示 name
+  // Camera has no alias, display name directly
   if (obj.type === 'camera') {
-    return obj.name || '相机'
+    return obj.name || 'Camera'
   }
   if (obj.type === 'light' && (obj as LightObject).lightType === 'ambient') {
-    return '环境光'
+    return 'Ambient Light'
   }
   if (obj.type === 'light' && (obj as LightObject).lightType === 'spot') {
-    return obj.alias || obj.name || '聚光灯'
+    return obj.alias || obj.name || 'Spotlight'
   }
-  // 其他对象优先显示 alias
+  // Other objects prioritize alias
   const objWithAlias = obj as { alias?: string; name?: string }
-  return objWithAlias.alias || obj.name || '未命名'
+  return objWithAlias.alias || obj.name || 'Untitled'
 }
 
 /**
- * Clip-Mask Phase 1：返回该对象被哪个 mask 裁切（若有），否则返回空串。
- * 单蒙版独占（FCFS），所以最多匹配一个。
+ * Clip-Mask Phase 1: Returns which mask clips this object (if any), otherwise empty string.
+ * Exclusive single-mask (FCFS), matches at most one.
  */
 function getClippingMaskAlias(objectId: string): string {
   for (const o of objectStore.objects) {
@@ -170,7 +170,7 @@ function getClippingMaskAlias(objectId: string): string {
 
 
 /**
- * 切换可见性
+ * Toggle visibility
  */
 function handleToggleVisible(objectId: string) {
   const obj = objectStore.getObject(objectId)
@@ -180,7 +180,7 @@ function handleToggleVisible(objectId: string) {
 }
 
 /**
- * 拖拽开始
+ * Drag start
  */
 function handleDragStart(event: DragEvent, objectId: string) {
   if (!enableDrag.value) return
@@ -203,7 +203,7 @@ function handleDragStart(event: DragEvent, objectId: string) {
 }
 
 /**
- * 拖拽悬停
+ * Drag over
  */
 function handleDragOver(event: DragEvent, objectId: string) {
   if (!enableDrag.value || !dragState.value) return
@@ -218,7 +218,7 @@ function handleDragOver(event: DragEvent, objectId: string) {
 }
 
 /**
- * 拖拽放置
+ * Drag drop
  */
 function handleDrop(event: DragEvent, targetId: string) {
   if (!enableDrag.value || !dragState.value) return
@@ -228,7 +228,7 @@ function handleDrop(event: DragEvent, targetId: string) {
   const draggedId = dragState.value.draggedId
   if (!draggedId || draggedId === targetId) return
   
-  // 1. 在本地数组中移动元素位置（按 zIndex 降序排列）
+  // 1. Move element position in local array (sorted by zIndex descending)
   const list = [...sortedObjects.value]
   const draggedIndex = list.findIndex(o => o.id === draggedId)
   const targetIndex = list.findIndex(o => o.id === targetId)
@@ -238,15 +238,15 @@ function handleDrop(event: DragEvent, targetId: string) {
     return
   }
   
-  // 从原位置移除
+  // Remove from original position
   const [movedItem] = list.splice(draggedIndex, 1)
   if (movedItem) {
-    // 插入到目标位置
+    // Insert into target position
     list.splice(targetIndex, 0, movedItem)
   }
   
-  // 2. 重新分配 zIndex（反向，因为列表是上面遮挡下面，index 0 是顶层）
-  // 例如：总数10，第一个元素 zIndex=10，最后一个 zIndex=1
+  // 2. Reassign zIndex (reverse order: top element obscures bottom, index 0 is top layer)
+  // E.g.: total 10, first element zIndex=10, last zIndex=1
   list.forEach((obj, index) => {
     const newZIndex = list.length - index
     if (obj.zIndex !== newZIndex) {
@@ -260,7 +260,7 @@ function handleDrop(event: DragEvent, targetId: string) {
 }
 
 /**
- * 拖拽结束
+ * Drag end
  */
 function handleDragEnd() {
   dragState.value = null

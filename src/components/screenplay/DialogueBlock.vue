@@ -4,15 +4,15 @@
     :class="{ selected: isSelected }"
     @click="handleClick"
   >
-    <!-- 第一行：控制行 -->
+    <!-- Row 1: Controls -->
     <div class="control-row">
-      <!-- 人物标签 -->
+      <!-- Character tag -->
       <div class="dialogue-header">
         <span class="dialogue-icon">👤</span>
-        <span class="dialogue-title">人物</span>
+        <span class="dialogue-title">Character</span>
       </div>
 
-      <!-- 头像/角色名 -->
+      <!-- Avatar / Character name -->
       <button
         class="actor-selector"
         @click.stop="$emit('selectActor')"
@@ -21,34 +21,34 @@
         <span class="actor-name">{{ actorName }}</span>
       </button>
 
-      <!-- 占位符,把场景编辑按钮推到右侧 -->
+      <!-- Spacer to push scene edit button to right -->
       <div style="flex: 1;" />
 
-      <!-- 编排动作按钮 -->
+      <!-- Choreograph action button -->
       <button 
         class="btn-action-mode" 
         :class="{ active: block.actions.length > 0 }"
-        title="编排动作"
+        title="Action Sequencer"
         @click.stop="$emit('enter-action-mode')"
       >
-        🎬 编排动作
+        🎬 Actions
       </button>
 
-      <!-- 删除按钮 -->
+      <!-- Delete button -->
       <button 
         class="btn-delete" 
-        title="删除" 
+        title="Delete" 
         @click.stop="$emit('delete')"
       >
         🗑️
       </button>
     </div>
 
-    <!-- 第二行：文本行 -->
+    <!-- Row 2: Text -->
     <textarea
       v-model="localText"
       class="text-area full-width"
-      placeholder="输入台词内容..."
+      placeholder="Enter dialogue line..."
       rows="2"
       @input="handleTextInput"
       @click.stop
@@ -64,8 +64,8 @@ import type { DialogueBlock } from '@/types/screenplay'
 const props = defineProps<{
   block: DialogueBlock
   isSelected: boolean
-  actorName?: string // 演员显示名称
-  characterId?: string // 人物ID
+  actorName?: string // Actor display name
+  characterId?: string // Character ID
 }>()
 
 const emit = defineEmits<{
@@ -76,10 +76,10 @@ const emit = defineEmits<{
   'enter-action-mode': []
 }>()
 
-// 本地状态
+// Local state
 const localText = ref(props.block.text)
 
-// 监听 block 变化,同步本地状态
+// Watch block change, sync local state
 watch(() => props.block, (newBlock) => {
   localText.value = newBlock.text
 }, { deep: true })
@@ -115,7 +115,7 @@ function handleTextInput() {
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
-/* 第一行：控制行 */
+/* Row 1: Controls */
 .control-row {
   display: flex;
   align-items: center;
@@ -201,7 +201,7 @@ function handleTextInput() {
   background: #fecaca;
 }
 
-/* 第二行：文本行 */
+/* Row 2: Text */
 .text-row {
   display: flex;
   gap: 8px;

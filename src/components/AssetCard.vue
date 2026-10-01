@@ -8,7 +8,7 @@
     @mouseleave="handleMouseLeave"
   >
     <div class="asset-preview">
-      <!-- 图片/视频预览 -->
+      <!-- Image/Video preview -->
       <template v-if="!showPlayButton">
         <img 
           v-if="displaySrc" 
@@ -31,12 +31,12 @@
         </div>
       </template>
       
-      <!-- 音频预览 -->
+      <!-- Audio preview -->
       <template v-else>
         <div class="audio-icon">
           {{ asset.type === 'bgm' ? '🎵' : '🔊' }}
         </div>
-        <!-- 增加时长显示 -->
+        <!-- Add duration display -->
         <div
           v-if="asset.duration"
           class="duration-badge"
@@ -92,7 +92,7 @@ defineEmits<{
 
 const imageUrl = ref('')
 
-// --- Hover 帧动画状态 ---
+// --- Hover Frame Animation State ---
 const allFrameUrls = ref<string[]>([])
 const animFrameIndex = ref(0)
 const animTimer = ref<number | null>(null)
@@ -100,10 +100,10 @@ const isHovering = ref(false)
 const framesLoaded = ref(false)
 const framesLoading = ref(false)
 
-/** 是否正在播放帧动画 */
+/** Whether playing frame animation */
 const isAnimating = computed(() => isHovering.value && allFrameUrls.value.length > 0)
 
-/** 最终显示的图片 src：Hover 播放时用帧序列，否则用静止帧 */
+/** Displayed image src: frame sequence on hover, static frame otherwise */
 const displaySrc = computed(() => {
   if (isAnimating.value) {
     return allFrameUrls.value[animFrameIndex.value] ?? imageUrl.value
@@ -121,7 +121,7 @@ function formatDuration(seconds: number): string {
 async function load() {
   if (!props.loadImage) return
   
-  // 音频类型跳过图片加载
+  // Audio type skips image loading
   if (props.asset.type === 'bgm' || props.asset.type === 'sfx') return
 
   try {
@@ -134,33 +134,33 @@ async function load() {
   }
 }
 
-// P1: 委托给 metadata 注册表，保留 bgm/sfx 特殊图标
+// P1: Delegate to metadata registry, keep bgm/sfx special icons
 function getPlaceholderIcon(type: string) {
-  // bgm/sfx 是 Asset 类型（非 SceneObjectType），需要特殊处理
+  // bgm/sfx are Asset types (not SceneObjectType), require special handling
   if (type === 'bgm') return '🎵'
   if (type === 'sfx') return '🔊'
   return getTypeIcon(type)
 }
 
-// --- Hover 动画逻辑 ---
+// --- Hover Animation Logic ---
 
 function handleMouseEnter() {
-  // 仅对动态素材启用帧动画
+  // Enable frame animation only for dynamic assets
   if (props.asset.type !== 'animation' || !props.loadAllFrames) return
   
   isHovering.value = true
 
   if (framesLoaded.value) {
-    // 已加载过帧数据，直接启动播放
+    // Frame data already loaded, start playback directly
     startAnimation()
   } else if (!framesLoading.value) {
-    // 首次 hover，惰性加载所有帧
+    // First hover, lazily load all frames
     framesLoading.value = true
     props.loadAllFrames(props.asset.id)
       .then(urls => {
         allFrameUrls.value = urls
         framesLoaded.value = true
-        // 加载完成后若仍处于 hover 状态，启动播放
+        // If still hovered after load, start playback
         if (isHovering.value && urls.length > 0) {
           startAnimation()
         }
@@ -180,7 +180,7 @@ function handleMouseLeave() {
 }
 
 function startAnimation() {
-  stopAnimation() // 防护：先清除可能残留的定时器
+  stopAnimation() // Guard: clear potential lingering timer
   animFrameIndex.value = 0
   const fps = props.asset.fps ?? 12
   const interval = 1000 / fps
@@ -217,7 +217,7 @@ onUnmounted(() => {
   overflow: hidden;
   transition: all 0.2s;
   border: 2px solid transparent;
-  height: 100%; /* 确保填满容器 */
+  height: 100%; /* Ensure filling container */
   display: flex;
   flex-direction: column;
 }
@@ -256,7 +256,7 @@ onUnmounted(() => {
 .asset-preview img {
   width: 100%;
   height: 100%;
-  object-fit: contain; /* 改为 contain 以免裁切 */
+  object-fit: contain; /* Use contain to avoid cropping */
 }
 
 .placeholder {

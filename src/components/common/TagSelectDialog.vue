@@ -6,7 +6,7 @@
   >
     <div class="tag-select-dialog">
       <div class="dialog-header">
-        <h3>按标签筛选</h3>
+        <h3>Filter by Tag</h3>
         <button
           class="close-btn"
           @click="handleCancel"
@@ -21,7 +21,7 @@
             :class="{ active: isAllSelected }"
             @click="selectAll"
           >
-            全部
+            All
           </button>
           <button 
             v-for="tag in availableTags" 
@@ -37,7 +37,7 @@
           v-if="availableTags.length === 0"
           class="empty-hint"
         >
-          无可用标签
+          No tags available
         </div>
       </div>
       <div class="dialog-footer">
@@ -45,13 +45,13 @@
           class="btn-cancel"
           @click="handleCancel"
         >
-          取消
+          Cancel
         </button>
         <button
           class="btn-confirm"
           @click="handleConfirm"
         >
-          确定
+          Confirm
         </button>
       </div>
     </div>
@@ -72,34 +72,34 @@ const emit = defineEmits<{
   (e: 'confirm', tags: string[]): void
 }>()
 
-// 本地选中标签（编辑中的状态）
+// Locally selected tags (editing state)
 const localSelectedTags = ref<string[]>([])
 
-// 当对话框打开时，同步外部选中状态到本地
+// Sync external selected state to local when dialog opens
 watch(() => props.visible, (visible) => {
   if (visible) {
     localSelectedTags.value = [...props.selectedTags]
   }
 })
 
-// 是否全选
+// Whether all selected
 const isAllSelected = computed(() => {
   return props.availableTags.length > 0 && 
          localSelectedTags.value.length === props.availableTags.length
 })
 
-// 全选
+// Select all
 function selectAll() {
   if (isAllSelected.value) {
-    // 如果已经全选，点击后清空
+    // If all selected, clear on click
     localSelectedTags.value = []
   } else {
-    // 否则全选
+    // Otherwise select all
     localSelectedTags.value = [...props.availableTags]
   }
 }
 
-// 切换单个标签
+// Toggle single tag
 function toggleTag(tag: string) {
   const index = localSelectedTags.value.indexOf(tag)
   if (index === -1) {
@@ -109,13 +109,13 @@ function toggleTag(tag: string) {
   }
 }
 
-// 确定
+// Confirm
 function handleConfirm() {
   emit('confirm', [...localSelectedTags.value])
   emit('update:visible', false)
 }
 
-// 取消
+// Cancel
 function handleCancel() {
   emit('update:visible', false)
 }

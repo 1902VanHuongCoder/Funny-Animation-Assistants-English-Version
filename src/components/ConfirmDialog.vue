@@ -48,9 +48,9 @@ withDefaults(defineProps<{
   showSecondaryConfirm?: boolean
   secondaryConfirmText?: string
 }>(), {
-  title: '确认',
-  confirmText: '确定',
-  cancelText: '取消',
+  title: 'Confirm',
+  confirmText: 'Confirm',
+  cancelText: 'Cancel',
   isDanger: false,
   showSecondaryConfirm: false,
   secondaryConfirmText: '',

@@ -33,7 +33,7 @@
             class="loading-overlay"
           >
             <span class="loading-spinner" />
-            <span class="loading-text">正在加载资源...</span>
+            <span class="loading-text">Loading assets...</span>
           </div>
         </div>
 
@@ -41,20 +41,20 @@
         <div class="info-sidebar">
           <!-- Template/Character Info -->
           <div class="info-section">
-            <h4>基本信息</h4>
+            <h4>Basic Info</h4>
             <div class="info-row">
-              <span class="info-label">名称</span>
-              <span class="info-value">{{ info?.name ?? '未知' }}</span>
+              <span class="info-label">Name</span>
+              <span class="info-value">{{ info?.name ?? 'Unknown' }}</span>
             </div>
             <div class="info-row">
-              <span class="info-label">包含对象</span>
-              <span class="info-value">{{ objects.length }} 个</span>
+              <span class="info-label">Objects</span>
+              <span class="info-value">{{ objects.length }}</span>
             </div>
             <div
               v-if="info?.createdAt"
               class="info-row"
             >
-              <span class="info-label">创建时间</span>
+              <span class="info-label">Created At</span>
               <span class="info-value">{{ formatDate(info.createdAt) }}</span>
             </div>
           </div>
@@ -64,7 +64,7 @@
             v-if="info?.tags && info.tags.length > 0"
             class="info-section"
           >
-            <h4>标签</h4>
+            <h4>Tags</h4>
             <div class="tags-list">
               <span
                 v-for="tag in info.tags"
@@ -78,12 +78,12 @@
 
           <!-- Animation List -->
           <div class="info-section">
-            <h4>🎬 动画列表</h4>
+            <h4>🎬 Animation List</h4>
             <div
               v-if="animationGroups.length === 0"
               class="empty-hint"
             >
-              无可用动画
+              No animations available
             </div>
             <div
               v-for="group in animationGroups"
@@ -105,7 +105,7 @@
                     class="anim-type-badge"
                     :class="anim.type"
                   >
-                    轨道
+                    Track
                   </span>
                   <span
                     v-if="anim.loop"
@@ -162,9 +162,9 @@ interface Props {
   title: string
   objects: SceneObject[]
   editorAnchor?: { x: number; y: number } | undefined
-  /** 是否将顶层对象从归零坐标恢复到画布坐标（模板预览=true，人物编辑器预览=false） */
+  /** Restore top-level objects from zero to canvas coords (template preview=true, char editor preview=false) */
   restoreAnchorOffset?: boolean
-  /** v19: 场景级渲染链（从模板的持久化数据传入，避免 rebuild） */
+  /** v19: Scene-level render chain (passed from template persistent data, avoiding rebuild) */
   renderChain?: string[]
   info?: PreviewInfo | undefined
 }
@@ -191,12 +191,12 @@ const isAnimating = ref(false)
 const isPreloading = ref(true)
 const renderer = ref<ReturnType<typeof useSceneRenderer> | null>(null)
 
-/** 备份编辑器的 sceneObjectStore 数据 */
+/** Backup sceneObjectStore data of editor */
 const backupSceneObjects = ref<SceneObject[]>([])
-/** v19: 备份编辑器的 sceneRenderChain */
+/** v19: Backup sceneRenderChain of editor */
 const backupRenderChain = ref<string[]>([])
 
-/** 当前正在播放的动画集合 (key: `objectId:animName`) */
+/** Set of currently playing animations (key: `objectId:animName`) */
 const playingAnimations = ref<Set<string>>(new Set())
 
 
@@ -231,7 +231,7 @@ function choosePreviewFitBounds(
 // Computed
 // ============================================================================
 
-/** 有初始动画的对象数量 */
+/** Count of objects with initial animations */
 const animatableCount = computed(() => {
   let count = 0
   for (const obj of props.objects) {
@@ -242,9 +242,9 @@ const animatableCount = computed(() => {
   return count
 })
 
-void animatableCount.value // 保留计算属性供未来使用
+void animatableCount.value // Retained computed property for future use
 
-/** 按对象分组的动画列表 */
+/** Animation list grouped by object */
 interface AnimationInfo {
   id: string
   name: string
@@ -268,8 +268,8 @@ const animationGroups = computed<AnimationGroup[]>(() => {
 
     const animations: AnimationInfo[] = []
     for (const def of Object.values(obj.animations)) {
-      // 过滤掉自动生成的帧播放动画（origin === 'auto'），
-      // 但保留底层素材为动态多帧的对象（它们需要 auto 帧动画来驱动 AnimatedSprite）
+      // Filter out auto-generated frame playback animations (origin === 'auto'),
+      // but keep objects whose underlying asset is multi-frame (they need auto frame anims to drive AnimatedSprite)
       if (def.origin === 'auto' && !isObjectDynamic(obj)) continue
 
       animations.push({
@@ -311,10 +311,10 @@ function getTypeIcon(type: SceneObjectType): string {
 }
 
 /**
- * 检查场景对象的底层素材是否为动态多帧类型
- * - prop/background: 查询对应 Store 获取资源类型
- * - symbol: 检查当前素材的 type
- * - 其他类型: 返回 false
+ * Check whether underlying asset of scene object is dynamic multi-frame type
+ * - prop/background: query Store for asset type
+ * - symbol: check current material type
+ * - other types: return false
  */
 function isObjectDynamic(obj: SceneObject): boolean {
   if (obj.type === 'prop') {
@@ -361,7 +361,7 @@ function findAnimationByName(
 // ============================================================================
 
 /**
- * 播放单个轨道动画
+ * Play single track animation
  */
 function playTrackAnimation(objectId: string, animName: string, definition: AnimationDefinition): void {
   if (!renderer.value) return
@@ -375,7 +375,7 @@ function playTrackAnimation(objectId: string, animName: string, definition: Anim
 }
 
 /**
- * 停止单个对象的指定动画
+ * Stop specified animation of single object
  */
 function stopTrackAnimation(objectId: string, animName: string): void {
   if (!renderer.value) return
@@ -391,24 +391,24 @@ function stopTrackAnimation(objectId: string, animName: string): void {
 
 
 /**
- * 切换单个动画的播放/停止
+ * Toggle play/stop for single animation
  */
 function toggleAnimation(objectId: string, anim: AnimationInfo): void {
   const key = `${objectId}:${anim.name}`
 
   if (playingAnimations.value.has(key)) {
-    // 停止
+    // Stop
     stopTrackAnimation(objectId, anim.name)
     playingAnimations.value.delete(key)
   } else {
-    // 播放
+    // Play
     playTrackAnimation(objectId, anim.name, anim.definition)
     playingAnimations.value.add(key)
   }
 }
 
 /**
- * 播放所有初始动画
+ * Play all initial animations
  */
 function startInitialAnimations(): void {
   if (!renderer.value) return
@@ -436,14 +436,14 @@ function startInitialAnimations(): void {
 
 
 /**
- * 停止所有动画（初始 + 手动触发）
+ * Stop all animations (initial + manual triggers)
  */
 function stopAllAnimations(): void {
   if (!renderer.value) return
   const sceneGraph = renderer.value.getSceneGraph()
   if (!sceneGraph) return
 
-  // 停止所有 GenericAnimationPlayer
+  // Stop all GenericAnimationPlayers
   for (const obj of sceneObjectStore.objects) {
     const player = sceneGraph.getGenericAnimationPlayer(obj.id)
     if (player) {
@@ -460,11 +460,11 @@ function stopAllAnimations(): void {
 // ============================================================================
 
 /**
- * 将编辑器工厂创建的静止 Sprite 升级为播放级 AnimatedSprite
+ * Upgrade static Sprite created by editor factory to playback AnimatedSprite
  *
- * 编辑器工厂的 createEditorAnimationSpriteContainer 为性能优化只创建 PIXI.Sprite（首帧），
- * 但预览对话框需要 PIXI.AnimatedSprite 才能播放帧序列动画。
- * 此函数检测 editor_still_sprite 并将其替换为完整的 AnimatedSprite。
+ * Editor factory createEditorAnimationSpriteContainer creates PIXI.Sprite (first frame) for performance,
+ * but preview dialog needs PIXI.AnimatedSprite to play frame sequence animations.
+ * This function detects editor_still_sprite and replaces it with full AnimatedSprite.
  */
 function upgradeToAnimatedSprite(
   obj: SceneObject,
@@ -475,7 +475,7 @@ function upgradeToAnimatedSprite(
     const propData = propStore.getProp(obj.refId)
     if (propData?.type !== 'animation' || !propData.frames?.length) return
 
-    // 仅升级编辑器 Sprite 容器（SceneObjectRenderer 创建的已经是 AnimatedSprite）
+    // Upgrade editor Sprite container only (those from SceneObjectRenderer are already AnimatedSprite)
     const stillSprite = container.getChildByName('editor_still_sprite')
     if (!stillSprite) return
 
@@ -540,11 +540,11 @@ function upgradeToAnimatedSprite(
 // ============================================================================
 
 onMounted(async () => {
-  // 1. 备份当前 sceneObjectStore 数据和 renderChain
+  // 1. Backup current sceneObjectStore data and renderChain
   backupSceneObjects.value = [...sceneObjectStore.setupState.objects]
   backupRenderChain.value = [...sceneObjectStore.getSceneRenderChain()]
 
-  // 2. 准备预览对象（深拷贝 + 还原坐标偏移）
+  // 2. Prepare preview objects (deep copy + restore coordinate offsets)
   const previewObjects = JSON.parse(JSON.stringify(props.objects)) as SceneObject[]
   if (props.restoreAnchorOffset !== false) {
     const anchor = props.editorAnchor ?? { x: CANVAS_WIDTH / 2, y: CANVAS_HEIGHT / 2 }
@@ -556,20 +556,20 @@ onMounted(async () => {
     }
   }
 
-  // 3. 加载预览对象到 sceneObjectStore（保持原始 ID）
+  // 3. Load preview objects into sceneObjectStore (preserve original IDs)
   const setup: SceneSetup = {
     camera: { x: 0, y: 0, width: 0, height: 0, zoom: 1.0 },
     objects: previewObjects,
-    renderChain: props.renderChain ?? [],  // v19: 使用已保存的渲染链，避免 rebuild
+    renderChain: props.renderChain ?? [],  // v19: Use saved render chain to avoid rebuild
   }
 
   loadSetupToSceneObjects(setup, { skipCamera: true, skipAmbientLight: true })
 
-  // 4. 预加载全量资源（预览需要完整帧动画数据，而非编辑器 first-paint 最小集）
+  // 4. Preload full assets (preview needs complete frame anim data, not editor first-paint minimal set)
   const { collectAssets, loadAssets } = useAssetLoader()
   const { imageUrls, audioUrls } = collectAssets(
     { objects: previewObjects },
-    null  // 预览不涉及 block actions
+    null  // Preview does not involve block actions
   )
   if (imageUrls.size > 0 || audioUrls.size > 0) {
     await loadAssets(
@@ -580,7 +580,7 @@ onMounted(async () => {
   }
   isPreloading.value = false
 
-  // 5. 初始化 PIXI 渲染器
+  // 5. Initialize PIXI renderer
   if (canvasContainerRef.value) {
     const rendererInstance = useSceneRenderer({
       canvasContainer: canvasContainerRef.value,
@@ -592,8 +592,8 @@ onMounted(async () => {
     await rendererInstance.initRenderer()
     await rendererInstance.renderObjects()
 
-    // 5.5 升级 prop/symbol 动画容器：
-    // 编辑器工厂使用 Sprite（first-paint 优化），预览需要 AnimatedSprite 才能播放帧动画
+    // 5.5 Upgrade prop/symbol animation containers:
+    // Editor factory uses Sprite (first-paint optimization); preview needs AnimatedSprite to play frame anims
     const sceneGraph = rendererInstance.getSceneGraph()
     const { getTexture } = useAssetLoader()
     for (const obj of sceneObjectStore.objects) {
@@ -602,16 +602,16 @@ onMounted(async () => {
       upgradeToAnimatedSprite(obj, objContainer, getTexture)
     }
 
-    // 6. 为有 animations 定义但没有 GenericAnimationPlayer 的对象补建 player
-    //    useSceneGraph 仅为 prop/background 类型创建 player
-    //    symbol/composite/expression 等类型需要手动补建
+    // 6. Rebuild players for objects with animations defined but lacking GenericAnimationPlayer
+    //    useSceneGraph creates players only for prop/background types
+    //    symbol/composite/expression types need manual player construction
     const playerCache = sceneGraph.getGenericAnimationPlayers()
     for (const obj of sceneObjectStore.objects) {
       if (obj.animations && Object.keys(obj.animations).length > 0 && !playerCache.has(obj.id)) {
         const container = sceneGraph.getContainer(obj.id)
         if (container) {
-          // v19 Fix: composite 对象需要 playerResolver（委托子对象变换）
-          // 和 boundsProvider（union 空代理容器的动态虚拟边界）
+          // v19 Fix: composite object needs playerResolver (delegates child transforms)
+          // and boundsProvider (dynamic virtual bounds for union proxy container)
           if (obj.type === 'composite') {
             const player = createGenericAnimationPlayer({
               target: container,
@@ -629,18 +629,18 @@ onMounted(async () => {
       }
     }
 
-    // 6. 隐藏安全区域遮罩
+    // 6. Hide safe area mask
     const pixiApp = rendererInstance.getPixiApp()
     const ctx = pixiApp.getContext()
     if (ctx?.safeAreaOverlay) {
       ctx.safeAreaOverlay.visible = false
     }
 
-    // 6. fitContent: 计算内容边界并自适应缩放
+    // 6. fitContent: calculate content bounds and adapt scale
     setTimeout(() => {
       const stage = ctx?.stage
       if (stage) {
-        // 优先使用 contentLayer 的边界，避免 stage 边界包含固定锚点图元导致 bbox 过大。
+        // Prioritize contentLayer bounds to avoid fixed anchor primitives on stage making bbox too large.
         const contentLayerBounds = ctx?.contentLayer?.getLocalBounds()
         const stageBounds = stage.getLocalBounds()
         const fitTarget = choosePreviewFitBounds(contentLayerBounds, stageBounds)
@@ -659,7 +659,7 @@ onMounted(async () => {
       }
     }, 100)
 
-    // 7. 自动播放初始动画（如果有）
+    // 7. Auto play initial animations (if any)
     if (animatableCount.value > 0) {
       setTimeout(() => {
         startInitialAnimations()
@@ -669,15 +669,15 @@ onMounted(async () => {
 })
 
 onBeforeUnmount(() => {
-  // 停止所有动画
+  // Stop all animations
   stopAllAnimations()
 
-  // 清理 PIXI 渲染器
+  // Clean up PIXI renderer
   if (renderer.value) {
     renderer.value.destroyRenderer()
   }
 
-  // 还原 sceneObjectStore 数据和 renderChain
+  // Restore sceneObjectStore data and renderChain
   if (backupSceneObjects.value.length > 0 || sceneObjectStore.objects.length === 0) {
     sceneObjectStore.initFromSetup(backupSceneObjects.value)
     sceneObjectStore.setSceneRenderChain(backupRenderChain.value)

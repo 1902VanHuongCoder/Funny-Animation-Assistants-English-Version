@@ -6,7 +6,7 @@
   >
     <div class="save-template-dialog">
       <div class="dialog-header">
-        <h3>保存为场景模板</h3>
+        <h3>Save as Scene Template</h3>
         <button
           class="close-btn"
           @click="emit('cancel')"
@@ -16,21 +16,21 @@
       </div>
 
       <div class="dialog-body">
-        <!-- 模板名称 -->
+        <!-- Template Name -->
         <div class="form-field">
-          <label>模板名称 <span class="required">*</span></label>
+          <label>Template Name <span class="required">*</span></label>
           <input
             v-model="templateName"
             type="text"
             class="form-input"
-            placeholder="输入模板名称"
+            placeholder="Enter template name"
             @keydown.enter="handleSave"
           >
         </div>
 
-        <!-- 标签 -->
+        <!-- Tags -->
         <div class="form-field">
-          <label>标签（可选）</label>
+          <label>Tags (Optional)</label>
           <div class="tags-input-area">
             <div class="tags-display">
               <span
@@ -49,11 +49,11 @@
               v-model="newTag"
               type="text"
               class="tag-input"
-              placeholder="输入标签后按回车"
+              placeholder="Type tag and press Enter"
               @keydown.enter="addTag"
             >
           </div>
-          <!-- 推荐标签 -->
+          <!-- Recommended Tags -->
           <div
             v-if="recommendedTags.length > 0"
             class="recommended-tags"
@@ -69,21 +69,21 @@
           </div>
         </div>
 
-        <!-- 对象选择列表 -->
+        <!-- Object Selection List -->
         <div class="form-field">
-          <label>选择要包含的对象</label>
+          <label>Select Objects to Include</label>
           <div class="object-select-toolbar">
             <button
               class="btn-select-action"
               @click="selectAll"
             >
-              全选
+              Select All
             </button>
             <button
               class="btn-select-action"
               @click="deselectAll"
             >
-              全不选
+              Deselect All
             </button>
           </div>
           <div class="object-select-list">
@@ -111,11 +111,11 @@
               <span
                 v-if="item.followParent"
                 class="follow-hint"
-              >跟随父对象</span>
+              >Follows parent</span>
             </div>
           </div>
           <div class="select-summary">
-            选中 {{ selectedObjectIds.size }} 个对象
+            Selected {{ selectedObjectIds.size }} objects
           </div>
         </div>
       </div>
@@ -125,14 +125,14 @@
           class="btn-cancel"
           @click="emit('cancel')"
         >
-          取消
+          Cancel
         </button>
         <button
           class="btn-save"
           :disabled="!canSave"
           @click="handleSave"
         >
-          保存
+          Save
         </button>
       </div>
     </div>
@@ -149,9 +149,9 @@ import { snapshotToTemplate } from '@/utils/sceneTemplateEngine'
 
 interface Props {
   visible: boolean
-  /** 打开时预选的对象 ID（可选） */
+  /** Pre-selected object ID on open (optional) */
   initialSelectedObjectId?: string | undefined
-  /** 所有非 camera 对象 */
+  /** All non-camera objects */
   allSceneObjects: SceneObject[]
 }
 
@@ -164,13 +164,13 @@ const emit = defineEmits<{
 
 const templateStore = useSceneTemplateStore()
 
-// 初始名称
+// Initial name
 const defaultName = computed(() => {
   if (props.initialSelectedObjectId) {
     const obj = props.allSceneObjects.find(o => o.id === props.initialSelectedObjectId)
-    return obj?.alias ?? obj?.name ?? '新建模板'
+    return obj?.alias ?? obj?.name ?? 'New Template'
   }
-  return '新建模板'
+  return 'New Template'
 })
 
 const templateName = ref(defaultName.value)
@@ -199,20 +199,20 @@ function removeTag(tag: string) {
   selectedTags.value = selectedTags.value.filter(t => t !== tag)
 }
 
-// ===== 对象选择逻辑 =====
+// ===== Object Selection Logic =====
 
-/** 对象选择列表项 */
+/** Object selection list item */
 interface ObjectSelectItem {
   id: string
   name: string
   icon: string
   isChild: boolean
-  /** 子对象跟随父对象，不可单独勾选/取消 */
+  /** Child objects follow parent, cannot be individually checked/unchecked */
   followParent: boolean
   parentId?: string | undefined
 }
 
-/** 收集某个 composite 的所有递归子对象 ID */
+/** Collect all recursive child IDs of a composite object */
 function collectAllChildIds(compositeId: string, objects: SceneObject[]): Set<string> {
   const result = new Set<string>()
   const composite = objects.find(o => o.id === compositeId)
@@ -221,7 +221,7 @@ function collectAllChildIds(compositeId: string, objects: SceneObject[]): Set<st
   const comp = composite as CompositeObject
   for (const childId of comp.childIds) {
     result.add(childId)
-    // 递归
+    // Recursive
     const childSet = collectAllChildIds(childId, objects)
     for (const id of childSet) {
       result.add(id)
@@ -230,12 +230,12 @@ function collectAllChildIds(compositeId: string, objects: SceneObject[]): Set<st
   return result
 }
 
-/** 构建对象选择列表（树形展示） */
+/** Build object selection list (tree presentation) */
 const objectSelectItems = computed((): ObjectSelectItem[] => {
   const items: ObjectSelectItem[] = []
   const allObjects = props.allSceneObjects
 
-  // 找出所有属于某个 composite 子对象的 ID
+  // Find all IDs belonging to composite children
   const allChildIds = new Set<string>()
   for (const obj of allObjects) {
     if (obj.type === 'composite') {
@@ -246,7 +246,7 @@ const objectSelectItems = computed((): ObjectSelectItem[] => {
     }
   }
 
-  // 顶层对象 = 不是任何 composite 的子对象
+  // Top level objects = not children of any composite
   const topLevel = allObjects.filter(o => !allChildIds.has(o.id))
 
   function addWithChildren(obj: SceneObject, depth: number): void {
@@ -259,7 +259,7 @@ const objectSelectItems = computed((): ObjectSelectItem[] => {
       parentId: obj.parentId,
     })
 
-    // 如果是 composite，展开子对象
+    // If composite, expand children
     if (obj.type === 'composite') {
       const comp = obj as CompositeObject
       for (const childId of comp.childIds) {
@@ -278,14 +278,14 @@ const objectSelectItems = computed((): ObjectSelectItem[] => {
   return items
 })
 
-/** 选中的对象 ID 集合 */
+/** Selected object ID set */
 const selectedObjectIds = ref(new Set<string>(
   props.initialSelectedObjectId ? [props.initialSelectedObjectId] : []
 ))
 
-/** 切换对象的选中状态 */
+/** Toggle object selected state */
 function toggleObjectSelect(item: ObjectSelectItem): void {
-  if (item.followParent) return // 子对象不可单独操作
+  if (item.followParent) return // Child objects cannot be independently toggled
 
   const newSet = new Set(selectedObjectIds.value)
   if (newSet.has(item.id)) {
@@ -318,7 +318,7 @@ function handleSave() {
   const name = templateName.value.trim()
   if (!name || selectedObjectIds.value.size === 0) return
 
-  // 收集选中的顶层对象
+  // Collect selected top level objects
   const selectedTopLevel = props.allSceneObjects.filter(o => selectedObjectIds.value.has(o.id))
 
   const template = snapshotToTemplate(
@@ -477,7 +477,7 @@ function handleSave() {
   background: #e5e7eb;
 }
 
-/* ===== 对象选择列表 ===== */
+/* ===== Object Selection List ===== */
 
 .object-select-toolbar {
   display: flex;

@@ -3,32 +3,32 @@
     class="grouping-mode-bar"
     :style="{ transform: `translate(calc(-50% + ${offset.x}px), ${offset.y}px)` }"
   >
-    <!-- Header: 可拖动 -->
+    <!-- Header: Draggable -->
     <div class="grouping-bar-header" @mousedown="startDrag">
       <span class="grouping-mode-icon">🔗</span>
       <span class="grouping-mode-label">
-        {{ mode === 'create' ? '成组模式' : `添加成员到「${compositeName ?? '未知'}」` }}
+        {{ mode === 'create' ? 'Grouping Mode' : `Add members to "${compositeName ?? 'Unknown'}"` }}
       </span>
       <span class="grouping-pending-list">
-        已选 {{ pendingIds.length }} 个
+        Selected {{ pendingIds.length }}
       </span>
-      <!-- compositeMode 选择器（仅 create 模式且未隐藏） -->
+      <!-- compositeMode selector (only create mode and not hidden) -->
       <template v-if="mode === 'create' && !hideCompositeMode">
         <button
           class="composite-mode-btn"
           :class="{ active: compositeMode === 'entity' }"
-          title="实体模式：删除组合时同时删除子对象"
+          title="Entity mode: Deleting the group also deletes child objects"
           @click="$emit('update:compositeMode', 'entity')"
         >
-          📦 实体
+          📦 Entity
         </button>
         <button
           class="composite-mode-btn"
           :class="{ active: compositeMode === 'union' }"
-          title="联合模式：删除组合时子对象自动解散"
+          title="Union mode: Deleting the group automatically disbands child objects"
           @click="$emit('update:compositeMode', 'union')"
         >
-          📎 联合
+          📎 Union
         </button>
       </template>
       <button
@@ -36,16 +36,16 @@
         :disabled="pendingIds.length < 2 && mode === 'create'"
         @click="$emit('confirm')"
       >
-        ✓ {{ mode === 'create' ? '完成' : '确认' }}
+        ✓ {{ mode === 'create' ? 'Done' : 'Confirm' }}
       </button>
       <button
         class="grouping-btn cancel"
         @click="$emit('cancel')"
       >
-        ✗ 取消
+        ✗ Cancel
       </button>
     </div>
-    <!-- 对象列表 -->
+    <!-- Object list -->
     <div class="grouping-object-list">
       <template v-for="flat in flatNodes" :key="flat.id">
         <label
@@ -106,7 +106,7 @@ defineEmits<{
   (e: 'update:compositeMode', mode: 'entity' | 'union'): void
 }>()
 
-// 展开/折叠状态（组件内部管理）
+// Expand/collapse state (managed internally by component)
 const expandedIds = ref(new Set<string>())
 
 function toggleExpand(id: string): void {
@@ -117,12 +117,12 @@ function toggleExpand(id: string): void {
   }
 }
 
-// 扁平化计算
+// Flatten calculation
 const flatNodes = computed(() =>
   flattenGroupingTree(props.treeNodes, expandedIds.value)
 )
 
-// 拖动偏移（组件内部管理）
+// Drag offset (managed internally by component)
 const offset = ref({ x: 0, y: 0 })
 
 function startDrag(e: MouseEvent): void {
@@ -149,7 +149,7 @@ function startDrag(e: MouseEvent): void {
   document.addEventListener('mouseup', onUp)
 }
 
-// 暴露 reset 方法供父组件在取消/确认时调用
+// Expose reset method for parent component when canceling/confirming
 function resetOffset(): void {
   offset.value = { x: 0, y: 0 }
   expandedIds.value.clear()
@@ -217,7 +217,7 @@ defineExpose({ resetOffset })
   font-size: 11px;
 }
 
-/* compositeMode 选择器 */
+/* compositeMode selector */
 .composite-mode-btn {
   padding: 2px 8px;
   font-size: 11px;
@@ -242,7 +242,7 @@ defineExpose({ resetOffset })
   background: #f3f4f6;
 }
 
-/* 确认 / 取消 */
+/* Confirm / Cancel */
 .grouping-btn {
   padding: 3px 10px;
   font-size: 11px;
@@ -279,7 +279,7 @@ defineExpose({ resetOffset })
   background: #f3f4f6;
 }
 
-/* 对象列表 */
+/* Object list */
 .grouping-object-list {
   max-height: 180px;
   overflow-y: auto;

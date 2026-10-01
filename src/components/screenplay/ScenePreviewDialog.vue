@@ -6,11 +6,11 @@
       @click.self="handleClose"
     >
       <div class="preview-dialog">
-        <!-- 标题栏 -->
+        <!-- Title bar -->
         <div class="preview-header">
           <div class="header-left">
             <span class="preview-icon">🎬</span>
-            <span class="preview-title">场景预览</span>
+            <span class="preview-title">Scene Preview</span>
             <span class="scene-info">{{ sceneTitle }}</span>
             <span
               v-if="(scenePlayerRef?.currentTime ?? 0) > 0"
@@ -21,16 +21,16 @@
           </div>
           <button
             class="close-btn"
-            title="关闭"
+            title="Close"
             @click="handleClose"
           >
             ✕
           </button>
         </div>
         
-        <!-- 预览区域 -->
+        <!-- Preview area -->
         <div class="preview-content">
-          <!-- 加载中 -->
+          <!-- Loading -->
           <div
             v-if="isLoading"
             class="loading-overlay"
@@ -39,7 +39,7 @@
             <span>{{ loadingMessage }}</span>
           </div>
           
-          <!-- 错误信息 -->
+          <!-- Error message -->
           <div
             v-else-if="errorMessage"
             class="error-overlay"
@@ -50,11 +50,11 @@
               class="retry-btn"
               @click="initPreview"
             >
-              重试
+              Retry
             </button>
           </div>
 
-          <!-- 播放器 -->
+          <!-- Player -->
           <ScenePlayer
             v-else
             ref="scenePlayerRef"
@@ -69,7 +69,7 @@
           />
         </div>
 
-        <!-- 控制栏 -->
+        <!-- Controls -->
         <div class="preview-controls">
           <button 
             class="control-btn play-btn" 
@@ -77,7 +77,7 @@
             @click="handlePlayPause"
           >
             <span class="btn-icon">{{ isPlaying ? '⏸' : '▶' }}</span>
-            <span class="btn-text">{{ isPlaying ? '暂停' : '播放' }}</span>
+            <span class="btn-text">{{ isPlaying ? 'Pause' : 'Play' }}</span>
           </button>
           
           <button 
@@ -86,7 +86,7 @@
             @click="handleReset"
           >
             <span class="btn-icon">⏮</span>
-            <span class="btn-text">重置</span>
+            <span class="btn-text">Reset</span>
           </button>
           
           <div class="progress-section">
@@ -118,7 +118,7 @@ import { useAssetLoader } from '@/composables/useAssetLoader'
 import type { Episode } from '@/stores/episodeStore'
 import { useProjectStore } from '@/stores/projectStore'
 import { useSceneObjectStore } from '@/stores/sceneObjectStore'
-// v7.3: effectStore 已删除
+// v7.3: effectStore removed
 import { useSoundStore } from '@/stores/soundStore'
 import type { SceneObject } from '@/types/sceneObject'
 import { ensureSceneTTS as sharedEnsureSceneTTS } from '@/utils/ttsUtils'
@@ -140,12 +140,12 @@ const emit = defineEmits<{
 const projectStore = useProjectStore()
 const sceneObjectStore = useSceneObjectStore()
 
-// Teleport 目标
+// Teleport target
 const teleportTarget = shallowRef<HTMLElement | string>('body')
 
-// 状态
+// State
 const isLoading = ref(true)
-const loadingMessage = ref('正在准备预览...')
+const loadingMessage = ref('Preparing preview...')
 const errorMessage = ref<string | null>(null)
 const isPlaying = ref(false)
 const currentTime = ref(0)
@@ -161,85 +161,85 @@ interface ScenePlayerInstance {
   isPlaying: boolean
 }
 
-// 引用
+// References
 const scenePlayerRef = ref<ScenePlayerInstance | null>(null)
 
-// 资源管理
+// Asset management
 const generatedBlobUrls = new Set<string>()
-const loadedTextureUrls = new Set<string>() // 追踪加载的纹理
-const loadedAudioUrls = new Set<string>() // 追踪加载的音频
+const loadedTextureUrls = new Set<string>() // Track loaded textures
+const loadedAudioUrls = new Set<string>() // Track loaded audio
 
 const { loadImageUrl, getImageUrl } = useAssetImage()
 const { loadAudioUrl, getAudioUrl, revokeBlobUrl } = useAssetAudio()
 
 // Stores
-// v7.3: effectStore 已删除
+// v7.3: effectStore removed
 const soundStore = useSoundStore()
 
-// 计算当前场景
+// Compute current scene
 const currentScene = computed(() => {
   if (!props.episode) return null
   return props.episode.scenes.find(s => s.id === props.sceneId) || null
 })
 
-const sceneTitle = computed(() => currentScene.value?.title || '未命名场景')
+const sceneTitle = computed(() => currentScene.value?.title || 'Unnamed Scene')
 
-// 更新 teleport 目标
+// Update teleport target
 function updateTeleportTarget() {
   const fullscreenElement = document.fullscreenElement
   teleportTarget.value = fullscreenElement ? fullscreenElement as HTMLElement : 'body'
 }
 
-// 格式化时间
+// Format time
 function formatTime(ms: number): string {
   const seconds = Math.floor(ms / 1000)
   const milliseconds = Math.floor((ms % 1000) / 10)
   return `${seconds.toString().padStart(2, '0')}:${milliseconds.toString().padStart(2, '0')}`
 }
 
-// 初始化预览
+// Initialize preview
 async function initPreview() {
   isLoading.value = true
   errorMessage.value = null
-  generatedBlobUrls.clear() // 清理旧的（如果有）
+  generatedBlobUrls.clear() // Clear old ones if any
   
   try {
-    loadingMessage.value = '正在初始化...'
+    loadingMessage.value = 'Initializing...'
     
-    // 初始化 AudioContext
+    // Initialize AudioContext
     await audioKit.init()
     
-    // 1. 确保 TTS
+    // 1. Ensure TTS
     await doEnsureSceneTTS()
     if (errorMessage.value) return
     
-    // 2. 预加载图片资源 (Texture)
+    // 2. Preload image assets (Texture)
     await preloadSceneImages()
     
-    // 3. 预加载音频资源
+    // 3. Preload audio assets
     await preloadSceneAudio()
     
-    loadingMessage.value = '准备就绪'
+    loadingMessage.value = 'Ready'
     
-    // 等待一帧，确保 ScenePlayer 挂载
+    // Wait one frame to ensure ScenePlayer mounts
     await nextTick()
   } catch (e) {
     console.error('Init preview failed', e)
-    errorMessage.value = `初始化失败: ${e instanceof Error ? e.message : '未知错误'}`
+    errorMessage.value = `Initialization failed: ${e instanceof Error ? e.message : 'Unknown error'}`
   } finally {
     isLoading.value = false
   }
 }
 
 /**
- * 使用共享模块确保场景 TTS，然后预加载音频 Blob URL
+ * Use shared module to ensure scene TTS, then preload audio Blob URL
  */
 async function doEnsureSceneTTS() {
   const scene = currentSceneCopy.value
   const originalScene = currentScene.value
   if (!scene || !originalScene) return
 
-  loadingMessage.value = '正在检查语音资源...'
+  loadingMessage.value = 'Checking voice assets...'
 
   try {
     await sharedEnsureSceneTTS(originalScene, scene, {
@@ -253,13 +253,13 @@ async function doEnsureSceneTTS() {
     console.error('TTS error', e)
     const error = e as Error & { errorCode?: string }
     if (error.errorCode === 'TTS_PROVIDER_NOT_CONFIGURED') {
-      errorMessage.value = '本地 TTS Provider 尚未配置。请先为台词导入本地音频，或配置本地 TTS Provider。'
+      errorMessage.value = 'Local TTS Provider is not configured. Please import local audio for lines, or configure a local TTS Provider.'
       return
     }
     throw e
   }
 
-  // 预加载音频 Blob URL（与播放器生命周期绑定，保留在组件内）
+  // Preload audio Blob URL (bound to player lifecycle, kept inside component)
   for (const block of scene.script) {
     if (block.type !== 'dialogue' && block.type !== 'narration') continue
     const finalConfig = block.ttsConfig
@@ -274,13 +274,13 @@ async function doEnsureSceneTTS() {
         await loadAudioUrl(audioPath)
         let blobUrl = getAudioUrl(audioPath)
 
-        // v12.9: 验证 blob URL 是否仍然有效
+        // v12.9: Verify if blob URL is still valid
         if (blobUrl?.startsWith('blob:')) {
           try {
             const resp = await fetch(blobUrl)
             if (!resp.ok) throw new Error('Blob URL not accessible')
           } catch {
-            console.warn('[ScenePreview] 缓存的 Blob URL 已失效，重新加载:', audioPath)
+            console.warn('[ScenePreview] Cached Blob URL expired, reloading:', audioPath)
             revokeBlobUrl(audioPath)
             await loadAudioUrl(audioPath)
             blobUrl = getAudioUrl(audioPath)
@@ -303,20 +303,20 @@ async function preloadSceneImages() {
   const scene = currentSceneCopy.value
   if (!scene) return
   
-  loadingMessage.value = '正在加载图片资源...'
+  loadingMessage.value = 'Loading image assets...'
   
-  // 使用 useAssetLoader 统一收集资源（包含表情和 partAssetOverrides）
+  // Use useAssetLoader to collect assets (including expressions and partAssetOverrides)
   const { collectAssets, loadAssets } = useAssetLoader()
   
-  // 修复：不仅扫描 Setup，还要扫描所有 Block Actions 的动态资源
-  // 这确保 set_character 动态切换的表情等资源也被预加载
+  // Fix: Scan both Setup and all Block Actions dynamic assets
+  // Ensures dynamically switched expressions in set_character are preloaded
   const allImageUrls = new Set<string>()
   
-  // Step 1: 收集 Setup 静态资源
+  // Step 1: Collect Setup static assets
   const { imageUrls: setupImageUrls } = collectAssets(scene.setup, null)
   setupImageUrls.forEach(url => allImageUrls.add(url))
   
-  // Step 2: 收集所有 Block Actions 的动态资源
+  // Step 2: Collect dynamic assets from all Block Actions
   for (const block of scene.script) {
     const { imageUrls: blockImageUrls } = collectAssets(scene.setup, block)
     blockImageUrls.forEach(url => allImageUrls.add(url))
@@ -324,21 +324,21 @@ async function preloadSceneImages() {
   
   // console.log(`[ScenePreviewDialog] preloadSceneImages: collected ${allImageUrls.size} image URLs (setup: ${setupImageUrls.size}, with blocks: ${allImageUrls.size})`)
   
-  // 使用 useAssetLoader 加载资源
+  // Load assets using useAssetLoader
   await loadAssets(allImageUrls, new Set())
   
-  // 记录已加载的 URL（用于 cleanup）
-  // 注意：useAssetLoader 内部使用 textureCache，我们也需要追踪 blobUrl 用于 PIXI.Assets 清理
+  // Record loaded URLs (for cleanup)
+  // Note: useAssetLoader uses textureCache internally; track blobUrl for PIXI.Assets cleanup
   for (const url of allImageUrls) {
     try {
-      // 确保资源也加载到 useAssetImage 的 blob store
+      // Ensure assets loaded to useAssetImage blob store as well
       await loadImageUrl(url)
       const blobUrl = getImageUrl(url)
       if (blobUrl) {
         loadedTextureUrls.add(blobUrl)
       }
     } catch (e) {
-      // loadAssets 已处理，这里仅追踪
+      // Handled by loadAssets, tracking only here
     }
   }
 }
@@ -348,7 +348,7 @@ async function preloadSceneAudio() {
   const scene = currentSceneCopy.value
   if (!scene) return
 
-  loadingMessage.value = '正在加载音频资源...'
+  loadingMessage.value = 'Loading audio assets...'
   const audioPaths = new Set<string>()
   
   // Collect SFX / BGM
@@ -376,7 +376,7 @@ async function preloadSceneAudio() {
   }
 }
 
-// 事件处理
+// Event handling
 function handlePlayPause() {
   if (isPlaying.value) {
     scenePlayerRef.value?.pause()
@@ -389,7 +389,7 @@ function handleReset() {
   scenePlayerRef.value?.reset()
 }
 
-// Seek 功能已移除，进度条仅用于显示当前进度
+// Seek removed, progress bar displays current progress only
 
 
 
@@ -413,7 +413,7 @@ function handlePlayerError(msg: string) {
 function handleClose() {
   scenePlayerRef.value?.pause()
   
-  // 释放预加载的纹理资源
+  // Release preloaded texture assets
   for (const url of loadedTextureUrls) {
       if (PIXI.Assets.cache.has(url)) {
           void PIXI.Assets.unload(url)
@@ -421,53 +421,53 @@ function handleClose() {
   }
   loadedTextureUrls.clear()
 
-  // 释放预加载的音频资源（仅从 audioKit 缓存中移除，不 revoke blob URL）
+  // Release preloaded audio assets (remove from audioKit cache, do not revoke blob URL)
   for (const url of loadedAudioUrls) {
       audioKit.unload(url)
   }
   loadedAudioUrls.clear()
 
-  // v12.9: 不要 revoke generatedBlobUrls，它们可能属于 useAssetAudio 的全局缓存
-  // 否则会导致全局缓存中的 blob URL 失效，下次打开时 fetch 失败 (ERR_FILE_NOT_FOUND)
+  // v12.9: Do not revoke generatedBlobUrls, they may belong to useAssetAudio global cache
+  // otherwise cached blob URLs invalidate, causing fetch failure (ERR_FILE_NOT_FOUND) on reopen
   generatedBlobUrls.clear()
   
-  // 恢复 Store 中的 Base64 (如果被我们修改成了 Blob URL)
-  // 实际上，由于我们直接修改了 episode.scenes 中的对象，而 Store 中的 state 也是这些对象
-  // 我们可能污染了 Store。
-  // 这是一个风险点。
-  // 更好的做法是：不要修改原始对象，而是创建一个 Map 传递给 ScenePlayer？
-  // 或者：在 close 时，如果有 Base64 备份，恢复它？
-  // 由于我们是 "Base64 -> Blob URL"，我们丢失了 Base64 吗？
-  // 并没有，我们是从 Store 读取 Base64，转换后赋值给 .audio。
-  // 如果我们不恢复，下次 Store 保存时会保存 Blob URL 吗？
-  // 是的，如果用户在预览期间保存项目。这是个问题。
+  // Restore Base64 in Store (if modified to Blob URL)
+  // We modified episode.scenes directly, which are the same state objects in Store
+  // We might pollute Store.
+  // This is a risk point.
+  // Better practice: pass a Map to ScenePlayer without modifying originals?
+  // Or restore Base64 backup on close?
+  // Did we lose Base64 during 'Base64 -> Blob URL'?
+  // No, read Base64 from Store and assigned converted value to .audio.
+  // If not restored, will Store save Blob URLs?
+  // Yes, if user saves project during preview. This is an issue.
   
-  // 修正方案：
-  // 我们在 ensureSceneTTS 中，不应该修改 block.ttsConfig.audio。
-  // 但是 ScenePlayer 是设计为从 block.ttsConfig.audio 读取的。
-  // ScenePlayer 应该支持从外部 Map 获取音频，或者我们应该深拷贝一份 Scene 数据给 ScenePlayer。
+  // Fix plan:
+  // Do not modify block.ttsConfig.audio in ensureSceneTTS.
+  // But ScenePlayer is designed to read from block.ttsConfig.audio.
+  // ScenePlayer should support external Map or deep copied Scene data.
   
-  // 考虑到 ScenePlayer 重构中我们移除了所有转换逻辑，它现在只认 URL。
-  // 最简单的方案：深拷贝 currentScene 给 ScenePlayer。
-  // 但 ScenePlayer 接收 episodeId/sceneId 并自己从 Store 获取...
-  // 这导致 ScenePlayer 总是从 Store 获取原始数据。
+  // ScenePlayer only recognizes URLs after refactoring.
+  // Simplest solution: deep copy currentScene for ScenePlayer.
+  // But ScenePlayer receives episodeId/sceneId and fetches from Store...
+  // leading ScenePlayer to always get raw data from Store.
   
-  // 回头看 ScenePlayer.vue:
+  // Looking back at ScenePlayer.vue:
   // const currentScene = computed(() => props.episode.scenes.find...)
-  // 它使用 props.episode。
+  // It uses props.episode.
   
-  // 所以，如果我们在 ScenePreviewDialog 中传递一个 **深拷贝的 Episode** 给 ScenePlayer，
-  // 我们就可以随意修改这个副本而不影响 Store。
+  // So passing a deep copied Episode to ScenePlayer
+  // allows modifying copy safely without affecting Store.
   
   emit('close')
 }
 
-// 修正：使用副本传递给 ScenePlayer
+// Fix: Pass copy to ScenePlayer
 const episodeCopy = ref<Episode | null>(null)
-// 备份 SceneObjectStore 数据
+// Backup SceneObjectStore data
 const backupSceneObjects = ref<SceneObject[]>([])
 
-// 覆盖 currentScene 计算属性，使用 episodeCopy
+// Override currentScene computed property using episodeCopy
 const currentSceneCopy = computed(() => {
   if (!episodeCopy.value) return null
   return episodeCopy.value.scenes.find(s => s.id === props.sceneId) || null
@@ -476,16 +476,16 @@ const currentSceneCopy = computed(() => {
 watch(() => props.visible, async (val) => {
   if (val) {
     updateTeleportTarget()
-    // 深拷贝 Episode，避免污染 Store
+    // Deep copy Episode to avoid polluting Store
     episodeCopy.value = JSON.parse(JSON.stringify(props.episode)) as Episode
     
-    // 同步 Scene Objects 到 Store，以便 getVoiceId 能查找到实例
-    // 注意：使用原始 currentScene (来自 props) 获取对象数据
-    // 备份现有数据
+    // Sync Scene Objects to Store so getVoiceId can find instances
+    // Note: use original currentScene (from props) to get object data
+    // Backup existing data
     backupSceneObjects.value = [...sceneObjectStore.setupState.objects]
 
     if (currentScene.value?.setup?.objects) {
-       // 双层架构：使用 initFromSetup 替代直接赋值（objects 现在是 computed 只读）
+       // Dual-layer: use initFromSetup instead of direct assignment (objects is read-only computed)
        sceneObjectStore.initFromSetup(currentScene.value.setup.objects)
     } else {
        sceneObjectStore.clearObjects()
@@ -495,10 +495,10 @@ watch(() => props.visible, async (val) => {
   } else {
     episodeCopy.value = null
     
-    // 恢复 Scene Objects
-    // 只有在有备份时才恢复，避免多次恢复导致数据丢失
+    // Restore Scene Objects
+    // Restore only when backup exists, avoiding data loss from multiple restores
     if (backupSceneObjects.value.length > 0 || sceneObjectStore.objects.length === 0) {
-        // 双层架构：使用 initFromSetup 替代直接赋值
+        // Dual-layer: use initFromSetup instead of direct assignment
         sceneObjectStore.initFromSetup(backupSceneObjects.value)
         backupSceneObjects.value = []
     }

@@ -4,14 +4,14 @@
       v-if="!action"
       class="empty-hint"
     >
-      请选择一个动作以编辑属性
+      Select an action to inspect properties
     </div>
     
     <div
       v-else
       class="inspector-form"
     >
-      <!-- 通用头部 -->
+      <!-- Header -->
       <div class="inspector-header">
         <div class="target-object">
           <span class="target-icon">{{ getActionHeaderIcon(action!) }}</span>
@@ -21,15 +21,15 @@
           class="action-type-badge"
           :class="action!['category']"
         >
-          {{ action!['category'] === 'point' ? '◆ 瞬时' : '═ 持续' }}
+          {{ action!['category'] === 'point' ? '◆ Instant' : '═ Duration' }}
         </span>
       </div>
 
-      <!-- 时间设置 (v6.2) -->
+      <!-- Timing Settings (v6.2) -->
       <div class="property-section">
-        <h4>时间设置</h4>
+        <h4>Timing Settings</h4>
         <div class="property-field">
-          <label>序号:</label>
+          <label>Slot:</label>
           <select
             :value="action!['slotIndex']"
             @change="handleSlotIndexChange"
@@ -47,7 +47,7 @@
           v-if="action!['category'] === 'duration'"
           class="property-field"
         >
-          <label>跨度:</label>
+          <label>Span:</label>
           <input
             :value="(action as BaseDurationAction)['slotSpan'] ?? 1"
             type="number"
@@ -58,25 +58,25 @@
         </div>
       </div>
 
-      <!-- 参数配置 (v6.3 Delta 模式) -->
+      <!-- Parameter Configuration (v6.3 Delta Mode) -->
       <div class="property-section">
-        <h4>已变更属性</h4>
+        <h4>Modified Properties</h4>
         
-        <!-- set_character 已移除 -->
+        <!-- set_character removed -->
 
-        <!-- set_transform: 视觉属性 + 几何属性 (v9.2) -->
+        <!-- set_transform: visual properties + geometry properties (v9.2) -->
         <template v-if="action!['type'] === 'set_transform'">
-          <!-- v9.2: Death Action 简化面板 -->
+          <!-- v9.2: Death Action simplified panel -->
           <template v-if="isCurrentDeathAction">
             <div class="death-action-panel">
               <div class="death-icon">🍂</div>
-              <div class="death-label">对象已消亡</div>
-              <div class="death-hint">消亡后对象不再渲染，无法编辑属性</div>
+              <div class="death-label">Object Despawned</div>
+              <div class="death-hint">The object is no longer rendered after despawning and its properties cannot be edited</div>
             </div>
           </template>
-          <!-- 正常属性编辑器 -->
+          <!-- Normal property editor -->
           <template v-else>
-            <!-- 几何属性 (v9.2 新增) -->
+            <!-- Geometry properties (v9.2) -->
             <template
               v-for="prop in activeGeometryProps"
               :key="prop.key"
@@ -86,13 +86,13 @@
                   <span class="delta-property-label">{{ prop.label }}</span>
                   <button
                     class="delta-remove-btn"
-                    title="移除"
+                    title="Remove"
                     @click="removeGeometryProp(prop.key)"
                   >
                     ×
                   </button>
                 </div>
-                <!-- 百分比类型 -->
+                <!-- Percentage type -->
                 <template v-if="prop.type === 'percent'">
                   <div class="percent-input-row" style="display: flex; align-items: center;">
                     <input
@@ -106,14 +106,14 @@
                       v-if="prop.key === 'scaleX'"
                       class="lock-btn" 
                       style="background: none; border: none; cursor: pointer; padding: 0 4px; font-size: 14px; margin-left: 6px; opacity: 0.8;"
-                      :title="scaleLocked ? '解锁比例' : '锁定比例'"
+                      :title="scaleLocked ? 'Unlock Ratio' : 'Lock Ratio'"
                       @click="toggleScaleLock"
                     >
                       {{ scaleLocked ? '🔗' : '🔓' }}
                     </button>
                   </div>
                 </template>
-                <!-- 角度类型 -->
+                <!-- Degree type -->
                 <template v-else-if="prop.type === 'degree'">
                   <div class="degree-input-row">
                     <input
@@ -125,7 +125,7 @@
                     <span class="degree-label">°</span>
                   </div>
                 </template>
-                <!-- 普通数字类型 -->
+                <!-- Normal number type -->
                 <template v-else>
                   <input
                     v-model.number="geometryParams[prop.key]"
@@ -137,7 +137,7 @@
               </div>
             </template>
             
-            <!-- 视觉属性 -->
+            <!-- Visual properties -->
             <template
               v-for="prop in activeVisualProps"
               :key="prop.key"
@@ -147,7 +147,7 @@
                   <span class="delta-property-label">{{ prop.label }}</span>
                   <button
                     class="delta-remove-btn"
-                    title="移除"
+                    title="Remove"
                     @click="removeVisualProp(prop.key)"
                   >
                     ×
@@ -190,23 +190,23 @@
               v-if="activeVisualProps.length === 0 && activeGeometryProps.length === 0"
               class="empty-props-hint"
             >
-              暂无变更属性，点击下方添加
+              No modified properties, click below to add
             </div>
           </template>
         </template>
 
-        <!-- v9.3: set_visual: 视觉属性 (visible/flipX/zIndex) -->
+        <!-- v9.3: set_visual: Visual properties (visible/flipX/zIndex) -->
         <template v-else-if="action!['type'] === 'set_visual'">
-          <!-- visible 可见性 -->
+          <!-- visible -->
           <div
             v-if="setVisualParams['visible'] !== undefined"
             class="delta-property-item"
           >
             <div class="delta-property-header">
-              <span class="delta-property-label">👁️ 可见性</span>
+              <span class="delta-property-label">👁️ Visibility</span>
               <button
                 class="delta-remove-btn"
-                title="移除"
+                title="Remove"
                 @click="removeSetVisualProp('visible')"
               >
                 ×
@@ -218,20 +218,20 @@
                 type="checkbox"
                 @change="handleSetVisualParamsChange"
               >
-              <span>显示</span>
+              <span>Visible</span>
             </label>
           </div>
           
-          <!-- flipX 水平翻转 -->
+          <!-- flipX -->
           <div
             v-if="setVisualParams['flipX'] !== undefined"
             class="delta-property-item"
           >
             <div class="delta-property-header">
-              <span class="delta-property-label">🔄 翻转</span>
+              <span class="delta-property-label">🔄 Flip</span>
               <button
                 class="delta-remove-btn"
-                title="移除"
+                title="Remove"
                 @click="removeSetVisualProp('flipX')"
               >
                 ×
@@ -243,20 +243,20 @@
                 type="checkbox"
                 @change="handleSetVisualParamsChange"
               >
-              <span>水平翻转</span>
+              <span>Flip Horizontal</span>
             </label>
           </div>
           
-          <!-- zIndex 层级 -->
+          <!-- zIndex -->
           <div
             v-if="setVisualParams['zIndex'] !== undefined"
             class="delta-property-item"
           >
             <div class="delta-property-header">
-              <span class="delta-property-label">📑 层级</span>
+              <span class="delta-property-label">📑 Layer (Z-Index)</span>
               <button
                 class="delta-remove-btn"
-                title="移除"
+                title="Remove"
                 @click="removeSetVisualProp('zIndex')"
               >
                 ×
@@ -275,10 +275,10 @@
             class="delta-property-item"
           >
             <div class="delta-property-header">
-              <span class="delta-property-label">💡 场景光照</span>
+              <span class="delta-property-label">💡 Scene Lighting</span>
               <button
                 class="delta-remove-btn"
-                title="移除"
+                title="Remove"
                 @click="removeSetVisualProp('receiveLighting')"
               >
                 ×
@@ -290,7 +290,7 @@
                 type="checkbox"
                 @change="handleSetVisualParamsChange"
               >
-              <span>参与场景光照</span>
+              <span>Receive Scene Lighting</span>
             </label>
           </div>
 
@@ -299,10 +299,10 @@
             class="delta-property-item"
           >
             <div class="delta-property-header">
-              <span class="delta-property-label">🌑 脚底投影</span>
+              <span class="delta-property-label">🌑 Ground Shadow</span>
               <button
                 class="delta-remove-btn"
-                title="移除"
+                title="Remove"
                 @click="removeSetVisualProp('castShadow')"
               >
                 ×
@@ -314,41 +314,41 @@
                 type="checkbox"
                 @change="handleSetVisualParamsChange"
               >
-              <span>投射阴影</span>
+              <span>Cast Shadow</span>
             </label>
           </div>
           
-          <!-- 空状态提示 -->
+          <!-- Empty state hint -->
           <div
             v-if="setVisualParams['visible'] === undefined && setVisualParams['flipX'] === undefined && setVisualParams['zIndex'] === undefined && setVisualParams['receiveLighting'] === undefined && setVisualParams['castShadow'] === undefined"
             class="empty-props-hint"
           >
-            暂无变更属性
+            No modified properties
           </div>
         </template>
 
-        <!-- set_lifecycle: 生命周期控制 -->
+        <!-- set_lifecycle: Lifecycle control -->
         <template v-else-if="action!['type'] === 'set_lifecycle'">
-          <!-- 消亡 Action 简化面板 -->
+          <!-- Despawn Action simplified panel -->
           <template v-if="isCurrentDeathAction">
             <div class="death-action-panel">
               <div class="death-icon">🍂</div>
-              <div class="death-label">对象已消亡</div>
-              <div class="death-hint">消亡后对象不再渲染，无法编辑属性</div>
+              <div class="death-label">Object Despawned</div>
+              <div class="death-hint">The object is no longer rendered after despawning and its properties cannot be edited</div>
             </div>
           </template>
-          <!-- 出生 Action -->
+          <!-- Spawn Action -->
           <template v-else-if="isCurrentBirthAction">
             <div class="birth-action-panel">
               <div class="birth-icon">🌱</div>
-              <div class="birth-label">对象出生</div>
+              <div class="birth-label">Object Spawned</div>
               <label class="anim-option-checkbox">
                 <input
                   type="checkbox"
                   :checked="(action as SetLifecycleAction).params.autoDespawnOnBlockEnd ?? true"
                   @change="handleAutoDespawnChange(($event.target as HTMLInputElement).checked)"
                 >
-                <span>本段结束后自动消亡</span>
+                <span>Auto-despawn at end of block</span>
               </label>
             </div>
           </template>
@@ -359,14 +359,14 @@
             <div class="scene-structure-summary">
               <div class="scene-structure-icon">🧭</div>
               <div>
-                <div class="scene-structure-title">结构变更</div>
-                <div class="scene-structure-hint">当前槽位的父子结构最终状态</div>
+                <div class="scene-structure-title">Structure Change</div>
+                <div class="scene-structure-hint">Parent-child structure final state for current slot</div>
               </div>
             </div>
 
             <div class="scene-structure-counts">
-              <span>结构操作 {{ sceneStructureOperationGroups.length }}</span>
-              <span>变更项 {{ sceneStructureChangeCount }}</span>
+              <span>Structure Operations {{ sceneStructureOperationGroups.length }}</span>
+              <span>Changes {{ sceneStructureChangeCount }}</span>
             </div>
 
             <div
@@ -381,7 +381,7 @@
                 </div>
                 <button
                   class="delta-remove-btn"
-                  title="删除此结构操作"
+                  title="Delete this structure operation"
                   @click="removeSceneStructureOperation(group)"
                 >
                   ×
@@ -392,7 +392,7 @@
                 v-if="group.parentEntries.length > 0"
                 class="scene-structure-subsection"
               >
-                <div class="scene-structure-subtitle">父级关系</div>
+                <div class="scene-structure-subtitle">Parent Relationship</div>
                 <div
                   v-for="entry in group.parentEntries"
                   :key="`parent-${entry.objectId}`"
@@ -403,7 +403,7 @@
                     <span
                       v-if="!getSceneObject(entry.objectId)"
                       class="scene-structure-missing"
-                    >对象已不存在</span>
+                    >Object no longer exists</span>
                   </div>
                   <div class="scene-structure-value">
                     {{ getObjectDisplayName(entry.parentId) }}
@@ -415,7 +415,7 @@
                 v-if="group.spawnedEntries.length > 0"
                 class="scene-structure-subsection"
               >
-                <div class="scene-structure-subtitle">成组状态</div>
+                <div class="scene-structure-subtitle">Group State</div>
                 <div
                   v-for="entry in group.spawnedEntries"
                   :key="`spawned-${entry.objectId}`"
@@ -427,23 +427,23 @@
                       <span
                         v-if="!getSceneObject(entry.objectId)"
                         class="scene-structure-missing"
-                      >对象已不存在</span>
+                      >Object no longer exists</span>
                     </div>
                     <div class="scene-structure-value">
-                      {{ entry.spawned ? '启用' : '停用' }}
+                      {{ entry.spawned ? 'Enabled' : 'Disabled' }}
                     </div>
                   </div>
                   <label
                     v-if="entry.spawned"
                     class="scene-structure-auto-restore-row"
-                    title="本段结束后自动停用该结构对象，并还原挂入它的成员关系"
+                    title="Automatically deactivate this structure object at the end of this block and restore its member attachments"
                   >
                     <input
                       type="checkbox"
                       :checked="isSceneStructureAutoRestoreEnabled(group.operation)"
                       @change="handleSceneStructureAutoRestoreChange(group.id, ($event.target as HTMLInputElement).checked)"
                     >
-                    <span>本段结束后自动停用</span>
+                    <span>Auto-deactivate at end of block</span>
                   </label>
                 </div>
               </div>
@@ -453,24 +453,24 @@
               v-if="sceneStructureChangeCount === 0"
               class="empty-props-hint"
             >
-              这条结构变更没有任何变更项
+              This structure change has no modified items
             </div>
           </div>
         </template>
 
-        <!-- P2: set_composite: 修改组合对象属性（可编辑面板） -->
+        <!-- P2: set_composite: Modify composite object properties (editable panel) -->
         <template v-else-if="action!['type'] === 'set_composite'">
 
-          <!-- renderChain 排序编辑器 -->
+          <!-- renderChain sorting editor -->
           <div
             v-if="compositeParams.renderChain !== undefined"
             class="delta-property-item"
           >
             <div class="delta-property-header">
-              <span class="delta-property-label">📋 渲染链排序</span>
+              <span class="delta-property-label">📋 Render Chain Order</span>
               <button
                 class="delta-remove-btn"
-                title="移除"
+                title="Remove"
                 @click="removeCompositeProp('renderChain')"
               >
                 ×
@@ -478,11 +478,11 @@
             </div>
             <div class="sc-rc-list">
               <div class="sc-rc-header">
-                <span>渲染顺序 ({{ compositeParams.renderChain?.length ?? 0 }})</span>
+                <span>Render Order ({{ compositeParams.renderChain?.length ?? 0 }})</span>
                 <div class="sc-rc-controls">
                   <button
                     class="sc-rc-move-btn"
-                    title="上移（底层方向）"
+                    title="Move Up (toward bottom layer)"
                     :disabled="!scRcCanMoveUp"
                     @click="handleCompositeChildMove(scRcSelectedIndex, -1)"
                   >
@@ -490,7 +490,7 @@
                   </button>
                   <button
                     class="sc-rc-move-btn"
-                    title="下移（顶层方向）"
+                    title="Move Down (toward top layer)"
                     :disabled="!scRcCanMoveDown"
                     @click="handleCompositeChildMove(scRcSelectedIndex, 1)"
                   >
@@ -499,14 +499,14 @@
                 </div>
               </div>
               <div class="sc-rc-order-hint">
-                ↑ 底层  ·  ↓ 顶层
+                ↑ Bottom Layer  ·  ↓ Top Layer
               </div>
               <template v-for="(entry, displayIdx) in scRcDisplay" :key="'scrc-' + displayIdx">
-                <!-- zIndex 分组分割线 -->
+                <!-- zIndex group divider -->
                 <div v-if="entry.type === 'divider'" class="sc-rc-zindex-divider">
                   <span class="sc-rc-zindex-label">zIndex {{ entry.zIndex }}</span>
                 </div>
-                <!-- 渲染链项 -->
+                <!-- Render chain item -->
                 <div
                   v-else
                   class="sc-rc-item"
@@ -522,38 +522,38 @@
                   @drop.prevent="onScRcDrop(entry.flatIndex)"
                   @dragend="onScRcDragEnd"
                 >
-                  <span class="sc-rc-drag-handle" title="拖拽排序">⠿</span>
+                  <span class="sc-rc-drag-handle" title="Drag to reorder">⠿</span>
                   <span class="sc-rc-icon">{{ getCompositeChildIcon(entry.childId) }}</span>
                   <span class="sc-rc-name">{{ getCompositeChildName(entry.childId) }}</span>
                 </div>
               </template>
               <div v-if="!compositeParams.renderChain?.length" class="sc-rc-empty">
-                暂无子对象
+                No child objects
               </div>
             </div>
           </div>
 
-          <!-- 空状态提示 -->
+          <!-- Empty state hint -->
           <div
             v-if="compositeParams.renderChain === undefined"
             class="empty-props-hint"
           >
-            暂无变更属性，点击下方添加
+            No modified properties, click below to add
           </div>
         </template>
 
-        <!-- Clip-Mask Phase 1 D3: set_mask（修改蒙版裁切目标 / 形状） -->
+        <!-- Clip-Mask Phase 1 D3: set_mask (modify mask target / shape) -->
         <template v-else-if="action!['type'] === 'set_mask'">
-          <!-- 形状（shape） -->
+          <!-- Shape -->
           <div
             v-if="maskParams.shape !== undefined"
             class="delta-property-item"
           >
             <div class="delta-property-header">
-              <span class="delta-property-label">形状</span>
+              <span class="delta-property-label">Shape</span>
               <button
                 class="delta-remove-btn"
-                title="移除"
+                title="Remove"
                 @click="removeMaskProp('shape')"
               >
                 ×
@@ -564,21 +564,21 @@
               class="prop-select"
               @change="handleMaskParamsChange"
             >
-              <option value="rectangle">▭ 矩形</option>
-              <option value="ellipse">⬭ 椭圆</option>
+              <option value="rectangle">▭ Rectangle</option>
+              <option value="ellipse">⬭ Ellipse</option>
             </select>
           </div>
 
-          <!-- 宽度（width） -->
+          <!-- Width -->
           <div
             v-if="maskParams.width !== undefined"
             class="delta-property-item"
           >
             <div class="delta-property-header">
-              <span class="delta-property-label">宽度</span>
+              <span class="delta-property-label">Width</span>
               <button
                 class="delta-remove-btn"
-                title="移除"
+                title="Remove"
                 @click="removeMaskProp('width')"
               >
                 ×
@@ -594,16 +594,16 @@
             >
           </div>
 
-          <!-- 高度（height） -->
+          <!-- Height -->
           <div
             v-if="maskParams.height !== undefined"
             class="delta-property-item"
           >
             <div class="delta-property-header">
-              <span class="delta-property-label">高度</span>
+              <span class="delta-property-label">Height</span>
               <button
                 class="delta-remove-btn"
-                title="移除"
+                title="Remove"
                 @click="removeMaskProp('height')"
               >
                 ×
@@ -619,16 +619,16 @@
             >
           </div>
 
-          <!-- 裁切目标（targetIds） -->
+          <!-- Clipping Targets (targetIds) -->
           <div
             v-if="maskParams.targetIds !== undefined"
             class="delta-property-item"
           >
             <div class="delta-property-header">
-              <span class="delta-property-label">✂ 裁切目标 ({{ maskParams.targetIds.length }})</span>
+              <span class="delta-property-label">✂ Clipping Targets ({{ maskParams.targetIds.length }})</span>
               <button
                 class="delta-remove-btn"
-                title="移除"
+                title="Remove"
                 @click="removeMaskProp('targetIds')"
               >
                 ×
@@ -646,17 +646,17 @@
                 </span>
                 <button
                   class="mask-target-remove-btn"
-                  title="移除目标"
+                  title="Remove target"
                   @click="removeMaskTarget(tid)"
                 >
                   ❌
                 </button>
               </li>
             </ul>
-            <div v-else class="mask-target-empty">无目标（全部释放）</div>
+            <div v-else class="mask-target-empty">No targets (release all)</div>
             <div class="mask-target-add-row">
               <select v-model="maskTargetAddSelection" class="mask-target-add-select">
-                <option value="">+ 添加目标...</option>
+                <option value="">+ Add target...</option>
                 <option
                   v-for="obj in maskCandidateTargets"
                   :key="obj.id"
@@ -670,21 +670,21 @@
                 :disabled="!maskTargetAddSelection"
                 @click="addMaskTarget"
               >
-                添加
+                Add
               </button>
             </div>
           </div>
 
-          <!-- 空状态提示 -->
+          <!-- Empty state hint -->
           <div
             v-if="maskParams.shape === undefined && maskParams.targetIds === undefined && maskParams.width === undefined && maskParams.height === undefined"
             class="empty-props-hint"
           >
-            暂无变更属性，点击下方添加
+            No modified properties, click below to add
           </div>
         </template>
 
-        <!-- tween_transform: 几何属性 + 透明度 -->
+        <!-- tween_transform: Geometry properties + Opacity -->
         <template v-else-if="action!['type'] === 'tween_transform'">
           <template
             v-for="prop in activeTweenProps"
@@ -695,13 +695,13 @@
                 <span class="delta-property-label">{{ prop.label }}</span>
                 <button
                   class="delta-remove-btn"
-                  title="移除"
+                  title="Remove"
                   @click="removeGeometryProp(prop.key)"
                 >
                   ×
                 </button>
               </div>
-              <!-- 百分比类型 -->
+              <!-- Percentage type -->
               <template v-if="prop.type === 'percent'">
                 <div class="percent-input-row" style="display: flex; align-items: center;">
                   <input
@@ -715,14 +715,14 @@
                     v-if="prop.key === 'scaleX'"
                     class="lock-btn" 
                     style="background: none; border: none; cursor: pointer; padding: 0 4px; font-size: 14px; margin-left: 6px; opacity: 0.8;"
-                    :title="scaleLocked ? '解锁比例' : '锁定比例'"
+                    :title="scaleLocked ? 'Unlock Ratio' : 'Lock Ratio'"
                     @click="toggleScaleLock"
                   >
                     {{ scaleLocked ? '🔗' : '🔓' }}
                   </button>
                 </div>
               </template>
-              <!-- 角度类型 -->
+              <!-- Degree type -->
               <template v-else-if="prop.type === 'degree'">
                 <div class="degree-input-row">
                   <input
@@ -734,7 +734,7 @@
                   <span class="degree-label">°</span>
                 </div>
               </template>
-              <!-- 范围滑块类型 (alpha) -->
+              <!-- Range slider type (alpha) -->
               <template v-else-if="prop.type === 'range'">
                 <div class="range-row">
                   <input
@@ -762,7 +762,7 @@
                   </option>
                 </select>
               </template>
-              <!-- 普通数字类型 -->
+              <!-- Normal number type -->
               <template v-else>
                 <input
                   v-model.number="geometryParams[prop.key]"
@@ -777,26 +777,26 @@
             v-if="activeTweenProps.length === 0"
             class="empty-props-hint"
           >
-            暂无变更属性，点击下方添加
+            No modified properties, click below to add
           </div>
         </template>
 
-        <!-- 相机动作类型 (camera_cut / camera_move / camera_follow / camera_shake) -->
+        <!-- Camera Action Types (camera_cut / camera_move / camera_follow / camera_shake) -->
         <template v-else-if="isCameraAction">
-          <!-- 动作类型标签 -->
+          <!-- Action type badge -->
           <div class="camera-action-type-label">
             <span class="type-icon">{{ getCameraActionIcon(action!['type']) }}</span>
             <span class="type-name">{{ getCameraActionTypeName(action!['type']) }}</span>
           </div>
 
-          <!-- 镜头切 / 运镜 参数 -->
+          <!-- Camera Cut / Camera Move parameters -->
           <template v-if="action!['type'] === 'camera_cut' || action!['type'] === 'camera_move'">
             <div class="camera-mode-hint">
-              {{ action!['type'] === 'camera_cut' ? '提示: 拖拽画面框以设定瞬间机位' : '提示: 拖拽画面框以设定【终点】位置' }}
+              {{ action!['type'] === 'camera_cut' ? 'Hint: Drag camera frame on canvas to set instant position' : 'Hint: Drag camera frame on canvas to set [Target] position' }}
             </div>
             <div class="delta-property-item">
               <div class="delta-property-header">
-                <span class="delta-property-label">目标中心 X</span>
+                <span class="delta-property-label">Target Center X</span>
               </div>
               <input
                 :value="Math.round(cameraParams.x)"
@@ -807,7 +807,7 @@
             </div>
             <div class="delta-property-item">
               <div class="delta-property-header">
-                <span class="delta-property-label">目标中心 Y</span>
+                <span class="delta-property-label">Target Center Y</span>
               </div>
               <input
                 :value="Math.round(cameraParams.y)"
@@ -818,7 +818,7 @@
             </div>
             <div class="delta-property-item">
               <div class="delta-property-header">
-                <span class="delta-property-label">目标 Zoom</span>
+                <span class="delta-property-label">Target Zoom</span>
               </div>
               <div class="zoom-input-row">
                 <input
@@ -834,16 +834,16 @@
             </div>
           </template>
 
-          <!-- 跟随参数 -->
+          <!-- Follow parameters -->
           <template v-else-if="action!['type'] === 'camera_follow'">
             <div class="camera-mode-hint">
-              提示: 相机将跟随选定目标移动
+              Hint: Camera will follow the selected target
             </div>
             <div class="follow-panel">
               <div class="follow-card">
                 <div class="follow-card-header">
-                  <span class="delta-property-label">跟随目标</span>
-                  <span class="follow-card-caption">选择一个对象作为镜头跟随主体</span>
+                  <span class="delta-property-label">Follow Target</span>
+                  <span class="follow-card-caption">Select an object as the camera tracking target</span>
                 </div>
                 <div
                   class="follow-target-dropdown"
@@ -858,7 +858,7 @@
                     <span v-if="selectedFollowTargetLabel">
                       {{ selectedFollowTargetLabel }}
                     </span>
-                    <span v-else class="follow-target-placeholder">请选择目标...</span>
+                    <span v-else class="follow-target-placeholder">Select target...</span>
                     <span class="follow-target-arrow">{{ showFollowDropdown ? '▲' : '▼' }}</span>
                   </button>
                   <div v-if="showFollowDropdown" class="follow-target-list">
@@ -867,7 +867,7 @@
                       :class="{ selected: !followParams.followTarget }"
                       @click="selectFollowTarget('')"
                     >
-                      <span class="follow-target-item-label">无</span>
+                      <span class="follow-target-item-label">None</span>
                     </div>
                     <div
                       v-for="item in flatFollowTargetList"
@@ -896,8 +896,8 @@
 
               <div class="follow-card">
                 <div class="follow-card-header">
-                  <span class="delta-property-label">基础参数</span>
-                  <span class="follow-card-caption">设置构图偏移和镜头缩放</span>
+                  <span class="delta-property-label">Basic Parameters</span>
+                  <span class="follow-card-caption">Configure framing offset and camera zoom</span>
                 </div>
                 <div class="follow-inline-stack">
                   <label class="follow-inline-field">
@@ -917,7 +917,7 @@
                 </div>
                 <div class="follow-inline-grid">
                   <label class="follow-inline-field">
-                    <span class="follow-inline-label">偏移 X</span>
+                    <span class="follow-inline-label">Offset X</span>
                     <input
                       v-model.number="followParams.offsetX"
                       type="number"
@@ -926,7 +926,7 @@
                     >
                   </label>
                   <label class="follow-inline-field">
-                    <span class="follow-inline-label">偏移 Y</span>
+                    <span class="follow-inline-label">Offset Y</span>
                     <input
                       v-model.number="followParams.offsetY"
                       type="number"
@@ -945,13 +945,13 @@
                       type="checkbox"
                       @change="handleFollowParamsChange"
                     >
-                    <span>平滑入场</span>
+                    <span>Smooth Transition</span>
                   </span>
-                  <span class="follow-toggle-desc">开始跟随时，从当前机位平滑滑动到目标位置</span>
+                  <span class="follow-toggle-desc">Smoothly glide from current camera position to target position when tracking starts</span>
                 </label>
                 <div v-if="followParams.smoothEntry" class="follow-inline-grid follow-sub-grid">
                   <label class="follow-inline-field">
-                    <span class="follow-inline-label">过渡时长</span>
+                    <span class="follow-inline-label">Duration</span>
                     <div class="zoom-input-row">
                       <input
                         v-model.number="followParams.smoothEntryDuration"
@@ -976,13 +976,13 @@
                       type="checkbox"
                       @change="handleFollowParamsChange"
                     >
-                    <span>自动推拉</span>
+                    <span>Auto Zoom</span>
                   </span>
-                  <span class="follow-toggle-desc">在跟随过程中叠加轻微的周期缩放，增加镜头呼吸感</span>
+                  <span class="follow-toggle-desc">Overlay periodic zoom pulsation during follow to add camera breathing feel</span>
                 </label>
                 <div v-if="followParams.autoZoom" class="follow-inline-grid follow-sub-grid">
                   <label class="follow-inline-field">
-                    <span class="follow-inline-label">推拉幅度</span>
+                    <span class="follow-inline-label">Zoom Range</span>
                     <div class="zoom-input-row">
                       <input
                         v-model.number="followParams.autoZoomRange"
@@ -996,7 +996,7 @@
                     </div>
                   </label>
                   <label class="follow-inline-field">
-                    <span class="follow-inline-label">推拉次数</span>
+                    <span class="follow-inline-label">Cycles</span>
                     <input
                       v-model.number="followParams.autoZoomCycles"
                       type="number"
@@ -1017,9 +1017,9 @@
                       type="checkbox"
                       @change="handleFollowParamsChange"
                     >
-                    <span>边界约束</span>
+                    <span>Boundary Constraint</span>
                   </span>
-                  <span class="follow-toggle-desc">限制相机在画布范围内，避免镜头越界</span>
+                  <span class="follow-toggle-desc">Clamp camera within canvas bounds to prevent out-of-frame display</span>
                 </label>
               </div>
             </div>
@@ -1027,11 +1027,11 @@
 
           <template v-else-if="action!['type'] === 'camera_shake'">
             <div class="camera-mode-hint">
-              提示: 镜头将产生随机抖动效果
+              Hint: Camera will shake with randomized perturbation
             </div>
             <div class="delta-property-item">
               <div class="delta-property-header">
-                <span class="delta-property-label">强度 (px)</span>
+                <span class="delta-property-label">Intensity (px)</span>
               </div>
               <input
                 v-model.number="shakeParams.intensity"
@@ -1043,7 +1043,7 @@
             </div>
             <div class="delta-property-item">
               <div class="delta-property-header">
-                <span class="delta-property-label">频率 (Hz)</span>
+                <span class="delta-property-label">Frequency (Hz)</span>
               </div>
               <input
                 v-model.number="shakeParams.frequency"
@@ -1056,7 +1056,7 @@
             </div>
             <div class="delta-property-item">
               <div class="delta-property-header">
-                <span class="delta-property-label">衰减</span>
+                <span class="delta-property-label">Decay</span>
               </div>
               <label class="checkbox-label">
                 <input
@@ -1064,18 +1064,18 @@
                   type="checkbox"
                   @change="handleShakeChange"
                 >
-                <span>随时间衰减</span>
+                <span>Decay over time</span>
               </label>
             </div>
           </template>
         </template>
 
-        <!-- set_audio: 音频动作 -->
+        <!-- set_audio: Audio action -->
         <template v-else-if="action!['type'] === 'set_audio'">
-          <!-- 必需属性: Action -->
+          <!-- Required property: Action -->
           <div class="delta-property-item">
             <div class="delta-property-header">
-              <span class="delta-property-label">动作</span>
+              <span class="delta-property-label">Action</span>
             </div>
             <div class="anim-action-row">
               <label
@@ -1089,7 +1089,7 @@
                   :checked="audioParams['action'] === 'play'"
                   @change="handleAudioParamsChange('action', 'play')"
                 >
-                <span>▶ 播放</span>
+                <span>▶ Play</span>
               </label>
               <label
                 class="anim-action-option"
@@ -1102,12 +1102,12 @@
                   :checked="audioParams['action'] === 'stop'"
                   @change="handleAudioParamsChange('action', 'stop')"
                 >
-                <span>⏹ 停止</span>
+                <span>⏹ Stop</span>
               </label>
             </div>
           </div>
 
-          <!-- 可选属性 -->
+          <!-- Optional properties -->
           <template
             v-for="prop in activeAudioProps"
             :key="prop.key"
@@ -1117,7 +1117,7 @@
                 <span class="delta-property-label">{{ prop.label }}</span>
                 <button
                   class="delta-remove-btn"
-                  title="移除"
+                  title="Remove"
                   @click="removeAudioProp(prop.key)"
                 >
                   ×
@@ -1166,11 +1166,11 @@
           </template>
         </template>
 
-        <!-- set_text_reveal: 文本显现动作 -->
+        <!-- set_text_reveal: Text reveal action -->
         <template v-else-if="action!['type'] === 'set_text_reveal'">
           <div class="delta-property-item">
             <div class="delta-property-header">
-              <span class="delta-property-label">动作</span>
+              <span class="delta-property-label">Action</span>
             </div>
             <div class="anim-action-row">
               <label
@@ -1180,11 +1180,11 @@
                 <input
                   type="radio"
                   name="text-reveal-action"
-                  value="play"
+                  value="play" 
                   :checked="textRevealParams['action'] === 'play'"
                   @change="handleTextRevealParamsChange('action', 'play')"
                 >
-                <span>⌨ 开始打字</span>
+                <span>⌨ Start Typing</span>
               </label>
               <label
                 class="anim-action-option text-reveal-complete-option"
@@ -1193,28 +1193,28 @@
                 <input
                   type="radio"
                   name="text-reveal-action"
-                  value="stop"
+                  value="stop" 
                   :checked="textRevealParams['action'] === 'stop'"
                   @change="handleTextRevealParamsChange('action', 'stop')"
                 >
-                <span>▣ 显示完整文本</span>
+                <span>▣ Show Full Text</span>
               </label>
             </div>
           </div>
           <div class="delta-property-item">
             <div class="delta-property-header">
-              <span class="delta-property-label">效果</span>
+              <span class="delta-property-label">Effect</span>
             </div>
             <select
               :value="textRevealParams['mode'] ?? 'typewriter'"
               @change="handleTextRevealParamsChange('mode', ($event.target as HTMLSelectElement).value)"
             >
-              <option value="typewriter">打字机</option>
+              <option value="typewriter">Typewriter</option>
             </select>
           </div>
         </template>
 
-        <!-- set_screen_effect / tween_screen_effect: 画面特效参数 -->
+        <!-- set_screen_effect / tween_screen_effect: Screen effect parameters -->
         <template v-else-if="action!['type'] === 'set_screen_effect' || action!['type'] === 'tween_screen_effect'">
           <template
             v-for="prop in activeScreenEffectProps"
@@ -1225,13 +1225,13 @@
                 <span class="delta-property-label">{{ prop.label }}</span>
                 <button
                   class="delta-remove-btn"
-                  title="移除"
+                  title="Remove"
                   @click="removeScreenEffectProp(prop.key)"
                 >
                   ×
                 </button>
               </div>
-              <!-- 颜色类型 -->
+              <!-- Color type -->
               <template v-if="prop.type === 'color'">
                 <div class="color-input-row">
                   <input
@@ -1242,7 +1242,7 @@
                   <span class="color-hex-label">{{ screenEffectParams[prop.key] ?? '#000000' }}</span>
                 </div>
               </template>
-              <!-- 范围滑块类型 -->
+              <!-- Range slider type -->
               <template v-else-if="prop.type === 'range'">
                 <div class="range-row">
                   <input
@@ -1256,7 +1256,7 @@
                   <span class="value-label">{{ ((screenEffectParams[prop.key] as number) ?? 0).toFixed(2) }}</span>
                 </div>
               </template>
-              <!-- 选择类型 (holeShape) -->
+              <!-- Select type (holeShape) -->
               <template v-else-if="prop.type === 'select'">
                 <select
                   :value="screenEffectParams[prop.key]"
@@ -1271,7 +1271,7 @@
                   </option>
                 </select>
               </template>
-              <!-- 普通数字类型 -->
+              <!-- Normal number type -->
               <template v-else>
                 <input
                   v-model.number="screenEffectParams[prop.key]"
@@ -1286,11 +1286,11 @@
             v-if="activeScreenEffectProps.length === 0"
             class="empty-props-hint"
           >
-            暂无变更属性，点击下方添加
+            No modified properties, click below to add
           </div>
         </template>
 
-        <!-- set_light / tween_light: 光源参数 (点光源 PRD Phase 0.5) -->
+        <!-- set_light / tween_light: Light parameters (Point light PRD Phase 0.5) -->
         <template v-else-if="action!['type'] === 'set_light' || action!['type'] === 'tween_light'">
           <template
             v-for="prop in activeLightProps"
@@ -1301,13 +1301,13 @@
                 <span class="delta-property-label">{{ prop.label }}</span>
                 <button
                   class="delta-remove-btn"
-                  title="移除"
+                  title="Remove"
                   @click="removeLightProp(prop.key)"
                 >
                   ×
                 </button>
               </div>
-              <!-- 颜色类型 -->
+              <!-- Color type -->
               <template v-if="prop.type === 'color'">
                 <div class="color-input-row">
                   <input
@@ -1318,7 +1318,7 @@
                   <span class="color-hex-label">{{ lightParams[prop.key] ?? '#ffffff' }}</span>
                 </div>
               </template>
-              <!-- 范围滑块类型 -->
+              <!-- Range slider type -->
               <template v-else-if="prop.type === 'range'">
                 <div class="range-row">
                   <input
@@ -1346,7 +1346,7 @@
                   </option>
                 </select>
               </template>
-              <!-- 普通数字类型 -->
+              <!-- Normal number type -->
               <template v-else>
                 <input
                   v-model.number="lightParams[prop.key]"
@@ -1363,11 +1363,11 @@
             v-if="activeLightProps.length === 0"
             class="empty-props-hint"
           >
-            暂无变更属性，点击下方添加
+            No modified properties, click below to add
           </div>
         </template>
 
-        <!-- set_text / tween_text: 文本属性 (Text PRD) -->
+        <!-- set_text / tween_text: Text properties (Text PRD) -->
         <template v-else-if="action!['type'] === 'set_text' || action!['type'] === 'tween_text'">
           <template
             v-for="prop in activeTextProps"
@@ -1378,13 +1378,13 @@
                 <span class="delta-property-label">{{ prop.label }}</span>
                 <button
                   class="delta-remove-btn"
-                  title="移除"
+                  title="Remove"
                   @click="removeTextProp(prop.key)"
                 >
                   ×
                 </button>
               </div>
-              <!-- 颜色类型 -->
+              <!-- Color type -->
               <template v-if="prop.type === 'color'">
                 <div class="color-input-row">
                   <input
@@ -1395,7 +1395,7 @@
                   <span class="color-hex-label">{{ textParams[prop.key] ?? '#ffffff' }}</span>
                 </div>
               </template>
-              <!-- 选择类型 -->
+              <!-- Select type -->
               <template v-else-if="prop.type === 'select'">
                 <select
                   :value="textParams[prop.key]"
@@ -1410,7 +1410,7 @@
                   </option>
                 </select>
               </template>
-              <!-- 文本内容（textarea） -->
+              <!-- Text content (textarea) -->
               <template v-else-if="prop.type === 'textarea'">
                 <textarea
                   :value="(textParams[prop.key] as string) ?? ''"
@@ -1419,7 +1419,7 @@
                   @input="handleTextContentChange(($event.target as HTMLTextAreaElement).value)"
                 />
               </template>
-              <!-- 复选框类型 -->
+              <!-- Checkbox type -->
               <template v-else-if="prop.type === 'checkbox'">
                 <label class="checkbox-label">
                   <input
@@ -1430,7 +1430,7 @@
                   <span>{{ prop.checkLabel }}</span>
                 </label>
               </template>
-              <!-- 范围滑块类型 -->
+              <!-- Range slider type -->
               <template v-else-if="prop.type === 'range'">
                 <div class="range-row">
                   <input
@@ -1444,7 +1444,7 @@
                   <span class="value-label">{{ ((textParams[prop.key] as number) ?? 0) }}</span>
                 </div>
               </template>
-              <!-- 普通数字类型 -->
+              <!-- Normal number type -->
               <template v-else>
                 <input
                   v-model.number="textParams[prop.key]"
@@ -1457,11 +1457,11 @@
               </template>
             </div>
           </template>
-          <!-- gradientStops: 渐变色标（fillType 为 linear_gradient 时显示） -->
+          <!-- gradientStops: Gradient color stops (shown when fillType is linear_gradient) -->
           <template v-if="textParams['fillType'] === 'linear_gradient'">
             <div class="delta-property-item">
               <div class="delta-property-header">
-                <span class="delta-property-label">起始色</span>
+                <span class="delta-property-label">Start Color</span>
               </div>
               <div class="color-input-row">
                 <input
@@ -1474,7 +1474,7 @@
             </div>
             <div class="delta-property-item">
               <div class="delta-property-header">
-                <span class="delta-property-label">结束色</span>
+                <span class="delta-property-label">End Color</span>
               </div>
               <div class="color-input-row">
                 <input
@@ -1490,15 +1490,15 @@
             v-if="activeTextProps.length === 0"
             class="empty-props-hint"
           >
-            暂无变更属性，点击下方添加
+            No modified properties, click below to add
           </div>
         </template>
 
-        <!-- v11.0: set_anim - Animation 控制 -->
-        <!-- v11.52: 改为按需添加模式，用户只添加需要控制的动画 -->
+        <!-- v11.0: set_anim - Animation control -->
+        <!-- v11.52: On-demand addition mode -->
         <template v-else-if="action!['type'] === 'set_anim'">
           <div class="v11-anim-editor">
-            <!-- 已添加的动画控制列表 -->
+            <!-- Added animation control list -->
             <div v-if="currentAnimations.length > 0" class="anim-list">
               <div 
                 v-for="(animItem, index) in currentAnimations" 
@@ -1513,27 +1513,27 @@
                       :checked="animItem.autoStopOnBlockEnd ?? true"
                       @change="handleAnimAutoStopChange(index, ($event.target as HTMLInputElement).checked)"
                     >
-                    <span>本段结束后自动停止</span>
+                    <span>Auto-stop at end of block</span>
                   </label>
                 </div>
-                <!-- v12.x: 控制行（按钮 + 循环选项） -->
+                <!-- v12.x: Control row (buttons + loop option) -->
                 <div class="anim-controls-row">
                   <div class="anim-controls">
                     <button
                       class="anim-action-btn"
                       :class="{ active: animItem.action === 'play' }"
-                      title="播放"
+                      title="Play"
                       @click="handleSetAnimAction(animItem.animName, 'play')"
                     >▶</button>
                     <button
                       class="anim-action-btn"
                       :class="{ active: animItem.action === 'stop' }"
-                      title="停止"
+                      title="Stop"
                       @click="handleSetAnimAction(animItem.animName, 'stop')"
                     >⏹</button>
                     <button
                       class="anim-remove-btn"
-                      title="移除"
+                      title="Remove"
                       @click="removeAnimFromAction(index)"
                     >🗑️</button>
                   </div>
@@ -1543,41 +1543,41 @@
                     class="anim-loop-select"
                     @change="handleAnimLoopOverrideChange(index, ($event.target as HTMLSelectElement).value)"
                   >
-                    <option value="">跟随动画定义</option>
-                    <option value="true">循环</option>
-                    <option value="false">不循环</option>
+                    <option value="">Follow Animation Definition</option>
+                    <option value="true">Loop</option>
+                    <option value="false">No Loop</option>
                   </select>
                 </div>
                 <div
                   v-if="animItem.action !== 'stop'"
                   class="anim-timing-row"
                 >
-                  <span class="anim-timing-label">播放方式</span>
+                  <span class="anim-timing-label">Playback Mode</span>
                   <select
                     :value="animItem.timingMode ?? ''"
                     class="anim-timing-select"
                     @change="handleAnimTimingModeChange(index, ($event.target as HTMLSelectElement).value)"
                   >
-                    <option value="">跟随动画定义</option>
-                    <option value="continuous">连续播放</option>
-                    <option value="tts_speech">跟随 TTS 有声片段</option>
+                    <option value="">Follow Animation Definition</option>
+                    <option value="continuous">Continuous</option>
+                    <option value="tts_speech">Follow TTS Speech</option>
                   </select>
                 </div>
               </div>
             </div>
             
-            <!-- 空状态提示 -->
+            <!-- Empty state hint -->
             <div v-else class="empty-props-hint">
-              💡 点击下方按钮添加要控制的动画
+              💡 Click the button below to add animation control
             </div>
             
-            <!-- 添加动画控制按钮 -->
+            <!-- Add animation control button -->
             <div v-if="availableAnimationsToAdd.length > 0" class="add-anim-section">
               <button
                 class="add-anim-btn"
                 @click="showAddAnimMenu = !showAddAnimMenu"
               >
-                + 添加动画控制
+                + Add Animation Control
               </button>
               <div v-if="showAddAnimMenu" class="add-anim-menu">
                 <button 
@@ -1591,20 +1591,20 @@
               </div>
             </div>
             
-            <!-- 无可用动画 -->
+            <!-- No available animations -->
             <div v-else-if="availableAnimations.length === 0" class="empty-props-hint">
-              ⚠️ 该对象暂无可用的 Animation
+              ⚠️ No animations available for this object
             </div>
           </div>
         </template>
 
-        <!-- v16: set_material - 元件素材切换 / v18: 表情引用切换 -->
+        <!-- v16: set_material - Symbol material switch / v18: Expression reference switch -->
         <template v-else-if="action!['type'] === 'set_material'">
           <div class="delta-property-item">
             <div class="delta-property-header">
-              <span class="delta-property-label">{{ targetIsExpression ? '目标表情' : '目标素材' }}</span>
+              <span class="delta-property-label">{{ targetIsExpression ? 'Target Expression' : 'Target Material' }}</span>
             </div>
-            <!-- Symbol: 素材下拉列表 -->
+            <!-- Symbol: Material dropdown list -->
             <template v-if="!targetIsExpression">
               <select
                 :value="(action as SetMaterialAction).params.materialId"
@@ -1616,14 +1616,14 @@
                   :key="mat.id"
                   :value="mat.id"
                 >
-                  {{ mat.name }} ({{ mat.type === 'static' ? '静态' : '动画' }})
+                  {{ mat.name }} ({{ mat.type === 'static' ? 'Static' : 'Animated' }})
                 </option>
                 <option v-if="targetSymbolMaterials.length === 0" disabled value="">
-                  暂无素材
+                  No materials available
                 </option>
               </select>
             </template>
-            <!-- Expression: 表情下拉列表 -->
+            <!-- Expression: Expression dropdown list -->
             <template v-else>
               <select
                 :value="(action as SetMaterialAction).params.materialId"
@@ -1638,7 +1638,7 @@
                   {{ expr.name }}
                 </option>
                 <option v-if="targetExpressionList.length === 0" disabled value="">
-                  暂无表情
+                  No expressions available
                 </option>
               </select>
             </template>
@@ -1646,14 +1646,14 @@
         </template>
       </div>
 
-      <!-- 添加属性按钮 (v6.3) - v9.2: Death Action 不显示 -->
+      <!-- Add Property button (v6.3) - v9.2: Not shown for Death Action -->
       <div v-if="!isCurrentDeathAction" class="add-property-section">
         <template v-if="availablePropsToAdd.length > 0">
           <button
             class="add-property-btn"
             @click="showAddPropertyMenu = !showAddPropertyMenu"
           >
-            + 编辑属性
+            + Add Property
           </button>
           <div
             v-if="showAddPropertyMenu"
@@ -1669,21 +1669,21 @@
             </button>
           </div>
         </template>
-        <!-- v11.0: set_anim 不再需要“添加属性”功能，Animation 在人物编辑器中管理 -->
+        <!-- v11.0: set_anim no longer needs "Add Property", Animation is managed in character editor -->
       </div>
       
-      <!-- 删除动作按钮 -->
+      <!-- Delete action button -->
       <div class="delete-action-section">
         <button
           class="delete-action-btn"
           @click="handleDeleteAction"
         >
-          🗑️ 删除此动作
+          🗑️ Delete Action
         </button>
       </div>
     </div>
 
-    <!-- 表情选择对话框 -->
+    <!-- Expression selector dialog -->
     <ExpressionSelectorDialog
       v-if="showExpressionDialog"
       @select="handleExpressionSelect"
@@ -1722,13 +1722,13 @@ interface InspectorPropDef {
 
 const props = defineProps<{
   action: Action | null
-  blockDuration: number // Block总时长（毫秒）
-  slots: RuntimeSlot[] // 槽位列表
-  // v7.55: 从 ObjectPropertiesPanel 进入时要自动聚焦的字段
+  blockDuration: number // Block total duration (ms)
+  slots: RuntimeSlot[] // Slots list
+  // v7.55: Field to auto-focus when entering from ObjectPropertiesPanel
   focusField?: 'pose' | 'layerPreset' | 'expression' | 'partAsset' | null
-  // v9.3: 当前 slot 下有生命的对象 ID 列表（用于过滤 camera_follow 跟随目标）
+  // v9.3: Alive object ID list under current slot (used to filter camera_follow targets)
   aliveObjectIds?: string[]
-  // v11.1: 场景上下文，用于获取场景级动画
+  // v11.1: Scene context, used to get scene-level animations
   episodeId?: string | undefined
   sceneId?: string | undefined
 }>()
@@ -1769,8 +1769,8 @@ function getSceneObject(id: string): SceneObject | undefined {
 }
 
 function getObjectDisplayName(id: string | null): string {
-  if (!id) return '无父级'
-  if (id === SCENE_ACTION_TARGET) return '当前场景'
+  if (!id) return 'No Parent'
+  if (id === SCENE_ACTION_TARGET) return 'Current Scene'
   const obj = getSceneObject(id)
   if (!obj) return id
   return obj.alias?.trim() || obj.name?.trim() || id
@@ -1794,15 +1794,15 @@ function sortSceneStructureParentEntries(entries: SceneStructureParentEntry[]): 
 }
 
 function getSceneStructureOperationTitle(operation: SceneStructureOperation): string {
-  if (operation.kind === 'group') return '成组操作'
-  if (operation.kind === 'ungroup') return '拆分组合'
-  return '父级调整'
+  if (operation.kind === 'group') return 'Group Operation'
+  if (operation.kind === 'ungroup') return 'Ungroup'
+  return 'Adjust Parent'
 }
 
 function getSceneStructureOperationHint(operation: SceneStructureOperation): string {
-  if (operation.kind === 'group') return '启用组合并挂入成员，作为一次整体操作执行'
-  if (operation.kind === 'ungroup') return '停用组合并恢复成员父级关系，作为一次整体操作执行'
-  return '调整对象归属关系，作为一次整体操作执行'
+  if (operation.kind === 'group') return 'Enable composite and attach members, executed as a unified operation'
+  if (operation.kind === 'ungroup') return 'Deactivate composite and restore member parentage, executed as a unified operation'
+  return 'Adjust object relationships, executed as a unified operation'
 }
 
 const sceneStructureOperationGroups = computed<SceneStructureOperationGroup[]>(() => {
@@ -1877,140 +1877,140 @@ function removeSceneStructureOperation(group: SceneStructureOperationGroup): voi
   commitSceneStructureOperations(sceneStructureParams.value.operations.filter(operation => operation.id !== group.id))
 }
 
-// 删除动作
+// Delete action
 function handleDeleteAction() {
   if (props.action) {
     emit('delete')
   }
 }
 
-// ==================== 属性定义 (v6.3) ====================
+// ==================== Property Definitions (v6.3) ====================
 
-// 视觉属性定义 (set_character 使用，包含 alpha 和 visible/flipX/zIndex)
+// Visual property definitions (used by set_character, including alpha and visible/flipX/zIndex)
 const VISUAL_PROPS: InspectorPropDef[] = [
-  { key: 'alpha', label: '透明度', type: 'range', step: 0.1 },
-  { key: 'visible', label: '可见性', type: 'checkbox', checkLabel: '显示' },
-  { key: 'flipX', label: '翻转', type: 'checkbox', checkLabel: '水平翻转' },
-  { key: 'zIndex', label: '层级', type: 'number', step: 1 },
+  { key: 'alpha', label: 'Opacity', type: 'range', step: 0.1 },
+  { key: 'visible', label: 'Visibility', type: 'checkbox', checkLabel: 'Visible' },
+  { key: 'flipX', label: 'Flip', type: 'checkbox', checkLabel: 'Flip Horizontal' },
+  { key: 'zIndex', label: 'Layer (Z-Index)', type: 'number', step: 1 },
 ]
 
-// v9.3: set_transform 仅支持透明度属性（其余视觉属性由 set_visual 处理）
+// v9.3: set_transform only supports opacity (remaining visual props handled by set_visual)
 const TRANSFORM_VISUAL_PROPS: InspectorPropDef[] = [
-  { key: 'alpha', label: '透明度', type: 'range', step: 0.1 },
+  { key: 'alpha', label: 'Opacity', type: 'range', step: 0.1 },
 ]
 
-// 几何属性定义 (tween_transform)
+// Geometry property definitions (tween_transform)
 const GEOMETRY_PROPS: InspectorPropDef[] = [
-  { key: 'x', label: '目标 X', type: 'number', step: 1 },
-  { key: 'y', label: '目标 Y', type: 'number', step: 1 },
-  { key: 'scaleX', label: '目标缩放X', type: 'percent', step: 1 },
-  { key: 'scaleY', label: '目标缩放Y', type: 'percent', step: 1 },
-  { key: 'rotation', label: '旋转 (度)', type: 'degree', step: 1 },
+  { key: 'x', label: 'Target X', type: 'number', step: 1 },
+  { key: 'y', label: 'Target Y', type: 'number', step: 1 },
+  { key: 'scaleX', label: 'Target Scale X', type: 'percent', step: 1 },
+  { key: 'scaleY', label: 'Target Scale Y', type: 'percent', step: 1 },
+  { key: 'rotation', label: 'Rotation (°)', type: 'degree', step: 1 },
 ]
 
-// 变换原点属性（仅 set_transform 使用，tween_transform 不支持）
+// Transform origin properties (used by set_transform only, not supported by tween_transform)
 const TRANSFORM_ORIGIN_PROPS: InspectorPropDef[] = [
-  { key: 'transformOriginX', label: '变换点 X', type: 'number', step: 1 },
-  { key: 'transformOriginY', label: '变换点 Y', type: 'number', step: 1 },
+  { key: 'transformOriginX', label: 'Origin X', type: 'number', step: 1 },
+  { key: 'transformOriginY', label: 'Origin Y', type: 'number', step: 1 },
 ]
 
-// 音频属性定义
+// Audio property definitions
 const AUDIO_PROPS: InspectorPropDef[] = [
-  { key: 'volume', label: '音量', type: 'range', step: 0.05, min: 0, max: 1 },
-  { key: 'loop', label: '循环', type: 'checkbox', checkLabel: '循环播放' },
-  { key: 'fadeIn', label: '淡入 (秒)', type: 'number', step: 0.1, min: 0 },
-  { key: 'fadeOut', label: '淡出 (秒)', type: 'number', step: 0.1, min: 0 }
+  { key: 'volume', label: 'Volume', type: 'range', step: 0.05, min: 0, max: 1 },
+  { key: 'loop', label: 'Loop', type: 'checkbox', checkLabel: 'Loop Playback' },
+  { key: 'fadeIn', label: 'Fade In (s)', type: 'number', step: 0.1, min: 0 },
+  { key: 'fadeOut', label: 'Fade Out (s)', type: 'number', step: 0.1, min: 0 }
 ]
 
-// 画面特效属性定义
+// Screen effect property definitions
 const SCREEN_EFFECT_PROPS: InspectorPropDef[] = [
-  { key: 'baseColor', label: '🎨 遮罩颜色', type: 'color' },
-  { key: 'holeShape', label: '🔲 挖孔形状', type: 'select', options: [
-    { value: 'circle', label: '圆形' },
-    { value: 'horizontal_ellipse', label: '水平椭圆' },
-    { value: 'vertical_ellipse', label: '垂直椭圆' },
-    { value: 'rectangle', label: '矩形' },
+  { key: 'baseColor', label: '🎨 Mask Color', type: 'color' },
+  { key: 'holeShape', label: '🔲 Cutout Shape', type: 'select', options: [
+    { value: 'circle', label: 'Circle' },
+    { value: 'horizontal_ellipse', label: 'Horizontal Ellipse' },
+    { value: 'vertical_ellipse', label: 'Vertical Ellipse' },
+    { value: 'rectangle', label: 'Rectangle' },
   ] },
-  { key: 'openRatio', label: '开孔比例', type: 'range', step: 0.01, min: 0, max: 1 },
-  { key: 'holeWidth', label: '孔洞宽度', type: 'number', step: 10, min: 0 },
-  { key: 'holeHeight', label: '孔洞高度', type: 'number', step: 10, min: 0 },
+  { key: 'openRatio', label: 'Cutout Ratio', type: 'range', step: 0.01, min: 0, max: 1 },
+  { key: 'holeWidth', label: 'Hole Width', type: 'number', step: 10, min: 0 },
+  { key: 'holeHeight', label: 'Hole Height', type: 'number', step: 10, min: 0 },
 ]
 
-// 光源属性定义 (点光源 PRD Phase 0.5)
+// Light property definitions (Point light PRD Phase 0.5)
 const LIGHT_PROPS: InspectorPropDef[] = [
-  { key: 'lightColor', label: '💡 光照颜色', type: 'color' },
-  { key: 'lightIntensity', label: '强度', type: 'range', step: 0.01, min: 0, max: 2 },
-  { key: 'lightRadius', label: '半径 (px)', type: 'range', step: 10, min: 50, max: 3000 },
-  { key: 'flicker', label: '闪烁强度', type: 'range', step: 0.05, min: 0, max: 1 },
-  { key: 'flickerSpeed', label: '闪烁速度', type: 'range', step: 0.05, min: 0, max: 1 },
-  { key: 'directionAngle', label: '方向角 (rad)', type: 'range', step: 0.01, min: -3.14, max: 3.14 },
-  { key: 'coneAngle', label: '开角 (°)', type: 'range', step: 5, min: 10, max: 360 },
+  { key: 'lightColor', label: '💡 Light Color', type: 'color' },
+  { key: 'lightIntensity', label: 'Intensity', type: 'range', step: 0.01, min: 0, max: 2 },
+  { key: 'lightRadius', label: 'Radius (px)', type: 'range', step: 10, min: 50, max: 3000 },
+  { key: 'flicker', label: 'Flicker Intensity', type: 'range', step: 0.05, min: 0, max: 1 },
+  { key: 'flickerSpeed', label: 'Flicker Speed', type: 'range', step: 0.05, min: 0, max: 1 },
+  { key: 'directionAngle', label: 'Direction Angle (rad)', type: 'range', step: 0.01, min: -3.14, max: 3.14 },
+  { key: 'coneAngle', label: 'Cone Angle (°)', type: 'range', step: 5, min: 10, max: 360 },
 ]
 
-// 文本属性定义 (Text PRD: set_text / tween_text)
+// Text property definitions (Text PRD: set_text / tween_text)
 const TEXT_PROPS: InspectorPropDef[] = [
-  { key: 'content', label: '📝 内容', type: 'textarea' },
-  { key: 'fontFamily', label: '🔤 字体', type: 'select', options: [
-    { value: 'Noto Sans SC', label: '思源黑体' },
-    { value: 'Noto Serif SC', label: '思源宋体' },
-    { value: 'LXGW WenKai', label: '霞鹜文楷' },
-    { value: 'ZCOOL QingKe HuangYou', label: '站酷庆科黄油体' },
-    { value: 'Ma Shan Zheng', label: '马善政楷书' },
+  { key: 'content', label: '📝 Content', type: 'textarea' },
+  { key: 'fontFamily', label: '🔤 Font', type: 'select', options: [
+    { value: 'Noto Sans SC', label: 'Noto Sans SC' },
+    { value: 'Noto Serif SC', label: 'Noto Serif SC' },
+    { value: 'LXGW WenKai', label: 'LXGW WenKai' },
+    { value: 'ZCOOL QingKe HuangYou', label: 'ZCOOL QingKe HuangYou' },
+    { value: 'Ma Shan Zheng', label: 'Ma Shan Zheng' },
   ] },
-  { key: 'fontSize', label: '🔢 字号', type: 'number', step: 1, min: 8 },
-  { key: 'color', label: '🎨 颜色', type: 'color' },
-  { key: 'align', label: '↔ 对齐', type: 'select', options: [
-    { value: 'left', label: '左对齐' },
-    { value: 'center', label: '居中' },
-    { value: 'right', label: '右对齐' },
+  { key: 'fontSize', label: '🔢 Font Size', type: 'number', step: 1, min: 8 },
+  { key: 'color', label: '🎨 Color', type: 'color' },
+  { key: 'align', label: '↔ Align', type: 'select', options: [
+    { value: 'left', label: 'Left' },
+    { value: 'center', label: 'Center' },
+    { value: 'right', label: 'Right' },
   ] },
-  { key: 'fontWeight', label: '𝐁 粗细', type: 'select', options: [
-    { value: 'normal', label: '正常' },
-    { value: 'bold', label: '加粗' },
+  { key: 'fontWeight', label: '𝐁 Weight', type: 'select', options: [
+    { value: 'normal', label: 'Normal' },
+    { value: 'bold', label: 'Bold' },
   ] },
-  { key: 'fontStyle', label: '𝐼 样式', type: 'select', options: [
-    { value: 'normal', label: '正常' },
-    { value: 'italic', label: '斜体' },
+  { key: 'fontStyle', label: '𝐼 Style', type: 'select', options: [
+    { value: 'normal', label: 'Normal' },
+    { value: 'italic', label: 'Italic' },
   ] },
-  { key: 'stroke', label: '描边颜色', type: 'color' },
-  { key: 'strokeThickness', label: '描边粗细', type: 'number', step: 1, min: 0 },
-  { key: 'letterSpacing', label: '字距', type: 'number', step: 1 },
-  { key: 'lineHeight', label: '行高', type: 'number', step: 1, min: 0 },
-  { key: 'wordWrap', label: '自动换行', type: 'checkbox', checkLabel: '启用' },
-  { key: 'wordWrapWidth', label: '换行宽度', type: 'number', step: 10, min: 50 },
-  { key: 'textBoxMode', label: '文本框模式', type: 'select', options: [
-    { value: 'auto-size', label: '自动尺寸' },
-    { value: 'auto-width', label: '自动宽度' },
-    { value: 'auto-height', label: '自动高度' },
-    { value: 'fixed', label: '固定尺寸' },
+  { key: 'stroke', label: 'Stroke Color', type: 'color' },
+  { key: 'strokeThickness', label: 'Stroke Thickness', type: 'number', step: 1, min: 0 },
+  { key: 'letterSpacing', label: 'Letter Spacing', type: 'number', step: 1 },
+  { key: 'lineHeight', label: 'Line Height', type: 'number', step: 1, min: 0 },
+  { key: 'wordWrap', label: 'Word Wrap', type: 'checkbox', checkLabel: 'Enabled' },
+  { key: 'wordWrapWidth', label: 'Wrap Width', type: 'number', step: 10, min: 50 },
+  { key: 'textBoxMode', label: 'Text Box Mode', type: 'select', options: [
+    { value: 'auto-size', label: 'Auto Size' },
+    { value: 'auto-width', label: 'Auto Width' },
+    { value: 'auto-height', label: 'Auto Height' },
+    { value: 'fixed', label: 'Fixed Size' },
   ] },
-  { key: 'writingMode', label: '书写方向', type: 'select', options: [
-    { value: 'horizontal', label: '横排' },
-    { value: 'vertical', label: '竖排' },
+  { key: 'writingMode', label: 'Writing Direction', type: 'select', options: [
+    { value: 'horizontal', label: 'Horizontal' },
+    { value: 'vertical', label: 'Vertical' },
   ] },
-  // 投影
-  { key: 'dropShadow', label: '文字投影', type: 'checkbox', checkLabel: '启用' },
-  { key: 'dropShadowColor', label: '投影颜色', type: 'color' },
-  { key: 'dropShadowBlur', label: '投影模糊', type: 'number', step: 1, min: 0 },
-  { key: 'dropShadowAngle', label: '投影角度', type: 'number', step: 0.1 },
-  { key: 'dropShadowDistance', label: '投影距离', type: 'number', step: 1, min: 0 },
-  // 渐变
-  { key: 'fillType', label: '渐变填充', type: 'select', options: [
-    { value: '', label: '关闭' },
-    { value: 'linear_gradient', label: '线性渐变' },
+  // Drop shadow
+  { key: 'dropShadow', label: 'Text Shadow', type: 'checkbox', checkLabel: 'Enabled' },
+  { key: 'dropShadowColor', label: 'Shadow Color', type: 'color' },
+  { key: 'dropShadowBlur', label: 'Shadow Blur', type: 'number', step: 1, min: 0 },
+  { key: 'dropShadowAngle', label: 'Shadow Angle', type: 'number', step: 0.1 },
+  { key: 'dropShadowDistance', label: 'Shadow Distance', type: 'number', step: 1, min: 0 },
+  // Gradient
+  { key: 'fillType', label: 'Gradient Fill', type: 'select', options: [
+    { value: '', label: 'None' },
+    { value: 'linear_gradient', label: 'Linear Gradient' },
   ] },
-  { key: 'gradientAngle', label: '渐变角度 (°)', type: 'number', step: 1 },
-  { key: 'revealSpeed', label: '⌨ 速度 (字/秒)', type: 'number', step: 0.5, min: 0.5 },
-  // 背景填充
-  { key: 'textBackgroundEnabled', label: '背景填充', type: 'checkbox', checkLabel: '启用' },
-  { key: 'textBackgroundColor', label: '背景颜色', type: 'color' },
-  { key: 'textBackgroundAlpha', label: '背景透明度', type: 'range', step: 0.05, min: 0, max: 1 },
-  { key: 'textBackgroundPaddingX', label: '背景水平内边距', type: 'number', step: 1, min: 0 },
-  { key: 'textBackgroundPaddingY', label: '背景垂直内边距', type: 'number', step: 1, min: 0 },
-  { key: 'textBackgroundRadius', label: '背景圆角', type: 'number', step: 1, min: 0 },
+  { key: 'gradientAngle', label: 'Gradient Angle (°)', type: 'number', step: 1 },
+  { key: 'revealSpeed', label: '⌨ Speed (chars/s)', type: 'number', step: 0.5, min: 0.5 },
+  // Background fill
+  { key: 'textBackgroundEnabled', label: 'Background Fill', type: 'checkbox', checkLabel: 'Enabled' },
+  { key: 'textBackgroundColor', label: 'Background Color', type: 'color' },
+  { key: 'textBackgroundAlpha', label: 'Background Opacity', type: 'range', step: 0.05, min: 0, max: 1 },
+  { key: 'textBackgroundPaddingX', label: 'Background Padding X', type: 'number', step: 1, min: 0 },
+  { key: 'textBackgroundPaddingY', label: 'Background Padding Y', type: 'number', step: 1, min: 0 },
+  { key: 'textBackgroundRadius', label: 'Background Radius', type: 'number', step: 1, min: 0 },
 ]
 
-// tween_text 不可插值的属性（仅 set_text 使用）
+// Non-interpolatable properties for tween_text (set_text only)
 const TEXT_NON_INTERPOLATABLE_KEYS = [
   'content', 'fontFamily', 'align', 'fontWeight', 'fontStyle', 'stroke',
   'wordWrap', 'textBoxMode', 'writingMode', 'dropShadow',
@@ -2018,17 +2018,17 @@ const TEXT_NON_INTERPOLATABLE_KEYS = [
   'dropShadowColor',
 ]
 
-// 不可插值的属性 key（tween_screen_effect 不应出现这些属性）
+// Non-interpolatable property keys (tween_screen_effect should not include these)
 const NON_INTERPOLATABLE_KEYS = ['baseColor', 'holeShape']
 
-// effectClass → 可编辑属性 key 映射
+// effectClass → editable property keys mapping
 const EFFECT_CLASS_ALLOWED_KEYS: Record<string, string[]> = {
   fullscreen_cover: ['baseColor'],
   iris_mask: ['baseColor', 'holeShape', 'openRatio', 'holeWidth', 'holeHeight'],
   spotlight: ['baseColor', 'holeShape', 'openRatio', 'holeWidth', 'holeHeight'],
 }
 
-// 获取当前 action 目标对象的 effectClass
+// Get effectClass for current action target object
 const targetEffectClass = computed(() => {
   const action = props.action
   if (!action) return undefined
@@ -2040,7 +2040,7 @@ const targetEffectClass = computed(() => {
   return undefined
 })
 
-// 根据 effectClass 过滤后的属性定义
+// Property definitions filtered by effectClass
 const filteredScreenEffectProps = computed(() => {
   const ec = targetEffectClass.value
   let base = SCREEN_EFFECT_PROPS
@@ -2050,7 +2050,7 @@ const filteredScreenEffectProps = computed(() => {
       base = SCREEN_EFFECT_PROPS.filter(prop => allowedKeys.includes(prop.key))
     }
   }
-  // tween_screen_effect: 排除不可插值的属性（baseColor, holeShape）
+  // tween_screen_effect: exclude non-interpolatable properties (baseColor, holeShape)
   if (props.action?.type === 'tween_screen_effect') {
     return base.filter(prop => !NON_INTERPOLATABLE_KEYS.includes(prop.key))
   }
@@ -2078,57 +2078,57 @@ interface LooseObject {
   fadeOut?: number
 }
 
-// 视觉参数
+// Visual parameters
 const visualParams = ref<LooseObject>({})
 
-// 几何参数
+// Geometry parameters
 const geometryParams = ref<LooseObject>({})
 
-// 音频参数
+// Audio parameters
 const audioParams = ref<LooseObject>({})
 const textRevealParams = ref<{ action: 'play' | 'stop'; mode: 'typewriter' }>({
   action: 'play',
   mode: 'typewriter',
 })
 
-// 画面特效参数
+// Screen effect parameters
 const screenEffectParams = ref<LooseObject>({})
 
-// 光源参数 (点光源 PRD Phase 0.5)
+// Light parameters (Point light PRD Phase 0.5)
 const lightParams = ref<LooseObject>({})
 
-// 文本属性参数 (Text PRD)
+// Text property parameters (Text PRD)
 const textParams = ref<LooseObject>({})
 
-// v9.3: set_visual 专用属性定义（不含 alpha，alpha 由 set_transform 处理）
+// v9.3: Dedicated set_visual property definitions (without alpha, alpha handled by set_transform)
 const SET_VISUAL_PROPS: InspectorPropDef[] = [
-  { key: 'visible', label: '可见性', type: 'checkbox', checkLabel: '显示' },
-  { key: 'flipX', label: '翻转', type: 'checkbox', checkLabel: '水平翻转' },
-  { key: 'zIndex', label: '层级', type: 'number', step: 1 },
-  { key: 'receiveLighting', label: '场景光照', type: 'checkbox', checkLabel: '参与场景光照' },
-  { key: 'castShadow', label: '脚底投影', type: 'checkbox', checkLabel: '投射阴影' },
+  { key: 'visible', label: 'Visibility', type: 'checkbox', checkLabel: 'Visible' },
+  { key: 'flipX', label: 'Flip', type: 'checkbox', checkLabel: 'Flip Horizontal' },
+  { key: 'zIndex', label: 'Layer (Z-Index)', type: 'number', step: 1 },
+  { key: 'receiveLighting', label: 'Scene Lighting', type: 'checkbox', checkLabel: 'Receive Scene Lighting' },
+  { key: 'castShadow', label: 'Ground Shadow', type: 'checkbox', checkLabel: 'Cast Shadow' },
 ]
 
-// v9.3: set_visual 参数
+// v9.3: set_visual parameters
 const setVisualParams = ref<LooseObject>({})
 
-// P2: set_composite 参数
+// P2: set_composite parameters
 const compositeParams = ref<{ renderChain?: string[] | undefined }>({})
 
-// Clip-Mask Phase 1 D3: set_mask 参数
+// Clip-Mask Phase 1 D3: set_mask parameters
 const maskParams = ref<{ targetIds?: string[]; shape?: 'rectangle' | 'ellipse'; width?: number; height?: number }>({})
 const maskTargetAddSelection = ref<string>('')
 
-// 相机参数
+// Camera parameters
 const cameraParams = ref({ x: 0, y: 0, zoom: 1 })
 
-// 相机 zoom 百分数显示（zoom * 100）
+// Camera zoom percentage display (zoom * 100)
 const cameraZoomPercent = computed(() => {
   return Math.round(cameraParams.value.zoom * 100)
 })
 
-// 监听 action 变化，更新参数
-// v6.6: 添加 deep: true 以监听 action['params'] 的变化（用于拖动相机框时实时更新）
+// Watch action changes and update parameters
+// v6.6: Add deep: true to watch action['params'] changes (for real-time update when dragging camera frame)
 watch(() => props.action, (newAction) => {
   if (!newAction) {
     visualParams.value = {}
@@ -2146,18 +2146,18 @@ watch(() => props.action, (newAction) => {
         zIndex: params.zIndex,
       } as LooseObject
     
-    // v9.2: set_transform 也支持几何属性
+    // v9.2: set_transform also supports geometry properties
     if (newAction.type === 'set_transform') {
       let currentScaleX: number | undefined = undefined
       let currentScaleY: number | undefined = undefined
       
-      // 兼容历史遗留的单轴 scale 参数
+      // Compatibility for legacy single-axis scale parameter
       if (params.scale !== undefined) {
          currentScaleX = currentScaleY = Math.round((params.scale) * 100)
       } else {
          if (params.scaleX !== undefined) currentScaleX = Math.round((params.scaleX) * 100)
          if (params.scaleY !== undefined) currentScaleY = Math.round((params.scaleY) * 100)
-         // 如果旧数据里只有 scaleX 没有 scaleY，则让他们默认相等
+         // If legacy data only has scaleX without scaleY, default them to be equal
          if (currentScaleX !== undefined && currentScaleY === undefined) currentScaleY = currentScaleX
       }
 
@@ -2177,7 +2177,7 @@ watch(() => props.action, (newAction) => {
     let currentScaleX: number | undefined = undefined
     let currentScaleY: number | undefined = undefined
     
-    // 兼容历史遗留的单轴 scale 参数
+    // Compatibility for legacy single-axis scale parameter
     if (params.scale !== undefined) {
         currentScaleX = currentScaleY = Math.round((params.scale) * 100)
     } else {
@@ -2222,7 +2222,7 @@ watch(() => props.action, (newAction) => {
     }
   }
   
-  // v9.3: set_visual 初始化
+  // v9.3: set_visual initialization
   if (newAction.type === 'set_visual') {
     setVisualParams.value = {
       visible: params.visible,
@@ -2233,7 +2233,7 @@ watch(() => props.action, (newAction) => {
     } as LooseObject
   }
 
-  // P2: set_composite 初始化
+  // P2: set_composite initialization
   if (newAction.type === 'set_composite') {
     const compositeAction = newAction
     compositeParams.value = {
@@ -2241,7 +2241,7 @@ watch(() => props.action, (newAction) => {
     }
   }
 
-  // Clip-Mask Phase 1 D3: set_mask 初始化
+  // Clip-Mask Phase 1 D3: set_mask initialization
   if (newAction.type === 'set_mask') {
     const maskAction = newAction
     maskParams.value = {
@@ -2253,31 +2253,31 @@ watch(() => props.action, (newAction) => {
     maskTargetAddSelection.value = ''
   }
 
-  // 画面特效参数初始化
+  // Screen effect parameters initialization
   if (newAction.type === 'set_screen_effect' || newAction.type === 'tween_screen_effect') {
     screenEffectParams.value = { ...params } as LooseObject
   }
 
-  // 光源参数初始化 (点光源 PRD Phase 0.5)
+  // Light parameters initialization (Point light PRD Phase 0.5)
   if (newAction.type === 'set_light' || newAction.type === 'tween_light') {
     lightParams.value = { ...params } as LooseObject
   }
 
-  // 文本参数初始化 (Text PRD)
+  // Text parameters initialization (Text PRD)
   if (newAction.type === 'set_text' || newAction.type === 'tween_text') {
     textParams.value = { ...params } as LooseObject
   }
 }, { immediate: true, deep: true })
 
-// 当前已激活的视觉属性 (只有值不为 undefined 的)
+// Currently active visual properties (only non-undefined values)
 const activeVisualProps = computed(() => {
   return VISUAL_PROPS.filter(prop => visualParams.value[prop.key] !== undefined)
 })
 
-// 当前已激活的几何属性
+// Currently active geometry properties
 const activeGeometryProps = computed(() => {
   const base = GEOMETRY_PROPS.filter(prop => geometryParams.value[prop.key] !== undefined)
-  // 变换原点仅 set_transform 显示
+  // Transform origin is only displayed for set_transform
   if (props.action?.type === 'set_transform') {
     const originProps = TRANSFORM_ORIGIN_PROPS.filter(prop => geometryParams.value[prop.key] !== undefined)
     return [...base, ...originProps]
@@ -2285,31 +2285,31 @@ const activeGeometryProps = computed(() => {
   return base
 })
 
-// tween_transform 的所有已激活属性（几何 + 透明度）
+// All active properties of tween_transform (geometry + opacity)
 const activeTweenProps = computed(() => {
   const allProps = [...GEOMETRY_PROPS, ...TRANSFORM_VISUAL_PROPS]
   return allProps.filter(prop => geometryParams.value[prop.key] !== undefined)
 })
 
-// 当前已激活的音频属性
+// Currently active audio properties
 const activeAudioProps = computed(() => {
   return AUDIO_PROPS.filter(prop => audioParams.value[prop.key] !== undefined)
 })
 
-// 当前已激活的画面特效属性
+// Currently active screen effect properties
 const activeScreenEffectProps = computed(() => {
   return filteredScreenEffectProps.value.filter(prop => screenEffectParams.value[prop.key] !== undefined)
 })
 
-// v9.3: activeVisualPropsForSetVisual 已移除，改用模板硬编码方式显示 set_visual 属性
+// v9.3: activeVisualPropsForSetVisual removed, set_visual properties displayed directly in template
 
-// 可添加的属性列表
+// Available properties to add
 const availablePropsToAdd = computed(() => {
   if (!props.action) return []
   
-  // set_character 已移除
+  // set_character removed
   
-  // v9.3: set_transform 仅支持透明度 + 几何属性（其余视觉属性由 set_visual 处理）
+  // v9.3: set_transform only supports opacity + geometry properties (other visual props handled by set_visual)
   if (props.action.type === 'set_transform') {
     const availableVisual = TRANSFORM_VISUAL_PROPS.filter(prop => visualParams.value[prop.key] === undefined)
     const availableGeometry = GEOMETRY_PROPS.filter(prop => geometryParams.value[prop.key] === undefined)
@@ -2327,19 +2327,19 @@ const availablePropsToAdd = computed(() => {
     return AUDIO_PROPS.filter(prop => audioParams.value[prop.key] === undefined)
   }
 
-  // v9.3: set_visual 可添加视觉属性
+  // v9.3: set_visual available visual properties to add
   if (props.action.type === 'set_visual') {
     return SET_VISUAL_PROPS.filter(prop =>
       setVisualParams.value[prop.key] === undefined && canAddSetVisualProp(prop.key)
     )
   }
   
-  // v11.0: set_anim 不再通过添加属性方式管理，返回空列表
+  // v11.0: set_anim is no longer managed via add-property, returns empty list
   if (props.action.type === 'set_anim') {
     return []
   }
 
-  // P2: set_composite 可添加组合属性
+  // P2: set_composite available composite properties to add
   if (props.action.type === 'set_composite') {
     return SET_COMPOSITE_PROPS.filter(prop => {
       const key = prop.key as keyof typeof compositeParams.value
@@ -2347,7 +2347,7 @@ const availablePropsToAdd = computed(() => {
     })
   }
 
-  // Clip-Mask Phase 1 D3: set_mask 可添加属性
+  // Clip-Mask Phase 1 D3: set_mask available properties to add
   if (props.action.type === 'set_mask') {
     return SET_MASK_PROPS.filter(prop => {
       const key = prop.key as keyof typeof maskParams.value
@@ -2355,17 +2355,17 @@ const availablePropsToAdd = computed(() => {
     })
   }
 
-  // 画面特效参数
+  // Screen effect parameters
   if (props.action.type === 'set_screen_effect' || props.action.type === 'tween_screen_effect') {
     return filteredScreenEffectProps.value.filter(prop => screenEffectParams.value[prop.key] === undefined)
   }
 
-  // 文本属性 (Text PRD)
+  // Text properties (Text PRD)
   if (props.action.type === 'set_text' || props.action.type === 'tween_text') {
     return filteredTextProps.value.filter(prop => textParams.value[prop.key] === undefined)
   }
 
-  // 光源参数 (点光源 PRD Phase 0.5)
+  // Light parameters (Point light PRD Phase 0.5)
   if (props.action.type === 'set_light' || props.action.type === 'tween_light') {
     return filteredLightProps.value.filter(prop => lightParams.value[prop.key] === undefined)
   }
@@ -2373,20 +2373,20 @@ const availablePropsToAdd = computed(() => {
   return []
 })
 
-// 添加属性
+// Add property
 function addProperty(key: string) {
   if (!props.action) return
   
   if (props.action.type === 'set_transform') {
-    // v9.3: set_transform 仅支持透明度 + 几何属性
+    // v9.3: set_transform only supports opacity + geometry properties
     const visualProp = TRANSFORM_VISUAL_PROPS.find(p => p.key === key)
     if (visualProp) {
-      // TRANSFORM_VISUAL_PROPS 目前只有 alpha (range 类型)，默认值为 1
+      // TRANSFORM_VISUAL_PROPS currently only has alpha (range type), default value 1
       visualParams.value[key] = 1
       handleVisualParamsChange()
     } else {
-      // 几何属性
-      // 几何属性
+      // Geometry properties
+      // Geometry properties
       if (key === 'scaleX' || key === 'scaleY') {
         geometryParams.value[key] = 100
       } else {
@@ -2395,7 +2395,7 @@ function addProperty(key: string) {
       handleSetTransformGeometryChange()
     }
   } else if (props.action.type === 'tween_transform') {
-    // scale 默认值为 100%，rotation 默认值为 0 度，alpha 默认值为 1
+    // scale defaults to 100%, rotation defaults to 0 deg, alpha defaults to 1
     if (key === 'scaleX' || key === 'scaleY') {
       geometryParams.value[key] = 100
     } else if (key === 'alpha') {
@@ -2411,18 +2411,18 @@ function addProperty(key: string) {
        handleAudioParamsChange(key, defaultValue)
     }
   } else if (props.action.type === 'set_anim') {
-    // v11.0: set_anim 不再通过此方式添加属性
+    // v11.0: set_anim no longer adds properties this way
   } else if (props.action.type === 'set_visual') {
-    // v9.3: 添加 set_visual 属性
+    // v9.3: Add set_visual property
     const prop = SET_VISUAL_PROPS.find(p => p.key === key)
     if (prop && canAddSetVisualProp(key)) {
       setVisualParams.value[key] = prop.type === 'checkbox' ? false : 0
       handleSetVisualParamsChange()
     }
   } else if (props.action.type === 'set_composite') {
-    // P2: 添加 set_composite 属性
+    // P2: Add set_composite property
     if (key === 'renderChain') {
-      // 从目标 composite 对象的运行时 renderChain 读取默认值
+      // Read default value from target composite runtime renderChain
       const targetObj = sceneObjectStore.getObject(props.action.target)
       const currentRenderChain = targetObj?.type === 'composite'
         ? [...((targetObj as CompositeObject).renderChain ?? [])]
@@ -2431,9 +2431,9 @@ function addProperty(key: string) {
       handleCompositeParamsChange()
     }
   } else if (props.action.type === 'set_mask') {
-    // Clip-Mask Phase 1 D3: 添加 set_mask 属性
+    // Clip-Mask Phase 1 D3: Add set_mask property
     if (key === 'targetIds') {
-      // 从目标 mask 当前 targetIds 读取默认值
+      // Read default value from target mask current targetIds
       const targetObj = sceneObjectStore.getObject(props.action.target)
       const currentTargets = targetObj?.type === 'mask'
         ? [...((targetObj as MaskObject).targetIds ?? [])]
@@ -2441,7 +2441,7 @@ function addProperty(key: string) {
       maskParams.value.targetIds = currentTargets
       handleMaskParamsChange()
     } else if (key === 'shape') {
-      // 从目标 mask 当前 shape 读取默认值
+      // Read default value from target mask current shape
       const targetObj = sceneObjectStore.getObject(props.action.target)
       const currentShape: 'rectangle' | 'ellipse' = targetObj?.type === 'mask'
         ? ((targetObj as MaskObject).shape ?? 'rectangle')
@@ -2473,7 +2473,7 @@ function addProperty(key: string) {
       handleScreenEffectParamsChange()
     }
   } else if (props.action.type === 'set_text' || props.action.type === 'tween_text') {
-    // 文本属性添加 (Text PRD)
+    // Add text property (Text PRD)
     const prop = TEXT_PROPS.find(p => p.key === key)
     if (prop) {
       let defaultValue: string | number
@@ -2501,7 +2501,7 @@ function addProperty(key: string) {
       handleTextParamsChange()
     }
   } else if (props.action.type === 'set_light' || props.action.type === 'tween_light') {
-    // 光源参数添加 (点光源 PRD Phase 0.5)
+    // Add light property (Point light PRD Phase 0.5)
     const prop = LIGHT_PROPS.find(p => p.key === key)
     if (prop) {
       let defaultValue: string | number
@@ -2521,16 +2521,16 @@ function addProperty(key: string) {
   showAddPropertyMenu.value = false
 }
 
-// 移除视觉属性
+// Remove visual property
 function removeVisualProp(key: string) {
   visualParams.value[key] = undefined
   handleVisualParamsChange()
 }
 
-// 移除几何属性
+// Remove geometry property
 function removeGeometryProp(key: string) {
   geometryParams.value[key] = undefined
-  // v17: 按 action type 分发到正确的处理函数
+  // v17: Dispatch to correct handler by action type
   if (props.action?.type === 'set_transform') {
     handleSetTransformGeometryChange()
   } else {
@@ -2538,12 +2538,12 @@ function removeGeometryProp(key: string) {
   }
 }
 
-// 移除音频属性
+// Remove audio property
 function removeAudioProp(key: string) {
   handleAudioParamsChange(key, undefined)
 }
 
-// v9.3: 移除 set_visual 属性
+// v9.3: Remove set_visual property
 function removeSetVisualProp(key: string) {
   setVisualParams.value[key] = undefined
   handleSetVisualParamsChange()
@@ -2577,30 +2577,30 @@ function canAddSetVisualProp(key: string): boolean {
   return true
 }
 
-// 移除画面特效属性
+// Remove screen effect property
 function removeScreenEffectProp(key: string) {
   delete screenEffectParams.value[key]
   handleScreenEffectParamsChange()
 }
 
-// 移除光源属性 (点光源 PRD Phase 0.5)
+// Remove light property (Point light PRD Phase 0.5)
 function removeLightProp(key: string) {
   delete lightParams.value[key]
   handleLightParamsChange()
 }
 
-// 移除文本属性 (Text PRD)
+// Remove text property (Text PRD)
 function removeTextProp(key: string) {
   delete textParams.value[key]
   handleTextParamsChange()
 }
 
-// P2: set_composite 属性定义
+// P2: set_composite property definitions
 const SET_COMPOSITE_PROPS: InspectorPropDef[] = [
-  { key: 'renderChain', label: '📋 渲染链排序', type: 'childList' },
+  { key: 'renderChain', label: '📋 Render Chain Order', type: 'childList' },
 ]
 
-// P2: 移除 set_composite 属性
+// P2: Remove set_composite property
 function removeCompositeProp(key: 'renderChain') {
   const updated = { ...compositeParams.value }
   delete updated[key]
@@ -2608,18 +2608,18 @@ function removeCompositeProp(key: 'renderChain') {
   handleCompositeParamsChange()
 }
 
-// Clip-Mask Phase 1 D3: set_mask 属性定义
+// Clip-Mask Phase 1 D3: set_mask property definitions
 const SET_MASK_PROPS: InspectorPropDef[] = [
-  { key: 'targetIds', label: '✂ 裁切目标', type: 'maskTargetList' },
-  { key: 'shape', label: '形状', type: 'select', options: [
-    { value: 'rectangle', label: '矩形' },
-    { value: 'ellipse', label: '椭圆' },
+  { key: 'targetIds', label: '✂ Clipping Targets', type: 'maskTargetList' },
+  { key: 'shape', label: 'Shape', type: 'select', options: [
+    { value: 'rectangle', label: 'Rectangle' },
+    { value: 'ellipse', label: 'Ellipse' },
   ] },
-  { key: 'width', label: '宽度', type: 'number' },
-  { key: 'height', label: '高度', type: 'number' },
+  { key: 'width', label: 'Width', type: 'number' },
+  { key: 'height', label: 'Height', type: 'number' },
 ]
 
-// 移除 set_mask 属性
+// Remove set_mask property
 function removeMaskProp(key: 'targetIds' | 'shape' | 'width' | 'height') {
   const updated = { ...maskParams.value }
   delete updated[key]
@@ -2627,7 +2627,7 @@ function removeMaskProp(key: 'targetIds' | 'shape' | 'width' | 'height') {
   handleMaskParamsChange()
 }
 
-// 处理 set_mask 参数变更（emit 给父组件）
+// Handle set_mask parameter change (emit to parent component)
 function handleMaskParamsChange() {
   const action = props.action
   if (action?.type !== 'set_mask') return
@@ -2640,7 +2640,7 @@ function handleMaskParamsChange() {
   emit('update', { params })
 }
 
-// 添加 mask 裁切目标
+// Add mask clipping target
 function addMaskTarget() {
   if (!maskTargetAddSelection.value) return
   const cur = maskParams.value.targetIds ?? []
@@ -2653,14 +2653,14 @@ function addMaskTarget() {
   handleMaskParamsChange()
 }
 
-// 移除 mask 裁切目标
+// Remove mask clipping target
 function removeMaskTarget(id: string) {
   const cur = maskParams.value.targetIds ?? []
   maskParams.value.targetIds = cur.filter(t => t !== id)
   handleMaskParamsChange()
 }
 
-// 当前 mask（即 set_mask.target 指向的 mask 对象，用于排除自身）
+// Current mask (mask object pointed to by set_mask.target, to exclude itself)
 const maskCurrentMask = computed<MaskObject | null>(() => {
   const action = props.action
   if (action?.type !== 'set_mask') return null
@@ -2668,7 +2668,7 @@ const maskCurrentMask = computed<MaskObject | null>(() => {
   return obj?.type === 'mask' ? (obj as unknown as MaskObject) : null
 })
 
-// 已被其它 mask 占用的目标 id 集合（非本 mask）
+// Target ID set occupied by other masks (excluding this mask)
 const maskClaimedByOthers = computed<Set<string>>(() => {
   const set = new Set<string>()
   const selfId = maskCurrentMask.value?.id ?? null
@@ -2680,7 +2680,7 @@ const maskClaimedByOthers = computed<Set<string>>(() => {
   return set
 })
 
-// 候选目标：类型允许 + 不在当前 targetIds + 不在其它 mask 占用 + 不是本 mask 自身
+// Candidate targets: type allowed + not in current targetIds + not occupied by other mask + not this mask itself
 const maskCandidateTargets = computed<SceneObject[]>(() => {
   const own = new Set(maskParams.value.targetIds ?? [])
   const selfId = maskCurrentMask.value?.id ?? null
@@ -2693,13 +2693,13 @@ const maskCandidateTargets = computed<SceneObject[]>(() => {
   })
 })
 
-// 获取 mask target 显示名
+// Get mask target display name
 function getMaskTargetName(id: string): string {
   const o = sceneObjectStore.getObject(id)
   return o?.alias || o?.name || id
 }
 
-// 获取 mask target 图标
+// Get mask target icon
 function getMaskTargetIcon(id: string): string {
   const o = sceneObjectStore.getObject(id)
   if (!o) return '❓'
@@ -2714,7 +2714,7 @@ const scRcSelectedIndex = computed(() => {
   return compositeParams.value.renderChain?.indexOf(scRcSelectedId.value) ?? -1
 })
 
-// zIndex 分组显示数据
+// zIndex grouped display data
 interface ScRcItemEntry {
   type: 'item'
   childId: string
@@ -2729,7 +2729,7 @@ interface ScRcDividerEntry {
 
 type ScRcDisplayEntry = ScRcItemEntry | ScRcDividerEntry
 
-/** 解析 renderChain 为带 zIndex 分组分割线的显示列表 */
+/** Parse renderChain into display list with zIndex group dividers */
 const scRcDisplay = computed((): ScRcDisplayEntry[] => {
   const chain = compositeParams.value.renderChain
   if (!chain || chain.length === 0) return []
@@ -2742,7 +2742,7 @@ const scRcDisplay = computed((): ScRcDisplayEntry[] => {
     const obj = sceneObjectStore.getObject(childId)
     const z = obj?.zIndex ?? 0
 
-    // 组切换时插入分割线
+    // Insert divider on group transition
     if (prevZIndex !== null && z !== prevZIndex) {
       entries.push({ type: 'divider', zIndex: z })
     }
@@ -2754,7 +2754,7 @@ const scRcDisplay = computed((): ScRcDisplayEntry[] => {
   return entries
 })
 
-/** 获取指定 flatIndex 所在 zIndex 分组的边界 [groupStart, groupEnd]（闭区间） */
+/** Get bounds [groupStart, groupEnd] (inclusive) for zIndex group at flatIndex */
 function getScRcZIndexGroupBounds(flatIdx: number): [number, number] {
   const chain = compositeParams.value.renderChain
   if (!chain || flatIdx < 0 || flatIdx >= chain.length) return [-1, -1]
@@ -2790,13 +2790,13 @@ const scRcCanMoveDown = computed(() => {
   return idx < groupEnd
 })
 
-// P2: 处理子对象排序移动（受 zIndex 分组约束）
+// P2: Handle child object reorder move (constrained by zIndex group)
 function handleCompositeChildMove(index: number, direction: -1 | 1) {
   const renderChain = compositeParams.value.renderChain
   if (!renderChain) return
   const targetIndex = index + direction
   if (targetIndex < 0 || targetIndex >= renderChain.length) return
-  // zIndex 边界检查
+  // zIndex boundary check
   const [groupStart, groupEnd] = getScRcZIndexGroupBounds(index)
   if (targetIndex < groupStart || targetIndex > groupEnd) return
   // swap
@@ -2805,12 +2805,12 @@ function handleCompositeChildMove(index: number, direction: -1 | 1) {
   newRenderChain[index] = newRenderChain[targetIndex]!
   newRenderChain[targetIndex] = temp
   compositeParams.value.renderChain = newRenderChain
-  // 跟随选中项
+  // Follow selected item
   scRcSelectedId.value = newRenderChain[targetIndex] ?? null
   handleCompositeParamsChange()
 }
 
-// 拖拽排序（受 zIndex 分组约束）
+// Drag and drop sorting (constrained by zIndex group)
 function onScRcDragStart(idx: number, e: DragEvent) {
   scRcDragStartIndex = idx
   const chain = compositeParams.value.renderChain
@@ -2821,7 +2821,7 @@ function onScRcDragStart(idx: number, e: DragEvent) {
 }
 
 function onScRcDragOver(idx: number) {
-  // 仅允许拖到同 zIndex 组内
+  // Only allow dragging within same zIndex group
   if (scRcDragStartIndex >= 0) {
     const chain = compositeParams.value.renderChain
     if (chain) {
@@ -2847,7 +2847,7 @@ function onScRcDrop(dropIdx: number) {
   if (scRcDragStartIndex < 0 || scRcDragStartIndex === dropIdx) return
   const renderChain = compositeParams.value.renderChain
   if (!renderChain) return
-  // zIndex 跨组校验
+  // zIndex cross-group validation
   const srcObj = sceneObjectStore.getObject(renderChain[scRcDragStartIndex]!)
   const tgtObj = sceneObjectStore.getObject(renderChain[dropIdx]!)
   const srcZ = srcObj?.zIndex ?? 0
@@ -2867,7 +2867,7 @@ function onScRcDragEnd() {
   scRcDragStartIndex = -1
 }
 
-// P2: 处理 set_composite 参数变更
+// P2: Handle set_composite parameters change
 function handleCompositeParamsChange() {
   const action = props.action
   if (action?.type !== 'set_composite') return
@@ -2880,7 +2880,7 @@ function handleCompositeParamsChange() {
   emit('update', { params })
 }
 
-// P2: 获取子对象显示名
+// P2: Get child object display name
 function getCompositeChildName(childId: string): string {
   const obj = sceneObjectStore.getObject(childId)
   if (!obj) return childId
@@ -2890,32 +2890,32 @@ function getCompositeChildName(childId: string): string {
   return childId
 }
 
-// P2: 获取子对象图标（委托统一 metadata 注册表）
+// P2: Get child object icon (delegated to unified metadata registry)
 function getCompositeChildIcon(childId: string): string {
   const obj = sceneObjectStore.getObject(childId)
   if (!obj) return '❓'
   return getTypeIcon(obj.type)
 }
 
-// 画面特效颜色变更
+// Screen effect color change
 function handleScreenEffectColorChange(key: string, value: string) {
   screenEffectParams.value[key] = value
   handleScreenEffectParamsChange()
 }
 
-// 画面特效选择变更（如 holeShape）
+// Screen effect select change (e.g. holeShape)
 function handleScreenEffectSelectChange(key: string, value: string) {
   screenEffectParams.value[key] = value
   handleScreenEffectParamsChange()
 }
 
-// 画面特效参数变更
+// Screen effect parameter change
 function handleScreenEffectParamsChange() {
   const action = props.action
   if (!action) return
   if (action.type !== 'set_screen_effect' && action.type !== 'tween_screen_effect') return
 
-  // 收集所有非 undefined 的参数
+  // Collect all non-undefined parameters
   const updatedParams: Record<string, unknown> = {}
   for (const [key, value] of Object.entries(screenEffectParams.value)) {
     if (value !== undefined) {
@@ -2926,7 +2926,7 @@ function handleScreenEffectParamsChange() {
   emit('update', { params: updatedParams })
 }
 
-// 光源参数变更 (点光源 PRD Phase 0.5)
+// Light parameter change (Point light PRD Phase 0.5)
 function handleLightParamsChange() {
   const action = props.action
   if (!action) return
@@ -2942,13 +2942,13 @@ function handleLightParamsChange() {
   emit('update', { params: updatedParams })
 }
 
-// 光源颜色变更 (点光源 PRD Phase 0.5)
+// Light color change (Point light PRD Phase 0.5)
 function handleLightColorChange(key: string, value: string) {
   lightParams.value[key] = value
   handleLightParamsChange()
 }
 
-// 根据 lightType 过滤后的光源属性定义
+// Light property definitions filtered by lightType
 const filteredLightProps = computed(() => {
   const action = props.action
   if (!action) return LIGHT_PROPS
@@ -2963,12 +2963,12 @@ const filteredLightProps = computed(() => {
   return LIGHT_PROPS.filter(p => p.key !== 'directionAngle' && p.key !== 'coneAngle')
 })
 
-// 当前已激活的光源属性
+// Currently active light properties
 const activeLightProps = computed(() => {
   return filteredLightProps.value.filter(prop => lightParams.value[prop.key] !== undefined)
 })
 
-// 文本属性过滤（tween_text 排除不可插值属性）
+// Text property filter (tween_text excludes non-interpolatable properties)
 const filteredTextProps = computed(() => {
   if (props.action?.type === 'tween_text') {
     return TEXT_PROPS.filter(prop => !TEXT_NON_INTERPOLATABLE_KEYS.includes(prop.key))
@@ -2976,12 +2976,12 @@ const filteredTextProps = computed(() => {
   return TEXT_PROPS
 })
 
-// 当前已激活的文本属性
+// Currently active text properties
 const activeTextProps = computed(() => {
   return filteredTextProps.value.filter(prop => textParams.value[prop.key] !== undefined)
 })
 
-// 文本参数变更 (Text PRD)
+// Text parameter change (Text PRD)
 function handleTextParamsChange() {
   const action = props.action
   if (!action) return
@@ -2997,16 +2997,16 @@ function handleTextParamsChange() {
   emit('update', { params: updatedParams })
 }
 
-// 文本颜色变更
+// Text color change
 function handleTextColorChange(key: string, value: string) {
   textParams.value[key] = value
   handleTextParamsChange()
 }
 
-// 文本选择变更
+// Text select change
 function handleTextSelectChange(key: string, value: string) {
   textParams.value[key] = value
-  // fillType 切换为 linear_gradient 时自动初始化 gradientStops
+  // Auto initialize gradientStops when fillType switches to linear_gradient
   if (key === 'fillType' && value === 'linear_gradient') {
     const existing = textParams.value['gradientStops'] as { offset: number; color: string }[] | undefined
     if (!existing || existing.length < 2) {
@@ -3022,13 +3022,13 @@ function handleTextSelectChange(key: string, value: string) {
   handleTextParamsChange()
 }
 
-// 文本内容变更
+// Text content change
 function handleTextContentChange(value: string) {
   textParams.value['content'] = value
   handleTextParamsChange()
 }
 
-// 渐变色标变更（双色模式）
+// Gradient stop change (two-color mode)
 function handleTextGradientStopChange(index: number, color: string) {
   const stops = (textParams.value['gradientStops'] as { offset: number; color: string }[] | undefined) ?? [
     { offset: 0, color: '#ffffff' },
@@ -3042,7 +3042,7 @@ function handleTextGradientStopChange(index: number, color: string) {
   handleTextParamsChange()
 }
 
-// 渐变色标计算属性
+// Gradient stop computed property
 const textGradientStartColor = computed(() => {
   const stops = textParams.value['gradientStops'] as { offset: number; color: string }[] | undefined
   return stops?.[0]?.color ?? '#ffffff'
@@ -3053,7 +3053,7 @@ const textGradientEndColor = computed(() => {
   return stops?.[1]?.color ?? '#000000'
 })
 
-// v16: set_material — 获取目标元件对象的素材列表
+// v16: set_material — Get target symbol material list
 const targetSymbolMaterials = computed(() => {
   const action = props.action
   if (action?.type !== 'set_material') return []
@@ -3062,7 +3062,7 @@ const targetSymbolMaterials = computed(() => {
   return (targetObj as SymbolObject).materials
 })
 
-// v18: set_material — 判断目标是否为表情对象
+// v18: set_material — Determine whether target is an expression object
 const targetIsExpression = computed(() => {
   const action = props.action
   if (action?.type !== 'set_material') return false
@@ -3070,25 +3070,25 @@ const targetIsExpression = computed(() => {
   return targetObj?.type === 'expression'
 })
 
-// v18: set_material — 获取表情列表
+// v18: set_material — Get expression list
 const targetExpressionList = computed(() => {
   if (!targetIsExpression.value) return []
   return expressionStore.expressionList
 })
 
-// v16: set_material — 处理素材选择变更
+// v16: set_material — Handle material selection change
 function handleMaterialIdChange(materialId: string) {
   emit('update', { params: { materialId } })
 }
 
-// v9.3: 处理 set_visual 参数变化
+// v9.3: Handle set_visual parameter change
 function handleSetVisualParamsChange() {
   const action = props.action
   if (action?.type !== 'set_visual') return
   
   const params: LooseObject = { ...(action.params ?? {}) }
   
-  // 只保留有值的属性
+  // Only retain properties with defined values
   for (const prop of SET_VISUAL_PROPS) {
     if (setVisualParams.value[prop.key] !== undefined) {
       params[prop.key] = setVisualParams.value[prop.key]
@@ -3100,14 +3100,14 @@ function handleSetVisualParamsChange() {
   emit('update', { params })
 }
 
-// 处理视觉参数变化
+// Handle visual parameter change
 function handleVisualParamsChange() {
   if (!props.action) return
   
   const action = props.action as unknown as { params?: Record<string, unknown> }
   const params: LooseObject = { ...(action.params ?? {}) }
 
-  // 只保留有值的属性
+  // Only retain properties with defined values
   for (const prop of VISUAL_PROPS) {
     if (visualParams.value[prop.key] !== undefined) {
       params[prop.key] = visualParams.value[prop.key]
@@ -3119,14 +3119,14 @@ function handleVisualParamsChange() {
   emit('update', { params })
 }
 
-// 处理几何参数变化
+// Handle geometry parameter change
 function handleGeometryParamsChange() {
   if (props.action?.type !== 'tween_transform') return
   
   const action = props.action as unknown as { params?: Record<string, unknown> }
   const params: LooseObject = { ...(action.params ?? {}) }
   
-  // x, y 直接保存为整数
+  // x, y saved directly as integers
   if (geometryParams.value.x !== undefined) {
     params.x = Math.round(geometryParams.value.x)
   } else {
@@ -3139,7 +3139,7 @@ function handleGeometryParamsChange() {
     delete params.y
   }
   
-  // scaleX/scaleY 从百分比转换回比例
+  // scaleX/scaleY converted from percentage back to scale
   if (geometryParams.value.scaleX !== undefined) {
     params.scaleX = geometryParams.value.scaleX / 100
   } else {
@@ -3152,14 +3152,14 @@ function handleGeometryParamsChange() {
     delete params.scaleY
   }
   
-  // rotation 从角度转换回弧度
+  // rotation converted from degrees back to radians
   if (geometryParams.value.rotation !== undefined) {
     params.rotation = (geometryParams.value.rotation) * Math.PI / 180
   } else {
     delete params.rotation
   }
   
-  // alpha 直接保存（0-1 范围）
+  // alpha saved directly (0-1 range)
   if (geometryParams.value.alpha !== undefined) {
     params.alpha = geometryParams.value.alpha
   } else {
@@ -3169,14 +3169,14 @@ function handleGeometryParamsChange() {
   emit('update', { params })
 }
 
-// v9.2: 处理 set_transform 几何参数变化
+// v9.2: Handle set_transform geometry parameter change
 function handleSetTransformGeometryChange() {
   if (props.action?.type !== 'set_transform') return
   
   const action = props.action as unknown as { params?: Record<string, unknown> }
   const params: LooseObject = { ...(action.params ?? {}) }
   
-  // x, y 直接保存为整数
+  // x, y saved directly as integers
   if (geometryParams.value.x !== undefined) {
     params.x = Math.round(geometryParams.value.x)
   } else {
@@ -3189,7 +3189,7 @@ function handleSetTransformGeometryChange() {
     delete params.y
   }
   
-  // scaleX/scaleY 从百分比转换回比例
+  // scaleX/scaleY converted from percentage back to scale
   if (geometryParams.value.scaleX !== undefined) {
     params.scaleX = geometryParams.value.scaleX / 100
   } else {
@@ -3202,14 +3202,14 @@ function handleSetTransformGeometryChange() {
     delete params.scaleY
   }
   
-  // rotation 从角度转换回弧度
+  // rotation converted from degrees back to radians
   if (geometryParams.value.rotation !== undefined) {
     params.rotation = geometryParams.value.rotation * Math.PI / 180
   } else {
     delete params.rotation
   }
 
-  // 变换原点：0~1 归一化值，直接存储
+  // Transform origin: 0~1 normalized value, stored directly
   if (geometryParams.value['transformOriginX'] !== undefined) {
     params['transformOriginX'] = geometryParams.value['transformOriginX']
   } else {
@@ -3224,15 +3224,15 @@ function handleSetTransformGeometryChange() {
   emit('update', { params })
 }
 
-// 处理音频参数变化
+// Handle audio parameter change
 function handleAudioParamsChange(key: string, value: string | number | boolean | undefined) {
   if (props.action?.type !== 'set_audio') return
   
    
   const params: LooseObject = { ...audioParams.value, [key]: value }
-  audioParams.value = params // 更新本地状态
+  audioParams.value = params // Update local state
   
-  // 清理 undefined
+  // Clean up undefined
   const finalParams: LooseObject = {}
   if (params.action) finalParams.action = params.action
   for (const prop of AUDIO_PROPS) {
@@ -3260,13 +3260,13 @@ function handleTextRevealParamsChange(key: 'action' | 'mode', value: string) {
   })
 }
 
-// 处理相机参数变化
+// Handle camera parameter change
 function handleCameraParamsChange() {
   if (!props.action) return
   emit('update', { params: { ...cameraParams.value } })
 }
 
-// 处理相机 X 变化（保持整数）
+// Handle camera X change (maintain integer)
 function handleCameraXChange(event: Event) {
   const target = event.target as HTMLInputElement
   const value = Math.round(parseFloat(target.value) || 0)
@@ -3274,7 +3274,7 @@ function handleCameraXChange(event: Event) {
   handleCameraParamsChange()
 }
 
-// 处理相机 Y 变化（保持整数）
+// Handle camera Y change (maintain integer)
 function handleCameraYChange(event: Event) {
   const target = event.target as HTMLInputElement
   const value = Math.round(parseFloat(target.value) || 0)
@@ -3282,16 +3282,16 @@ function handleCameraYChange(event: Event) {
   handleCameraParamsChange()
 }
 
-// 处理相机 Zoom 变化（输入百分数，转换为 zoom 值）
+// Handle camera Zoom change (input percentage, convert to zoom value)
 function handleCameraZoomChange(event: Event) {
   const target = event.target as HTMLInputElement
   const percent = parseFloat(target.value) || 100
-  const zoom = Math.max(0.1, percent / 100)  // 百分数转换为 zoom 值
-  cameraParams.value.zoom = Math.round(zoom * 100) / 100  // 保留两位小数
+  const zoom = Math.max(0.1, percent / 100)  // Percentage converted to zoom value
+  cameraParams.value.zoom = Math.round(zoom * 100) / 100  // Keep 2 decimal places
   handleCameraParamsChange()
 }
 
-// 处理缩放联动的事件
+// Handle scale lock events
 const scaleLocked = ref(true)
 
 function toggleScaleLock() {
@@ -3319,38 +3319,38 @@ function handleScaleChange(changedKey: string) {
   if (props.action?.type === 'tween_transform') handleGeometryParamsChange()
 }
 
-// 截断槽位文本
+// Truncate slot text
 function truncateSlotText(text: string, maxLen: number): string {
   if (!text) return ''
   return text.length > maxLen ? text.slice(0, maxLen) + '...' : text
 }
 
-// 获取槽位标签（支持 preroll/subtitle/postroll）
+// Get slot label (supports preroll/subtitle/postroll)
 function getSlotLabel(slot: RuntimeSlot): string {
-  if (slot.type === 'preroll') return '前置'
-  if (slot.type === 'postroll') return '后置'
+  if (slot.type === 'preroll') return 'Pre-roll'
+  if (slot.type === 'postroll') return 'Post-roll'
   return truncateSlotText(slot.text ?? '', 15)
 }
 
-// 当前选中的槽位
+// Currently selected slot
 // const currentSlot... (removed)
 
-// 当前槽位文本
+// Current slot text
 // const currentSlotText... (removed)
 // function formatSlotDuration... (removed)
 
-// 判断是否为持续动作 (v6.3)
+// Determine whether action is duration action (v6.3)
 function isDurationAction(action: Action): boolean {
   const durationActions: ActionType[] = [
     'tween_transform',
     'camera_move',
-    'camera_follow', // v7.x: 添加 camera_follow
+    'camera_follow', // v7.x: Add camera_follow
     'camera_shake'
   ]
   return durationActions.includes(action.type)
 }
 
-// 获取目标对象图标
+// Get target object icon
 function getTargetIcon(target: string): string {
   if (target === 'camera') return '📷'
   if (target === SCENE_ACTION_TARGET) return '🎬'
@@ -3363,19 +3363,19 @@ function getActionHeaderIcon(action: Action): string {
 }
 
 function getActionHeaderTitle(action: Action): string {
-  if (action.type === 'set_text_reveal') return '打字机'
+  if (action.type === 'set_text_reveal') return 'Typewriter'
   return getTargetName(action.target)
 }
 
-// v7.0: 获取目标对象名称
+// v7.0: Get target object name
 function getTargetName(target: string): string {
-  if (target === 'camera') return '相机'
-  if (target === SCENE_ACTION_TARGET) return '当前场景'
+  if (target === 'camera') return 'Camera'
+  if (target === SCENE_ACTION_TARGET) return 'Current Scene'
   
-  // v7.0: 通过实例ID查找场景对象
+  // v7.0: Look up scene object via instance ID
   const obj = sceneObjectStore.getObject(target)
   if (obj) {
-    // v7.1: 优先使用别名（确保非空字符串）
+    // v7.1: Prefer alias (ensure non-empty string)
     const alias = obj.alias
     if (alias?.trim()) {
       return alias
@@ -3385,44 +3385,44 @@ function getTargetName(target: string): string {
     }
   }
   
-  // v7.1: 如果找不到对象，提供更友好的显示
+  // v7.1: If object not found, provide user-friendly display
   if (target.startsWith('char_')) {
-    return '角色 ' + target.substring(5, 13) + '...'
+    return 'Character ' + target.substring(5, 13) + '...'
   }
   if (target.startsWith('bg_')) {
-    return '背景 ' + target.substring(3, 11) + '...'
+    return 'Background ' + target.substring(3, 11) + '...'
   }
   
   return target
 }
 
-// 震动参数 - 使用 ref
+// Shake parameters - using ref
 const shakeParams = ref({
   intensity: 0,
   decay: false,
   frequency: 10
 })
 
-// 相机跟随参数
+// Camera follow parameters
 const followParams = ref({
   followTarget: '',
 
   damping: 0,
   offsetX: 0,
-  offsetY: -50,  // 默认 -50，让人物稍微偏下
-  zoom: undefined as number | undefined,  // 可选的 zoom 参数
-  smoothEntry: false,  // v15: 平滑入场
-  smoothEntryDuration: 300,  // v15: 平滑入场时长 (ms)
-  autoZoom: false,  // v15: 自动推拉
-  autoZoomRange: 5,  // v15: 推拉幅度 %
-  autoZoomCycles: 0.5,  // v15: 推拉次数
-  constrainBounds: false  // v6.9: 边界约束选项
+  offsetY: -50,  // Default -50, placing character slightly lower
+  zoom: undefined as number | undefined,  // Optional zoom parameter
+  smoothEntry: false,  // v15: Smooth transition
+  smoothEntryDuration: 300,  // v15: Smooth transition duration (ms)
+  autoZoom: false,  // v15: Auto zoom
+  autoZoomRange: 5,  // v15: Zoom range %
+  autoZoomCycles: 0.5,  // v15: Zoom cycles
+  constrainBounds: false  // v6.9: Boundary constraint option
 })
 
-// P2: 自定义树形下拉组件状态
+// P2: Custom tree dropdown state
 const showFollowDropdown = ref(false)
 
-// P2: 记录展开的 composite ID 集合（默认全部折叠）
+// P2: Track expanded composite ID set (collapsed by default)
 const expandedComposites = ref(new Set<string>())
 
 
@@ -3437,7 +3437,7 @@ function toggleCompositeExpand(compositeId: string) {
   expandedComposites.value = next
 }
 
-// P2: 获取当前选中目标的显示标签（递归查找）
+// P2: Get display label for currently selected target (recursive lookup)
 const selectedFollowTargetLabel = computed(() => {
   const targetId = followParams.value.followTarget
   if (!targetId) return ''
@@ -3454,41 +3454,41 @@ const selectedFollowTargetLabel = computed(() => {
   return findInTree(followTargetTree.value) ?? targetId
 })
 
-// P2: 处理下拉失焦（延迟关闭，避免点击子元素时闪烁）
+// P2: Handle dropdown blur (delayed close to prevent flicker when clicking child elements)
 function onFollowDropdownFocusOut(event: FocusEvent) {
   const dropdown = (event.currentTarget as HTMLElement)
   const relatedTarget = event.relatedTarget as HTMLElement | null
-  // 如果焦点仍在下拉容器内，不关闭
+  // Do not close if focus is still within dropdown container
   if (relatedTarget && dropdown.contains(relatedTarget)) return
-  // 延迟关闭，允许 click 事件先触发
+  // Delayed close, allowing click event to trigger first
   setTimeout(() => { showFollowDropdown.value = false }, 150)
 }
-// v6.9: 获取当前相机的真实 zoom 值
+// v6.9: Get actual zoom value of current camera
 const currentCameraZoom = computed(() => {
   const cameraObj = sceneObjectStore.objects.find(obj => obj.type === 'camera')
   return (cameraObj as CameraObject).zoom ?? 1
 })
 
-// 跟随 zoom 百分数显示（zoom * 100，始终显示当前值）
+// Follow zoom percentage display (zoom * 100, always shows current value)
 const followZoomPercent = computed(() => {
-  // v6.9: 如果 zoom 未定义，使用当前相机的真实 zoom
+  // v6.9: If zoom is undefined, use current camera actual zoom
   const zoom = followParams.value.zoom ?? currentCameraZoom.value
   return Math.round(zoom * 100)
 })
 
-// v9.2: 判断是否为 Death Action (消亡动作)
+// v9.2: Determine if action is Death Action (despawn action)
 const isCurrentDeathAction = computed(() => {
   if (!props.action) return false
   return isDeathAction(props.action)
 })
 
-// v9.5: 判断是否为 Birth Action (出生动作) - 用于显示 autoDespawnOnBlockEnd 控制
+// v9.5: Determine if action is Birth Action (spawn action) - for autoDespawnOnBlockEnd control
 const isCurrentBirthAction = computed(() => {
   if (!props.action) return false
   return isBirthAction(props.action)
 })
 
-// v9.5: 处理“本段结束后自动消亡”复选框变化
+// v9.5: Handle 'Auto-despawn at end of block' checkbox change
 function handleAutoDespawnChange(checked: boolean) {
   if (!props.action) return
   const currentParams = (props.action as SetLifecycleAction).params
@@ -3497,15 +3497,15 @@ function handleAutoDespawnChange(checked: boolean) {
   } as Partial<Action>)
 }
 
-// 判断是否为相机动作
+// Determine whether action is camera action
 const isCameraAction = computed(() => {
   if (!props.action) return false
   const cameraActionTypes = ['camera_cut', 'camera_move', 'camera_follow', 'camera_shake']
   return cameraActionTypes.includes(props.action.type)
 })
 
-// v7.0: 可用的实例列表（用于跟随目标选择，支持角色、道具、组合对象、背景）
-// v9.3: 根据 aliveObjectIds 过滤掉已消亡的对象
+// v7.0: Available instance list (for follow target selection: characters, props, composites, backgrounds)
+// v9.3: Filter out despawned objects according to aliveObjectIds
 const FOLLOW_TARGET_ICONS: Record<string, string> = {
   character: '👤',
   prop: '📦',
@@ -3519,10 +3519,10 @@ interface FollowTargetTreeItem {
   alias: string
   type: string
   icon: string
-  children?: FollowTargetTreeItem[]  // composite 类型有子对象（entity/union 均支持）
+  children?: FollowTargetTreeItem[]  // composite type has child objects (both entity and union supported)
 }
 
-/** 扁平化后的可见列表项，用于模板 v-for 渲染 */
+/** Flattened visible list items for template v-for rendering */
 interface FollowTargetFlatItem {
   id: string
   alias: string
@@ -3532,20 +3532,20 @@ interface FollowTargetFlatItem {
   hasChildren: boolean
 }
 
-/** 检查对象是否在存活列表中 */
+/** Check whether object is in alive list */
 function isAlive(objId: string): boolean {
   if (!props.aliveObjectIds || props.aliveObjectIds.length === 0) return true
   return props.aliveObjectIds.includes(objId)
 }
 
 /**
- * 树形跟随目标列表（递归构建）：
- * - entity / union 组合对象均构建 children，支持折叠展开
- * - 非 composite 子对象不重复出现在顶层
+ * Tree-structure follow target list (recursively constructed):
+ * - Both entity / union composite objects build children with expand/collapse support
+ * - Non-composite child objects do not appear redundantly at root level
  */
 const followTargetTree = computed<FollowTargetTreeItem[]>(() => {
   const supportedTypes = ['character', 'prop', 'composite', 'background', 'expression']
-  // 收集所有 composite 的 childIds 集合
+  // Collect set of childIds for all composites
   const allChildIds = new Set<string>()
   for (const obj of sceneObjectStore.objects) {
     if (obj.type === 'composite') {
@@ -3555,7 +3555,7 @@ const followTargetTree = computed<FollowTargetTreeItem[]>(() => {
     }
   }
 
-  /** 递归构建单个对象节点 */
+  /** Recursively construct single object node */
   function buildItem(obj: SceneObject): FollowTargetTreeItem {
     const item: FollowTargetTreeItem = {
       id: obj.id,
@@ -3565,11 +3565,11 @@ const followTargetTree = computed<FollowTargetTreeItem[]>(() => {
     }
     if (obj.type === 'composite') {
       const composite = obj as CompositeObject
-      // entity / union 均构建 children
+      // Both entity / union build children
       const children = (composite.childIds ?? [])
         .map(cid => sceneObjectStore.objects.find(o => o.id === cid))
         .filter((child): child is SceneObject => !!child && isAlive(child.id))
-        .map(child => buildItem(child))  // 递归构建
+        .map(child => buildItem(child))  // Recursive construction
       if (children.length > 0) {
         item.children = children
       }
@@ -3581,7 +3581,7 @@ const followTargetTree = computed<FollowTargetTreeItem[]>(() => {
   for (const obj of sceneObjectStore.objects) {
     if (!supportedTypes.includes(obj.type)) continue
     if (!isAlive(obj.id)) continue
-    // 跳过已被 composite 收纳的子对象（它们会在 composite 下展示）
+    // Skip child objects already contained in composite (displayed under composite)
     if (allChildIds.has(obj.id)) continue
     result.push(buildItem(obj))
   }
@@ -3589,8 +3589,8 @@ const followTargetTree = computed<FollowTargetTreeItem[]>(() => {
 })
 
 /**
- * 扁平化可见列表（根据展开状态递归拍平）：
- * 模板直接 v-for 此列表，通过 depth 控制缩进层级
+ * Flattened visible list (recursively flattened according to expand state):
+ * Template directly iterates this list via v-for, using depth to control indentation
  */
 const flatFollowTargetList = computed<FollowTargetFlatItem[]>(() => {
   const result: FollowTargetFlatItem[] = []
@@ -3614,7 +3614,7 @@ const flatFollowTargetList = computed<FollowTargetFlatItem[]>(() => {
   return result
 })
 
-// P2: 清理已不存在的 composite ID（递归收集有效 ID）
+// P2: Clean up non-existent composite IDs (recursively collect valid IDs)
 watch(() => followTargetTree.value, (tree) => {
   function collectIds(items: FollowTargetTreeItem[], ids: Set<string>) {
     for (const item of items) {
@@ -3631,7 +3631,7 @@ watch(() => followTargetTree.value, (tree) => {
   expandedComposites.value = cleaned
 })
 
-// 监听 action 变化，更新 shakeParams
+// Watch action changes and update shakeParams
 watch(() => props.action, (newAction) => {
   if (newAction?.type !== 'camera_shake') {
     shakeParams.value = { intensity: 0, decay: false, frequency: 10 }
@@ -3646,9 +3646,9 @@ watch(() => props.action, (newAction) => {
   }
 }, { immediate: true })
 
-// focusField watch 中的 set_character 逻辑已移除
+// set_character logic in focusField watch removed
 
-// 处理槽位序号变化（下拉列表选择，直接使用 0-based index）
+// Handle slot index change (dropdown selection, directly uses 0-based index)
 function handleSlotIndexChange(event: Event) {
   if (!props.action) return
   const target = event.target as HTMLSelectElement
@@ -3658,7 +3658,7 @@ function handleSlotIndexChange(event: Event) {
   }
 }
 
-// 处理槽位跨度变化
+// Handle slot span change
 function handleSlotSpanChange(event: Event) {
   if (!props.action || !isDurationAction(props.action)) return
   const target = event.target as HTMLInputElement
@@ -3668,7 +3668,7 @@ function handleSlotSpanChange(event: Event) {
   }
 }
 
-// 处理震动参数变化
+// Handle shake parameters change
 function handleShakeChange() {
   if (props.action?.type !== 'camera_shake') return
   
@@ -3681,15 +3681,15 @@ function handleShakeChange() {
   emit('update', { params })
 }
 
-// ==================== 相机控制台相关函数 ====================
+// ==================== Camera Console Functions ====================
 
 // switchCameraActionType removed
 
 
-// 处理缓动函数变化
+// Handle easing function change
 // function handleEasingChange... (removed)
 
-// 处理跟随目标变化
+// Handle follow target change
 function selectFollowTarget(targetId: string) {
   if (!props.action) return
   followParams.value.followTarget = targetId
@@ -3697,7 +3697,7 @@ function selectFollowTarget(targetId: string) {
   handleFollowParamsChange()
 }
 
-// 处理跟随参数变化
+// Handle follow parameters change
 function handleFollowParamsChange() {
   if (!props.action) return
 
@@ -3722,12 +3722,12 @@ function handleFollowParamsChange() {
   emit('update', { params })
 }
 
-// 处理跟随 zoom 变化（输入百分数，转换为 zoom 值）
+// Handle follow zoom change (input percentage, convert to zoom value)
 function handleFollowZoomChange(event: Event) {
   const target = event.target as HTMLInputElement
   const percent = parseFloat(target.value)
   if (!isNaN(percent) && percent > 0) {
-    followParams.value.zoom = Math.round(percent) / 100  // 百分数转换为 zoom 值
+    followParams.value.zoom = Math.round(percent) / 100  // Percentage converted to zoom value
   } else {
     followParams.value.zoom = undefined
   }
@@ -3737,7 +3737,7 @@ function handleFollowZoomChange(event: Event) {
 // function clearFollowZoom... (removed)
 // function useCurrentZoom... (removed)
 
-// 监听 action 变化，更新 followParams
+// Watch action changes and update followParams
 watch(() => props.action, (newAction) => {
   if (newAction?.type !== 'camera_follow') {
     followParams.value = { followTarget: '', damping: 0, offsetX: 0, offsetY: -50, zoom: undefined, smoothEntry: false, smoothEntryDuration: 300, autoZoom: false, autoZoomRange: 5, autoZoomCycles: 0.5, constrainBounds: false }
@@ -3751,30 +3751,30 @@ watch(() => props.action, (newAction) => {
     damping: action.params?.damping ?? 0,
     offsetX: action.params?.offsetX ?? 0,
     offsetY: action.params?.offsetY ?? -50,
-    zoom: action.params?.zoom,  // 可能是 undefined
-    smoothEntry: action.params?.smoothEntry ?? false,  // v15: 平滑入场
-    smoothEntryDuration: action.params?.smoothEntryDuration ?? 300,  // v15: 平滑入场时长
-    autoZoom: action.params?.autoZoom ?? false,  // v15: 自动推拉
-    autoZoomRange: action.params?.autoZoomRange ?? 5,  // v15: 推拉幅度
-    autoZoomCycles: action.params?.autoZoomCycles ?? 0.5,  // v15: 推拉次数
-    constrainBounds: action.params?.constrainBounds ?? false  // v6.9: 边界约束
+    zoom: action.params?.zoom,  // May be undefined
+    smoothEntry: action.params?.smoothEntry ?? false,  // v15: Smooth transition
+    smoothEntryDuration: action.params?.smoothEntryDuration ?? 300,  // v15: Smooth transition duration
+    autoZoom: action.params?.autoZoom ?? false,  // v15: Auto zoom
+    autoZoomRange: action.params?.autoZoomRange ?? 5,  // v15: Zoom range
+    autoZoomCycles: action.params?.autoZoomCycles ?? 0.5,  // v15: Zoom cycles
+    constrainBounds: action.params?.constrainBounds ?? false  // v6.9: Boundary constraint
   }
 }, { immediate: true })
 
-// 处理表情选择
+// Handle expression selection
 function handleExpressionSelect(_expressionId: string) {
-  // set_character 已移除，此函数不再执行任何操作
+  // set_character removed, this function is a no-op
   showExpressionDialog.value = false
 }
 
 
 
-// 处理通用更新
+// Handle generic update
 // function handleUpdate... (removed)
 
-// ==================== v11.0: set_anim 支持 ====================
+// ==================== v11.0: set_anim Support ====================
 
-// 获取 set_anim 目标资源类型和 ID
+// Get set_anim target resource type and ID
 function getSetAnimTargetResource(): { type: 'prop' | 'background'; id: string } | null {
   if (props.action?.type !== 'set_anim') return null
   const target = props.action.target
@@ -3789,7 +3789,7 @@ function getSetAnimTargetResource(): { type: 'prop' | 'background'; id: string }
   return null
 }
 
-// v11.1: 获取目标资源可用的 Animation 列表
+// v11.1: Get available Animation list for target resource
 const availableAnimations = computed(() => {
   const result: {
     id: string
@@ -3800,10 +3800,10 @@ const availableAnimations = computed(() => {
   
   const target = props.action?.target
   
-  // v16: 场景对象：优先从 SceneObject.animations 读取
+  // v16: Scene object: prioritize reading from SceneObject.animations
   const targetObj = target ? sceneObjectStore.getObject(target) : null
   if (targetObj) {
-    // 优先对象级动画
+    // Prioritize object-level animations
     const objectAnims = animationStore.getObjectAnimations(targetObj)
     if (objectAnims.length > 0) {
       for (const anim of objectAnims) {
@@ -3813,7 +3813,7 @@ const availableAnimations = computed(() => {
     }
   }
 
-  // 回退：资源级查找（兼容未迁移的对象）
+  // Fallback: resource-level lookup (for non-migrated objects)
   const resource = getSetAnimTargetResource()
   if (resource) {
     const resourceAnims = animationStore.getAnimations(resource.type, resource.id)
@@ -3825,35 +3825,35 @@ const availableAnimations = computed(() => {
   return result
 })
 
-// v11.3: 动画状态管理（支持多动画）
-// 数据结构: params.animations = [{ animName, action, loop }, ...]
-// v11.52: 按需添加模式后，getAnimActionState 和 getAnimLoopState 不再需要
+// v11.3: Animation state management (supports multi-animation)
+// Data structure: params.animations = [{ animName, action, loop }, ...]
+// v11.52: With on-demand addition mode, getAnimActionState and getAnimLoopState are no longer needed
 
-// 处理动画播放/停止变更
+// Handle animation play/stop change
 function handleSetAnimAction(animName: string, action: 'play' | 'stop') {
   updateAnimationsParams(animName, { action })
 }
 
-// v11.88: handleSetAnimLoop 已移除，loop 设置统一由 Animation 资源定义控制
+// v11.88: handleSetAnimLoop removed, loop setting controlled by Animation resource definition
 
-// 更新 animations 数组参数
-// v11.88: 移除 loop 属性，循环设置统一由 Animation 资源定义控制
+// Update animations array parameter
+// v11.88: Removed loop property, loop setting controlled by Animation resource definition
 function updateAnimationsParams(animName: string, updates: { action?: 'play' | 'stop' }) {
   if (props.action?.type !== 'set_anim') return
   
-  // v11.88: animations 是必需的唯一格式
+  // v11.88: animations is the only required format
   type AnimItem = SetAnimAction['params']['animations'][number]
   const animations: AnimItem[] = [...(props.action.params.animations || [])]
-  // 查找或创建动画项
+  // Find or create animation item
   const existingIndex = animations.findIndex(a => a.animName === animName)
   if (existingIndex >= 0) {
     const existing = animations[existingIndex]
     if (existing) {
-      // v11.88: 使用条件属性设置避免 exactOptionalPropertyTypes 错误
+      // v11.88: Use conditional property assignment to avoid exactOptionalPropertyTypes error
       const updatedItem: AnimItem = {
         animName: existing.animName
       }
-      // 仅在有值时设置可选属性
+      // Only assign optional properties when value is present
       const newAction = updates.action !== undefined ? updates.action : existing.action
       if (newAction !== undefined) {
         updatedItem.action = newAction
@@ -3877,8 +3877,8 @@ function updateAnimationsParams(animName: string, updates: { action?: 'play' | '
     animations.push(newItem)
   }
   
-  // v11.52: 按需添加模式 - 不再自动过滤 stop 状态的动画
-  // 用户明确添加的动画都应保留，无论其状态
+  // v11.52: On-demand addition mode - no longer auto-filters stop state animations
+  // Explicitly added animations must be retained regardless of state
   
   emit('update', {
     params: {
@@ -3887,31 +3887,31 @@ function updateAnimationsParams(animName: string, updates: { action?: 'play' | '
   })
 }
 
-// v11.52: 按需添加模式 - 菜单显示状态
+// v11.52: On-demand addition mode - menu display state
 const showAddAnimMenu = ref(false)
 
-// v11.52: 当前已添加的动画列表（从 action.params.animations 读取）
-// v11.88: animations 是必需的唯一格式，包含 autoStopOnBlockEnd 属性
+// v11.52: Current added animation list (read from action.params.animations)
+// v11.88: animations is the only required format, includes autoStopOnBlockEnd property
 const currentAnimations = computed(() => {
   if (props.action?.type !== 'set_anim') return []
   return props.action.params.animations || []
 })
 
-// v11.52: 可添加的动画列表（排除已添加的）
+// v11.52: Available animations to add (excluding already added)
 const availableAnimationsToAdd = computed(() => {
   const addedNames = new Set(currentAnimations.value.map(a => a.animName))
   return availableAnimations.value.filter(anim => !addedNames.has(anim.name))
 })
 
-// v11.52: 添加动画到 action
-// v11.88: 包含 autoStopOnBlockEnd 属性（默认 true）
+// v11.52: Add animation to action
+// v11.88: Includes autoStopOnBlockEnd property (default true)
 function addAnimToAction(animName: string) {
   if (props.action?.type !== 'set_anim') return
   
   type AnimItem = SetAnimAction['params']['animations'][number]
   const animations: AnimItem[] = [...currentAnimations.value]
   
-  // 添加新动画，默认播放，默认本段结束后停止
+  // Add new animation, default play, default stop on block end
   animations.push({
     animName,
     action: 'play',
@@ -3927,8 +3927,8 @@ function addAnimToAction(animName: string) {
   showAddAnimMenu.value = false
 }
 
-// v11.52: 从 action 移除动画
-// v11.88: 移除 loop 属性
+// v11.52: Remove animation from action
+// v11.88: Remove loop property
 function removeAnimFromAction(index: number) {
   if (props.action?.type !== 'set_anim') return
   
@@ -3944,7 +3944,7 @@ function removeAnimFromAction(index: number) {
   })
 }
 
-// v11.88: 处理每个动画项的"本段结束后停止"变更
+// v11.88: Handle per-animation auto-stop at block end change
 function handleAnimAutoStopChange(index: number, checked: boolean) {
   if (props.action?.type !== 'set_anim') return
   
@@ -4014,7 +4014,7 @@ function handleAnimTimingModeChange(index: number, value: string) {
 }
 
 
-// 获取相机动作图标
+// Get camera action icon
 function getCameraActionIcon(type: string): string {
   switch (type) {
     case 'camera_cut':
@@ -4030,17 +4030,17 @@ function getCameraActionIcon(type: string): string {
   }
 }
 
-// 获取相机动作类型名称
+// Get camera action type name
 function getCameraActionTypeName(type: string): string {
   switch (type) {
     case 'camera_cut':
-      return '镜头切'
+      return 'Camera Cut'
     case 'camera_move':
-      return '运镜'
+      return 'Camera Move'
     case 'camera_follow':
-      return '跟随'
+      return 'Follow'
     case 'camera_shake':
-      return '震动'
+      return 'Shake'
     default:
       return ''
   }
@@ -4273,7 +4273,7 @@ function getCameraActionTypeName(type: string): string {
   margin-top: 8px;
 }
 
-/* v6.2 样式 */
+/* v6.2 Styles */
 .type-badge {
   display: inline-block;
   padding: 4px 12px;
@@ -4309,7 +4309,7 @@ function getCameraActionTypeName(type: string): string {
   margin-left: 8px;
 }
 
-/* 槽位文本显示样式 */
+/* Slot text display styles */
 .slot-text-display {
   margin-top: 12px;
   background: #f0f7ff;
@@ -4350,7 +4350,7 @@ function getCameraActionTypeName(type: string): string {
   background: white;
 }
 
-/* v6.3 Delta 模式样式 */
+/* v6.3 Delta mode styles */
 .action-type-badge {
   font-size: 11px;
   padding: 2px 8px;
@@ -4571,7 +4571,7 @@ function getCameraActionTypeName(type: string): string {
   white-space: nowrap;
 }
 
-/* v9.2: Death Action 简化面板样式 */
+/* v9.2: Death Action simplified panel styles */
 .death-action-panel {
   text-align: center;
   padding: 24px 16px;
@@ -4644,7 +4644,7 @@ function getCameraActionTypeName(type: string): string {
   background: #f3f4f6;
 }
 
-/* 部位素材编辑区域 */
+/* Part material edit area */
 .part-assets-edit-section {
   margin-top: 12px;
   padding: 12px;
@@ -4765,7 +4765,7 @@ function getCameraActionTypeName(type: string): string {
   background: #fecaca;
 }
 
-/* 姿态切换确认对话框 */
+/* Pose switch confirmation dialog */
 .confirm-dialog-overlay {
   position: fixed;
   top: 0;
@@ -4936,7 +4936,7 @@ function getCameraActionTypeName(type: string): string {
   background: rgba(59, 130, 246, 0.1);
 }
 
-/* 删除动作按钮 */
+/* Delete action button */
 .delete-action-section {
   padding: 16px 16px 8px;
   border-top: 1px solid #e5e7eb;
@@ -4961,7 +4961,7 @@ function getCameraActionTypeName(type: string): string {
   border-color: #fca5a5;
 }
 
-/* v6.4: set_anim 动画控制样式 */
+/* v6.4: set_anim animation control styles */
 .anim-state-item {
   margin-bottom: 16px;
   padding: 12px;
@@ -4974,7 +4974,7 @@ function getCameraActionTypeName(type: string): string {
   margin-top: 8px;
 }
 
-/* v11.3: 动画列表样式 */
+/* v11.3: Animation list styles */
 .anim-list {
   display: flex;
   flex-direction: column;
@@ -5046,7 +5046,7 @@ function getCameraActionTypeName(type: string): string {
   cursor: pointer;
 }
 
-/* v11.52: 移除动画按钮 */
+/* v11.52: Remove animation button */
 .anim-remove-btn {
   width: 28px;
   height: 28px;
@@ -5064,7 +5064,7 @@ function getCameraActionTypeName(type: string): string {
   border-color: #fca5a5;
 }
 
-/* v11.52: 添加动画控制区域 */
+/* v11.52: Add animation control area */
 .add-anim-section {
   margin-top: 12px;
   position: relative;
@@ -5284,7 +5284,7 @@ function getCameraActionTypeName(type: string): string {
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.10);
 }
 
-/* 相机控制台样式 */
+/* Camera control panel styles */
 .camera-console {
   margin-bottom: 16px;
 }
@@ -5464,7 +5464,7 @@ function getCameraActionTypeName(type: string): string {
   gap: 6px;
 }
 
-/* camera_follow zoom 输入框 */
+/* camera_follow zoom input */
 .zoom-input-row {
   display: flex;
   align-items: center;
@@ -5506,7 +5506,7 @@ function getCameraActionTypeName(type: string): string {
   border-color: #fecaca;
 }
 
-/* v6.9: 使用当前值按钮 */
+/* v6.9: Use current value button */
 .use-current-btn {
   padding: 4px 8px;
   font-size: 12px;
@@ -5539,7 +5539,7 @@ function getCameraActionTypeName(type: string): string {
   margin-top: 8px;
 }
 
-/* v11.88: 本段结束后停止 checkbox */
+/* v11.88: Auto stop at block end checkbox */
 .auto-stop-section {
   margin-top: 12px;
   padding-top: 12px;
@@ -5568,7 +5568,7 @@ function getCameraActionTypeName(type: string): string {
   color: #1f2937;
 }
 
-/* v11.88: 每个动画项的"本段结束后停止" checkbox */
+/* v11.88: Per-animation auto stop at block end checkbox */
 .anim-auto-stop-label {
   display: flex;
   align-items: center;
@@ -5593,7 +5593,7 @@ function getCameraActionTypeName(type: string): string {
   color: #374151;
 }
 
-/* P2: 自定义树形下拉组件 */
+/* P2: Custom tree dropdown component */
 .follow-target-dropdown {
   position: relative;
   outline: none;
@@ -5672,7 +5672,7 @@ function getCameraActionTypeName(type: string): string {
   color: #2563eb;
 }
 
-/* 子项目：缩进量由 inline style paddingLeft 控制 */
+/* Child item: indent controlled by inline style paddingLeft */
 .follow-target-item.child-item {
   font-size: 11px;
   color: #6b7280;
@@ -5686,7 +5686,7 @@ function getCameraActionTypeName(type: string): string {
   color: #2563eb;
 }
 
-/* 子项目前缀符号 └ */
+/* Child item prefix symbol └ */
 .follow-target-child-prefix {
   color: #9ca3af;
   margin-right: 2px;
@@ -5694,7 +5694,7 @@ function getCameraActionTypeName(type: string): string {
   flex-shrink: 0;
 }
 
-/* 折叠/展开按钮 — 放在行尾，不影响一级对象对齐 */
+/* Expand/collapse button - placed at end of row without affecting root alignment */
 .follow-target-toggle {
   display: inline-flex;
   align-items: center;
@@ -5721,7 +5721,7 @@ function getCameraActionTypeName(type: string): string {
   white-space: nowrap;
 }
 
-/* P2: set_composite 可编辑面板 */
+/* P2: set_composite editable panel */
 .composite-mode-tabs {
   display: flex;
   gap: 4px;
@@ -5752,7 +5752,7 @@ function getCameraActionTypeName(type: string): string {
   font-weight: 500;
 }
 
-/* === set_composite 渲染链排序 UI（对齐 entity composite 属性面板） === */
+/* === set_composite render chain order UI (aligned with entity composite property panel) === */
 .sc-rc-list {
   margin-top: 6px;
 }

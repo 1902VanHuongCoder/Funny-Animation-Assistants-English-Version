@@ -5,22 +5,22 @@
   >
     <div class="manager-dialog">
       <div class="dialog-header">
-        <h3>{{ objectName }} — 素材管理</h3>
+        <h3>{{ objectName }} — Material Management</h3>
         <div class="header-actions">
           <button
             v-if="!batchMode"
             class="header-btn"
-            title="批量管理"
+            title="Batch Management"
             @click="batchMode = true"
           >
-            📦 批量管理
+            📦 Batch Manage
           </button>
           <button
             v-else
             class="header-btn"
             @click="exitBatchMode"
           >
-            ← 退出批量
+            ← Exit Batch
           </button>
           <button
             class="close-btn"
@@ -50,7 +50,7 @@
               v-if="!batchMode && mat.id === localCurrentId"
               class="current-badge"
             >
-              ✓ 当前
+              ✓ Current
             </div>
             <!-- Batch checkbox -->
             <div
@@ -91,7 +91,7 @@
             </div>
             <div class="card-info">
               <span class="card-name">{{ mat.name }}</span>
-              <span class="card-type">{{ mat.type === 'static' ? '静态' : '动画' }}</span>
+              <span class="card-type">{{ mat.type === 'static' ? 'Static' : 'Animation' }}</span>
             </div>
             <!-- Card bottom actions -->
             <div
@@ -102,7 +102,7 @@
                 class="btn-edit"
                 @click.stop="handleEditMaterial(mat.id)"
               >
-                ✏️ 编辑
+                ✏️ Edit
               </button>
               <button
                 class="btn-del"
@@ -120,7 +120,7 @@
           class="add-material-btn"
           @click="handleAddMaterial"
         >
-          ➕ 添加素材
+          ➕ Add Material
         </button>
 
         <!-- Batch footer -->
@@ -134,19 +134,19 @@
               type="checkbox"
               @change="toggleSelectAll"
             >
-            全选 ({{ selectedIds.size }}/{{ localMaterials.length }})
+            Select All ({{ selectedIds.size }}/{{ localMaterials.length }})
           </label>
           <button
             class="batch-delete-btn"
             :disabled="selectedIds.size === 0 || selectedIds.size === localMaterials.length"
             @click="handleBatchDelete"
           >
-            🗑️ 批量删除 ({{ selectedIds.size }})
+            🗑️ Batch Delete ({{ selectedIds.size }})
           </button>
         </div>
       </div>
 
-      <!-- Footer: 确定 / 取消 -->
+      <!-- Footer: OK / Cancel -->
       <div class="dialog-footer">
         <div class="footer-info" />
         <div class="footer-actions">
@@ -154,13 +154,13 @@
             class="btn-cancel"
             @click="emit('close')"
           >
-            取消
+            Cancel
           </button>
           <button
             class="btn-confirm"
             @click="handleConfirm"
           >
-            ✓ 确定
+            ✓ Confirm
           </button>
         </div>
       </div>
@@ -173,7 +173,7 @@
       >
         <div class="edit-modal">
           <div class="edit-header">
-            <h4>{{ editingMaterial.isNew ? '添加素材' : '编辑素材' }}</h4>
+            <h4>{{ editingMaterial.isNew ? 'Add Material' : 'Edit Material' }}</h4>
             <button
               class="close-btn"
               @click="editingMaterial = null"
@@ -189,14 +189,14 @@
                 <img
                   v-if="currentPreviewImage"
                   :src="currentPreviewImage"
-                  alt="预览"
+                  alt="Preview"
                 >
                 <div
                   v-else
                   class="preview-placeholder"
                 >
                   <span class="placeholder-icon-large">🖼️</span>
-                  <span>暂无预览</span>
+                  <span>No preview</span>
                 </div>
               </div>
               <div class="preview-controls">
@@ -207,16 +207,16 @@
                   @mouseup="handlePlayEnd"
                   @mouseleave="handlePlayEnd"
                 >
-                  ▶ 按住播放测试
+                  ▶ Hold to test play
                 </button>
               </div>
               <div class="preview-status">
-                <span>类型: {{ editingMaterial.type === 'static' ? '静态图' : '序列帧动画' }}</span>
+                <span>Type: {{ editingMaterial.type === 'static' ? 'Static Image' : 'Frame Animation' }}</span>
                 <span v-if="editingMaterial.type === 'animation' && editingMaterial.frames.length > 0">
-                  · {{ editingMaterial.frames.length }} 帧
+                  · {{ editingMaterial.frames.length }} frames
                 </span>
                 <span v-if="isPlaying && editingMaterial.frames.length > 0">
-                  · 当前帧: {{ currentFrameIndex + 1 }}
+                  · Current frame: {{ currentFrameIndex + 1 }}
                 </span>
               </div>
               <div
@@ -231,17 +231,17 @@
             <!-- Right: Form -->
             <div class="edit-form-panel">
               <div class="form-group">
-                <label>素材名称 *</label>
+                <label>Material Name *</label>
                 <input
                   v-model="editingMaterial.name"
                   type="text"
                   class="form-input"
-                  placeholder="输入素材名称"
+                  placeholder="Enter material name"
                 >
               </div>
 
               <div class="form-group">
-                <label>类型</label>
+                <label>Type</label>
                 <div class="type-selector">
                   <label class="radio-label">
                     <input
@@ -249,7 +249,7 @@
                       type="radio"
                       value="static"
                     >
-                    静态图片
+                    Static Image
                   </label>
                   <label class="radio-label">
                     <input
@@ -257,7 +257,7 @@
                       type="radio"
                       value="animation"
                     >
-                    序列帧
+                    Image Sequence
                   </label>
                 </div>
               </div>
@@ -267,7 +267,7 @@
                 v-if="editingMaterial.type === 'static'"
                 class="form-group"
               >
-                <label>图片资源 *</label>
+                <label>Image Resource *</label>
                 <div class="file-upload-area">
                   <div
                     v-if="editingMaterial.url || editingMaterial._runtimeUrl"
@@ -275,14 +275,14 @@
                   >
                     <img
                       :src="editingMaterial._runtimeUrl || resolveUrl(editingMaterial.url)"
-                      alt="已上传"
+                      alt="Uploaded"
                       @error="handleImageError"
                     >
                     <button
                       class="btn-replace"
                       @click="uploadStaticImage"
                     >
-                      替换
+                      Replace
                     </button>
                   </div>
                   <div
@@ -290,7 +290,7 @@
                     class="upload-placeholder-btn"
                     @click="uploadStaticImage"
                   >
-                    <span>📂 点击选择图片</span>
+                    <span>📂 Click to select image</span>
                   </div>
                   <input
                     ref="staticFileInput"
@@ -305,15 +305,15 @@
               <!-- Animation mode: frames -->
               <template v-if="editingMaterial.type === 'animation'">
                 <div class="form-group">
-                  <label>序列帧 *</label>
-                  <p class="form-hint">点击帧可设置为默认静止图</p>
+                  <label>Frame Sequence *</label>
+                  <p class="form-hint">Click a frame to set as default still frame</p>
                   <div class="frames-grid">
                     <div
                       v-for="(frame, index) in editingMaterial.frames"
                       :key="index"
                       class="frame-item"
                       :class="{ 'is-default': !useCustomStillFrame && selectedStillFrameIndex === index }"
-                      title="点击设为静止帧"
+                      title="Click to set as still frame"
                       @click="selectAsStillFrame(index)"
                     >
                       <img
@@ -326,7 +326,7 @@
                         v-if="!useCustomStillFrame && selectedStillFrameIndex === index"
                         class="default-badge"
                       >
-                        默认
+                        Default
                       </div>
                       <button
                         class="frame-remove"
@@ -352,10 +352,10 @@
                   >
                 </div>
 
-                <!-- 默认静止图 -->
+                <!-- Default still image -->
                 <div class="form-group">
-                  <label>默认静止图 *</label>
-                  <p class="form-hint">动画停止时显示的图片，可从序列帧中选择或单独上传</p>
+                  <label>Default Still Image *</label>
+                  <p class="form-hint">Image displayed when animation stops. Select from sequence frames or upload custom image</p>
                   <div class="still-frame-source-selector">
                     <label class="radio-label">
                       <input
@@ -364,11 +364,11 @@
                         :value="false"
                         :disabled="editingMaterial.frames.length === 0"
                       >
-                      使用序列帧
+                      Use Sequence Frame
                       <span
                         v-if="!useCustomStillFrame && editingMaterial.frames.length > 0"
                         class="source-badge"
-                      >第 {{ selectedStillFrameIndex + 1 }} 帧</span>
+                      >Frame {{ selectedStillFrameIndex + 1 }}</span>
                     </label>
                     <label class="radio-label">
                       <input
@@ -376,11 +376,11 @@
                         type="radio"
                         :value="true"
                       >
-                      自定义上传
+                      Custom Upload
                       <span
                         v-if="useCustomStillFrame"
                         class="source-badge custom"
-                      >独立图片</span>
+                      >Standalone Image</span>
                     </label>
                   </div>
                   <div class="still-frame-preview">
@@ -390,14 +390,14 @@
                     >
                       <img
                         :src="stillFramePreviewSrc"
-                        alt="静止帧"
+                        alt="Still Frame"
                       >
                       <button
                         v-if="useCustomStillFrame"
                         class="btn-replace"
                         @click="uploadCustomStillFrame"
                       >
-                        替换
+                        Replace
                       </button>
                     </div>
                     <div
@@ -405,13 +405,13 @@
                       class="upload-placeholder-btn"
                       @click="uploadCustomStillFrame"
                     >
-                      <span>📂 点击上传静止图</span>
+                      <span>📂 Click to upload still image</span>
                     </div>
                     <div
                       v-else
                       class="upload-placeholder-btn disabled"
                     >
-                      <span>请先上传序列帧</span>
+                      <span>Please upload frame sequence first</span>
                     </div>
                     <input
                       ref="stillFrameInput"
@@ -435,13 +435,13 @@
                     >
                   </div>
                   <div class="form-group half">
-                    <label>循环</label>
+                    <label>Loop</label>
                     <label class="checkbox-label">
                       <input
                         v-model="editingMaterial.loop"
                         type="checkbox"
                       >
-                      循环播放
+                      Loop Playback
                     </label>
                   </div>
                 </div>
@@ -454,14 +454,14 @@
               class="btn-cancel"
               @click="editingMaterial = null"
             >
-              取消
+              Cancel
             </button>
             <button
               class="btn-save"
               :disabled="!canSave"
               @click="handleSaveMaterial"
             >
-              ✓ 保存
+              ✓ Save
             </button>
           </div>
         </div>
@@ -471,7 +471,7 @@
     <!-- FileBrowserDialog -->
     <FileBrowserDialog
       v-if="showFileBrowser"
-      title="选择图片"
+      title="Select Image"
       :file-filter="imageFileFilter"
       :multiple="fileBrowserMultiple"
       @select="handleFileBrowserSelect"
@@ -506,11 +506,11 @@ const emit = defineEmits<{
 const projectStore = useProjectStore()
 const { getImageUrl } = useAssetImage()
 
-/** 解析 URL：通过 getImageUrl 解析项目路径 */
+/** Resolve URL: resolve project path via getImageUrl */
 function resolveUrl(url: string | undefined): string {
   if (!url) return ''
-  // blob:/data: URL 不透传（可能是来自持久化数据的陌生 blob URL，已失效）
-  // 当前会话新创建的 blob URL 按 _runtimeUrl 优先级在调用方处理
+  // Do not pass-through blob:/data: URLs (could be stale blob URLs from persisted data)
+  // Newly created blob URLs in current session are handled by caller via _runtimeUrl priority
   if (url.startsWith('blob:') || url.startsWith('data:')) return ''
   return getImageUrl(url) || ''
 }
@@ -519,7 +519,7 @@ function resolveUrl(url: string | undefined): string {
 const localMaterials = ref<SymbolMaterial[]>([])
 const localCurrentId = ref<string | undefined>(undefined)
 
-// Initialize local copies — 显式提取已知字段，避免运行时残留的 _runtimeUrl 等属性泄漏
+// Initialize local copies — explicitly extract known fields to prevent runtime residual properties like _runtimeUrl from leaking
 localMaterials.value = props.materials.map(m => ({
   id: m.id,
   name: m.name,
@@ -564,8 +564,8 @@ async function handleFileBrowserSelect(files: SelectedFile[]) {
       const blobUrl = URL.createObjectURL(blob)
       editingMaterial.value._runtimeUrl = blobUrl
       editingMaterial.value.url = f.path || f.name
-      // 自动填充名称：使用文件名（去扩展名）
-      if (!editingMaterial.value.name || editingMaterial.value.name.startsWith('素材')) {
+      // Auto-fill name: use filename (strip extension)
+      if (!editingMaterial.value.name || editingMaterial.value.name.startsWith('Material') || editingMaterial.value.name.startsWith('\u7d20\u6750')) {
         editingMaterial.value.name = f.name.replace(/\.[^/.]+$/, '')
       }
     }
@@ -580,8 +580,8 @@ async function handleFileBrowserSelect(files: SelectedFile[]) {
         })
       }
     }
-    // 自动填充名称：多帧动画使用文件夹名称
-    if (files.length > 0 && (!editingMaterial.value.name || editingMaterial.value.name.startsWith('素材'))) {
+    // Auto-fill name: multi-frame animation uses folder name
+    if (files.length > 0 && (!editingMaterial.value.name || editingMaterial.value.name.startsWith('Material') || editingMaterial.value.name.startsWith('\u7d20\u6750'))) {
       const folderName = extractFolderName(files[0]!.path || files[0]!.name)
       if (folderName) {
         editingMaterial.value.name = folderName
@@ -593,7 +593,7 @@ async function handleFileBrowserSelect(files: SelectedFile[]) {
 }
 
 /**
- * 从文件路径提取父文件夹名称
+ * Extract parent folder name from file path
  */
 function extractFolderName(filePath: string): string {
   const parts = filePath.replace(/\\/g, '/').split('/')
@@ -655,7 +655,7 @@ interface EditingMaterialForm {
   name: string
   type: 'static' | 'animation'
   url?: string
-  /** 编辑期间的 blob URL（仅用于当前会话预览，不持久化） */
+  /** Blob URL during editing (only used for current session preview, not persisted) */
   _runtimeUrl?: string
   frames: { url: string; _runtimeUrl?: string }[]
   fps: number
@@ -664,7 +664,7 @@ interface EditingMaterialForm {
 
 const editingMaterial = ref<EditingMaterialForm | null>(null)
 
-// ===== Still Frame (静止帧) =====
+// ===== Still Frame =====
 const useCustomStillFrame = ref(false)
 const selectedStillFrameIndex = ref(0)
 const customStillFrameUrl = ref('')
@@ -691,7 +691,7 @@ const currentPreviewImage = computed(() => {
   return stillFramePreviewSrc.value
 })
 
-// v16: 素材资源路径显示（参考 PropEditorModal.displayAssetPath）
+// v16: Material asset path display (refer to PropEditorModal.displayAssetPath)
 const displayAssetPath = computed(() => {
   if (!editingMaterial.value) return ''
   if (editingMaterial.value.type === 'static') {
@@ -703,7 +703,7 @@ const displayAssetPath = computed(() => {
     if (!frames || frames.length === 0) return ''
     const firstUrl = frames[0]?.url
     if (!firstUrl || firstUrl.startsWith('blob:') || firstUrl.startsWith('data:')) return ''
-    return `${firstUrl} (共${frames.length}帧)`
+    return `${firstUrl} (${frames.length} frames)`
   }
   return ''
 })
@@ -744,7 +744,7 @@ function handleAddMaterial() {
   editingMaterial.value = {
     id: '',
     isNew: true,
-    name: `素材${localMaterials.value.length + 1}`,
+    name: `Material ${localMaterials.value.length + 1}`,
     type: 'static',
     frames: [],
     fps: 25,
@@ -765,7 +765,7 @@ function handleEditMaterial(materialId: string) {
     frames: mat.frames ? mat.frames.map(f => ({ url: f.url })) : [],
     ...(mat.url != null ? { url: mat.url } : {}),
   }
-  // 初始化静止帧状态
+  // Initialize still frame state
   if (mat.type === 'animation') {
     if (mat.stillFrameSource === 'custom') {
       useCustomStillFrame.value = true
@@ -819,8 +819,8 @@ function handleStaticFileSelect(event: Event) {
   const blobUrl = fileToBlob(file)
   editingMaterial.value._runtimeUrl = blobUrl
   editingMaterial.value.url = file.name
-  // 自动填充名称：使用文件名（去扩展名）
-  if (!editingMaterial.value.name || editingMaterial.value.name.startsWith('素材')) {
+  // Auto-fill name: use filename (strip extension)
+  if (!editingMaterial.value.name || editingMaterial.value.name.startsWith('Material') || editingMaterial.value.name.startsWith('\u7d20\u6750')) {
     editingMaterial.value.name = file.name.replace(/\.[^/.]+$/, '')
   }
   target.value = ''
@@ -840,10 +840,10 @@ function handleFramesUpload(event: Event) {
       _runtimeUrl: blobUrl,
     })
   }
-  // 自动填充名称：多帧动画使用首个文件名的前缀（去掉末尾数字和扩展名）
-  if (sorted.length > 0 && (!editingMaterial.value.name || editingMaterial.value.name.startsWith('素材'))) {
+  // Auto-fill name: multi-frame animation uses prefix of first filename (strip trailing numbers and extension)
+  if (sorted.length > 0 && (!editingMaterial.value.name || editingMaterial.value.name.startsWith('Material') || editingMaterial.value.name.startsWith('\u7d20\u6750'))) {
     const firstName = sorted[0]!.name.replace(/\.[^/.]+$/, '')
-    // 尝试去掉末尾数字序号，如 "walk_001" → "walk"
+    // Try stripping trailing numeric suffix, e.g. "walk_001" -> "walk"
     const baseName = firstName.replace(/[_-]?\d+$/, '')
     editingMaterial.value.name = baseName || firstName
   }
@@ -919,7 +919,7 @@ function handleSaveMaterial() {
       updates.frames = editingMaterial.value.frames
       updates.fps = editingMaterial.value.fps
       updates.loop = editingMaterial.value.loop
-      // 静止帧信息
+      // Still frame information
       if (useCustomStillFrame.value) {
         updates.stillFrameSource = 'custom'
         const customUrl = customStillFrameUrl.value
@@ -928,7 +928,7 @@ function handleSaveMaterial() {
       } else {
         updates.stillFrameSource = 'frame'
         updates.stillFrameIndex = selectedStillFrameIndex.value
-        // url 指向选中的帧
+        // url points to selected frame
         const frames = editingMaterial.value.frames
         if (frames.length > 0 && selectedStillFrameIndex.value < frames.length) {
           const sf = frames[selectedStillFrameIndex.value]!

@@ -10,9 +10,9 @@ const errorMessage = ref('')
 onErrorCaptured((err) => {
   hasError.value = true
   errorMessage.value = err.message
-  toast.error(`发生错误: ${err.message}`)
+  toast.error(`An error occurred: ${err.message}`)
   console.error('[ErrorBoundary]', err)
-  return false  // 阻止错误继续传播
+  return false  // Prevent error from propagating
 })
 
 function retry() {
@@ -30,7 +30,7 @@ function retry() {
     <div class="error-icon">
       ⚠️
     </div>
-    <h3>组件加载失败</h3>
+    <h3>Component Failed to Load</h3>
     <p class="error-message">
       {{ errorMessage }}
     </p>
@@ -38,7 +38,7 @@ function retry() {
       class="btn-retry"
       @click="retry"
     >
-      重试
+      Retry
     </button>
   </div>
 </template>

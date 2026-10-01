@@ -16,17 +16,17 @@
         </div>
 
         <div class="dialog-content">
-          <!-- 左侧筛选栏：仅标签 -->
+          <!-- Left filter sidebar: Tags only -->
           <div class="filter-sidebar">
             <div class="filter-group">
-              <h4>标签</h4>
+              <h4>Tags</h4>
               <div class="filter-list">
                 <button
                   class="filter-btn"
                   :class="{ active: selectedTags.size === 0 }"
                   @click="selectedTags = new Set()"
                 >
-                  全部
+                  All
                 </button>
                 <button
                   v-for="tag in allTags"
@@ -41,9 +41,9 @@
             </div>
           </div>
 
-          <!-- 右侧内容区 -->
+          <!-- Right content area -->
           <div class="main-content">
-            <!-- 顶部工具栏：性别 tabs + 搜索框 -->
+            <!-- Top toolbar: Gender tabs + search input -->
             <div class="content-toolbar">
               <div class="gender-tabs">
                 <button
@@ -60,19 +60,19 @@
                 v-model="searchKeyword"
                 type="text"
                 class="search-input"
-                placeholder="搜索人物..."
+                placeholder="Search characters..."
               >
             </div>
 
-            <!-- 卡片网格 -->
+            <!-- Card grid -->
             <div class="dialog-body">
               <div
                 v-if="filteredCharacters.length === 0"
                 class="empty-state"
               >
-                <p>📭 暂无可用人物</p>
+                <p>📭 No characters available</p>
                 <p class="hint">
-                  请先在「人物管理」中创建人物
+                  Please create characters in Character Manager first
                 </p>
               </div>
 
@@ -101,13 +101,13 @@
                     >
                       👤
                     </div>
-                    <!-- 性别角标 -->
+                    <!-- Gender badge -->
                     <div class="gender-badge">
                       {{ getGenderIcon(char.gender) }}
                     </div>
-                    <!-- 对象数量 -->
+                    <!-- Object count -->
                     <div class="count-badge">
-                      {{ char.objects.length }} 个对象
+                      {{ char.objects.length }} objects
                     </div>
                   </div>
                   <div class="card-info">
@@ -138,13 +138,13 @@
               </div>
             </div>
 
-            <!-- 底部按钮 -->
+            <!-- Bottom buttons -->
             <div class="dialog-footer">
               <button
                 class="btn-cancel"
                 @click="emit('close')"
               >
-                取消
+                Cancel
               </button>
               <button
                 class="btn-confirm"
@@ -169,19 +169,19 @@ import type { CompositeCharacter } from '@/types/compositeCharacter'
 import type { Gender } from '@/types/project'
 
 const props = withDefaults(defineProps<{
-  /** 对话框标题 */
+  /** Dialog title */
   title?: string
-  /** 排除的人物 ID 列表 */
+  /** Excluded character ID list */
   excludeIds?: string[]
-  /** 仅包含的人物 ID 列表（白名单模式，为空则不过滤） */
+  /** Included character ID list (whitelist mode, no filter if empty) */
   includeIds?: string[]
-  /** 确认按钮文字 */
+  /** Confirm button text */
   confirmText?: string
 }>(), {
-  title: '选择人物',
+  title: 'Select Character',
   excludeIds: () => [],
   includeIds: () => [],
-  confirmText: '确定',
+  confirmText: 'Confirm',
 })
 
 const emit = defineEmits<{
@@ -196,10 +196,10 @@ const currentGender = ref<Gender | 'all'>('all')
 const searchKeyword = ref('')
 const selectedTags = ref<Set<string>>(new Set())
 
-/** 从所有人物中动态收集去重的标签列表 */
+/** Dynamically collect deduplicated tag list from all characters */
 const allTags = computed(() => {
   const tagSet = new Set<string>()
-  // 基于当前可见范围（白名单/排除后）收集标签
+  // Collect tags based on current visible scope (after whitelist/exclusions)
   let base = props.includeIds.length > 0
     ? characterStore.characters.filter(c => props.includeIds.includes(c.id))
     : characterStore.characters
@@ -225,10 +225,10 @@ function toggleTag(tag: string): void {
 }
 
 const genderOptions: { label: string; value: Gender | 'all' }[] = [
-  { label: '全部', value: 'all' },
-  { label: '♂ 男', value: 'male' },
-  { label: '♀ 女', value: 'female' },
-  { label: '⚧ 其他', value: 'other' },
+  { label: 'All', value: 'all' },
+  { label: '♂ Male', value: 'male' },
+  { label: '♀ Female', value: 'female' },
+  { label: '⚧ Other', value: 'other' },
 ]
 
 function getGenderIcon(gender: Gender): string {
@@ -240,35 +240,35 @@ function getGenderIcon(gender: Gender): string {
 }
 
 const filteredCharacters = computed(() => {
-  // 1. 白名单过滤（includeIds 非空时仅展示白名单中的人物）
+  // 1. Whitelist filter (when includeIds is non-empty, only show characters in whitelist)
   let list = props.includeIds.length > 0
     ? characterStore.characters.filter(c => props.includeIds.includes(c.id))
     : [...characterStore.characters]
 
-  // 2. 排除指定 ID
+  // 2. Exclude specified IDs
   if (props.excludeIds.length > 0) {
     list = list.filter(c => !props.excludeIds.includes(c.id))
   }
 
-  // 3. 性别筛选
+  // 3. Gender filter
   if (currentGender.value !== 'all') {
     list = list.filter(c => c.gender === currentGender.value)
   }
 
-  // 4. 标签筛选（多选交集：人物必须包含所有已选标签）
+  // 4. Tag filter (multi-select intersection: character must include all selected tags)
   if (selectedTags.value.size > 0) {
     list = list.filter(c =>
       c.tags && [...selectedTags.value].every(tag => c.tags?.includes(tag))
     )
   }
 
-  // 5. 关键词搜索
+  // 5. Keyword search
   if (searchKeyword.value.trim()) {
     const kw = searchKeyword.value.toLowerCase()
     list = list.filter(c => c.name.toLowerCase().includes(kw))
   }
 
-  // 6. 按创建时间倒序
+  // 6. Sort by creation time descending
   return list.sort((a, b) => b.createdAt - a.createdAt)
 })
 
@@ -342,14 +342,14 @@ function handleConfirm(): void {
   color: #1f2937;
 }
 
-/* ===== 双栏布局 ===== */
+/* ===== Two column layout ===== */
 .dialog-content {
   flex: 1;
   display: flex;
   overflow: hidden;
 }
 
-/* ===== 左侧筛选栏 ===== */
+/* ===== Left filter sidebar ===== */
 .filter-sidebar {
   width: 180px;
   background: #f9fafb;
@@ -407,7 +407,7 @@ function handleConfirm(): void {
   font-weight: 500;
 }
 
-/* ===== 右侧内容区 ===== */
+/* ===== Right content area ===== */
 .main-content {
   flex: 1;
   display: flex;
@@ -471,7 +471,7 @@ function handleConfirm(): void {
   box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
 }
 
-/* ===== Body: Grid 卡片 ===== */
+/* ===== Body: Grid cards ===== */
 .dialog-body {
   flex: 1;
   overflow-y: auto;

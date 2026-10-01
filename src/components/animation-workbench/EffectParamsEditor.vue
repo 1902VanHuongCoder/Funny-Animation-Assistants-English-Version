@@ -1,19 +1,19 @@
 <template>
   <div class="effect-params-editor">
-    <!-- 当前类型 + 更换按钮 -->
+    <!-- Current type + Change button -->
     <div class="field-row">
-      <label>类型</label>
+      <label>Type</label>
       <div class="type-selector">
         <span class="current-type" :class="{ unsupported: currentUnsupportedReason }" :title="currentUnsupportedReason">
           <span class="type-icon">{{ currentMeta?.icon ?? '?' }}</span>
           <span class="type-name">{{ currentMeta?.name ?? localTrack.effectParams.type }}</span>
-          <span v-if="currentUnsupportedReason" class="type-status">不可用</span>
+          <span v-if="currentUnsupportedReason" class="type-status">Unavailable</span>
         </span>
-        <button class="btn-change" @click="showPicker = !showPicker">更换 ▾</button>
+        <button class="btn-change" @click="showPicker = !showPicker">Change ▾</button>
       </div>
     </div>
 
-    <!-- Popover 特效类型选择器 -->
+    <!-- Popover effect type selector -->
     <div v-if="showPicker" class="type-picker-popover">
       <template v-for="cat in categories" :key="cat.key">
         <div class="cat-header">{{ cat.label }}</div>
@@ -37,9 +37,9 @@
       </template>
     </div>
 
-    <!-- 参数编辑区域 -->
+    <!-- Parameters editing area -->
     <div class="section-divider" />
-    <div class="section-header">参数</div>
+    <div class="section-header">Parameters</div>
 
     <template v-for="field in currentFields" :key="field.key">
       <div class="field-row">
@@ -113,122 +113,122 @@ const emit = defineEmits<{
 // ===== Effect Registry =====
 
 const DIRECTION_OPTIONS = [
-  { value: 'horizontal', label: '水平' },
-  { value: 'vertical', label: '垂直' },
-  { value: 'both', label: '双向' },
+  { value: 'horizontal', label: 'Horizontal' },
+  { value: 'vertical', label: 'Vertical' },
+  { value: 'both', label: 'Both' },
 ]
 
 const AXIS_OPTIONS = [
-  { value: 'rotation', label: '旋转' },
-  { value: 'x', label: '水平' },
-  { value: 'y', label: '垂直' },
+  { value: 'rotation', label: 'Rotation' },
+  { value: 'x', label: 'Horizontal' },
+  { value: 'y', label: 'Vertical' },
 ]
 
 const EFFECT_REGISTRY: EffectMeta[] = [
-  // 运动类
+  // Motion category
   {
-    type: 'wave', icon: '🌊', name: '波浪', category: 'motion',
+    type: 'wave', icon: '🌊', name: 'Wave', category: 'motion',
     defaultParams: { type: 'wave', speed: 1, amplitude: 10, frequency: 1, direction: 'horizontal' },
     paramFields: [
-      { key: 'speed', label: '速度', type: 'number', step: 0.1 },
-      { key: 'amplitude', label: '振幅', type: 'number' },
-      { key: 'frequency', label: '频率', type: 'number', step: 0.1 },
-      { key: 'direction', label: '方向', type: 'select', options: DIRECTION_OPTIONS },
+      { key: 'speed', label: 'Speed', type: 'number', step: 0.1 },
+      { key: 'amplitude', label: 'Amplitude', type: 'number' },
+      { key: 'frequency', label: 'Frequency', type: 'number', step: 0.1 },
+      { key: 'direction', label: 'Direction', type: 'select', options: DIRECTION_OPTIONS },
     ],
   },
   {
-    type: 'ribbon', icon: '🎀', name: '飘带', category: 'motion',
+    type: 'ribbon', icon: '🎀', name: 'Ribbon', category: 'motion',
     defaultParams: { type: 'ribbon', speed: 0.5, amplitude: 10, frequency: 0.5, direction: 'horizontal', damping: 2, phaseScale: 0.2 },
     paramFields: [
-      { key: 'speed', label: '速度', type: 'number', step: 0.1 },
-      { key: 'amplitude', label: '最大振幅', type: 'number' },
-      { key: 'frequency', label: '频率', type: 'number', step: 0.1 },
-      { key: 'direction', label: '方向', type: 'select', options: DIRECTION_OPTIONS },
-      { key: 'damping', label: '衰减指数', type: 'number', step: 0.5, min: 1, max: 5 },
-      { key: 'phaseScale', label: '相位累积', type: 'number', step: 0.5, min: 0.5, max: 5 },
+      { key: 'speed', label: 'Speed', type: 'number', step: 0.1 },
+      { key: 'amplitude', label: 'Max Amplitude', type: 'number' },
+      { key: 'frequency', label: 'Frequency', type: 'number', step: 0.1 },
+      { key: 'direction', label: 'Direction', type: 'select', options: DIRECTION_OPTIONS },
+      { key: 'damping', label: 'Damping Index', type: 'number', step: 0.5, min: 1, max: 5 },
+      { key: 'phaseScale', label: 'Phase Accumulation', type: 'number', step: 0.5, min: 0.5, max: 5 },
     ],
   },
   {
-    type: 'shake', icon: '😵‍💫', name: '震动', category: 'motion',
+    type: 'shake', icon: '😵‍💫', name: 'Shake', category: 'motion',
     defaultParams: { type: 'shake', speed: 10, range: 10, axis: 'rotation' },
     paramFields: [
-      { key: 'speed', label: '速度', type: 'number', min: 1, max: 20 },
-      { key: 'range', label: '幅度', type: 'number', min: 1, max: 30 },
-      { key: 'axis', label: '轴向', type: 'select', options: AXIS_OPTIONS },
+      { key: 'speed', label: 'Speed', type: 'number', min: 1, max: 20 },
+      { key: 'range', label: 'Range', type: 'number', min: 1, max: 30 },
+      { key: 'axis', label: 'Axis', type: 'select', options: AXIS_OPTIONS },
     ],
   },
   {
-    type: 'float', icon: '🫧', name: '漂浮', category: 'motion',
+    type: 'float', icon: '🫧', name: 'Float', category: 'motion',
     defaultParams: { type: 'float', amplitude: 10, speed: 1 },
     paramFields: [
-      { key: 'amplitude', label: '振幅', type: 'number', unit: 'px' },
-      { key: 'speed', label: '速度', type: 'number', step: 0.1 },
+      { key: 'amplitude', label: 'Amplitude', type: 'number', unit: 'px' },
+      { key: 'speed', label: 'Speed', type: 'number', step: 0.1 },
     ],
   },
-  // 形变类
+  // Deform category
   {
-    type: 'breathe', icon: '💨', name: '呼吸', category: 'deform',
+    type: 'breathe', icon: '💨', name: 'Breathe', category: 'deform',
     defaultParams: { type: 'breathe', intensity: 0.5, speed: 1 },
     paramFields: [
-      { key: 'intensity', label: '强度', type: 'number', step: 0.1, min: 0, max: 1 },
-      { key: 'speed', label: '速度', type: 'number', step: 0.1 },
+      { key: 'intensity', label: 'Intensity', type: 'number', step: 0.1, min: 0, max: 1 },
+      { key: 'speed', label: 'Speed', type: 'number', step: 0.1 },
     ],
   },
   {
-    type: 'jelly', icon: '🩷', name: '果冻', category: 'deform',
+    type: 'jelly', icon: '🩷', name: 'Jelly', category: 'deform',
     defaultParams: { type: 'jelly', stiffness: 8, damping: 0.3, intensity: 0.3, duration: 1000 },
     paramFields: [
-      { key: 'stiffness', label: '刚度', type: 'number', min: 1, max: 20 },
-      { key: 'damping', label: '阻尼', type: 'number', step: 0.1, min: 0.1, max: 1 },
-      { key: 'intensity', label: '强度', type: 'number', step: 0.1, min: 0.1, max: 1 },
-      { key: 'duration', label: '时长', type: 'number', step: 100, min: 100, max: 5000, unit: 'ms' },
+      { key: 'stiffness', label: 'Stiffness', type: 'number', min: 1, max: 20 },
+      { key: 'damping', label: 'Damping', type: 'number', step: 0.1, min: 0.1, max: 1 },
+      { key: 'intensity', label: 'Intensity', type: 'number', step: 0.1, min: 0.1, max: 1 },
+      { key: 'duration', label: 'Duration', type: 'number', step: 100, min: 100, max: 5000, unit: 'ms' },
     ],
   },
   {
-    type: 'squash', icon: '🦮', name: '挤压', category: 'deform',
+    type: 'squash', icon: '🦮', name: 'Squash', category: 'deform',
     defaultParams: { type: 'squash', intensity: 0.2, speed: 2, duration: 1000 },
     paramFields: [
-      { key: 'intensity', label: '强度', type: 'number', step: 0.1, min: 0.1, max: 0.5 },
-      { key: 'speed', label: '速度', type: 'number', step: 0.5, min: 0.5, max: 5 },
-      { key: 'duration', label: '时长', type: 'number', step: 100, min: 100, max: 5000, unit: 'ms' },
+      { key: 'intensity', label: 'Intensity', type: 'number', step: 0.1, min: 0.1, max: 0.5 },
+      { key: 'speed', label: 'Speed', type: 'number', step: 0.5, min: 0.5, max: 5 },
+      { key: 'duration', label: 'Duration', type: 'number', step: 100, min: 100, max: 5000, unit: 'ms' },
     ],
   },
-  // 视觉类
+  // Visual category
   {
-    type: 'glow', icon: '✨', name: '发光', category: 'visual',
+    type: 'glow', icon: '✨', name: 'Glow', category: 'visual',
     defaultParams: { type: 'glow', color: '#ffff00', intensity: 2, size: 15 },
     paramFields: [
-      { key: 'color', label: '颜色', type: 'color' },
-      { key: 'intensity', label: '强度', type: 'number', step: 0.1, min: 0, max: 3 },
-      { key: 'size', label: '大小', type: 'number', min: 1, unit: 'px' },
+      { key: 'color', label: 'Color', type: 'color' },
+      { key: 'intensity', label: 'Intensity', type: 'number', step: 0.1, min: 0, max: 3 },
+      { key: 'size', label: 'Size', type: 'number', min: 1, unit: 'px' },
     ],
   },
   {
-    type: 'motion_blur', icon: '💨', name: '运动模糊', category: 'visual',
+    type: 'motion_blur', icon: '💨', name: 'Motion Blur', category: 'visual',
     defaultParams: { type: 'motion_blur', velocity: 20, angle: 0, kernelSize: 5 },
     paramFields: [
-      { key: 'velocity', label: '模糊速度', type: 'number', min: 5, max: 100 },
-      { key: 'angle', label: '角度', type: 'number', step: 15, unit: '°' },
-      { key: 'kernelSize', label: '核大小', type: 'number', min: 5, max: 15, step: 2 },
+      { key: 'velocity', label: 'Blur Velocity', type: 'number', min: 5, max: 100 },
+      { key: 'angle', label: 'Angle', type: 'number', step: 15, unit: '°' },
+      { key: 'kernelSize', label: 'Kernel Size', type: 'number', min: 5, max: 15, step: 2 },
     ],
   },
-  // 特殊类
+  // Special category
   {
-    type: 'petrify', icon: '🪨', name: '石化', category: 'special',
+    type: 'petrify', icon: '🪨', name: 'Petrify', category: 'special',
     defaultParams: { type: 'petrify', duration: 1000, intensity: 1.0, grayScale: true },
     paramFields: [
-      { key: 'duration', label: '时长', type: 'number', step: 100, min: 100, max: 5000, unit: 'ms' },
-      { key: 'intensity', label: '强度', type: 'number', step: 0.1, min: 0, max: 1 },
-      { key: 'grayScale', label: '去色', type: 'checkbox' },
+      { key: 'duration', label: 'Duration', type: 'number', step: 100, min: 100, max: 5000, unit: 'ms' },
+      { key: 'intensity', label: 'Intensity', type: 'number', step: 0.1, min: 0, max: 1 },
+      { key: 'grayScale', label: 'Desaturate', type: 'checkbox' },
     ],
   },
   {
-    type: 'shatter', icon: '💥', name: '碎裂', category: 'special',
+    type: 'shatter', icon: '💥', name: 'Shatter', category: 'special',
     defaultParams: { type: 'shatter', duration: 1500, pieceCount: 5, explodeForce: 10.0 },
     paramFields: [
-      { key: 'duration', label: '时长', type: 'number', step: 100, min: 100, max: 5000, unit: 'ms' },
-      { key: 'pieceCount', label: '碎片数', type: 'number', min: 1, max: 20 },
-      { key: 'explodeForce', label: '爆炸力度', type: 'number', min: 1, max: 50 },
+      { key: 'duration', label: 'Duration', type: 'number', step: 100, min: 100, max: 5000, unit: 'ms' },
+      { key: 'pieceCount', label: 'Piece Count', type: 'number', min: 1, max: 20 },
+      { key: 'explodeForce', label: 'Explosion Force', type: 'number', min: 1, max: 50 },
     ],
   },
 ]
@@ -236,10 +236,10 @@ const EFFECT_REGISTRY: EffectMeta[] = [
 const HIDDEN_EFFECT_TYPES = new Set<DynamicEffectType>(['petrify', 'shatter'])
 
 const CATEGORY_LABELS: Record<string, string> = {
-  motion: '运动类',
-  deform: '形变类',
-  visual: '视觉类',
-  special: '特殊类',
+  motion: 'Motion',
+  deform: 'Deformation',
+  visual: 'Visual',
+  special: 'Special',
 }
 
 // ===== Local State =====

@@ -3,16 +3,16 @@
     <div class="modal-content" @click.stop>
       <!-- Header -->
       <div class="modal-header">
-        <h3>导入音效</h3>
+        <h3>Import Audio</h3>
         <button class="close-btn" @click="close">×</button>
       </div>
 
       <!-- Body -->
       <div class="modal-body">
-        <!-- 分类选项 -->
+        <!-- Classification Options -->
         <div class="form-section">
           <div class="form-group">
-            <label>分类:</label>
+            <label>Category:</label>
             <div class="radio-group">
               <label class="radio-label">
                 <input
@@ -20,7 +20,7 @@
                   type="radio"
                   value="auto"
                 >
-                智能区分
+                Smart Detect
               </label>
               <label class="radio-label">
                 <input
@@ -28,7 +28,7 @@
                   type="radio"
                   value="bgm"
                 >
-                背景音乐 (BGM)
+                Background Music (BGM)
               </label>
               <label class="radio-label">
                 <input
@@ -36,24 +36,24 @@
                   type="radio"
                   value="sfx"
                 >
-                音效 (SFX)
+                Sound Effect (SFX)
               </label>
             </div>
             <div
               v-if="classifyMode === 'auto'"
               class="type-hint"
             >
-              根据音频长度自动区分：>20秒为背景音乐，否则为音效
+              Auto-detect by length: >20s is BGM, otherwise SFX
             </div>
           </div>
         </div>
 
         <div class="divider" />
 
-        <!-- 标签 -->
+        <!-- Tags -->
         <div class="form-section">
           <div class="form-group">
-            <label>标签:</label>
+            <label>Tags:</label>
             <div class="tags-input-container">
               <div class="tags-list">
                 <span
@@ -72,7 +72,7 @@
                 v-model="tagInput"
                 type="text"
                 class="tag-input"
-                placeholder="输入标签按回车添加..."
+                placeholder="Type tag and press Enter..."
                 @keydown.enter.prevent="addTag"
               >
             </div>
@@ -94,21 +94,21 @@
 
         <div class="divider" />
 
-        <!-- 文件选择 -->
+        <!-- File Selection -->
         <div class="form-section">
           <div class="select-folder-btn" @click="selectFiles">
             <span class="icon">📂</span>
-            <span>选择音频文件...</span>
+            <span>Select Audio Files...</span>
           </div>
         </div>
 
-        <!-- 预览列表 -->
+        <!-- Preview List -->
         <div
           v-if="previewItems.length > 0"
           class="preview-section"
         >
           <div class="section-title">
-            待导入项目 ({{ previewItems.length }})
+            Items to Import ({{ previewItems.length }})
           </div>
           <div class="preview-list">
             <div
@@ -130,13 +130,13 @@
           </div>
         </div>
 
-        <!-- 进度 -->
+        <!-- Progress -->
         <div
           v-if="isImporting"
           class="progress-section"
         >
           <div class="progress-info">
-            导入中... {{ importProgress.current }} / {{ importProgress.total }}
+            Importing... {{ importProgress.current }} / {{ importProgress.total }}
           </div>
           <div class="progress-bar">
             <div
@@ -149,21 +149,21 @@
 
       <!-- Footer -->
       <div class="modal-footer">
-        <button class="btn-cancel" @click="close">取消</button>
+        <button class="btn-cancel" @click="close">Cancel</button>
         <button
           class="btn-save"
           :disabled="previewItems.length === 0 || isImporting"
           @click="handleImport"
         >
-          开始导入 ({{ previewItems.length }})
+          Start Import ({{ previewItems.length }})
         </button>
       </div>
     </div>
 
-    <!-- 文件浏览对话框 -->
+    <!-- File Browser Dialog -->
     <FileBrowserDialog
       v-if="showFileBrowser"
-      title="选择音效文件夹"
+      title="Select Audio Folder"
       select-mode="directory"
       @select-directory="handleDirectorySelect"
       @close="showFileBrowser = false"
@@ -211,14 +211,14 @@ const availableTags = computed(() => {
 
 // Methods
 function handleOverlayClick() {
-  // 不关闭
+  // Do not close
 }
 
 function close() {
   emit('close')
 }
 
-// 标签管理
+// Tag management
 function addTag() {
   const val = tagInput.value.trim()
   if (val && !formData.value.tags.includes(val)) {
@@ -237,7 +237,7 @@ function removeTag(tag: string) {
   formData.value.tags = formData.value.tags.filter(t => t !== tag)
 }
 
-// 文件选择
+// File selection
 function selectFiles() {
   showFileBrowser.value = true
 }
@@ -245,7 +245,7 @@ function selectFiles() {
 async function handleDirectorySelect(directory: SelectedDirectory) {
   showFileBrowser.value = false
   
-  // 扫描目录中的音频文件
+  // Scan audio files in directory
   const audioFiles: { name: string; handle: FileSystemFileHandle; path: string }[] = []
   
   async function scanDirectory(dirHandle: FileSystemDirectoryHandle, basePath: string) {
@@ -271,7 +271,7 @@ async function handleDirectorySelect(directory: SelectedDirectory) {
     const blob = await file.handle.getFile()
     const duration = await getAudioDuration(blob)
     
-    // 确定类型
+    // Determine type
     let type: 'bgm' | 'sfx'
     if (classifyMode.value === 'auto') {
       type = duration > 20 ? 'bgm' : 'sfx'
@@ -291,7 +291,7 @@ async function handleDirectorySelect(directory: SelectedDirectory) {
   }
 }
 
-// 获取音频时长
+// Get audio duration
 function getAudioDuration(blob: Blob): Promise<number> {
   return new Promise((resolve) => {
     const audio = new Audio()
@@ -319,7 +319,7 @@ function formatTime(seconds: number): string {
   return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
 }
 
-// 导入
+// Import
 async function handleImport() {
   if (previewItems.value.length === 0) return
 
@@ -333,7 +333,7 @@ async function handleImport() {
       try {
         const newSound = soundStore.createSound(item.name, item.type)
         
-        // 加载 blob URL
+        // Load blob URL
         const blob = await item.handle.getFile()
         const blobUrl = URL.createObjectURL(blob)
         
@@ -346,7 +346,7 @@ async function handleImport() {
 
         successCount++
       } catch (error) {
-        console.error(`[SoundImportDialog] 导入 "${item.name}" 失败:`, error)
+        console.error(`[SoundImportDialog] Failed to import "${item.name}":`, error)
       }
       importProgress.value.current++
     }

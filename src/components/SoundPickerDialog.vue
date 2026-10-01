@@ -1,10 +1,10 @@
 <template>
   <AssetBrowser
-    title="选择音效"
+    title="Select Audio"
     :assets="soundStore.sounds"
     :all-tags="soundStore.allTags"
     :type-filter-options="typeFilterOptions"
-    empty-text="暂无音效素材，请先在素材管理中添加音效"
+    empty-text="No audio assets yet. Please add audio in Asset Manager first"
     show-play-button
     show-duration-sort
     @select="handleSelect"
@@ -26,9 +26,9 @@ const emit = defineEmits<{
 const soundStore = useSoundStore()
 
 const typeFilterOptions = [
-  { label: '全部', value: 'all' },
-  { label: '背景音乐', value: 'bgm' },
-  { label: '音效', value: 'sfx' }
+  { label: 'All', value: 'all' },
+  { label: 'Music', value: 'bgm' },
+  { label: 'Sound Effect', value: 'sfx' }
 ]
 
 function handleSelect(asset: { id: string; url?: string; [key: string]: unknown }) {

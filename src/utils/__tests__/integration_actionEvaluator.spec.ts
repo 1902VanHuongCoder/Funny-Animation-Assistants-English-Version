@@ -9,7 +9,7 @@ import { useProjectStore } from '@/stores/projectStore'
 import { useSceneObjectStore } from '@/stores/sceneObjectStore'
 import { useExpressionStore } from '@/stores/expressionStore'
 import { evaluateObjectStateBySlot } from '@/utils/actionEvaluator'
-import { calculatePrevContext } from '@/utils/sceneStateCalculator'
+import { applyBlockActionsToState, calculatePrevContext } from '@/utils/sceneStateCalculator'
 import { parseBlockToSlots } from '@/utils/slotUtils'
 import type { SceneObject } from '@/types/sceneObject'
 
@@ -351,7 +351,6 @@ describe('Integration: actionEvaluator with Real Project Data', () => {
         const prevContext = calculatePrevContext(scene, targetBlock.id)
 
         // 导入applyBlockActionsToState进行验证
-        const { applyBlockActionsToState } = require('@/utils/sceneStateCalculator')
         const endState = applyBlockActionsToState(prevContext, targetBlock, scene)
 
         expect(endState).toBeDefined()

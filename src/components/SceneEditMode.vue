@@ -1,19 +1,19 @@
 <!--
-  SceneEditMode.vue - 路由分发组件
+  SceneEditMode.vue - Route dispatcher component
   
-  职责：根据 mode 参数分发到对应的编辑器组件
-  - mode='setup' -> SetupEditor.vue (场景初始状态编辑)
-  - mode='action' -> ActionEditor.vue (导戏模式/动作编辑)
+  Responsibility: Dispatch to corresponding editor component based on mode parameter
+  - mode='setup' -> SetupEditor.vue (Scene initial state editing)
+  - mode='action' -> ActionEditor.vue (Directing mode / action editing)
   
-  架构优化说明：
-  将原本2000+行的混合组件拆分为两个独立的编辑器组件：
-  1. SetupEditor.vue - 只处理场景初始状态设置，没有时间轴、Ghosting、ActionEvaluator
-  2. ActionEditor.vue - 处理动作编辑，包含Timeline、Ghosting、Playback等功能
+  Architecture notes:
+  Split former 2000+ line hybrid component into two independent editor components:
+  1. SetupEditor.vue - Handles scene initial state only, no timeline, ghosting, or ActionEvaluator
+  2. ActionEditor.vue - Handles action editing, including Timeline, Ghosting, Playback, etc.
   
-  优势：
-  - 心智负担降低：写 Setup 逻辑时不需要考虑是否影响 Action Mode
-  - 代码瘦身：每个组件只加载自己需要的逻辑
-  - 状态管理清晰：Setup 修改 Scene Object，Action 修改 Script Block
+  Advantages:
+  - Reduced cognitive overhead: Writing Setup logic does not affect Action Mode
+  - Leaner code: Each component loads only what it needs
+  - Clear state management: Setup modifies Scene Object, Action modifies Script Block
 -->
 <template>
   <SetupEditor 
@@ -35,7 +35,7 @@
     v-else
     class="loading-placeholder"
   >
-    <span>正在加载...</span>
+    <span>Loading...</span>
   </div>
 </template>
 
@@ -60,14 +60,14 @@ const emit = defineEmits<{
 }>()
 
 /**
- * 处理退出场景编辑
+ * Handle exit scene editing
  */
 function handleExitSceneEdit() {
   emit('exitSceneEdit')
 }
 
 /**
- * 处理保存Setup（转发事件）
+ * Handle save Setup (forward event)
  */
 function handleSaveSetup(sceneId: string, setup: SceneSetup) {
   emit('saveSetup', sceneId, setup)

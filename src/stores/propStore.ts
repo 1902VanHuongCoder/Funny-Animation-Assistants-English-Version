@@ -10,14 +10,14 @@ export const usePropStore = defineStore('prop', () => {
   const props = ref<PropAsset[]>([])
 
   /**
-   * 生成唯一ID
+   * Generate unique ID
    */
   function generateId(): string {
     return `prop_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
   }
 
   /**
-   * 获取所有已使用的标签
+   * Get all used tags
    */
   const allTags = computed(() => {
     const tags = new Set<string>()
@@ -26,7 +26,7 @@ export const usePropStore = defineStore('prop', () => {
   })
 
   /**
-   * 创建新道具
+   * Create new prop
    */
   function createProp(name: string, type: 'static' | 'animation' = 'static'): PropAsset {
     const prop: PropAsset = {
@@ -47,12 +47,12 @@ export const usePropStore = defineStore('prop', () => {
   }
 
   /**
-   * 删除道具
+   * Delete prop
    */
   function deleteProp(id: string): boolean {
     const index = props.value.findIndex((p: PropAsset) => p.id === id)
     if (index !== -1) {
-      // 释放 Blob URL
+      // Release Blob URL
       const prop = props.value[index]
       if (prop?._runtimeUrl?.startsWith('blob:')) {
         URL.revokeObjectURL(prop._runtimeUrl)
@@ -77,14 +77,14 @@ export const usePropStore = defineStore('prop', () => {
   }
 
   /**
-   * 获取道具
+   * Get prop
    */
   function getProp(id: string): PropAsset | undefined {
     return props.value.find((p: PropAsset) => p.id === id)
   }
 
   /**
-   * 更新道具信息
+   * Update prop information
    */
   function updateProp(id: string, updates: Partial<PropAsset>): boolean {
     const prop = getProp(id)
@@ -99,10 +99,10 @@ export const usePropStore = defineStore('prop', () => {
   }
 
   /**
-   * 清空所有道具
+   * Clear all props
    */
   function clearAll() {
-    // 释放所有资源
+    // Release all resources
     props.value.forEach((prop: PropAsset) => {
       if (prop._runtimeUrl?.startsWith('blob:')) URL.revokeObjectURL(prop._runtimeUrl)
       if (prop._runtimeStillUrl?.startsWith('blob:')) URL.revokeObjectURL(prop._runtimeStillUrl)
@@ -114,7 +114,7 @@ export const usePropStore = defineStore('prop', () => {
   }
 
   /**
-   * 设置道具列表 (用于加载项目)
+   * Set prop list (used for loading project)
    */
   function setProps(list: PropAsset[]) {
     props.value = list

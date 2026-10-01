@@ -1,5 +1,5 @@
 <template>
-  <!-- Overlay 对话框容器 -->
+  <!-- Overlay dialog container -->
   <div
     class="editor-overlay"
     @click.self="handleReturn"
@@ -8,27 +8,27 @@
       ref="templateEditorContainer"
       class="editor-dialog"
     >
-      <!-- P1: 页面级工具栏 — 文档元数据 & 全局操作 -->
+      <!-- P1: Page-level toolbar — Document metadata & global actions -->
       <div class="editor-toolbar">
         <div class="toolbar-left-page">
           <button
             class="cancel-btn"
             @click="handleReturn"
           >
-            ← 返回
+            ← Back
           </button>
           <div class="template-title">
             <span class="mode-icon">🧩</span>
             <input
               v-model="templateName"
               class="title-input"
-              placeholder="输入模板名称"
+              placeholder="Enter template name"
               @blur="handleNameCommit"
               @keydown.enter="($event.target as HTMLInputElement).blur()"
             >
           </div>
 
-          <!-- 标签编辑区 -->
+          <!-- Tag edit area -->
           <div class="tag-editor-container">
             <span
               v-for="tag in selectedTags.slice(0, 1)"
@@ -52,20 +52,20 @@
 
             <button
               class="toolbar-btn icon-only"
-              title="编辑标签"
+              title="Edit Tags"
               @click="showTagEditor = !showTagEditor"
             >
               🏷️
             </button>
 
-            <!-- 标签编辑弹出面板 -->
+            <!-- Tag editor popover panel -->
             <div
               v-if="showTagEditor"
               class="tag-editor-popover"
               @click.stop
             >
               <div class="popover-header">
-                编辑标签
+                Edit Tags
               </div>
               <div class="popover-body">
                 <div class="popover-tags-display">
@@ -86,20 +86,20 @@
                     v-if="selectedTags.length === 0"
                     class="no-tags-hint"
                   >
-                    暂无标签
+                    No tags
                   </span>
                 </div>
                 <input
                   v-model="newTagInput"
                   class="popover-tag-input"
-                  placeholder="输入标签后按回车"
+                  placeholder="Type tag and press Enter"
                   @keydown.enter="addTag"
                 >
                 <div
                   v-if="recommendedTags.length > 0"
                   class="popover-recommended-tags"
                 >
-                  <span class="recommend-label">推荐：</span>
+                  <span class="recommend-label">Suggested:</span>
                   <span
                     v-for="tag in recommendedTags"
                     :key="tag"
@@ -116,38 +116,38 @@
         <div class="toolbar-right-page">
           <button
             class="action-btn"
-            title="生成缩略图"
+            title="Generate Thumbnail"
             @click="handleGenerateThumbnail"
           >
-            📷 缩略图
+            📷 Thumbnail
           </button>
           <button
             class="action-btn"
-            title="导入模板（即将上线）"
+            title="Import Template (Coming Soon)"
             @click="handleImportTemplate"
           >
-            📥 导入
+            📥 Import
           </button>
           <button
             class="save-btn"
             @click="handleSaveTemplate"
           >
-            保存
+            Save
           </button>
         </div>
       </div>
 
-      <!-- Main Content: 与 SetupEditor 共享的工作区布局 -->
+      <!-- Main Content: Shared workspace layout with SetupEditor -->
       <div class="editor-body">
         <main class="canvas-area">
-          <!-- P2: 画布级工具栏 — 对象操作 & 视图控制 -->
+          <!-- P2: Canvas toolbar — Object actions & view controls -->
           <div class="setup-toolbar">
             <div class="toolbar-left">
               <span
                 class="save-status"
                 :class="{ unsaved: hasLocalChanges }"
               >
-                {{ hasLocalChanges ? '● 未保存' : '✓ 已保存' }}
+                {{ hasLocalChanges ? '● Unsaved' : '✓ Saved' }}
               </span>
               <span class="mouse-position">
                 ({{ renderer?.mousePosition?.x || 0 }}, {{ renderer?.mousePosition?.y || 0 }})
@@ -156,20 +156,20 @@
             <div class="toolbar-right">
               <button
                 class="toolbar-btn preview-btn"
-                title="预览模板"
+                title="Preview Template"
                 @click="showPreview = true"
               >
                 <span class="btn-icon">🔍</span>
-                <span class="btn-text">预览</span>
+                <span class="btn-text">Preview</span>
               </button>
               <div class="add-menu-container">
                 <button
                   class="toolbar-btn add-btn"
-                  title="添加素材"
+                  title="Add Asset"
                   @click="toggleAddMenu"
                 >
                   <span class="btn-icon">+</span>
-                  <span class="btn-text">添加素材</span>
+                  <span class="btn-text">Add Asset</span>
                 </button>
                 <div
                   v-if="showAddMenu"
@@ -181,76 +181,76 @@
                     @click="handleMenuItemClick('backgrounds')"
                   >
                     <span class="menu-icon">🖼️</span>
-                    <span>背景</span>
+                    <span>Background</span>
                   </button>
                   <button
                     class="menu-item"
                     @click="handleMenuItemClick('props')"
                   >
                     <span class="menu-icon">📦</span>
-                    <span>道具</span>
+                    <span>Prop</span>
                   </button>
                   <button
                     class="menu-item"
                     @click="handleMenuItemClick('sounds')"
                   >
                     <span class="menu-icon">🔊</span>
-                    <span>音效</span>
+                    <span>Sound</span>
                   </button>
                   <button
                     class="menu-item"
                     @click="handleMenuItemClick('screen_effects')"
                   >
                     <span class="menu-icon">🌟</span>
-                    <span>画面特效</span>
+                    <span>Screen Effect</span>
                   </button>
                   <button
                     class="menu-item"
                     @click="handleMenuItemClick('symbol')"
                   >
                     <span class="menu-icon">🔧</span>
-                    <span>元件</span>
+                    <span>Symbol</span>
                   </button>
                   <button
                     class="menu-item"
                     @click="handleMenuItemClick('expression')"
                   >
                     <span class="menu-icon">😀</span>
-                    <span>表情</span>
+                    <span>Expression</span>
                   </button>
                   <button
                     class="menu-item"
                     @click="handleMenuItemClick('scene_templates')"
                   >
                     <span class="menu-icon">🧩</span>
-                    <span>场景模板</span>
+                    <span>Scene Template</span>
                   </button>
                   <button
                     class="menu-item"
                     @click="handleMenuItemClick('characters')"
                   >
                     <span class="menu-icon">👤</span>
-                    <span>人物</span>
+                    <span>Character</span>
                   </button>
                   <button
                     class="menu-item"
                     @click="handleMenuItemClick('light')"
                   >
                     <span class="menu-icon">💡</span>
-                    <span>光源</span>
+                    <span>Light</span>
                   </button>
                   <button
                     class="menu-item"
                     @click="handleMenuItemClick('text')"
                   >
                     <span class="menu-icon">📝</span>
-                    <span>文本</span>
+                    <span>Text</span>
                   </button>
                 </div>
               </div>
               <button
                 class="toolbar-btn icon-only"
-                title="复制选中对象"
+                title="Duplicate selected object"
                 :disabled="sceneObjectStore.getSelectedObject()?.type === 'camera'"
                 @click="handleCopyObject"
               >
@@ -258,7 +258,7 @@
               </button>
               <button
                 class="toolbar-btn icon-only"
-                title="组合"
+                title="Group"
                 :disabled="sceneObjectStore.getSelectedObject()?.type === 'camera'"
                 @click="handleStartGrouping"
               >
@@ -266,7 +266,7 @@
               </button>
               <button
                 class="toolbar-btn danger icon-only"
-                title="删除选中对象"
+                title="Delete selected object"
                 :disabled="sceneObjectStore.getSelectedObject()?.type === 'camera'"
                 @click="handleDeleteObject()"
               >
@@ -275,7 +275,7 @@
               <button
                 v-if="isDev"
                 class="toolbar-btn icon-only"
-                title="查看场景 Render Chain"
+                title="View Scene Render Chain"
                 @click="showRenderChainDialog = true"
               >
                 RC
@@ -284,13 +284,13 @@
                 <button
                   class="toolbar-btn icon-only"
                   :class="{ active: showPassThroughPanel }"
-                  title="穿透管理"
+                  title="Pass-through Management"
                   @click="showPassThroughPanel = !showPassThroughPanel; showPassThroughTip = false"
                 >
                   👻{{ passThroughCount > 0 ? ` ${passThroughCount}` : '' }}
                 </button>
                 <div v-if="showPassThroughTip" class="pass-through-tip-bubble">
-                  相机已设为穿透模式，点击管理
+                  Camera set to pass-through mode, click to manage
                 </div>
                 <PassThroughPanel
                   v-if="showPassThroughPanel"
@@ -303,7 +303,7 @@
               </div>
               <button
                 class="toolbar-btn icon-only"
-                :title="isFullscreen ? '退出全屏' : '全屏'"
+                :title="isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'"
                 @click="toggleFullscreen"
               >
                 {{ isFullscreen ? '⛶' : '⛶' }}
@@ -311,7 +311,7 @@
             </div>
           </div>
 
-          <!-- P2: 成组模式浮动栏 -->
+          <!-- P2: Grouping mode bar -->
           <GroupingModePanel
             v-if="groupingState"
             v-model:composite-mode="selectedCompositeMode"
@@ -325,7 +325,7 @@
             @cancel="handleGroupingCancel"
           />
 
-          <!-- 画布容器 -->
+          <!-- Canvas container -->
           <div
             ref="canvasContainer"
             class="canvas-container"
@@ -350,7 +350,7 @@
               :pan-y="renderer.panOffset.y"
               @pan-change="(x: number, y: number) => renderer?.setPanOffset(x, y)"
             />
-            <!-- 导入源路径浮动标签 -->
+            <!-- Import source path tag -->
             <div
               v-if="templateImportSourcePath"
               class="import-source-tag"
@@ -361,24 +361,24 @@
           </div>
         </main>
 
-        <!-- 右侧分隔条 -->
+        <!-- Right splitter -->
         <div
           v-show="!rightPanelCollapsed"
           class="resizer right-resizer"
           @mousedown="startResizeRightPanel"
         />
 
-        <!-- 右侧折叠按钮 -->
+        <!-- Right collapse button -->
         <button
           v-show="rightPanelCollapsed"
           class="expand-btn right"
-          title="展开面板"
+          title="Expand panel"
           @click="rightPanelCollapsed = false"
         >
           ◀
         </button>
 
-        <!-- 右侧：属性面板 -->
+        <!-- Right: Properties panel -->
         <aside
           v-show="!rightPanelCollapsed"
           class="right-panel"
@@ -387,15 +387,15 @@
           <div class="panel-header">
             <button
               class="collapse-btn"
-              title="折叠面板"
+              title="Collapse panel"
               @click="rightPanelCollapsed = true"
             >
               ▶
             </button>
-            <span class="panel-title">📋 属性</span>
+            <span class="panel-title">📋 Properties</span>
           </div>
 
-          <!-- 属性面板 -->
+          <!-- Properties panel -->
           <ObjectPropertiesPanel
             :selected-object="sceneObjectStore?.getSelectedObject()"
             :canvas-width="renderer?.canvasSize?.width || 1920"
@@ -418,7 +418,7 @@
         </aside>
       </div>
 
-      <!-- 素材选择对话框 -->
+      <!-- Asset Picker Dialogs -->
 
       <BackgroundPickerDialog
         v-if="showBackgroundPicker"
@@ -446,31 +446,31 @@
         @close="showTemplatePicker = false"
       />
 
-      <!-- v18: 表情选择对话框 -->
+      <!-- v18: Expression Picker Dialog -->
       <ExpressionSelectorDialog
         v-if="showExpressionPicker"
         @select="handleExpressionSelect"
         @close="showExpressionPicker = false"
       />
 
-      <!-- v19: 人物选择对话框 -->
+      <!-- v19: Character Picker Dialog -->
       <CompositeCharacterPickerDialog
         v-if="showCharacterPicker"
         @select="handleCompositeCharacterSelect"
         @close="showCharacterPicker = false"
       />
 
-      <!-- 导入文件浏览器 -->
+      <!-- Import File Browser -->
       <FileBrowserDialog
         v-if="showImportBrowser"
-        title="选择 config.json 文件"
+        title="Select config.json file"
         :file-filter="importFileFilter"
         :multiple="false"
         @select="handleImportFileSelect"
         @close="showImportBrowser = false"
       />
 
-      <!-- 确认对话框 -->
+      <!-- Confirm Dialog -->
       <ConfirmDialog
         v-if="showConfirmDialog"
         :title="confirmDialogConfig.title"
@@ -485,17 +485,17 @@
         @cancel="showConfirmDialog = false"
       />
 
-      <!-- 保存确认对话框 -->
+      <!-- Save Confirm Dialog -->
       <SaveConfirmDialog
         v-if="showSaveConfirmDialog"
-        title="保存更改"
-        message="当前有未保存的修改，您想要如何处理？"
+        title="Save Changes"
+        message="There are unsaved changes. What would you like to do?"
         @save-and-exit="handleSaveAndExit"
         @discard="handleDiscardAndExit"
         @cancel="showSaveConfirmDialog = false"
       />
 
-      <!-- 实例别名输入对话框 -->
+      <!-- Instance Alias Dialog -->
       <InstanceAliasDialog
         v-if="showAliasDialog"
         :actor-name="aliasDialogActorName"
@@ -507,7 +507,7 @@
         @cancel="handleAliasCancel"
       />
 
-      <!-- 场景 Render Chain 对话框 -->
+      <!-- Scene Render Chain Dialog -->
       <SceneRenderChainDialog
         v-if="showRenderChainDialog"
         mode-description="Template Editor objects"
@@ -516,10 +516,10 @@
     </div>
   </div>
 
-  <!-- 预览对话框 — objects 用 originalTemplate（坐标归零格式），renderChain 用编辑器当前状态 -->
+  <!-- Preview dialog -->
   <ObjectCollectionPreviewDialog
     v-if="showPreview && originalTemplate"
-    :title="`预览: ${templateName}`"
+    :title="`Preview: ${templateName}`"
     :objects="originalTemplate.objects"
     :editor-anchor="originalTemplate.editorAnchor"
     :render-chain="sceneObjectStore.getSceneRenderChain()"
@@ -589,19 +589,19 @@ const isDev = import.meta.env.DEV
 
 const toast = useToast()
 
-// 画布容器元素
+// Canvas container element
 const canvasContainer = ref<HTMLElement>()
 const templateEditorContainer = ref<HTMLElement>()
 
-// 模板特有状态
+// Template-specific state
 const templateName = ref('')
 const showPreview = ref(false)
 const originalTemplate = ref<SceneTemplate | null>(null)
 
-// 导入源目录路径
+// Import source directory path
 const templateImportSourcePath = ref('')
 
-// 标签编辑状态
+// Tag editing state
 const selectedTags = ref<string[]>([])
 const newTagInput = ref('')
 const showTagEditor = ref(false)
@@ -631,15 +631,15 @@ function removeTag(tag: string): void {
   workspace.markLocalChange()
 }
 
-// ===== 模板特有：保存逻辑 =====
+// ===== Template-specific: Save logic =====
 async function handleSaveTemplate(): Promise<void> {
-  // 从场景对象集合中收集所有对象
+  // Collect all objects from scene objects collection
   const objects = sceneObjectStore.objects.filter(o => o.type !== 'camera')
 
   const tags = selectedTags.value.length > 0 ? [...selectedTags.value] : undefined
 
   if (!originalTemplate.value) {
-    // ===== 新建模式：首次保存，创建模板记录 =====
+    // ===== Create mode: First save, create template record =====
     const newTemplate = buildTemplateFromObjects(
       objects,
       sceneObjectStore.objects,
@@ -656,15 +656,15 @@ async function handleSaveTemplate(): Promise<void> {
     try {
       await projectStore.saveProject()
       workspace.resetLocalChanges()
-      toast.success('模板创建成功')
-      // 通知 Manager 更新 editingTemplateId
+      toast.success('Template created successfully')
+      // Notify Manager to update editingTemplateId
       emit('created', newTemplate.id)
     } catch (error) {
-      console.error('[SceneTemplateEditor] 保存失败:', error)
-      toast.error('保存失败: ' + ((error as Error).message || '未知错误'))
+      console.error('[SceneTemplateEditor] Save failed:', error)
+      toast.error('Failed to save: ' + ((error as Error).message || 'Unknown error'))
     }
   } else {
-    // ===== 编辑模式：更新现有模板 =====
+    // ===== Edit mode: Update existing template =====
     const updatedTemplate = buildTemplateFromObjects(
       objects,
       sceneObjectStore.objects,
@@ -692,53 +692,53 @@ async function handleSaveTemplate(): Promise<void> {
     try {
       await projectStore.saveProject()
       workspace.resetLocalChanges()
-      toast.success('模板保存成功')
+      toast.success('Template saved successfully')
     } catch (error) {
-      console.error('[SceneTemplateEditor] 保存失败:', error)
-      toast.error('保存失败: ' + ((error as Error).message || '未知错误'))
+      console.error('[SceneTemplateEditor] Save failed:', error)
+      toast.error('Failed to save: ' + ((error as Error).message || 'Unknown error'))
     }
   }
 }
 
 function handleNameCommit(): void {
-  // 名称修改时标记本地变更
+  // Mark local changes when name is modified
   if (templateName.value !== originalTemplate.value?.name) {
     workspace.markLocalChange()
   }
 }
 
-// ===== 模板特有：缩略图生成 =====
+// ===== Template-specific: Thumbnail generation =====
 async function handleGenerateThumbnail(): Promise<void> {
   const pixiApp = renderer.value?.getPixiApp()
   const app = pixiApp?.app
   const pixiCtx = pixiApp?.getContext()
   const contentLayer = pixiCtx?.contentLayer
   if (!app || !contentLayer || !originalTemplate.value) {
-    toast.error('画布未初始化')
+    toast.error('Canvas not initialized')
     return
   }
 
   try {
-    // 使用 contentLayer 而非 stage：
-    // - 排除 lighting_bounds_anchor（位于 activeLayer，覆盖整张画布导致 bounds 过大）
-    // - renderer.render(contentLayer, ...) 将 contentLayer 视为根节点，自动排除 viewportLayer 的缩放/平移变换
+    // Use contentLayer instead of stage:
+    // - Exclude lighting_bounds_anchor (located in activeLayer, covers whole canvas causing oversized bounds)
+    // - renderer.render(contentLayer, ...) treats contentLayer as root node, automatically excluding viewportLayer zoom/pan transformations
     const bounds = contentLayer.getLocalBounds()
     if (bounds.width <= 0 || bounds.height <= 0) {
-      toast.error('画布中没有可渲染的对象')
+      toast.error('No renderable objects in canvas')
       return
     }
 
-    // 限制最大尺寸，避免 WebGL 纹理溢出
+    // Limit maximum size to avoid WebGL texture overflow
     const THUMB_MAX = 512
     const scale = Math.min(1, THUMB_MAX / Math.max(bounds.width, bounds.height))
     const texWidth = Math.ceil(bounds.width * scale)
     const texHeight = Math.ceil(bounds.height * scale)
 
-    // 创建 RenderTexture，仅渲染对象区域
+    // Create RenderTexture, render only the object bounds
     const PIXI = await import('pixi.js')
     const renderTexture = PIXI.RenderTexture.create({ width: texWidth, height: texHeight })
 
-    // 临时调整 contentLayer 的位移和缩放，使对象边界填满 RenderTexture
+    // Temporarily adjust contentLayer translation and scale so object bounds fill RenderTexture
     const origX = contentLayer.x
     const origY = contentLayer.y
     const origSX = contentLayer.scale.x
@@ -750,16 +750,16 @@ async function handleGenerateThumbnail(): Promise<void> {
 
     app.renderer.render(contentLayer, { renderTexture })
 
-    // 恢复 contentLayer 状态
+    // Restore contentLayer state
     contentLayer.x = origX
     contentLayer.y = origY
     contentLayer.scale.set(origSX, origSY)
 
-    // 提取为 Canvas
+    // Extract to Canvas
     const sourceCanvas = app.renderer.extract.canvas(renderTexture) as HTMLCanvasElement
     renderTexture.destroy(true)
 
-    // 转换为 JPEG DataURL
+    // Convert to JPEG DataURL
     const canvas = document.createElement('canvas')
     canvas.width = texWidth
     canvas.height = texHeight
@@ -776,19 +776,19 @@ async function handleGenerateThumbnail(): Promise<void> {
       _runtimeThumbnailUrl: dataUrl,
     })
     workspace.markLocalChange()
-    toast.success('缩略图已生成')
+    toast.success('Thumbnail generated')
   } catch (error) {
-    console.error('[SceneTemplateEditor] 缩略图生成失败:', error)
-    toast.error('缩略图生成失败: ' + ((error as Error).message || '未知错误'))
+    console.error('[SceneTemplateEditor] Thumbnail generation failed:', error)
+    toast.error('Failed to generate thumbnail: ' + ((error as Error).message || 'Unknown error'))
   }
 }
 
-// ===== 模板特有：导入 config.json =====
+// ===== Template-specific: Import config.json =====
 const selectedCompositeMode = ref<'entity' | 'union'>('union')
 
 const showImportBrowser = ref(false)
 
-/** 文件过滤器：显示 config.json 和图片文件 */
+/** File filter: show config.json and image files */
 const IMAGE_EXTENSIONS = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp']
 function importFileFilter(file: FileSystemFileHandle): boolean {
   const name = file.name.toLowerCase()
@@ -799,25 +799,25 @@ function importFileFilter(file: FileSystemFileHandle): boolean {
 
 function handleImportTemplate(): void {
   if (!projectStore.projectHandle) {
-    toast.error('请先打开项目')
+    toast.error('Please open a project first')
     return
   }
   showImportBrowser.value = true
 }
 
-/** 处理导入文件选择 */
+/** Handle import file selection */
 async function handleImportFileSelect(files: SelectedFile[]): Promise<void> {
   const file = files[0]
   if (!file) return
 
   if (file.name !== 'config.json') {
-    toast.error('请选择 config.json 文件')
+    toast.error('Please select config.json file')
     return
   }
 
   try {
-    // 1. 从文件路径推导目录句柄
-    const pathParts = file.path.split('/').slice(0, -1) // 移除 'config.json'
+    // 1. Derive directory handle from file path
+    const pathParts = file.path.split('/').slice(0, -1) // remove 'config.json'
     let dirHandle = projectStore.projectHandle!
     for (const part of pathParts) {
       if (!part) continue
@@ -825,29 +825,29 @@ async function handleImportFileSelect(files: SelectedFile[]): Promise<void> {
     }
     const importDirPath = pathParts.join('/')
 
-    // 2. 读取并解析 config.json
+    // 2. Read and parse config.json
     const configFile = await file.handle.getFile()
     const config = parseConfigJson(await configFile.text())
 
-    // 3. 收集帧路径 → 资源校验
+    // 3. Collect frame paths -> resource validation
     const allPaths = collectAllFramePaths(config)
     const validation = await validateConfigResources(allPaths, dirHandle)
 
     if (!validation.valid) {
-      console.warn('[SceneTemplateEditor] 部分资源缺失:', validation.missingFiles)
+      console.warn('[SceneTemplateEditor] Partial resources missing:', validation.missingFiles)
     }
 
-    // 4. 转换为场景对象
+    // 4. Convert to scene objects
     const objects = await convertConfigToSceneObjects(
       config, CANVAS_CENTER_X, CANVAS_CENTER_Y,
       validation.foundFiles, validation.resolvedRelativePaths,
       importDirPath, 'entity'
     )
 
-    // 5. 预加载导入对象的纹理资源
-    //    渲染管线通过 material.url（持久化路径）查找纹理，
-    //    必须在添加到 Store 之前将这些 URL 加载到 textureCache，
-    //    否则 watcher 触发 renderObjects 时纹理未就绪，sprite 为空白。
+    // 5. Preload texture resources for imported objects
+    //    The render pipeline looks up textures via material.url (persisted path),
+    //    which must be loaded into textureCache before adding to Store,
+    //    otherwise the watcher triggering renderObjects finds textures unready, rendering blank sprites.
     {
       const { loadAssets } = useAssetLoader()
       const imageUrls = new Set<string>()
@@ -861,7 +861,7 @@ async function handleImportFileSelect(files: SelectedFile[]): Promise<void> {
               for (const frame of material.frames) {
                 if (frame.url) imageUrls.add(frame.url)
               }
-              // 静止帧
+              // Still frame
               if (material.url) imageUrls.add(material.url)
             }
           }
@@ -872,53 +872,53 @@ async function handleImportFileSelect(files: SelectedFile[]): Promise<void> {
       }
     }
 
-    // 6. 添加到 Store
+    // 6. Add to Store
     for (const obj of objects) {
       sceneObjectStore.addObject(obj)
     }
 
-    // v19: 加载后重建 entity renderChain 和场景渲染链
+    // v19: Rebuild entity renderChain and scene render chain after loading
     sceneObjectStore.rebuildEntityRenderChains()
     sceneObjectStore.rebuildSceneRenderChain()
 
-    // 7. 选中第一个对象
+    // 7. Select first object
     if (objects.length > 0 && objects[0]) {
       sceneObjectStore.selectObject(objects[0].id)
     }
 
     workspace.markLocalChange()
 
-    // 记录导入源路径
+    // Record import source path
     if (importDirPath) {
       templateImportSourcePath.value = importDirPath
     }
 
-    // 8. 显式触发重渲染（确保纹理已加载后完整渲染）
+    // 8. Explicitly trigger re-render (ensuring complete render once textures are loaded)
     if (renderer.value) {
       await renderer.value.renderObjects()
     }
 
-    toast.success(`导入成功: ${objects.length} 个对象`)
+    toast.success(`Imported successfully: ${objects.length} objects`)
   } catch (e) {
-    console.error('[SceneTemplateEditor] 导入失败:', e)
-    toast.error(`导入失败: ${e instanceof Error ? e.message : String(e)}`)
+    console.error('[SceneTemplateEditor] Import failed:', e)
+    toast.error(`Import failed: ${e instanceof Error ? e.message : String(e)}`)
   }
 
   showImportBrowser.value = false
 }
 
-// ===== 初始化 composable =====
+// ===== Initialize composable =====
 const workspace = useSetupWorkspace({
   canvasContainer,
   editorContainer: templateEditorContainer,
-  // 模板编辑器不需要 episodeId/sceneId
+  // Template editor does not require episodeId/sceneId
   rendererExtras: {},
   onDataChange: () => projectStore.markAsUnsaved(),
   onSave: handleSaveTemplate,
   onExit: () => emit('close'),
 })
 
-// 从 composable 解构所有模板需要的变量
+// Destructure all needed template variables from composable
 const {
   renderer,
   hasLocalChanges,
@@ -992,10 +992,10 @@ const {
   cleanupEventListeners,
 } = workspace
 
-// 模板编辑器没有相机对象，不需要显示"相机已设为穿透模式"提示
+// Template editor has no camera object, no need to show pass-through camera tip
 showPassThroughTip.value = false
 
-// ===== 穿透列表 UI 状态 =====
+// ===== Pass-through list UI state =====
 const showPassThroughPanel = ref(false)
 const showRenderChainDialog = ref(false)
 
@@ -1043,7 +1043,7 @@ function handlePassThroughToggle(objectId: string) {
   }
 }
 
-// ===== 生命周期 =====
+// ===== Lifecycle =====
 
 onMounted(async () => {
   sceneObjectStore.setActionMode(false)
@@ -1051,10 +1051,10 @@ onMounted(async () => {
   let initialSetup: SceneSetup | null = null
 
   if (props.templateId) {
-    // ===== 编辑模式：加载现有模板 =====
+    // ===== Edit mode: Load existing template =====
     const template = templateStore.getTemplate(props.templateId)
     if (!template) {
-      throw new Error(`[SceneTemplateEditor] 模板 ${props.templateId} 不存在`)
+      throw new Error(`[SceneTemplateEditor] Template ${props.templateId} does not exist`)
     }
 
     originalTemplate.value = template
@@ -1062,9 +1062,9 @@ onMounted(async () => {
     selectedTags.value = [...(template.tags ?? [])]
     templateImportSourcePath.value = template.importSourcePath ?? ''
 
-    // v19: 使用 loadSetupToSceneObjects 替代 instantiateTemplate，
-    // 避免 ID 重映射导致 renderChain 中的引用失效
-    // 注意：保存时坐标已归零（减去 editorAnchor），加载时需恢复偏移
+    // v19: Use loadSetupToSceneObjects instead of instantiateTemplate,
+    // avoiding broken references in renderChain caused by ID remapping
+    // Note: Coordinates were normalized to 0 on save (minus editorAnchor), offset must be restored on load
     const anchor = template.editorAnchor ?? { x: CANVAS_CENTER_X, y: CANVAS_CENTER_Y }
     const restoredObjects = JSON.parse(JSON.stringify(template.objects)) as SceneObject[]
     for (const obj of restoredObjects) {
@@ -1076,21 +1076,21 @@ onMounted(async () => {
     const setup: SceneSetup = {
       camera: { x: 0, y: 0, width: 0, height: 0, zoom: 1.0 },
       objects: restoredObjects,
-      renderChain: template.renderChain ?? [],  // v19: 使用模板保存的渲染链（旧模板无此字段时自动 rebuild）
+      renderChain: template.renderChain ?? [],  // v19: Use saved render chain from template (auto rebuild if legacy template lacks this field)
     }
     initialSetup = setup
     loadSetupToSceneObjects(setup, { skipCamera: true, skipAmbientLight: true })
 
-    // 选中第一个非相机对象
+    // Select first non-camera object
     const firstObj = sceneObjectStore.objects.find(o => o.type !== 'camera')
     if (firstObj) {
       sceneObjectStore.selectObject(firstObj.id)
     }
   } else {
-    // ===== 新建模式：空白画布 =====
+    // ===== Create mode: Blank canvas =====
     originalTemplate.value = null
-    // 自动生成去重名称
-    const baseName = '新建模板'
+    // Auto-generate unique name
+    const baseName = 'New Template'
     const existingNames = new Set(templateStore.templates.map(t => t.name))
     let name = baseName
     let counter = 2
@@ -1102,7 +1102,7 @@ onMounted(async () => {
     selectedTags.value = []
   }
 
-  // 初始化画布（composable 负责）
+  // Initialize canvas (handled by composable)
   await initCanvas()
 
   if (initialSetup) {
@@ -1121,7 +1121,7 @@ onMounted(async () => {
     await renderer.value.renderObjects()
   }
 
-  // 设置 watchers 和事件监听
+  // Setup watchers and event listeners
   setupWatchers()
   setupEventListeners()
 })
@@ -1131,7 +1131,7 @@ onBeforeUnmount(() => {
   destroyCanvas()
   sceneObjectStore.clearObjects()
 })
-// 标签弹出面板：点击外部关闭
+// Tag popup panel: click outside to close
 function handleTagEditorClickOutside(event: MouseEvent): void {
   const target = event.target as HTMLElement
   if (showTagEditor.value && !target.closest('.tag-editor-container')) {
@@ -1139,7 +1139,7 @@ function handleTagEditorClickOutside(event: MouseEvent): void {
   }
 }
 
-// 注册/注销标签面板外部点击监听
+// Register/cleanup tag panel outside click listeners
 onMounted(() => {
   document.addEventListener('click', handleTagEditorClickOutside)
 })
@@ -1150,7 +1150,7 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
-/* ===== 全屏 Overlay 样式（与 Setup 模式一致） ===== */
+/* ===== Fullscreen Overlay styles (consistent with Setup mode) ===== */
 .editor-overlay {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
@@ -1168,7 +1168,7 @@ onBeforeUnmount(() => {
   position: relative;
 }
 
-/* ===== 页面级工具栏（与 CharacterEditorModal 风格一致） ===== */
+/* ===== Page-level toolbar (consistent with CharacterEditorModal style) ===== */
 .editor-toolbar {
   height: 48px;
   background: #f9fafb;
@@ -1241,7 +1241,7 @@ onBeforeUnmount(() => {
   background: #2563eb;
 }
 
-/* 模板名称编辑器（工具栏内联） */
+/* Template name editor (inline toolbar) */
 .template-title {
   display: flex;
   align-items: center;
@@ -1284,7 +1284,7 @@ onBeforeUnmount(() => {
   overflow: hidden;
 }
 
-/* ===== 复用 SetupEditor 的工作区样式 ===== */
+/* ===== Reused SetupEditor workspace styles ===== */
 
 .canvas-area {
   flex: 1;
@@ -1466,7 +1466,7 @@ onBeforeUnmount(() => {
   margin: 0 auto;
 }
 
-/* 右面板 */
+/* Right panel */
 .panel-header {
   display: flex;
   justify-content: space-between;
@@ -1559,7 +1559,7 @@ onBeforeUnmount(() => {
   overflow-y: auto;
 }
 
-/* 全屏 */
+/* Fullscreen */
 .editor-dialog:fullscreen {
   height: 100vh;
   width: 100vw;
@@ -1567,9 +1567,9 @@ onBeforeUnmount(() => {
   border-radius: 0;
 }
 
-/* 成组模式 CSS 已移至 GroupingModePanel.vue */
+/* Grouping mode CSS moved to GroupingModePanel.vue */
 
-/* ===== 标签编辑区 ===== */
+/* ===== Tag editing area ===== */
 .tag-editor-container {
   position: relative;
   display: flex;
@@ -1610,7 +1610,7 @@ onBeforeUnmount(() => {
   white-space: nowrap;
 }
 
-/* 标签编辑弹出面板 */
+/* Tag editing popover panel */
 .tag-editor-popover {
   position: absolute;
   top: calc(100% + 4px);
@@ -1718,7 +1718,7 @@ onBeforeUnmount(() => {
   color: #374151;
 }
 
-/* 导入源路径浮动标签 */
+/* Import source path floating tag */
 .import-source-tag {
   position: absolute;
   bottom: 8px;
@@ -1736,7 +1736,7 @@ onBeforeUnmount(() => {
   white-space: nowrap;
 }
 
-/* ===== 穿透提示气泡 ===== */
+/* ===== Pass-through tip bubble ===== */
 .pass-through-tip-bubble {
   position: absolute;
   top: 125%;

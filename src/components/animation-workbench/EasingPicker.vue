@@ -15,10 +15,10 @@ const emit = defineEmits<{
   'update:modelValue': [value: string]
 }>()
 
-// 动画工作台仅开放最稳定的两种缓动；底层 EasingType 仍保留旧数据兼容。
+// Animation workbench exposes the two most stable easings; underlying EasingType retains legacy compatibility.
 const options = [
-  { value: 'linear', label: '线性' },
-  { value: 'step', label: '阶跃' },
+  { value: 'linear', label: 'Linear' },
+  { value: 'step', label: 'Step' },
 ]
 
 function onChange(event: Event): void {

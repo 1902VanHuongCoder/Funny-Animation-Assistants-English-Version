@@ -2,34 +2,34 @@
   <div class="zoom-controls">
     <button
       class="zoom-btn"
-      title="缩小 (Ctrl+-)"
+      title="Zoom Out (Ctrl+-)"
       @click="zoomOut"
     >
       −
     </button>
     <button
       class="zoom-percentage"
-      :title="`当前缩放: ${displayPercent}%\n点击选择预设`"
+      :title="`Current Zoom: ${displayPercent}%\nClick to select preset`"
       @click="togglePresets"
     >
       {{ displayPercent }}%
     </button>
     <button
       class="zoom-btn"
-      title="放大 (Ctrl+=)"
+      title="Zoom In (Ctrl+=)"
       @click="zoomIn"
     >
       +
     </button>
     <button
       class="zoom-btn fit-btn"
-      title="适配视口 (Ctrl+0)"
+      title="Fit to Viewport (Ctrl+0)"
       @click="$emit('fit')"
     >
       ⊡
     </button>
 
-    <!-- 预设下拉 -->
+    <!-- Preset dropdown -->
     <div v-if="showPresets" class="presets-dropdown">
       <button
         v-for="preset in presets"
@@ -42,13 +42,13 @@
       </button>
       <div class="preset-divider" />
       <button class="preset-item" @click="$emit('fit'); showPresets = false">
-        适配高度
+        Fit Height
       </button>
       <button class="preset-item" @click="$emit('fit-all'); showPresets = false">
-        全部可见
+        Fit All
       </button>
       <button class="preset-item" @click="$emit('zoom-100'); showPresets = false">
-        实际像素
+        Actual Size (100%)
       </button>
     </div>
   </div>
@@ -58,7 +58,7 @@
 import { computed, ref } from 'vue'
 
 const props = defineProps<{
-  currentZoom: number   // userZoom 值
+  currentZoom: number   // userZoom value
 }>()
 
 const emit = defineEmits<{

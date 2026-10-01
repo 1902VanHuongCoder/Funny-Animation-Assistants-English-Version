@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">
+  <!-- Hair back -->
+  <circle cx="100" cy="95" r="68" fill="#78350f"/>
+  <!-- Head base -->
+  <circle cx="100" cy="110" r="58" fill="#fde68a"/>
+  <!-- Curly hair curls -->
+  <circle cx="60" cy="65" r="18" fill="#92400e"/>
+  <circle cx="90" cy="50" r="20" fill="#92400e"/>
+  <circle cx="120" cy="52" r="19" fill="#92400e"/>
+  <circle cx="145" cy="68" r="17" fill="#92400e"/>
+  <!-- Glasses -->
+  <circle cx="75" cy="110" r="18" fill="#ffffff" stroke="#047857" stroke-width="4"/>
+  <circle cx="125" cy="110" r="18" fill="#ffffff" stroke="#047857" stroke-width="4"/>
+  <line x1="93" y1="110" x2="107" y2="110" stroke="#047857" stroke-width="4"/>
+  <!-- Eyes inside glasses -->
+  <circle cx="78" cy="110" r="6" fill="#111827"/>
+  <circle cx="80" cy="108" r="2" fill="#ffffff"/>
+  <circle cx="122" cy="110" r="6" fill="#111827"/>
+  <circle cx="124" cy="108" r="2" fill="#ffffff"/>
+  <!-- Nose -->
+  <ellipse cx="100" cy="120" rx="5" ry="4" fill="#f59e0b"/>
+  <!-- Open amazed mouth -->
+  <ellipse cx="100" cy="138" rx="10" ry="12" fill="#b91c1c"/>
+</svg>

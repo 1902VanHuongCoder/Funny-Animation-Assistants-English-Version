@@ -6,7 +6,7 @@
     <div class="scene-creation-dialog">
       <div class="dialog-header">
         <h3 class="dialog-title">
-          新建场景
+          New Scene
         </h3>
         <button
           class="btn-close"
@@ -29,13 +29,13 @@
                 value="inherit"
                 name="creation-mode"
               >
-              <span class="mode-title">续接上一场景 (推荐)</span>
+              <span class="mode-title">Continue from Previous Scene (Recommended)</span>
             </div>
             <div
               v-if="mode === 'inherit'"
               class="mode-content"
             >
-              <p class="mode-desc">继承场景结束时的最终状态 (位置、动作结果)，并自动移除退场的对象</p>
+              <p class="mode-desc">Inherit final state from previous scene (positions, action results), removing exited objects</p>
               <select
                 v-model="selectedSourceId"
                 class="form-select"
@@ -62,13 +62,13 @@
                 value="copy"
                 name="creation-mode"
               >
-              <span class="mode-title">完全复制场景</span>
+              <span class="mode-title">Duplicate Scene Setup</span>
             </div>
             <div
               v-if="mode === 'copy'"
               class="mode-content"
             >
-              <p class="mode-desc">复制场景的初始状态 (Setup)，不包含后续动作的变化</p>
+              <p class="mode-desc">Duplicate initial setup of the scene without subsequent action changes</p>
               <select
                 v-model="selectedSourceId"
                 class="form-select"
@@ -95,13 +95,13 @@
                 value="empty"
                 name="creation-mode"
               >
-              <span class="mode-title">创建空白场景</span>
+              <span class="mode-title">Create Blank Scene</span>
             </div>
             <div
               v-if="mode === 'empty'"
               class="mode-content"
             >
-              <p class="mode-desc">创建一个没有任何背景和角色的初始场景</p>
+              <p class="mode-desc">Create a blank scene without background or characters</p>
             </div>
           </label>
         </div>
@@ -112,13 +112,13 @@
           class="btn-cancel"
           @click="$emit('close')"
         >
-          取消
+          Cancel
         </button>
         <button
           class="btn-confirm"
           @click="handleConfirm"
         >
-          创建
+          Create
         </button>
       </div>
     </div>
@@ -143,27 +143,27 @@ const emit = defineEmits<{
 const mode = ref<'copy' | 'empty' | 'inherit'>('inherit')
 const selectedSourceId = ref<string>('')
 
-// 初始化默认选中项
+// Initialize default selected item
 watch(() => props.defaultSourceId, (newId) => {
   if (newId) {
     selectedSourceId.value = newId
-    mode.value = 'inherit' // 默认推荐继承模式
+    mode.value = 'inherit' // Recommend inherit mode by default
   } else if (props.scenes.length > 0) {
-    // 如果没有指定默认ID但有场景，默认选中最后一个
+    // If no default ID specified but scenes exist, select last by default
     const lastScene = props.scenes[props.scenes.length - 1]
     if (lastScene) {
       selectedSourceId.value = lastScene.id
       mode.value = 'inherit'
     }
   } else {
-    // 如果没有场景，只能创建空的
+    // If no scenes exist, can only create empty
     mode.value = 'empty'
   }
 }, { immediate: true })
 
 function handleConfirm() {
   if ((mode.value === 'copy' || mode.value === 'inherit') && !selectedSourceId.value) {
-    // 如果是复制/继承模式但没有选中场景（理论上不应该发生），转为空模式
+    // Fallback to empty mode if copy/inherit mode but no scene selected
     emit('confirm', { mode: 'empty' })
     return
   }

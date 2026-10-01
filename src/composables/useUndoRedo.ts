@@ -1,6 +1,6 @@
 /**
- * Undo/Redo 系统
- * 使用命令模式实现撤销/重做功能
+ * Undo/Redo System
+ * Implements undo/redo functionality using the Command pattern
  */
 
 import { computed,ref } from 'vue'
@@ -19,23 +19,23 @@ export function useUndoRedo(maxHistorySize = 50) {
   const canRedo = computed(() => redoStack.value.length > 0)
 
   /**
-   * 执行命令
+   * Execute command
    */
   function executeCommand(command: Command) {
     command.execute()
     undoStack.value.push(command)
     
-    // 限制历史记录数量
+    // Limit history stack size
     if (undoStack.value.length > maxHistorySize) {
       undoStack.value.shift()
     }
     
-    // 执行新命令时清空 redo 栈
+    // Clear redo stack on executing new command
     redoStack.value = []
   }
 
   /**
-   * 撤销
+   * Undo
    */
   function undo() {
     if (!canUndo.value) return
@@ -46,7 +46,7 @@ export function useUndoRedo(maxHistorySize = 50) {
   }
 
   /**
-   * 重做
+   * Redo
    */
   function redo() {
     if (!canRedo.value) return
@@ -57,7 +57,7 @@ export function useUndoRedo(maxHistorySize = 50) {
   }
 
   /**
-   * 清空历史记录
+   * Clear history
    */
   function clear() {
     undoStack.value = []
@@ -73,4 +73,3 @@ export function useUndoRedo(maxHistorySize = 50) {
     clear
   }
 }
-

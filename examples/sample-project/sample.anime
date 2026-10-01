@@ -1,0 +1,803 @@
+{
+  "meta": {
+    "name": "Funny Animation Assistant Demo",
+    "resolution": {
+      "w": 1920,
+      "h": 1080
+    },
+    "fps": 25,
+    "version": "2.0.0"
+  },
+  "assets": {
+    "backgrounds": [
+      {
+        "id": "bg_studio_01",
+        "name": "Studio Stage",
+        "type": "static",
+        "url": "assets/backgrounds/bg_studio.svg",
+        "createdAt": 1767225600000
+      }
+    ],
+    "props": [
+      {
+        "id": "prop_char_alex_head",
+        "name": "Alex Head",
+        "type": "static",
+        "url": "assets/props/char_alex_head.svg",
+        "createdAt": 1767225600000
+      },
+      {
+        "id": "prop_char_alex_body",
+        "name": "Alex Body",
+        "type": "static",
+        "url": "assets/props/char_alex_body.svg",
+        "createdAt": 1767225600000
+      },
+      {
+        "id": "prop_char_bob_head",
+        "name": "Bob Head",
+        "type": "static",
+        "url": "assets/props/char_bob_head.svg",
+        "createdAt": 1767225600000
+      },
+      {
+        "id": "prop_char_bob_body",
+        "name": "Bob Body",
+        "type": "static",
+        "url": "assets/props/char_bob_body.svg",
+        "createdAt": 1767225600000
+      },
+      {
+        "id": "prop_laptop_01",
+        "name": "Studio Laptop",
+        "type": "static",
+        "url": "assets/props/prop_laptop.svg",
+        "createdAt": 1767225600000
+      }
+    ],
+    "sounds": [],
+    "musics": []
+  },
+  "expressions": {},
+  "episodes": [
+    {
+      "id": "episode_sample_01",
+      "episodeNumber": 1,
+      "name": "Episode 1: Web Animation Magic",
+      "scenes": [
+        {
+          "id": "scene_studio_01",
+          "type": "scene_container",
+          "title": "Studio Stage - The Discovery",
+          "setup": {
+            "camera": {
+              "x": 3360,
+              "y": 1400,
+              "width": 1456,
+              "height": 819,
+              "zoom": 1
+            },
+            "objects": [
+              {
+                "id": "light_ambient_01",
+                "refId": "",
+                "type": "light",
+                "name": "Ambient Light",
+                "alias": "Ambient Light",
+                "x": 3360,
+                "y": 1400,
+                "width": 96,
+                "height": 96,
+                "scaleX": 1,
+                "scaleY": 1,
+                "rotation": 0,
+                "zIndex": 1000,
+                "flipX": false,
+                "visible": true,
+                "alpha": 1,
+                "spawned": true,
+                "lightType": "ambient",
+                "lightColor": "#ffffff",
+                "lightIntensity": 1,
+                "lightRadius": 500
+              },
+              {
+                "id": "bg_obj_01",
+                "refId": "bg_studio_01",
+                "type": "background",
+                "name": "Studio Stage",
+                "alias": "Studio Stage",
+                "x": 3360,
+                "y": 1400,
+                "width": 1920,
+                "height": 1080,
+                "scaleX": 1,
+                "scaleY": 1,
+                "rotation": 0,
+                "alpha": 1,
+                "flipX": false,
+                "zIndex": -10,
+                "visible": true,
+                "spawned": true,
+                "initialAnimations": [
+                  {
+                    "name": "Studio Stage_帧动画",
+                    "loop": true
+                  }
+                ]
+              },
+              {
+                "id": "txt_title_01",
+                "refId": "",
+                "type": "text",
+                "name": "Title Banner",
+                "alias": "Title Banner",
+                "content": "✨ Welcome to Funny Animation Assistant ✨",
+                "x": 3360,
+                "y": 1080,
+                "width": 750,
+                "height": 60,
+                "scaleX": 1,
+                "scaleY": 1,
+                "rotation": 0,
+                "alpha": 1,
+                "flipX": false,
+                "zIndex": 100,
+                "visible": true,
+                "spawned": true,
+                "fontSize": 34,
+                "fontFamily": "sans-serif",
+                "fontWeight": "bold",
+                "fontStyle": "normal",
+                "color": "#ffffff",
+                "align": "center",
+                "wordWrap": false,
+                "wordWrapWidth": 800,
+                "stroke": "#1e3a8a",
+                "strokeThickness": 5,
+                "dropShadow": true,
+                "dropShadowColor": "#000000",
+                "dropShadowBlur": 8,
+                "dropShadowDistance": 4
+              },
+              {
+                "id": "prop_laptop_inst_01",
+                "refId": "prop_laptop_01",
+                "type": "prop",
+                "name": "Studio Laptop",
+                "alias": "Studio Laptop",
+                "x": 3360,
+                "y": 1500,
+                "width": 180,
+                "height": 135,
+                "scaleX": 1,
+                "scaleY": 1,
+                "rotation": 0,
+                "alpha": 1,
+                "flipX": false,
+                "zIndex": 20,
+                "visible": true,
+                "spawned": true,
+                "initialAnimations": [
+                  {
+                    "name": "Studio Laptop_帧动画",
+                    "loop": true
+                  }
+                ]
+              },
+              {
+                "id": "char_alex_inst_01",
+                "type": "composite",
+                "name": "Alex",
+                "alias": "Alex",
+                "refId": "",
+                "x": 3180,
+                "y": 1420,
+                "width": 200,
+                "height": 400,
+                "scaleX": 1,
+                "scaleY": 1,
+                "rotation": 0,
+                "alpha": 1,
+                "flipX": false,
+                "zIndex": 10,
+                "visible": true,
+                "spawned": true,
+                "compositeMode": "entity",
+                "childIds": [
+                  "alex_body_part_inst",
+                  "alex_head_part_inst"
+                ],
+                "extraInfo": {
+                  "kind": "actor",
+                  "actorId": "actor_alex"
+                },
+                "renderChain": [
+                  "alex_body_part_inst",
+                  "alex_head_part_inst"
+                ]
+              },
+              {
+                "id": "alex_body_part_inst",
+                "parentId": "char_alex_inst_01",
+                "type": "prop",
+                "refId": "prop_char_alex_body",
+                "name": "Alex Body",
+                "alias": "Alex Body",
+                "x": 3180,
+                "y": 1480,
+                "width": 160,
+                "height": 240,
+                "scaleX": 1,
+                "scaleY": 1,
+                "rotation": 0,
+                "alpha": 1,
+                "flipX": false,
+                "zIndex": 11,
+                "visible": true,
+                "spawned": true,
+                "initialAnimations": [
+                  {
+                    "name": "Alex Body_帧动画",
+                    "loop": true
+                  }
+                ]
+              },
+              {
+                "id": "alex_head_part_inst",
+                "parentId": "char_alex_inst_01",
+                "type": "prop",
+                "refId": "prop_char_alex_head",
+                "name": "Alex Head",
+                "alias": "Alex Head",
+                "x": 3180,
+                "y": 1330,
+                "width": 140,
+                "height": 140,
+                "scaleX": 1,
+                "scaleY": 1,
+                "rotation": 0,
+                "alpha": 1,
+                "flipX": false,
+                "zIndex": 12,
+                "visible": true,
+                "spawned": true,
+                "initialAnimations": [
+                  {
+                    "name": "Alex Head_帧动画",
+                    "loop": true
+                  }
+                ]
+              },
+              {
+                "id": "char_bob_inst_01",
+                "type": "composite",
+                "name": "Bob",
+                "alias": "Bob",
+                "refId": "",
+                "x": 3540,
+                "y": 1420,
+                "width": 200,
+                "height": 400,
+                "scaleX": 1,
+                "scaleY": 1,
+                "rotation": 0,
+                "alpha": 1,
+                "flipX": false,
+                "zIndex": 10,
+                "visible": true,
+                "spawned": true,
+                "compositeMode": "entity",
+                "childIds": [
+                  "bob_body_part_inst",
+                  "bob_head_part_inst"
+                ],
+                "extraInfo": {
+                  "kind": "actor",
+                  "actorId": "actor_bob"
+                },
+                "renderChain": [
+                  "bob_body_part_inst",
+                  "bob_head_part_inst"
+                ]
+              },
+              {
+                "id": "bob_body_part_inst",
+                "parentId": "char_bob_inst_01",
+                "type": "prop",
+                "refId": "prop_char_bob_body",
+                "name": "Bob Body",
+                "alias": "Bob Body",
+                "x": 3540,
+                "y": 1480,
+                "width": 160,
+                "height": 240,
+                "scaleX": 1,
+                "scaleY": 1,
+                "rotation": 0,
+                "alpha": 1,
+                "flipX": false,
+                "zIndex": 11,
+                "visible": true,
+                "spawned": true,
+                "initialAnimations": [
+                  {
+                    "name": "Bob Body_帧动画",
+                    "loop": true
+                  }
+                ]
+              },
+              {
+                "id": "bob_head_part_inst",
+                "parentId": "char_bob_inst_01",
+                "type": "prop",
+                "refId": "prop_char_bob_head",
+                "name": "Bob Head",
+                "alias": "Bob Head",
+                "x": 3540,
+                "y": 1330,
+                "width": 140,
+                "height": 140,
+                "scaleX": 1,
+                "scaleY": 1,
+                "rotation": 0,
+                "alpha": 1,
+                "flipX": false,
+                "zIndex": 12,
+                "visible": true,
+                "spawned": true,
+                "initialAnimations": [
+                  {
+                    "name": "Bob Head_帧动画",
+                    "loop": true
+                  }
+                ]
+              }
+            ],
+            "renderChain": [
+              "bg_obj_01",
+              "txt_title_01",
+              "prop_laptop_inst_01",
+              "char_alex_inst_01",
+              "char_bob_inst_01"
+            ]
+          },
+          "script": [
+            {
+              "id": "blk_intro_narration",
+              "type": "narration",
+              "text": "Welcome to Funny Animation Assistant! Today, Alex and Bob are making their first animated video.",
+              "speed": 1,
+              "ttsConfig": {
+                "duration": 4000,
+                "voiceId": 101026
+              },
+              "actions": [
+                {
+                  "id": "act_cam_follow_intro",
+                  "type": "camera_follow",
+                  "category": "duration",
+                  "target": "camera",
+                  "slotIndex": 0,
+                  "slotSpan": 1,
+                  "order": 0,
+                  "params": {
+                    "followTarget": "char_alex_inst_01",
+                    "damping": 0,
+                    "offsetX": 80,
+                    "offsetY": -40,
+                    "zoom": 1,
+                    "constrainBounds": true
+                  }
+                },
+                {
+                  "id": "action_1790784953253_4lw69mm5y",
+                  "type": "set_transform",
+                  "category": "point",
+                  "target": "bg_obj_01",
+                  "slotIndex": 0,
+                  "params": {
+                    "x": 3370.7751745812548,
+                    "y": 1486.1955603673878
+                  },
+                  "order": 1
+                },
+                {
+                  "id": "action_1790784959776_dme60s5rg",
+                  "type": "set_transform",
+                  "category": "point",
+                  "target": "char_alex_inst_01",
+                  "slotIndex": 0,
+                  "params": {
+                    "x": 1052.053283454914,
+                    "y": 784.3098997260827,
+                    "scaleX": 0.1,
+                    "scaleY": 1
+                  },
+                  "order": 2
+                },
+                {
+                  "id": "action_1790843315166_yrqzf1a6m",
+                  "type": "set_transform",
+                  "category": "point",
+                  "target": "bg_obj_01",
+                  "slotIndex": 1,
+                  "params": {
+                    "x": 3360.0010265919163,
+                    "y": 1432.3235451659498
+                  }
+                }
+              ],
+              "productionNote": {
+                "sourceIndex": 1,
+                "scene": "Studio Stage",
+                "visual": "Wide camera angle showing Alex and Bob in the studio",
+                "audio": "Upbeat studio BGM starts"
+              }
+            },
+            {
+              "id": "blk_alex_line_1",
+              "type": "dialogue",
+              "instanceId": "char_alex_inst_01",
+              "text": "Hey Bob! Did you know we can create animations right in the web browser now?",
+              "speed": 1,
+              "ttsConfig": {
+                "duration": 3800,
+                "voiceId": 101030
+              },
+              "actions": [
+                {
+                  "id": "act_cam_follow_alex",
+                  "type": "camera_follow",
+                  "category": "duration",
+                  "target": "camera",
+                  "slotIndex": 0,
+                  "slotSpan": 1,
+                  "order": 0,
+                  "params": {
+                    "followTarget": "char_alex_inst_01",
+                    "damping": 0,
+                    "offsetX": 0,
+                    "offsetY": -50,
+                    "zoom": 1.1,
+                    "constrainBounds": true
+                  }
+                },
+                {
+                  "id": "act_alex_nod",
+                  "type": "tween_transform",
+                  "category": "duration",
+                  "target": "char_alex_inst_01",
+                  "slotIndex": 0,
+                  "slotSpan": 1,
+                  "order": 1,
+                  "params": {
+                    "y": 1410
+                  }
+                }
+              ],
+              "productionNote": {
+                "sourceIndex": 2,
+                "scene": "Studio Stage",
+                "visual": "Camera zooms slightly into Alex as he speaks excited",
+                "audio": "Alex speaking voice"
+              }
+            },
+            {
+              "id": "blk_bob_line_1",
+              "type": "dialogue",
+              "instanceId": "char_bob_inst_01",
+              "text": "Wait, really? Without installing any heavy 3D apps or expensive rendering machines?!",
+              "speed": 1,
+              "ttsConfig": {
+                "duration": 3900,
+                "voiceId": 101026
+              },
+              "actions": [
+                {
+                  "id": "act_cam_follow_bob",
+                  "type": "camera_follow",
+                  "category": "duration",
+                  "target": "camera",
+                  "slotIndex": 0,
+                  "slotSpan": 1,
+                  "order": 0,
+                  "params": {
+                    "followTarget": "char_bob_inst_01",
+                    "damping": 0,
+                    "offsetX": 0,
+                    "offsetY": -50,
+                    "zoom": 1.15,
+                    "constrainBounds": true
+                  }
+                },
+                {
+                  "id": "act_bob_shake",
+                  "type": "camera_shake",
+                  "category": "duration",
+                  "target": "camera",
+                  "slotIndex": 0,
+                  "slotSpan": 1,
+                  "order": 1,
+                  "params": {
+                    "intensity": 6,
+                    "frequency": 8
+                  }
+                }
+              ],
+              "productionNote": {
+                "sourceIndex": 3,
+                "scene": "Studio Stage",
+                "visual": "Camera shakes with Bob's surprised reaction",
+                "audio": "Surprise alert sound"
+              }
+            },
+            {
+              "id": "blk_alex_line_2",
+              "type": "dialogue",
+              "instanceId": "char_alex_inst_01",
+              "text": "Exactly! Just type the screenplay, pick voices, and the timeline animates everything automatically!",
+              "speed": 1,
+              "ttsConfig": {
+                "duration": 4200,
+                "voiceId": 101030
+              },
+              "actions": [
+                {
+                  "id": "act_cam_follow_alex_2",
+                  "type": "camera_follow",
+                  "category": "duration",
+                  "target": "camera",
+                  "slotIndex": 0,
+                  "slotSpan": 1,
+                  "order": 0,
+                  "params": {
+                    "followTarget": "char_alex_inst_01",
+                    "damping": 0,
+                    "offsetX": 0,
+                    "offsetY": -50,
+                    "zoom": 1.05,
+                    "constrainBounds": true
+                  }
+                }
+              ],
+              "productionNote": {
+                "sourceIndex": 4,
+                "scene": "Studio Stage",
+                "visual": "Alex gestures towards the laptop on the desk",
+                "audio": "Alex confident speech"
+              }
+            },
+            {
+              "id": "blk_outro_narration",
+              "type": "narration",
+              "text": "With local-first storage and high-speed WebGL rendering, storytelling is now at your fingertips.",
+              "speed": 1,
+              "ttsConfig": {
+                "duration": 4500,
+                "voiceId": 101026
+              },
+              "actions": [
+                {
+                  "id": "act_cam_cut_wide",
+                  "type": "camera_cut",
+                  "category": "point",
+                  "target": "camera",
+                  "slotIndex": 0,
+                  "order": 0,
+                  "params": {
+                    "x": 3360,
+                    "y": 1400,
+                    "zoom": 1
+                  }
+                }
+              ],
+              "productionNote": {
+                "sourceIndex": 5,
+                "scene": "Studio Stage",
+                "visual": "Camera cuts back to wide shot showing the entire studio and characters",
+                "audio": "Music swell and outro fade"
+              }
+            }
+          ]
+        }
+      ],
+      "bgmTracks": [],
+      "duration": 20.4,
+      "createdAt": 1767225600000,
+      "modifiedAt": 1767225600000,
+      "version": "6.0"
+    }
+  ],
+  "actors": [
+    {
+      "id": "actor_alex",
+      "characterId": "char_alex_def",
+      "name": "Alex",
+      "alias": "Alex",
+      "voice": {
+        "voiceId": "101030",
+        "speed": 0,
+        "volume": 0
+      }
+    },
+    {
+      "id": "actor_bob",
+      "characterId": "char_bob_def",
+      "name": "Bob",
+      "alias": "Bob",
+      "voice": {
+        "voiceId": "101026",
+        "speed": 0,
+        "volume": 0
+      }
+    }
+  ],
+  "narrator": {
+    "voice": {
+      "voiceId": "101026",
+      "speed": 0,
+      "volume": 0
+    }
+  },
+  "compositeCharacters": [
+    {
+      "id": "char_alex_def",
+      "name": "Alex",
+      "gender": "male",
+      "createdAt": 1767225600000,
+      "objects": [
+        {
+          "id": "char_alex_root",
+          "type": "composite",
+          "name": "Alex",
+          "alias": "Alex",
+          "refId": "",
+          "x": 3180,
+          "y": 1420,
+          "width": 200,
+          "height": 400,
+          "scaleX": 1,
+          "scaleY": 1,
+          "rotation": 0,
+          "alpha": 1,
+          "flipX": false,
+          "zIndex": 10,
+          "visible": true,
+          "spawned": true,
+          "compositeMode": "entity",
+          "childIds": [
+            "alex_body_part",
+            "alex_head_part"
+          ],
+          "extraInfo": {
+            "kind": "character",
+            "characterId": "char_alex_def"
+          }
+        },
+        {
+          "id": "alex_body_part",
+          "parentId": "char_alex_root",
+          "type": "prop",
+          "refId": "prop_char_alex_body",
+          "name": "Alex Body",
+          "alias": "Alex Body",
+          "x": 3180,
+          "y": 1480,
+          "width": 160,
+          "height": 240,
+          "scaleX": 1,
+          "scaleY": 1,
+          "rotation": 0,
+          "alpha": 1,
+          "flipX": false,
+          "zIndex": 11,
+          "visible": true,
+          "spawned": true
+        },
+        {
+          "id": "alex_head_part",
+          "parentId": "char_alex_root",
+          "type": "prop",
+          "refId": "prop_char_alex_head",
+          "name": "Alex Head",
+          "alias": "Alex Head",
+          "x": 3180,
+          "y": 1330,
+          "width": 140,
+          "height": 140,
+          "scaleX": 1,
+          "scaleY": 1,
+          "rotation": 0,
+          "alpha": 1,
+          "flipX": false,
+          "zIndex": 12,
+          "visible": true,
+          "spawned": true
+        }
+      ],
+      "renderChain": [
+        "char_alex_root"
+      ]
+    },
+    {
+      "id": "char_bob_def",
+      "name": "Bob",
+      "gender": "male",
+      "createdAt": 1767225600000,
+      "objects": [
+        {
+          "id": "char_bob_root",
+          "type": "composite",
+          "name": "Bob",
+          "alias": "Bob",
+          "refId": "",
+          "x": 3540,
+          "y": 1420,
+          "width": 200,
+          "height": 400,
+          "scaleX": 1,
+          "scaleY": 1,
+          "rotation": 0,
+          "alpha": 1,
+          "flipX": false,
+          "zIndex": 10,
+          "visible": true,
+          "spawned": true,
+          "compositeMode": "entity",
+          "childIds": [
+            "bob_body_part",
+            "bob_head_part"
+          ],
+          "extraInfo": {
+            "kind": "character",
+            "characterId": "char_bob_def"
+          }
+        },
+        {
+          "id": "bob_body_part",
+          "parentId": "char_bob_root",
+          "type": "prop",
+          "refId": "prop_char_bob_body",
+          "name": "Bob Body",
+          "alias": "Bob Body",
+          "x": 3540,
+          "y": 1480,
+          "width": 160,
+          "height": 240,
+          "scaleX": 1,
+          "scaleY": 1,
+          "rotation": 0,
+          "alpha": 1,
+          "flipX": false,
+          "zIndex": 11,
+          "visible": true,
+          "spawned": true
+        },
+        {
+          "id": "bob_head_part",
+          "parentId": "char_bob_root",
+          "type": "prop",
+          "refId": "prop_char_bob_head",
+          "name": "Bob Head",
+          "alias": "Bob Head",
+          "x": 3540,
+          "y": 1330,
+          "width": 140,
+          "height": 140,
+          "scaleX": 1,
+          "scaleY": 1,
+          "rotation": 0,
+          "alpha": 1,
+          "flipX": false,
+          "zIndex": 12,
+          "visible": true,
+          "spawned": true
+        }
+      ],
+      "renderChain": [
+        "char_bob_root"
+      ]
+    }
+  ]
+}

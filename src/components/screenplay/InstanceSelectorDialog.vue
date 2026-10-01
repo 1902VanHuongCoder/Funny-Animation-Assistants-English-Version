@@ -6,7 +6,7 @@
     >
       <div class="picker-dialog">
         <div class="dialog-header">
-          <h3>选择演员实例</h3>
+          <h3>Select Actor Instance</h3>
           <button
             class="close-btn"
             @click="$emit('close')"
@@ -21,9 +21,9 @@
               v-if="actorInstances.length === 0"
               class="empty-state"
             >
-              <p>📭 当前场景中暂无存活的演员实例</p>
+              <p>📭 No active actor instances in current scene</p>
               <p class="hint">
-                请先在场景 Setup 或 Action 模式中添加演员
+                Please add an actor in Scene Setup or Action mode first
               </p>
             </div>
 
@@ -79,20 +79,20 @@
             </div>
           </div>
 
-          <!-- 底部按钮 -->
+          <!-- Bottom buttons -->
           <div class="dialog-footer">
             <button
               class="btn-cancel"
               @click="$emit('close')"
             >
-              取消
+              Cancel
             </button>
             <button
               class="btn-confirm"
               :disabled="!selectedInstanceId"
               @click="handleConfirm"
             >
-              确定
+              Confirm
             </button>
           </div>
         </div>
@@ -111,15 +111,15 @@ import type { SceneObject } from '@/types/screenplay'
 
 interface ActorInstanceItem {
   id: string          // SceneObject.id
-  alias: string       // 实例别名
-  actorName: string   // 演员名称
-  voiceLabel: string  // 配音标签
-  thumbnail: string | undefined  // 人物缩略图
+  alias: string       // Instance alias
+  actorName: string   // Actor name
+  voiceLabel: string  // Voice label
+  thumbnail: string | undefined  // Character thumbnail
 }
 
 const props = defineProps<{
-  sceneObjects: SceneObject[]  // runtime objects（含 spawned 状态）
-  currentInstanceId?: string   // 当前选中的实例ID
+  sceneObjects: SceneObject[]  // runtime objects (including spawned state)
+  currentInstanceId?: string   // Currently selected instance ID
 }>()
 
 const emit = defineEmits<{
@@ -132,7 +132,7 @@ const characterStore = useCompositeCharacterStore()
 
 const selectedInstanceId = ref(props.currentInstanceId || '')
 
-// 构建演员实例列表（仅显示 spawned 的演员实例）
+// Build actor instance list (display spawned actor instances only)
 const actorInstances = computed<ActorInstanceItem[]>(() => {
   return props.sceneObjects
     .filter(obj => obj.extraInfo?.kind === 'actor' && obj.spawned !== false)
@@ -145,7 +145,7 @@ const actorInstances = computed<ActorInstanceItem[]>(() => {
 
       return {
         id: obj.id,
-        alias: obj.alias || '未命名',
+        alias: obj.alias || 'Unnamed',
         actorName: actor?.name || '',
         voiceLabel: getVoiceName(actor?.voice?.voiceId) ?? '',
         thumbnail: character?._runtimeThumbnailUrl,

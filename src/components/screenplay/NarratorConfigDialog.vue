@@ -6,7 +6,7 @@
     <div class="narrator-config-dialog">
       <div class="dialog-header">
         <h3 class="dialog-title">
-          旁白配置
+          Narrator Settings
         </h3>
         <button
           class="btn-close"
@@ -17,9 +17,9 @@
       </div>
 
       <div class="dialog-body">
-        <!-- 语速设置 -->
+        <!-- Speed settings -->
         <div class="form-group compact-form-group">
-          <label class="form-label">语速</label>
+          <label class="form-label">Speech Rate</label>
           <div class="speed-selector">
             <select v-model.number="formData.speed" class="form-select">
               <option
@@ -33,9 +33,9 @@
           </div>
         </div>
 
-        <!-- 音量 -->
+        <!-- Volume -->
         <div class="form-group compact-form-group">
-          <label class="form-label">播放音量 {{ formData.volume }}</label>
+          <label class="form-label">Playback Volume {{ formData.volume }}</label>
           <div class="volume-control">
             <input
               v-model.number="formData.volume"
@@ -58,9 +58,9 @@
           </div>
         </div>
 
-        <!-- 配音音色 -->
+        <!-- Voice timbre -->
         <div class="form-group">
-          <label class="form-label">配音音色</label>
+          <label class="form-label">Voice Timbre</label>
           <VoiceSelectorPanel
             v-model="formData.voiceId"
             :initial-voice-id="initialVoiceId"
@@ -76,13 +76,13 @@
           class="btn-cancel"
           @click="$emit('close')"
         >
-          取消
+          Cancel
         </button>
         <button
           class="btn-save"
           @click="handleSave"
         >
-          保存
+          Save
         </button>
       </div>
     </div>
@@ -127,7 +127,7 @@ onMounted(() => {
     const voiceId = props.narrator.voice.voiceId ? parseInt(String(props.narrator.voice.voiceId)) : DEFAULT_VOICE_ID.female
     formData.value.voiceId = voiceId
     initialVoiceId.value = voiceId
-    // 智能处理旧版语速格式
+    // Handle legacy speech rate format intelligently
     formData.value.speed = getValidSpeedValue(props.narrator.voice.speed)
     formData.value.volume = getValidVolumeValue(props.narrator.voice.volume)
   }
@@ -142,7 +142,7 @@ async function playVoicePreview(voiceId?: number) {
     isPlayingVoice.value = true
     playingVoiceId.value = targetVoiceId
     
-    // 停止之前的音频
+    // Stop previous audio
     if (currentAudio) {
       currentAudio.stop()
       currentAudio = null
@@ -152,9 +152,9 @@ async function playVoicePreview(voiceId?: number) {
       currentPreviewTimer = null
     }
     
-    // 调用 TTS API 生成默认音量语音，本地播放时再应用增益
+    // Call TTS API to generate default volume audio, apply gain on local playback
     const result = await ttsClient.preview({
-      text: '你好,很高兴认识你。',
+      text: 'Hello, nice to meet you.',
       engine: getVoiceEngine(targetVoiceId),
       voiceType: targetVoiceId,
       volume: DEFAULT_VOLUME,
@@ -177,14 +177,14 @@ async function playVoicePreview(voiceId?: number) {
     }, previewDuration + 150)
     
   } catch (error) {
-    console.error('[NarratorConfigDialog] 配音试听失败:', error)
+    console.error('[NarratorConfigDialog] Voice preview failed:', error)
     isPlayingVoice.value = false
     playingVoiceId.value = undefined
     if (currentPreviewTimer !== null) {
       window.clearTimeout(currentPreviewTimer)
       currentPreviewTimer = null
     }
-    alert(`配音试听失败：${error instanceof Error ? error.message : '未知错误'}`)
+    alert(`Voice preview failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
   }
 }
 

@@ -1,212 +1,212 @@
 /**
- * TTS 音色元数据模块
+ * TTS voice metadata module
  *
- * 本模块集中管理可选 TTS Provider 的音色元数据和工具函数。
- * 所有需要音色列表的组件应从此模块导入，而非硬编码。
+ * This module manages voice metadata and utility functions for optional TTS Providers.
+ * All components requiring voice lists should import from this module rather than hardcoding.
  *
- * Community Edition 默认不会连接任何云厂商服务。这里保留的 provider
- * 标识和音色 ID 仅用于本地项目兼容、自托管服务或第三方适配器映射。
+ * Community Edition does not connect to cloud vendor services by default. The provider
+ * identifiers and voice IDs are preserved for local compatibility, self-hosted services, or third-party adapters.
  */
 
-/** TTS Provider 元数据标识。 */
+/** TTS Provider metadata identifier. */
 export type VoiceProviderId = 'tencent' | 'baidu'
 
 /** @deprecated Use VoiceProviderId for new code. */
 export type TTSEngine = VoiceProviderId
 
 /**
- * 音色选项接口
+ * Voice option interface
  */
 export interface VoiceOption {
-    /** 音色 ID（由具体 Provider 适配器解释） */
+    /** Voice ID (interpreted by specific Provider adapter) */
     id: number
-    /** 显示名称 */
+    /** Display name */
     name: string
-    /** 性别 */
+    /** Gender */
     gender: 'male' | 'female'
-    /** 音色描述标签 */
+    /** Voice description tag */
     description: string
-    /** 所属 Provider 元数据标识 */
+    /** Owning Provider metadata identifier */
     engine: VoiceProviderId
 }
 
 /**
- * 可用音色元数据列表。
+ * Available voice metadata list.
  */
 export const VOICE_OPTIONS: VoiceOption[] = [
     // ================================================================
-    // Tencent-compatible provider metadata（48 个）
-    // 参考：examples/tts-provider/README.md
+    // Tencent-compatible provider metadata (48 voices)
+    // See: examples/tts-provider/README.md
     // ================================================================
 
-    // --- 超自然大模型 ---
-    { id: 502001, name: '智小柔', gender: 'female', description: '温柔亲和', engine: 'tencent' },
-    { id: 502003, name: '智小敏', gender: 'female', description: '活力女声', engine: 'tencent' },
-    { id: 502004, name: '智小满', gender: 'female', description: '客服女声', engine: 'tencent' },
-    { id: 502005, name: '智小解', gender: 'male', description: '解说男声', engine: 'tencent' },
-    { id: 502006, name: '智小悟', gender: 'male', description: '阳光男声', engine: 'tencent' },
-    { id: 502007, name: '智小虎', gender: 'male', description: '演绎童声', engine: 'tencent' },
-    { id: 602003, name: '爱小悠', gender: 'female', description: '情感丰富', engine: 'tencent' },
-    { id: 602004, name: '暖心阿灿', gender: 'male', description: '沉稳大气', engine: 'tencent' },
-    { id: 602005, name: '专业梓欣', gender: 'female', description: '活力亲和', engine: 'tencent' },
-    { id: 603000, name: '懂事少年', gender: 'male', description: '懂事少年', engine: 'tencent' },
-    { id: 603001, name: '潇湘妹妹', gender: 'female', description: '趣味女声', engine: 'tencent' },
-    { id: 603002, name: '软萌心心', gender: 'male', description: '趣味童声', engine: 'tencent' },
-    { id: 603003, name: '随和老李', gender: 'male', description: '随和沉稳', engine: 'tencent' },
-    { id: 603004, name: '温柔小柠', gender: 'female', description: '温柔亲和', engine: 'tencent' },
-    { id: 603005, name: '知心大林', gender: 'male', description: '成熟磁性', engine: 'tencent' },
-    { id: 603006, name: '沉稳青叔', gender: 'male', description: '沉稳磁性', engine: 'tencent' },
-    { id: 603007, name: '邻家女孩', gender: 'female', description: '亲切自然', engine: 'tencent' },
+    // --- Ultra-Natural LLM ---
+    { id: 502001, name: 'Zhi Xiaorou', gender: 'female', description: 'Gentle & Warm', engine: 'tencent' },
+    { id: 502003, name: 'Zhi Xiaomin', gender: 'female', description: 'Vibrant Female', engine: 'tencent' },
+    { id: 502004, name: 'Zhi Xiaoman', gender: 'female', description: 'Customer Support Female', engine: 'tencent' },
+    { id: 502005, name: 'Zhi Xiaojie', gender: 'male', description: 'Commentary Male', engine: 'tencent' },
+    { id: 502006, name: 'Zhi Xiaowu', gender: 'male', description: 'Sunny Male', engine: 'tencent' },
+    { id: 502007, name: 'Zhi Xiaohu', gender: 'male', description: 'Dramatic Child', engine: 'tencent' },
+    { id: 602003, name: 'Ai Xiaoyou', gender: 'female', description: 'Emotional', engine: 'tencent' },
+    { id: 602004, name: 'Ah Can', gender: 'male', description: 'Calm & Majestic', engine: 'tencent' },
+    { id: 602005, name: 'Zi Xin', gender: 'female', description: 'Energetic & Friendly', engine: 'tencent' },
+    { id: 603000, name: 'Sensible Youth', gender: 'male', description: 'Sensible Youth', engine: 'tencent' },
+    { id: 603001, name: 'Xiaoxiang Sister', gender: 'female', description: 'Playful Female', engine: 'tencent' },
+    { id: 603002, name: 'Xin Xin', gender: 'male', description: 'Playful Child', engine: 'tencent' },
+    { id: 603003, name: 'Old Li', gender: 'male', description: 'Easygoing & Composed', engine: 'tencent' },
+    { id: 603004, name: 'Xiao Ning', gender: 'female', description: 'Gentle & Warm', engine: 'tencent' },
+    { id: 603005, name: 'Da Lin', gender: 'male', description: 'Mature Magnetic', engine: 'tencent' },
+    { id: 603006, name: 'Uncle Qing', gender: 'male', description: 'Calm Magnetic', engine: 'tencent' },
+    { id: 603007, name: 'Neighbor Girl', gender: 'female', description: 'Warm & Natural', engine: 'tencent' },
 
-    // --- 大模型 ---
-    { id: 501000, name: '智斌', gender: 'male', description: '磁性男声', engine: 'tencent' },
-    { id: 501001, name: '智兰', gender: 'female', description: '轻快女声', engine: 'tencent' },
-    { id: 501002, name: '智菊', gender: 'female', description: '端庄大方', engine: 'tencent' },
-    { id: 501003, name: '智宇', gender: 'male', description: '成熟大叔', engine: 'tencent' },
-    { id: 501004, name: '月华', gender: 'female', description: '气质聪慧', engine: 'tencent' },
-    { id: 501005, name: '飞镜', gender: 'male', description: '温和男声', engine: 'tencent' },
-    { id: 501006, name: '千嶂', gender: 'male', description: '沉稳大气', engine: 'tencent' },
-    { id: 501007, name: '浅草', gender: 'male', description: '青春男声', engine: 'tencent' },
-    { id: 501008, name: 'WeJames', gender: 'male', description: '外语男声', engine: 'tencent' },
-    { id: 501009, name: 'WeWinny', gender: 'female', description: '外语女声', engine: 'tencent' },
-    { id: 601008, name: '爱小豪', gender: 'male', description: '霸道高冷', engine: 'tencent' },
-    { id: 601009, name: '爱小芊', gender: 'female', description: '清纯灵巧', engine: 'tencent' },
-    { id: 601010, name: '爱小娇', gender: 'female', description: '娇媚女声', engine: 'tencent' },
-    { id: 601011, name: '爱小川', gender: 'male', description: '活力少年', engine: 'tencent' },
-    { id: 601012, name: '爱小璟', gender: 'female', description: '可爱萝莉', engine: 'tencent' },
-    { id: 601013, name: '爱小伊', gender: 'female', description: '知性姐姐', engine: 'tencent' },
-    { id: 601014, name: '爱小简', gender: 'male', description: '清爽学生', engine: 'tencent' },
+    // --- Large Model ---
+    { id: 501000, name: 'Zhibin', gender: 'male', description: 'Magnetic Male', engine: 'tencent' },
+    { id: 501001, name: 'Zhilan', gender: 'female', description: 'Lively Female', engine: 'tencent' },
+    { id: 501002, name: 'Zhiju', gender: 'female', description: 'Graceful & Elegant', engine: 'tencent' },
+    { id: 501003, name: 'Zhiyu', gender: 'male', description: 'Mature Uncle', engine: 'tencent' },
+    { id: 501004, name: 'Yuehua', gender: 'female', description: 'Clever & Refined', engine: 'tencent' },
+    { id: 501005, name: 'Feijing', gender: 'male', description: 'Gentle Male', engine: 'tencent' },
+    { id: 501006, name: 'Qianzhang', gender: 'male', description: 'Calm & Majestic', engine: 'tencent' },
+    { id: 501007, name: 'Qiancao', gender: 'male', description: 'Youthful Male', engine: 'tencent' },
+    { id: 501008, name: 'WeJames', gender: 'male', description: 'Foreign Male', engine: 'tencent' },
+    { id: 501009, name: 'WeWinny', gender: 'female', description: 'Foreign Female', engine: 'tencent' },
+    { id: 601008, name: 'Ai Xiaohao', gender: 'male', description: 'Dominant & Cool', engine: 'tencent' },
+    { id: 601009, name: 'Ai Xiaoqian', gender: 'female', description: 'Pure & Agile', engine: 'tencent' },
+    { id: 601010, name: 'Ai Xiaojiao', gender: 'female', description: 'Charming Female', engine: 'tencent' },
+    { id: 601011, name: 'Ai Xiaochuan', gender: 'male', description: 'Energetic Youth', engine: 'tencent' },
+    { id: 601012, name: 'Ai Xiaojing', gender: 'female', description: 'Cute Little Girl', engine: 'tencent' },
+    { id: 601013, name: 'Ai Xiaoyi', gender: 'female', description: 'Intellectual Sister', engine: 'tencent' },
+    { id: 601014, name: 'Ai Xiaojian', gender: 'male', description: 'Fresh Student', engine: 'tencent' },
 
-    // --- 精品 ---
-    { id: 101001, name: '智瑜', gender: 'female', description: '优雅知性姐姐', engine: 'tencent' },
-    { id: 101004, name: '智云', gender: 'male', description: '阅读男声', engine: 'tencent' },
-    { id: 101011, name: '智燕', gender: 'female', description: '有气场的女播音员', engine: 'tencent' },
-    { id: 101013, name: '智辉', gender: 'male', description: '新闻播音员', engine: 'tencent' },
-    { id: 101015, name: '智萌', gender: 'male', description: '纯真小朋友', engine: 'tencent' },
-    { id: 101016, name: '智甜', gender: 'female', description: '可爱萌宝宝', engine: 'tencent' },
-    { id: 101019, name: '智彤', gender: 'female', description: '时尚粤语姐姐', engine: 'tencent' },
-    { id: 101021, name: '智瑞', gender: 'male', description: '新闻播音员', engine: 'tencent' },
-    { id: 101026, name: '智希', gender: 'female', description: '甜美小助手', engine: 'tencent' },
-    { id: 101027, name: '智梅', gender: 'female', description: '柔美大方', engine: 'tencent' },
-    { id: 101030, name: '智柯', gender: 'male', description: '自然轻快', engine: 'tencent' },
-    { id: 101054, name: '智友', gender: 'male', description: '解说小哥哥', engine: 'tencent' },
-    { id: 101055, name: '智付', gender: 'female', description: '智能收银员', engine: 'tencent' },
+    // --- Premium ---
+    { id: 101001, name: 'Zhiyu (Female)', gender: 'female', description: 'Elegant Sister', engine: 'tencent' },
+    { id: 101004, name: 'Zhiyun', gender: 'male', description: 'Reading Male', engine: 'tencent' },
+    { id: 101011, name: 'Zhiyan', gender: 'female', description: 'Authoritative Broadcaster Female', engine: 'tencent' },
+    { id: 101013, name: 'Zhihui', gender: 'male', description: 'News Anchor', engine: 'tencent' },
+    { id: 101015, name: 'Zhimeng', gender: 'male', description: 'Innocent Child', engine: 'tencent' },
+    { id: 101016, name: 'Zhitian', gender: 'female', description: 'Cute Baby', engine: 'tencent' },
+    { id: 101019, name: 'Zhitong', gender: 'female', description: 'Fashionable Cantonese Sister', engine: 'tencent' },
+    { id: 101021, name: 'Zhirui', gender: 'male', description: 'News Anchor', engine: 'tencent' },
+    { id: 101026, name: 'Zhixi', gender: 'female', description: 'Sweet Assistant', engine: 'tencent' },
+    { id: 101027, name: 'Zhimei', gender: 'female', description: 'Soft & Generous', engine: 'tencent' },
+    { id: 101030, name: 'Zhike', gender: 'male', description: 'Natural & Lively', engine: 'tencent' },
+    { id: 101054, name: 'Zhiyou', gender: 'male', description: 'Commentary Guy', engine: 'tencent' },
+    { id: 101055, name: 'Zhifu', gender: 'female', description: 'Smart Cashier', engine: 'tencent' },
 
     // ================================================================
-    // Baidu-compatible provider metadata（76 个）
-    // 参考：examples/tts-provider/README.md
+    // Baidu-compatible provider metadata (76 voices)
+    // See: examples/tts-provider/README.md
     // ================================================================
 
-    // --- 基础音库 ---
-    { id: 0, name: '度小美', gender: 'female', description: '标准女主播', engine: 'baidu' },
-    { id: 1, name: '度小宇', gender: 'male', description: '亲切男声', engine: 'baidu' },
-    { id: 3, name: '度逍遥', gender: 'male', description: '情感男声', engine: 'baidu' },
-    { id: 4, name: '度丫丫', gender: 'female', description: '童声', engine: 'baidu' },
+    // --- Basic Voice Library ---
+    { id: 0, name: 'Du Xiaomei', gender: 'female', description: 'Standard Hostess', engine: 'baidu' },
+    { id: 1, name: 'Du Xiaoyu', gender: 'male', description: 'Friendly Male', engine: 'baidu' },
+    { id: 3, name: 'Du Xiaoyao', gender: 'male', description: 'Emotional Male', engine: 'baidu' },
+    { id: 4, name: 'Du Yaya', gender: 'female', description: 'Child Voice', engine: 'baidu' },
 
-    // --- 精品音库 ---
-    { id: 5003, name: '度逍遥', gender: 'male', description: '情感男声', engine: 'baidu' },
-    { id: 5118, name: '度小鹿', gender: 'female', description: '甜美女声', engine: 'baidu' },
-    { id: 106, name: '度博文', gender: 'male', description: '专业男主播', engine: 'baidu' },
-    { id: 103, name: '度米朵', gender: 'female', description: '可爱童声', engine: 'baidu' },
-    { id: 110, name: '度小童', gender: 'male', description: '童声主播', engine: 'baidu' },
-    { id: 111, name: '度小萌', gender: 'female', description: '软萌妹子', engine: 'baidu' },
-    { id: 5, name: '度小娇', gender: 'female', description: '成熟女主播', engine: 'baidu' },
+    // --- Premium Voice Library ---
+    { id: 5003, name: 'Du Xiaoyao', gender: 'male', description: 'Emotional Male', engine: 'baidu' },
+    { id: 5118, name: 'Du Xiaolu', gender: 'female', description: 'Sweet Female', engine: 'baidu' },
+    { id: 106, name: 'Du Bowen', gender: 'male', description: 'Professional Host', engine: 'baidu' },
+    { id: 103, name: 'Du Miduo', gender: 'female', description: 'Cute Child', engine: 'baidu' },
+    { id: 110, name: 'Du Xiaotong', gender: 'male', description: 'Child Host', engine: 'baidu' },
+    { id: 111, name: 'Du Xiaomeng', gender: 'female', description: 'Soft Sweet Girl', engine: 'baidu' },
+    { id: 5, name: 'Du Xiaojiao', gender: 'female', description: 'Mature Hostess', engine: 'baidu' },
 
-    // --- 臻品音库 ---
-    { id: 4003, name: '度逍遥', gender: 'male', description: '情感男声', engine: 'baidu' },
-    { id: 4106, name: '度博文', gender: 'male', description: '专业男主播', engine: 'baidu' },
-    { id: 4115, name: '度小贤', gender: 'male', description: '电台男主播', engine: 'baidu' },
-    { id: 5147, name: '度常盈', gender: 'female', description: '电台女主播', engine: 'baidu' },
-    { id: 5976, name: '度小皮', gender: 'male', description: '萌娃童声', engine: 'baidu' },
-    { id: 5971, name: '度皮特', gender: 'male', description: '老外男声', engine: 'baidu' },
-    { id: 4164, name: '度阿肯', gender: 'male', description: '主播男声', engine: 'baidu' },
-    { id: 4176, name: '度有为', gender: 'male', description: '磁性男声', engine: 'baidu' },
-    { id: 4259, name: '度小新', gender: 'female', description: '播音女声', engine: 'baidu' },
-    { id: 4119, name: '度小鹿', gender: 'female', description: '甜美女声', engine: 'baidu' },
-    { id: 4105, name: '度灵儿', gender: 'female', description: '清激女声', engine: 'baidu' },
-    { id: 4117, name: '度小乔', gender: 'female', description: '活泼女声', engine: 'baidu' },
-    { id: 4288, name: '度晴岚', gender: 'female', description: '甜美女声', engine: 'baidu' },
-    { id: 4192, name: '度青川', gender: 'male', description: '温柔男声', engine: 'baidu' },
-    { id: 4100, name: '度小雯', gender: 'female', description: '活力女主播', engine: 'baidu' },
-    { id: 4103, name: '度米朵', gender: 'female', description: '可爱女声', engine: 'baidu' },
-    { id: 4144, name: '度姗姗', gender: 'female', description: '娱乐女声', engine: 'baidu' },
-    { id: 4278, name: '度小贝', gender: 'female', description: '知识女主播', engine: 'baidu' },
-    { id: 4143, name: '度清风', gender: 'male', description: '配音男声', engine: 'baidu' },
-    { id: 4140, name: '度小新', gender: 'female', description: '专业女主播', engine: 'baidu' },
-    { id: 4129, name: '度小彦', gender: 'male', description: '知识男主播', engine: 'baidu' },
-    { id: 4149, name: '度星河', gender: 'male', description: '广告男声', engine: 'baidu' },
-    { id: 4254, name: '度小清', gender: 'female', description: '广告女声', engine: 'baidu' },
-    { id: 4206, name: '度博文', gender: 'male', description: '综艺男声', engine: 'baidu' },
-    { id: 4147, name: '度云朵', gender: 'female', description: '可爱童声', engine: 'baidu' },
-    { id: 4141, name: '度婉婉', gender: 'female', description: '甜美女声', engine: 'baidu' },
-    { id: 4226, name: '南方', gender: 'female', description: '电台女主播', engine: 'baidu' },
-    { id: 6205, name: '度悠然', gender: 'male', description: '旁白男声', engine: 'baidu' },
-    { id: 6221, name: '度云萱', gender: 'female', description: '旁白女声', engine: 'baidu' },
-    { id: 6546, name: '度清豪', gender: 'male', description: '逍遥侠客', engine: 'baidu' },
-    { id: 6602, name: '度清柔', gender: 'male', description: '温柔男神', engine: 'baidu' },
-    { id: 6562, name: '度雨楠', gender: 'female', description: '元气少女', engine: 'baidu' },
-    { id: 6543, name: '度雨萌', gender: 'female', description: '邻家女孩', engine: 'baidu' },
-    { id: 6747, name: '度书古', gender: 'male', description: '情感男声', engine: 'baidu' },
-    { id: 6748, name: '度书严', gender: 'male', description: '沉稳男声', engine: 'baidu' },
-    { id: 6746, name: '度书道', gender: 'male', description: '沉稳男声', engine: 'baidu' },
-    { id: 6644, name: '度书宁', gender: 'female', description: '亲和女声', engine: 'baidu' },
-    { id: 4148, name: '度小夏', gender: 'female', description: '甜美女声', engine: 'baidu' },
-    { id: 4277, name: '西贝', gender: 'female', description: '脱口秀女声', engine: 'baidu' },
-    { id: 4114, name: '阿龙', gender: 'male', description: '说书男声', engine: 'baidu' },
-    { id: 5153, name: '度常悦', gender: 'female', description: '民生女主播', engine: 'baidu' },
-    { id: 6561, name: '度小乐', gender: 'male', description: '可爱童声', engine: 'baidu' },
+    // --- Luxury Voice Library ---
+    { id: 4003, name: 'Du Xiaoyao', gender: 'male', description: 'Emotional Male', engine: 'baidu' },
+    { id: 4106, name: 'Du Bowen', gender: 'male', description: 'Professional Host', engine: 'baidu' },
+    { id: 4115, name: 'Du Xiaoxian', gender: 'male', description: 'Radio Host', engine: 'baidu' },
+    { id: 5147, name: 'Du Changying', gender: 'female', description: 'Radio Hostess', engine: 'baidu' },
+    { id: 5976, name: 'Du Xiaopi', gender: 'male', description: 'Cute Toddler', engine: 'baidu' },
+    { id: 5971, name: 'Du Peter', gender: 'male', description: 'Foreigner Male', engine: 'baidu' },
+    { id: 4164, name: 'Du Aken', gender: 'male', description: 'Host Male', engine: 'baidu' },
+    { id: 4176, name: 'Du Youwei', gender: 'male', description: 'Magnetic Male', engine: 'baidu' },
+    { id: 4259, name: 'Du Xiaoxin', gender: 'female', description: 'Broadcast Female', engine: 'baidu' },
+    { id: 4119, name: 'Du Xiaolu', gender: 'female', description: 'Sweet Female', engine: 'baidu' },
+    { id: 4105, name: 'Du Linger', gender: 'female', description: 'Clear Female', engine: 'baidu' },
+    { id: 4117, name: 'Du Xiaoqiao', gender: 'female', description: 'Lively Female', engine: 'baidu' },
+    { id: 4288, name: 'Du Qinglan', gender: 'female', description: 'Sweet Female', engine: 'baidu' },
+    { id: 4192, name: 'Du Qingchuan', gender: 'male', description: 'Gentle Male', engine: 'baidu' },
+    { id: 4100, name: 'Du Xiaowen', gender: 'female', description: 'Energetic Hostess', engine: 'baidu' },
+    { id: 4103, name: 'Du Miduo', gender: 'female', description: 'Cute Female', engine: 'baidu' },
+    { id: 4144, name: 'Du Shanshan', gender: 'female', description: 'Entertainment Female', engine: 'baidu' },
+    { id: 4278, name: 'Du Xiaobei', gender: 'female', description: 'Educational Hostess', engine: 'baidu' },
+    { id: 4143, name: 'Du Qingfeng', gender: 'male', description: 'Dubbing Male', engine: 'baidu' },
+    { id: 4140, name: 'Du Xiaoxin', gender: 'female', description: 'Professional Hostess', engine: 'baidu' },
+    { id: 4129, name: 'Du Xiaoyan', gender: 'male', description: 'Educational Host', engine: 'baidu' },
+    { id: 4149, name: 'Du Xinghe', gender: 'male', description: 'Commercial Male', engine: 'baidu' },
+    { id: 4254, name: 'Du Xiaoqing', gender: 'female', description: 'Commercial Female', engine: 'baidu' },
+    { id: 4206, name: 'Du Bowen', gender: 'male', description: 'Variety Show Male', engine: 'baidu' },
+    { id: 4147, name: 'Du Yunduo', gender: 'female', description: 'Cute Child', engine: 'baidu' },
+    { id: 4141, name: 'Du Wanwan', gender: 'female', description: 'Sweet Female', engine: 'baidu' },
+    { id: 4226, name: 'Nanfang', gender: 'female', description: 'Radio Hostess', engine: 'baidu' },
+    { id: 6205, name: 'Du Youran', gender: 'male', description: 'Narrator Male', engine: 'baidu' },
+    { id: 6221, name: 'Du Yunxuan', gender: 'female', description: 'Narrator Female', engine: 'baidu' },
+    { id: 6546, name: 'Du Qinghao', gender: 'male', description: 'Carefree Knight', engine: 'baidu' },
+    { id: 6602, name: 'Du Qingrou', gender: 'male', description: 'Gentle Idol', engine: 'baidu' },
+    { id: 6562, name: 'Du Yu\'nan', gender: 'female', description: 'Energetic Girl', engine: 'baidu' },
+    { id: 6543, name: 'Du Yumeng', gender: 'female', description: 'Neighbor Girl', engine: 'baidu' },
+    { id: 6747, name: 'Du Shugu', gender: 'male', description: 'Emotional Male', engine: 'baidu' },
+    { id: 6748, name: 'Du Shuyan', gender: 'male', description: 'Composed Male', engine: 'baidu' },
+    { id: 6746, name: 'Du Shudao', gender: 'male', description: 'Composed Male', engine: 'baidu' },
+    { id: 6644, name: 'Du Shuning', gender: 'female', description: 'Affable Female', engine: 'baidu' },
+    { id: 4148, name: 'Du Xiaoxia', gender: 'female', description: 'Sweet Female', engine: 'baidu' },
+    { id: 4277, name: 'Xi Bei', gender: 'female', description: 'Talk Show Female', engine: 'baidu' },
+    { id: 4114, name: 'Ah Long', gender: 'male', description: 'Storyteller Male', engine: 'baidu' },
+    { id: 5153, name: 'Du Changyue', gender: 'female', description: 'News Reporter Female', engine: 'baidu' },
+    { id: 6561, name: 'Du Xiaole', gender: 'male', description: 'Cute Child', engine: 'baidu' },
 
-    // --- 大模型音库 ---
-    { id: 4179, name: '度泽言', gender: 'male', description: '温暖男声', engine: 'baidu' },
-    { id: 4146, name: '度禧禧', gender: 'female', description: '阳光女声', engine: 'baidu' },
-    { id: 6567, name: '度小柔', gender: 'female', description: '温柔女声', engine: 'baidu' },
-    { id: 4156, name: '度言浩', gender: 'male', description: '年轻男声', engine: 'baidu' },
-    { id: 4157, name: '度言静', gender: 'female', description: '明亮女声', engine: 'baidu' },
-    { id: 4189, name: '度涵竹', gender: 'female', description: '开朗女声', engine: 'baidu' },
-    { id: 4194, name: '度嫣然', gender: 'female', description: '活泼女声', engine: 'baidu' },
-    { id: 4193, name: '度泽言', gender: 'male', description: '开朗男声', engine: 'baidu' },
-    { id: 4195, name: '度怀安', gender: 'male', description: '磁性男声', engine: 'baidu' },
-    { id: 4196, name: '度清影', gender: 'female', description: '甜美女声', engine: 'baidu' },
-    { id: 4197, name: '度沁遥', gender: 'female', description: '知性女声', engine: 'baidu' },
-    { id: 20100, name: '度小粤', gender: 'female', description: '粤语女声', engine: 'baidu' },
-    { id: 20101, name: '度晓芸', gender: 'female', description: '粤语女声', engine: 'baidu' },
-    { id: 4257, name: '四川小哥', gender: 'male', description: '四川男声', engine: 'baidu' },
-    { id: 4132, name: '度阿闽', gender: 'male', description: '闽南男声', engine: 'baidu' },
-    { id: 4139, name: '度小蓉', gender: 'female', description: '四川女声', engine: 'baidu' },
-    { id: 5977, name: '台媒女声', gender: 'female', description: '台湾女声', engine: 'baidu' },
-    { id: 4007, name: '度小台', gender: 'female', description: '台湾女声', engine: 'baidu' },
-    { id: 4150, name: '度湘玉', gender: 'female', description: '陕西女声', engine: 'baidu' },
-    { id: 4134, name: '度阿锦', gender: 'female', description: '东北女声', engine: 'baidu' },
-    { id: 4172, name: '度筱林', gender: 'female', description: '天津女声', engine: 'baidu' },
-    { id: 5980, name: '度阿花', gender: 'female', description: '上海女声', engine: 'baidu' },
-    { id: 4154, name: '度老崔', gender: 'male', description: '北京男声', engine: 'baidu' },
+    // --- LLM Voice Library ---
+    { id: 4179, name: 'Du Zeyan', gender: 'male', description: 'Warm Male', engine: 'baidu' },
+    { id: 4146, name: 'Du Xixi', gender: 'female', description: 'Sunny Female', engine: 'baidu' },
+    { id: 6567, name: 'Du Xiaorou', gender: 'female', description: 'Gentle Female', engine: 'baidu' },
+    { id: 4156, name: 'Du Yanhao', gender: 'male', description: 'Young Male', engine: 'baidu' },
+    { id: 4157, name: 'Du Yanjing', gender: 'female', description: 'Bright Female', engine: 'baidu' },
+    { id: 4189, name: 'Du Hanzhu', gender: 'female', description: 'Cheerful Female', engine: 'baidu' },
+    { id: 4194, name: 'Du Yanran', gender: 'female', description: 'Lively Female', engine: 'baidu' },
+    { id: 4193, name: 'Du Zeyan', gender: 'male', description: 'Cheerful Male', engine: 'baidu' },
+    { id: 4195, name: 'Du Huai\'an', gender: 'male', description: 'Magnetic Male', engine: 'baidu' },
+    { id: 4196, name: 'Du Qingying', gender: 'female', description: 'Sweet Female', engine: 'baidu' },
+    { id: 4197, name: 'Du Qinyao', gender: 'female', description: 'Intellectual Female', engine: 'baidu' },
+    { id: 20100, name: 'Du Xiaoyue', gender: 'female', description: 'Cantonese Female', engine: 'baidu' },
+    { id: 20101, name: 'Du Xiaoyun', gender: 'female', description: 'Cantonese Female', engine: 'baidu' },
+    { id: 4257, name: 'Sichuan Guy', gender: 'male', description: 'Sichuan Male', engine: 'baidu' },
+    { id: 4132, name: 'Du A\'min', gender: 'male', description: 'Minnan Male', engine: 'baidu' },
+    { id: 4139, name: 'Du Xiaorong', gender: 'female', description: 'Sichuan Female', engine: 'baidu' },
+    { id: 5977, name: 'Taiwan Media Female', gender: 'female', description: 'Taiwanese Female', engine: 'baidu' },
+    { id: 4007, name: 'Du Xiaotai', gender: 'female', description: 'Taiwanese Female', engine: 'baidu' },
+    { id: 4150, name: 'Du Xiangyu', gender: 'female', description: 'Shaanxi Female', engine: 'baidu' },
+    { id: 4134, name: 'Du A\'jin', gender: 'female', description: 'Northeast Female', engine: 'baidu' },
+    { id: 4172, name: 'Du Xiaolin', gender: 'female', description: 'Tianjin Female', engine: 'baidu' },
+    { id: 5980, name: 'Du A\'hua', gender: 'female', description: 'Shanghai Female', engine: 'baidu' },
+    { id: 4154, name: 'Du Lao Cui', gender: 'male', description: 'Beijing Male', engine: 'baidu' },
 ]
 
 /**
- * 默认音色 ID（按性别）
+ * Default voice ID (by gender)
  */
 export const DEFAULT_VOICE_ID = {
     female: 101026,
     male: 101030,
-    other: 101026,   // 默认女声
+    other: 101026,   // Default female voice
 } as const
 
 /**
- * 通用默认音色（作为回退值）
+ * General default voice (as fallback value)
  */
-export const FALLBACK_VOICE_ID = 101026 // 智希
+export const FALLBACK_VOICE_ID = 101026 // Zhixi
 
-// ==================== 工具函数 ====================
+// ==================== Utility Functions ====================
 
 /**
- * 获取所有音色选项
+ * Get all voice options
  */
 export function getVoiceOptions(): VoiceOption[] {
     return VOICE_OPTIONS
 }
 
 /**
- * 根据 ID 获取音色选项
+ * Get voice option by ID
  */
 export function getVoiceById(id: number | string | undefined): VoiceOption | undefined {
     if (id === undefined) return undefined
@@ -215,20 +215,20 @@ export function getVoiceById(id: number | string | undefined): VoiceOption | und
 }
 
 /**
- * 根据 ID 获取音色显示名称
+ * Get voice display name by ID
  */
 export function getVoiceName(id: number | string | undefined): string {
-    if (id === undefined) return '未设置'
+    if (id === undefined) return 'Not set'
     const voice = getVoiceById(id)
     if (!voice) {
-        return `音色 ${id}`
+        return `Voice ${id}`
     }
-    const genderLabel = voice.gender === 'female' ? '女' : '男'
+    const genderLabel = voice.gender === 'female' ? 'Female' : 'Male'
     return `${voice.name} (${genderLabel})`
 }
 
 /**
- * 根据性别获取默认音色 ID
+ * Get default voice ID by gender
  */
 export function getDefaultVoiceIdByGender(gender: string): number {
     if (gender === 'female') {
@@ -241,21 +241,21 @@ export function getDefaultVoiceIdByGender(gender: string): number {
 }
 
 /**
- * 获取女声列表
+ * Get female voice list
  */
 export function getFemaleVoices(): VoiceOption[] {
     return VOICE_OPTIONS.filter(v => v.gender === 'female')
 }
 
 /**
- * 获取男声列表
+ * Get male voice list
  */
 export function getMaleVoices(): VoiceOption[] {
     return VOICE_OPTIONS.filter(v => v.gender === 'male')
 }
 
 /**
- * 根据音色 ID 获取所属 Provider 元数据标识。
+ * Get owning Provider metadata identifier by voice ID.
  */
 export function getVoiceEngine(id: number | string | undefined): VoiceProviderId {
     if (id === undefined) return 'tencent'
@@ -282,10 +282,10 @@ const BAIDU_LLM = new Set([
 ])
 
 /**
- * 获取音色成本权重提示。
+ * Get voice cost weight hint.
  *
- * 该值只用于可选 TTS Provider 的 UI 提示，不代表开源版内置计费，
- * 也不意味着默认连接任何云服务。
+ * Used only for UI hints for optional TTS Providers; does not represent built-in billing
+ * nor imply default connection to cloud services.
  */
 export function getVoiceCostWeight(voice: Pick<VoiceOption, 'engine' | 'id'>): number {
     if (voice.engine === 'baidu') {
@@ -301,71 +301,71 @@ export function getVoiceCostWeight(voice: Pick<VoiceOption, 'engine' | 'id'>): n
 }
 
 /**
- * 获取音色卡片展示用成本档位。
+ * Get cost tier for voice card display.
  */
 export function getVoiceCostTier(voice: Pick<VoiceOption, 'engine' | 'id'>): number {
     return Math.ceil(getVoiceCostWeight(voice))
 }
 
 export function getVoiceCostTierLabel(voice: Pick<VoiceOption, 'engine' | 'id'>): string {
-    return `${getVoiceCostTier(voice)}档`
+    return `Tier ${getVoiceCostTier(voice)}`
 }
 
-// ========== 语速设置 ==========
+// ========== Speech Speed Settings ==========
 
 /**
- * 语速选项接口
+ * Speech speed option interface
  */
 export interface SpeedOption {
-    /** 通用语速参数值，兼容历史 Provider 映射范围 (-2 ~ 6) */
+    /** General speech speed parameter value, compatible with legacy range (-2 ~ 6) */
     value: number
-    /** 显示标签 */
+    /** Display label */
     label: string
-    /** 简短描述 */
+    /** Short description */
     description: string
 }
 
 /**
- * 语速选项列表（语义化标签）。
- * 具体 Provider 可在适配器中映射到自己的语速参数范围。
+ * Speech speed option list (semantic labels).
+ * Specific Providers can map to their own speech speed ranges in adapters.
  */
 export const SPEED_OPTIONS: SpeedOption[] = [
-    { value: -2, label: '较慢', description: '约 0.67 倍速' },
-    { value: -1, label: '稍慢', description: '约 0.83 倍速' },
-    { value: 0, label: '正常', description: '1.0 倍速' },
-    { value: 2, label: '稍快', description: '约 1.33 倍速' },
-    { value: 4, label: '较快', description: '约 1.67 倍速' },
-    { value: 6, label: '很快', description: '约 2.0 倍速' },
+    { value: -2, label: 'Slower', description: 'Approx 0.67x speed' },
+    { value: -1, label: 'Slow', description: 'Approx 0.83x speed' },
+    { value: 0, label: 'Normal', description: '1.0x speed' },
+    { value: 2, label: 'Fast', description: 'Approx 1.33x speed' },
+    { value: 4, label: 'Faster', description: 'Approx 1.67x speed' },
+    { value: 6, label: 'Very Fast', description: 'Approx 2.0x speed' },
 ]
 
 /**
- * 默认语速值（正常）
+ * Default speech speed value (Normal)
  */
 export const DEFAULT_SPEED = 0
 
 /**
- * 默认音量值（TTS API 中性音量）
+ * Default volume value (neutral TTS volume)
  */
 export const DEFAULT_VOLUME = 0
 
 /**
- * 获取所有语速选项
+ * Get all speech speed options
  */
 export function getSpeedOptions(): SpeedOption[] {
     return SPEED_OPTIONS
 }
 
 /**
- * 根据 TTS 参数值获取语速标签
+ * Get speech speed label by TTS parameter value
  */
 export function getSpeedLabel(value: number): string {
     const option = SPEED_OPTIONS.find(o => o.value === value)
-    return option?.label ?? '正常'
+    return option?.label ?? 'Normal'
 }
 
 /**
- * 将旧版倍速值 (0.5 ~ 2.0) 转换为新版 TTS 参数值
- * 用于数据迁移
+ * Convert legacy speed value (0.5 ~ 2.0) to new TTS parameter value
+ * Used for data migration
  */
 export function convertLegacySpeedToTTSValue(legacySpeed: number): number {
     if (legacySpeed <= 0.7) return -2
@@ -377,8 +377,8 @@ export function convertLegacySpeedToTTSValue(legacySpeed: number): number {
 }
 
 /**
- * 判断值是否为旧版倍速格式（0.5 ~ 2.0）
- * 新版使用标准值: -2, -1, 0, 2, 4, 6
+ * Check if value is legacy speed format (0.5 ~ 2.0)
+ * New format uses standard values: -2, -1, 0, 2, 4, 6
  */
 export function isLegacySpeedFormat(speed: number): boolean {
     const validNewValues = [-2, -1, 0, 2, 4, 6]
@@ -386,18 +386,18 @@ export function isLegacySpeedFormat(speed: number): boolean {
 }
 
 /**
- * 智能获取 TTS 语速参数值
- * 自动处理旧版格式转换
+ * Intelligently get TTS speech speed value
+ * Automatically handles legacy format conversion
  */
 export function getValidSpeedValue(speed: number | undefined): number {
     if (speed === undefined) return DEFAULT_SPEED
 
-    // 检测并转换旧版格式（0.5-2.0 范围内的非标准值）
+    // Detect and convert legacy format (non-standard values within 0.5-2.0)
     if (isLegacySpeedFormat(speed)) {
         return convertLegacySpeedToTTSValue(speed)
     }
 
-    // 确保值在有效范围内
+    // Ensure value is within valid range
     if (speed < -2) return -2
     if (speed > 6) return 6
 
@@ -405,9 +405,9 @@ export function getValidSpeedValue(speed: number | undefined): number {
 }
 
 /**
- * 智能获取本地播放音量参数值。
+ * Intelligently get local playback volume parameter value.
  *
- * 音量不再传给 TTS 供应商，而是在前端播放/导出混音阶段用作增益。
+ * Volume is not sent to TTS provider, but used as gain in frontend playback/export mixing.
  */
 export function getValidVolumeValue(volume: number | undefined): number {
     if (volume === undefined) return DEFAULT_VOLUME
@@ -419,8 +419,8 @@ export function getValidVolumeValue(volume: number | undefined): number {
 }
 
 /**
- * 将 -10 ~ 10 的用户音量映射为本地播放增益。
- * 0 为原始音量，10 约为 10 倍增益，-10 约为 1/10 音量。
+ * Map user volume (-10 ~ 10) to local playback gain.
+ * 0 is unity gain, 10 is approx 10x gain, -10 is approx 1/10 volume.
  */
 export function getPlaybackVolumeGain(volume: number | undefined): number {
     const normalized = getValidVolumeValue(volume)

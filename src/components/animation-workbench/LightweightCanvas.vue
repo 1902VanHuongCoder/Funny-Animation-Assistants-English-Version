@@ -1,8 +1,8 @@
 <!--
-  LightweightCanvas.vue — 动画编辑独立画布（v2: 复用 useSceneRenderer 管线）
+  LightweightCanvas.vue — Animation editing standalone canvas (v2: reuses useSceneRenderer pipeline)
   
-  使用 useSceneRenderer + AnimationSceneObjectStore 实现完全数据隔离，
-  渲染、拾取、拖拽逻辑与场景编辑 setup 模式完全一致。
+  Uses useSceneRenderer + AnimationSceneObjectStore for complete data isolation,
+  rendering, picking, and dragging logic completely match scene editing setup mode.
 -->
 <template>
   <div
@@ -46,30 +46,30 @@ import type { WorkbenchPreviewStore } from '@/types/WorkbenchPreviewStore'
 // ===== Props & Emits =====
 
 export interface LightweightCanvasProps {
-  /** 对象类型 */
+  /** Object type */
   resourceType: 'prop' | 'background' | 'symbol' | 'composite' | 'expression'
-  /** 资源引用 ID */
+  /** Asset reference ID */
   resourceId: string
-  /** 场景对象 ID（场景级入口） */
+  /** Scene object ID (scene-level entry) */
   sceneObjectId?: string | undefined
-  /** composite 子对象目标 ID（编辑子部件变换时） */
+  /** composite child object target ID (when editing sub-part transform) */
   targetObjectId?: string | undefined
-  /** 变换点手柄模式：'editable'（默认）或 'readonly'（只读灰色 gizmo） */
+  /** Pivot handle mode: 'editable' (default) or 'readonly' (grey read-only gizmo) */
   originHandleMode?: 'editable' | 'readonly'
   /**
-   * 初始缩放模式：
-   *   'zoom-100'（默认）—— 1:1 像素显示，适合主工作台画布；
-   *   'fit-content' —— 根据对象包围盒自适应缩放，适合小面板（如 PivotEditorPanel）。
+   * Initial zoom mode:
+   *   'zoom-100' (default) — 1:1 pixel display, suitable for main workbench canvas;
+   *   'fit-content' — Adaptive zoom based on object bounding box, suitable for small panels (e.g. PivotEditorPanel).
    */
   fitMode?: 'zoom-100' | 'fit-content'
   /**
-   * 锁定对象交互：不允许拖拽/缩放/旋转对象本体。
-   * 变换点手柄仍然可用。主要用于 PivotEditorPanel。
+   * Lock object interaction: dragging/scaling/rotating object itself forbidden.
+   * Pivot handle remains usable. Primarily used for PivotEditorPanel.
    */
   lockObjectInteraction?: boolean
   /**
-   * 禁用视口 pan/zoom：滚轮、中键/Space 拖拽都不再触发视口移动或缩放。
-   * 用于固定视图面板，避免对象被滚动或拖拽带离可视区。
+   * Disable viewport pan/zoom: wheel, middle-click/Space drag no longer trigger movement or zoom.
+   * Used for fixed view panels to prevent object from scrolling or dragging out of view.
    */
   disableViewportPanZoom?: boolean
 }
@@ -83,7 +83,7 @@ const emit = defineEmits<{
     objectBounds: { width: number; height: number }
   }]
   'canvas-app-ready': [app: PIXI.Application]
-  /** 画布上拖拽/缩放/旋转结束后触发 */
+  /** Triggered after drag/scale/rotate on canvas ends */
   'setup-change': [payload: SetupChangePayload]
 }>()
 
@@ -123,8 +123,8 @@ onMounted(async () => {
   await initCanvas()
 })
 
-// Prop 变更时（例如切换 track 导致 targetObjectId 改变，或场景对象切换），
-// 销毁当前渲染器并重新初始化——这是保持画布 + 隔离 store + 选中状态一致的最安全做法。
+// When prop changes (e.g. track switch causes targetObjectId change, or scene object switch),
+// destroy current renderer and reinitialize — safest way to keep canvas + isolated store + selection consistent.
 watch(
   () => [
     props.resourceType,
@@ -151,14 +151,14 @@ async function initCanvas() {
   const el = containerRef.value
   if (!el) return
 
-  // 1. 创建隔离 store（从全局 store 深拷贝目标对象，或构造合成对象）
+  // 1. Create isolated store (deep copy target object from global store, or construct composite)
   const globalStore = useSceneObjectStore()
 
   let rootObjectId = resolveRootObjectId(globalStore)
   let prebuiltObjects: SceneObject[] | undefined
 
   if (!rootObjectId) {
-    // 资源级预览：当前场景中无此资源的实例，构造合成对象
+    // Resource-level preview: no instance in current scene, construct composite object
     const syntheticId = `__anim_preview_${Date.now()}__`
     rootObjectId = syntheticId
     prebuiltObjects = [{
@@ -194,7 +194,7 @@ async function initCanvas() {
   baseStoreRef = baseStore
   runtimeStoreRef = runtimeStore
 
-  // 2. 创建 useSceneRenderer，注入隔离 store
+  // 2. Create useSceneRenderer, inject isolated store
   renderer = useSceneRenderer({
     canvasContainer: el,
     canvasWidth: CANVAS_WIDTH,
@@ -206,12 +206,12 @@ async function initCanvas() {
     lockObjectInteraction: props.lockObjectInteraction === true,
     disableViewportPanZoom: props.disableViewportPanZoom === true,
     onSetupChange: (change) => {
-      // 画布拖拽/缩放/旋转结束后，通知父组件将变换写入关键帧
+      // After canvas drag/scale/rotate ends, notify parent to write transform to keyframe
       emit('setup-change', change)
     },
   })
 
-  // 3. 初始化渲染器
+  // 3. Initialize renderer
   await renderer.initRenderer()
   rendererReady.value = true
   observeCanvasSize(el)
@@ -223,32 +223,32 @@ async function initCanvas() {
     return
   }
 
-  // 4. 隐藏 safe area overlay（动画编辑不需要）
+  // 4. Hide safe area overlay (not needed for animation editing)
   const safeAreaOverlay = pixiApp.getContext()?.safeAreaOverlay
   if (safeAreaOverlay) {
     safeAreaOverlay.visible = false
   }
 
-  // 5. 禁用自动渲染（等待 renderObjects 完成后再开启）
+  // 5. Disable auto rendering (enable after renderObjects completes)
   renderer.setAutoRenderEnabled(false)
 
-  // 6. 渲染对象
+  // 6. Render objects
   await renderer.renderObjects()
 
-  // 7. 恢复自动渲染
+  // 7. Resume auto rendering
   renderer.setAutoRenderEnabled(true)
 
   emit('canvas-app-ready', app)
 
-  // 8. 解析容器并发射 container-ready 事件
+  // 8. Resolve container and emit container-ready event
   resolveContainersAndEmit()
 
-  // 9. 默认缩放：fit-content 按对象包围盒自适应；zoom-100 为 1:1 像素
+  // 9. Default zoom: fit-content adapts to object bounding box; zoom-100 is 1:1 pixel
   if (props.fitMode === 'fit-content') {
-    // 必须等一拍让 PIXI 完成首次渲染，否则 getLocalBounds 可能返回空。
-    // 参考 ObjectCollectionPreviewDialog 的 fitContent 流程：用 contentLayer 的
-    // local bounds 作为 fit 目标（世界坐标系，未经 stage 缩放），
-    // 比在尚未纳入 stage 变换链的 rootContainer.getBounds 更稳定。
+    // Must wait one tick for PIXI to finish initial render, otherwise getLocalBounds might return empty.
+    // Refer to ObjectCollectionPreviewDialog fitContent flow: use contentLayer's
+    // local bounds as fit target (world coordinates, unscaled by stage),
+    // more stable than rootContainer.getBounds which is not yet in stage transform chain.
     await new Promise<void>(resolve => setTimeout(resolve, 0))
     const pixiCtx = pixiApp.getContext()
     const contentLayer = pixiCtx?.contentLayer
@@ -268,10 +268,10 @@ async function initCanvas() {
     renderer.scrollToCanvasCenter()
   }
 
-  // 10. 自动选中目标（变换点编辑面板依赖选中态来渲染变换点手柄）：
-  //   - 有 targetObjectId（composite 子部件）→ 选中子部件
-  //   - 否则选中根对象
-  // 注意：lockObjectInteraction 会禁用容器 pointer 事件，因此必须通过 API 主动选中。
+  // 10. Auto select target (pivot edit panel depends on selection to render pivot handle):
+  //   - Has targetObjectId (composite sub-part) -> select sub-part
+  //   - Otherwise select root object
+  // Note: lockObjectInteraction disables container pointer events, so must select actively via API.
   const selectId = props.targetObjectId ?? rootObjectId
   if (selectId) {
     renderer.selectObject(selectId)
@@ -303,7 +303,7 @@ function observeCanvasSize(el: HTMLElement) {
     const height = viewportSize.value.height
     renderer.handleResize(width, height)
     renderer.updateSelectionBox()
-    // 强制 PIXI 重绘当前帧，避免侧边栏折叠/展开后场景对象消失
+    // Force PIXI to redraw current frame, preventing scene objects from disappearing after sidebar toggle
     renderer.getPixiApp().app?.render()
   })
   viewportSize.value = {
@@ -316,15 +316,15 @@ function observeCanvasSize(el: HTMLElement) {
 // ===== Object ID Resolution =====
 
 /**
- * 从 props 解析需要渲染的根对象 ID。
- * 场景级入口使用 sceneObjectId，否则查找匹配 resourceId 的对象。
+ * Resolve root object ID to render from props.
+ * Scene-level entry uses sceneObjectId, otherwise searches matching resourceId.
  */
 function resolveRootObjectId(globalStore: ReturnType<typeof useSceneObjectStore>): string | null {
   if (props.sceneObjectId) {
     return props.sceneObjectId
   }
 
-  // 查找 store 中 refId 匹配的对象
+  // Find object with matching refId in store
   const obj = globalStore.objects.find(
     o => o.refId === props.resourceId && o.type === props.resourceType,
   )
@@ -334,8 +334,8 @@ function resolveRootObjectId(globalStore: ReturnType<typeof useSceneObjectStore>
 // ===== Container Resolution =====
 
 /**
- * 渲染完成后，从 sceneGraph 获取容器，构造 partContainers map，
- * 然后发射 container-ready 事件。
+ * After render completes, get containers from sceneGraph, construct partContainers map,
+ * then emit container-ready event.
  */
 function resolveContainersAndEmit() {
   if (!renderer || !runtimeStoreRef || !currentRootObjectId) return
@@ -349,7 +349,7 @@ function resolveContainersAndEmit() {
     return
   }
 
-  // 收集 composite 子对象容器（从隔离 store 读取）
+  // Collect composite child object containers (read from isolated store)
   const rootObj = runtimeStoreRef.getObject(rootId)
   const parts = new Map<string, PIXI.Container>()
 
@@ -360,7 +360,7 @@ function resolveContainersAndEmit() {
   targetContainer.value = rootContainer
   partContainers.value = parts.size > 0 ? parts : null
 
-  // 计算包围盒
+  // Calculate bounding box
   const bounds = rootContainer.getLocalBounds()
 
   emit('container-ready', {
@@ -374,7 +374,7 @@ function resolveContainersAndEmit() {
 }
 
 /**
- * 递归收集 composite 的所有子对象容器
+ * Recursively collect all child object containers of composite
  */
 function collectPartContainers(
   compositeObj: CompositeObject,
@@ -427,15 +427,15 @@ defineExpose({
   targetContainer,
   partContainers,
   fitToObject,
-  /** 获取底层 renderer 实例 */
+  /** Get underlying renderer instance */
   get renderer() { return renderer },
-  /** 获取隔离 sceneGraph */
+  /** Get isolated sceneGraph */
   get sceneGraph() { return renderer?.getSceneGraph() ?? null },
   /**
-   * 获取预览 store（窄接口）。
-   * 本 getter 只暴露 WorkbenchPreviewStore 定义的 5 项能力；底层仍是
-   * AnimationSceneObjectStore 返回的 reactive 实例，因此 objects / selectedObjectId
-   * 作为响应式字段直接在 computed 中访问即可。
+   * Get preview store (narrow interface).
+   * This getter exposes only 5 capabilities defined in WorkbenchPreviewStore; underlying is still
+   * reactive instance returned by AnimationSceneObjectStore, so objects / selectedObjectId
+   * can be accessed directly in computed as reactive fields.
    */
   get previewStore(): WorkbenchPreviewStore | null { return runtimeStoreRef as WorkbenchPreviewStore | null },
   get baseStore(): WorkbenchPreviewStore | null { return baseStoreRef as WorkbenchPreviewStore | null },

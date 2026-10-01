@@ -217,16 +217,16 @@ const shouldShowProjectElements = computed(() => {
 
 const showProjectMenu = ref(false)
 
-// 新建项目对话框状态
+// New project dialog state
 const showNewProjectDialog = ref(false)
 const selectedDirectory = ref<FileSystemDirectoryHandle | null>(null)
 const existingAnimeFiles = ref<string[]>([])
 
-// 确认关闭项目对话框状态
+// Confirm close project dialog state
 const showCloseConfirmDialog = ref(false)
 const showOpenConfirmDialog = ref(false)
 
-// 打开项目对话框状态
+// Open project dialog state
 const showFileSelectorDialog = ref(false)
 const availableFiles = ref<{ name: string; lastModified: Date }[]>([])
 const openProjectDirectory = ref<FileSystemDirectoryHandle | null>(null)
@@ -236,190 +236,190 @@ function toggleProjectMenu() {
   showProjectMenu.value = !showProjectMenu.value
 }
 
-// 关闭所有菜单
+// Close all menus
 function closeMenus() {
   showProjectMenu.value = false
 }
 
-// 项目菜单操作
+// Project menu actions
 async function handleNewProject() {
   closeMenus()
   
-  // 如果有项目打开,先显示确认对话框
+  // If a project is open, show confirm dialog first
   if (projectStore.isProjectOpen) {
     showCloseConfirmDialog.value = true
     return
   }
   
-  // 没有项目打开,直接选择目录
+  // If no project open, select directory directly
   await proceedWithNewProject()
 }
 
-// 用户确认关闭当前项目后的处理
+// Handler after user confirms closing current project
 async function handleConfirmClose() {
   showCloseConfirmDialog.value = false
   
   try {
-    // 保存当前项目
-    const currentProjectName = projectStore.projectName || '当前项目'
+    // Save current project
+    const currentProjectName = projectStore.projectName || 'Current Project'
     try {
       await projectStore.saveProject()
-      success(`「${currentProjectName}」已保存`)
+      success(`"${currentProjectName}" saved`)
     } catch (saveError) {
-      console.warn('保存当前项目失败:', saveError)
-      error('保存失败')
+      console.warn('Failed to save current project:', saveError)
+      error('Save failed')
     }
     
-    // 关闭当前项目
+    // Close current project
     await projectStore.closeProject(true) // skipCheck = true
     
-    // 继续新建项目流程
+    // Proceed with new project flow
     await proceedWithNewProject()
   } catch (error: unknown) {
     console.error(error)
-    alert('操作失败：' + ((error as Error).message || '未知错误'))
+    alert('Operation failed: ' + ((error as Error).message || 'Unknown error'))
   }
 }
 
-// 选择目录并继续新建项目流程
+// Select directory and proceed with new project flow
 async function proceedWithNewProject() {
   try {
-    // 选择目录 (在用户手势中调用)
+    // Select directory (called within user gesture)
     const handle = await projectStore.selectProjectDirectory()
     
-    // 扫描现有文件
+    // Scan existing files
     const files = await projectStore.scanAnimeFiles(handle)
     existingAnimeFiles.value = files.map(f => f.name)
     
-    // 保存目录句柄并显示对话框
+    // Save directory handle and show dialog
     selectedDirectory.value = handle
     showNewProjectDialog.value = true
   } catch (error: unknown) {
     const err = error as Error
     if (err.name !== 'AbortError') {
       console.error(error)
-      alert('选择目录失败：' + (err.message || '未知错误'))
+      alert('Failed to select directory: ' + (err.message || 'Unknown error'))
     }
   }
 }
 
-// 确认新建项目
+// Confirm new project
 async function handleConfirmNewProject(data: { fileName: string; projectName: string }) {
   try {
     showNewProjectDialog.value = false
     
     if (!selectedDirectory.value) {
-      throw new Error('未选择目录')
+      throw new Error('No directory selected')
     }
     
-    // 使用选择的目录句柄创建项目
+    // Create project using selected directory handle
     await projectStore.newProject(data.projectName, data.fileName, selectedDirectory.value)
     void router.push('/project')
   } catch (error: unknown) {
     console.error(error)
-    alert('创建项目失败：' + ((error as Error).message || '未知错误'))
+    alert('Failed to create project: ' + ((error as Error).message || 'Unknown error'))
   }
 }
 
 async function handleSaveProject() {
   closeMenus()
   try {
-    // 保存到文件系统（project.anime 文件）
+    // Save to file system (project.anime file)
     await projectStore.saveProject()
-    success('项目已保存！')
+    success('Project saved successfully!')
   } catch (err: unknown) {
     console.error(err)
-    error('项目保存失败：' + ((err as Error).message || '未知错误'))
+    error('Failed to save project: ' + ((err as Error).message || 'Unknown error'))
   }
 }
 
 async function handleOpenProject() {
   closeMenus()
   
-  // 如果有项目打开,先显示确认对话框
+  // If a project is open, show confirm dialog first
   if (projectStore.isProjectOpen) {
     showOpenConfirmDialog.value = true
     return
   }
   
-  // 没有项目打开,直接打开
+  // If no project open, open directly
   await proceedWithOpenProject()
 }
 
-// 用户确认关闭当前项目后的处理(打开新项目)
+// Handler after user confirms closing current project (open new project)
 async function handleConfirmOpenProject() {
   showOpenConfirmDialog.value = false
   
   try {
-    // 保存当前项目
-    const currentProjectName = projectStore.projectName || '当前项目'
+    // Save current project
+    const currentProjectName = projectStore.projectName || 'Current Project'
     try {
       await projectStore.saveProject()
-      success(`「${currentProjectName}」已保存`)
+      success(`"${currentProjectName}" saved`)
     } catch (saveError) {
-      console.warn('保存当前项目失败:', saveError)
-      error('保存失败')
+      console.warn('Failed to save current project:', saveError)
+      error('Save failed')
     }
     
-    // 关闭当前项目
+    // Close current project
     await projectStore.closeProject(true) // skipCheck = true
     
-    // 继续打开项目流程 (用户确认是新的用户手势)
+    // Proceed with open project flow (user confirm is new user gesture)
     await proceedWithOpenProject()
   } catch (error: unknown) {
     console.error(error)
-    alert('操作失败：' + ((error as Error).message || '未知错误'))
+    alert('Operation failed: ' + ((error as Error).message || 'Unknown error'))
   }
 }
 
-// 选择并打开项目
+// Select and open project
 async function proceedWithOpenProject() {
   try {
-    // 选择目录 (在用户手势中调用)
+    // Select directory (called within user gesture)
     const handle = await projectStore.selectProjectDirectory()
     
-    // 扫描现有文件
+    // Scan existing files
     const files = await projectStore.scanAnimeFiles(handle)
     
-    // 如果有多个文件,显示选择对话框
+    // If multiple files exist, show selection dialog
     if (files.length > 1) {
       availableFiles.value = files
       openProjectDirectory.value = handle
       showFileSelectorDialog.value = true
     } else if (files.length === 1 && files[0]) {
-      // 单个文件,直接打开
+      // Single file, open directly
       await projectStore.openProject(files[0].name, handle)
       void router.push('/project')
     } else {
-      throw new Error('未找到 .anime 文件')
+      throw new Error('No .anime file found')
     }
   } catch (error: unknown) {
     const err = error as Error
-    if (err.name === 'AbortError' || err.message === '用户取消操作') {
+    if (err.name === 'AbortError' || err.message === 'Operation cancelled by user') {
       return
     }
     console.error(error)
-    alert('打开项目失败：' + (err.message || '未知错误'))
+    alert('Failed to open project: ' + (err.message || 'Unknown error'))
   }
 }
 
-// 用户选择文件后的处理
+// Handler after user selects file
 async function handleSelectFile(fileName: string) {
   try {
     showFileSelectorDialog.value = false
     
     if (!openProjectDirectory.value) {
-      throw new Error('未找到目录句柄')
+      throw new Error('Directory handle not found')
     }
     
     await projectStore.openProject(fileName, openProjectDirectory.value)
     void router.push('/project')
   } catch (err: unknown) {
-    if ((err as Error).name === 'AbortError' || (err as Error).message === '用户取消操作') {
+    if ((err as Error).name === 'AbortError' || (err as Error).message === 'Operation cancelled by user') {
       return
     }
     console.error(err)
-    alert('打开项目失败：' + ((err as Error).message || '未知错误'))
+    alert('Failed to open project: ' + ((err as Error).message || 'Unknown error'))
   }
 }
 
@@ -427,23 +427,23 @@ async function handleCloseProject() {
   closeMenus()
   
   try {
-    // closeProject 内部会检查未保存更改
+    // closeProject checks unsaved changes internally
     await projectStore.closeProject()
     void router.push('/project')
   } catch (error: unknown) {
-    if ((error as Error).message !== '用户取消操作') {
+    if ((error as Error).message !== 'Operation cancelled by user') {
       console.error(error)
-      alert('关闭项目失败：' + ((error as Error).message || '未知错误'))
+      alert('Failed to close project: ' + ((error as Error).message || 'Unknown error'))
     }
   }
 }
 
-// 文件选择处理（降级方案）
+// File selection handler (fallback approach)
 async function handleFileSelect(e: Event) {
   const file = (e.target as HTMLInputElement).files?.[0]
   if (file) {
     if (!file.name.endsWith('.anime')) {
-      alert('请选择 .anime 格式的项目文件')
+      alert('Please select a project file in .anime format')
       return
     }
     
@@ -452,23 +452,23 @@ async function handleFileSelect(e: Event) {
       if (success) {
         projectStore.isProjectOpen = true
         void router.push('/project')
-        alert(`项目「${projectStore.projectName}」加载成功！`)
+        alert(`Project "${projectStore.projectName}" loaded successfully!`)
       } else {
-        alert('项目加载失败，请检查文件格式')
+        alert('Failed to load project, please check the file format')
       }
     } catch (error) {
       console.error(error)
-      alert('项目加载失败，请查看控制台')
+      alert('Failed to load project. Please check the console.')
     }
     
-    // 清空 input
+    // Clear input
     if (e.target) {
       (e.target as HTMLInputElement).value = ''
     }
   }
 }
 
-// 点击外部关闭菜单
+// Click outside to close menus
 if (typeof window !== 'undefined') {
   document.addEventListener('click', (e) => {
     const target = e.target as HTMLElement

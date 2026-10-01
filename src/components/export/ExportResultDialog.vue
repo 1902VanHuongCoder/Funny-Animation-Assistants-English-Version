@@ -4,123 +4,123 @@
     @click.self="handleClose"
   >
     <div class="export-result-dialog">
-      <!-- 标题栏 -->
+      <!-- Title bar -->
       <div class="dialog-header">
         <div class="header-content">
           <span class="status-icon">{{ success ? '✅' : '❌' }}</span>
-          <h3>{{ success ? '导出成功' : '导出失败' }}</h3>
+          <h3>{{ success ? 'Export Successful' : 'Export Failed' }}</h3>
         </div>
         <button
           class="close-btn"
-          title="关闭"
+          title="Close"
           @click="handleClose"
         >
           ✕
         </button>
       </div>
 
-      <!-- 内容区 -->
+      <!-- Content area -->
       <div class="dialog-body">
         <div
           v-if="success"
           class="success-content"
         >
-          <!-- 文件信息 -->
+          <!-- File info -->
           <div class="info-section">
-            <h4>📊 导出信息</h4>
+            <h4>📊 Export Details</h4>
             <div class="info-grid">
               <div class="info-item">
-                <span class="label">文件大小:</span>
+                <span class="label">File Size:</span>
                 <span class="value">{{ formatFileSize(result.fileSize) }}</span>
               </div>
               <div class="info-item">
-                <span class="label">导出时长:</span>
+                <span class="label">Export Duration:</span>
                 <span class="value">{{ formatDuration(result.duration) }}</span>
               </div>
               <div class="info-item">
-                <span class="label">总帧数:</span>
-                <span class="value">{{ result.totalFrames }} 帧</span>
+                <span class="label">Total Frames:</span>
+                <span class="value">{{ result.totalFrames }} frames</span>
               </div>
               <div class="info-item">
-                <span class="label">导出效率:</span>
+                <span class="label">Processing Speed:</span>
                 <span class="value">{{ averageSpeed }}</span>
               </div>
             </div>
           </div>
 
-          <!-- 视频设置 -->
+          <!-- Video settings -->
           <div class="info-section">
-            <h4>🎬 视频设置</h4>
+            <h4>🎬 Video Settings</h4>
             <div class="info-grid">
               <div class="info-item">
-                <span class="label">分辨率:</span>
+                <span class="label">Resolution:</span>
                 <span class="value">{{ result.resolution.width }}×{{ result.resolution.height }}</span>
               </div>
               <div class="info-item">
-                <span class="label">帧率:</span>
+                <span class="label">Frame Rate:</span>
                 <span class="value">{{ result.frameRate }} FPS</span>
               </div>
               <div class="info-item">
-                <span class="label">质量:</span>
+                <span class="label">Quality:</span>
                 <span class="value">{{ result.quality }}</span>
               </div>
               <div class="info-item">
-                <span class="label">格式:</span>
+                <span class="label">Format:</span>
                 <span class="value">MP4 (H.264 + AAC)</span>
               </div>
             </div>
           </div>
 
-          <!-- 提示信息 -->
+          <!-- Tip -->
           <div class="tip-section">
             <span class="tip-icon">💡</span>
-            <span class="tip-text">视频已自动下载到浏览器默认下载文件夹</span>
+            <span class="tip-text">Video has been downloaded to your browser's default download folder</span>
           </div>
         </div>
 
-        <!-- 失败信息 -->
+        <!-- Failure info -->
         <div
           v-else
           class="error-content"
         >
           <div class="error-message">
             <span class="error-icon">⚠️</span>
-            <p>{{ result.errorMessage || '导出过程中发生未知错误' }}</p>
+            <p>{{ result.errorMessage || 'An unknown error occurred during export' }}</p>
           </div>
           <div
             v-if="result.errorDetails"
             class="error-details"
           >
             <details>
-              <summary>查看详细错误信息</summary>
+              <summary>View Error Details</summary>
               <pre>{{ result.errorDetails }}</pre>
             </details>
           </div>
         </div>
       </div>
 
-      <!-- 操作按钮 -->
+      <!-- Action buttons -->
       <div class="dialog-footer">
         <button
           v-if="!success"
           class="btn btn-secondary"
           @click="handleClose"
         >
-          关闭
+          Close
         </button>
         <button
           v-if="!success"
           class="btn btn-primary"
           @click="handleRetry"
         >
-          重试
+          Retry
         </button>
         <button
           v-if="success"
           class="btn btn-primary"
           @click="handleClose"
         >
-          完成
+          Done
         </button>
       </div>
     </div>
@@ -154,22 +154,19 @@ const emit = defineEmits<{
 
 const success = computed(() => props.result.success)
 
-// 计算平均导出速度
+// Calculate average export speed
 const averageSpeed = computed(() => {
   if (!props.result.duration || !props.result.totalFrames) return '-'
   const framesPerSecond = props.result.totalFrames / (props.result.duration / 1000)
   const speedRatio = framesPerSecond / props.result.frameRate
-  // 说明：如果视频是 25 FPS，导出用了 10 秒，实际处理了 250 帧
-  // 那么每秒处理 25 帧，相当于 1x 实时速度（刚好跟上视频播放速度）
-  // 如果每秒处理 50 帧，就是 2x 速度（比实时播放快 2 倍）
   if (speedRatio >= 1) {
-    return `每秒处理 ${framesPerSecond.toFixed(1)} 帧 (${speedRatio.toFixed(2)}x)`
+    return `${framesPerSecond.toFixed(1)} fps (${speedRatio.toFixed(2)}x)`
   } else {
-    return `每秒处理 ${framesPerSecond.toFixed(1)} 帧 (较慢)`
+    return `${framesPerSecond.toFixed(1)} fps (slower)`
   }
 })
 
-// 格式化文件大小
+// Format file size
 function formatFileSize(bytes: number): string {
   if (bytes === 0) return '0 B'
   const units = ['B', 'KB', 'MB', 'GB']
@@ -178,15 +175,15 @@ function formatFileSize(bytes: number): string {
   return `${(bytes / Math.pow(k, i)).toFixed(2)} ${units[i]}`
 }
 
-// 格式化时长
+// Format duration
 function formatDuration(ms: number): string {
   const seconds = Math.floor(ms / 1000)
   const minutes = Math.floor(seconds / 60)
   const secs = seconds % 60
   if (minutes > 0) {
-    return `${minutes} 分 ${secs} 秒`
+    return `${minutes}m ${secs}s`
   }
-  return `${secs} 秒`
+  return `${secs}s`
 }
 
 function handleClose() {

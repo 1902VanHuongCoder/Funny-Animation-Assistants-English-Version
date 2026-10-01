@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">
+  <!-- Hair back -->
+  <path d="M40,90 Q40,30 100,25 Q160,30 160,90 Z" fill="#1e293b"/>
+  <!-- Head base -->
+  <circle cx="100" cy="110" r="60" fill="#fed7aa"/>
+  <!-- Hair top -->
+  <path d="M40,80 Q70,20 120,30 Q160,40 165,85 Q135,55 100,60 Q65,65 40,80 Z" fill="#334155"/>
+  <!-- Cheeks -->
+  <circle cx="65" cy="120" r="10" fill="#fca5a5" opacity="0.6"/>
+  <circle cx="135" cy="120" r="10" fill="#fca5a5" opacity="0.6"/>
+  <!-- Eyes -->
+  <ellipse cx="75" cy="105" rx="7" ry="9" fill="#0f172a"/>
+  <circle cx="77" cy="102" r="2.5" fill="#ffffff"/>
+  <ellipse cx="125" cy="105" rx="7" ry="9" fill="#0f172a"/>
+  <circle cx="127" cy="102" r="2.5" fill="#ffffff"/>
+  <!-- Eyebrows -->
+  <path d="M65,92 Q75,88 88,92" stroke="#334155" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <path d="M112,92 Q125,88 135,92" stroke="#334155" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <!-- Smile -->
+  <path d="M85,128 Q100,145 115,128" stroke="#dc2626" stroke-width="3.5" fill="#f87171" stroke-linecap="round"/>
+</svg>

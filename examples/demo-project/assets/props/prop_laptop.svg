@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="150" viewBox="0 0 200 150">
+  <!-- Desk Base -->
+  <ellipse cx="100" cy="135" rx="80" ry="12" fill="#0f172a" opacity="0.3"/>
+  <!-- Laptop Screen -->
+  <polygon points="35,25 165,25 155,105 45,105" fill="#1e293b" rx="4"/>
+  <polygon points="42,32 158,32 150,98 50,98" fill="#0ea5e9"/>
+  <!-- Code lines on screen -->
+  <rect x="58" y="42" width="40" height="5" rx="2" fill="#ffffff" opacity="0.9"/>
+  <rect x="105" y="42" width="30" height="5" rx="2" fill="#fde047" opacity="0.9"/>
+  <rect x="68" y="54" width="55" height="5" rx="2" fill="#a7f3d0" opacity="0.9"/>
+  <rect x="68" y="66" width="45" height="5" rx="2" fill="#fbcfe8" opacity="0.9"/>
+  <rect x="58" y="78" width="25" height="5" rx="2" fill="#ffffff" opacity="0.9"/>
+  <!-- Laptop Keyboard Base -->
+  <polygon points="20,115 180,115 160,105 40,105" fill="#64748b"/>
+  <!-- Touchpad -->
+  <rect x="85" y="110" width="30" height="4" rx="1" fill="#475569"/>
+</svg>

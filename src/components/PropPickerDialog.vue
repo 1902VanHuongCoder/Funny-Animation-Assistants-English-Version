@@ -1,10 +1,10 @@
 <template>
   <AssetBrowser
-    title="选择道具"
+    title="Select Prop"
     :assets="propStore.props"
     :all-tags="propStore.allTags"
     :type-filter-options="typeFilterOptions"
-    empty-text="暂无道具素材，请先在素材管理中添加道具"
+    empty-text="No prop assets yet. Please add props in Asset Manager first"
     :load-image="loadImage"
     :load-all-frames="loadAllFrames"
     @select="handleSelect"
@@ -28,25 +28,25 @@ const propStore = usePropStore()
 const { getImageUrl, loadImageUrl } = useAssetImage()
 
 const typeFilterOptions = [
-  { label: '全部', value: 'all' },
-  { label: '静态', value: 'static' },
-  { label: '动态', value: 'animation' }
+  { label: 'All', value: 'all' },
+  { label: 'Static', value: 'static' },
+  { label: 'Animated', value: 'animation' }
 ]
 
 function handleSelect(asset: { id: string; [key: string]: unknown }) {
-  // 从 store 获取完整的 Prop 对象
+  // Get full Prop object from store
   const prop = propStore.getProp(asset.id)
   if (prop) {
     emit('select', prop)
   }
 }
 
-// 加载图片 - 返回 Promise<string> 以兼容 AssetBrowser 组件
+// Load image - returns Promise<string> for AssetBrowser compatibility
 async function loadImage(id: string): Promise<string> {
   const prop = propStore.getProp(id)
   if (!prop) return ''
   
-  // 1. 静态道具
+  // 1. Static prop
   if (prop.type === 'static') {
     const propWithRuntime = prop as typeof prop & { _runtimeUrl?: string }
     if (propWithRuntime._runtimeUrl) {
@@ -59,8 +59,8 @@ async function loadImage(id: string): Promise<string> {
     return ''
   }
 
-  // 2. 动态道具：使用静止帧配置
-  // 2.1 自定义静止帧
+  // 2. Dynamic prop: use still frame config
+  // 2.1 Custom still frame
   if (prop.stillFrameSource === 'custom') {
     const propWithRuntime = prop as typeof prop & { _runtimeStillUrl?: string }
     if (propWithRuntime._runtimeStillUrl) {
@@ -72,7 +72,7 @@ async function loadImage(id: string): Promise<string> {
     }
   }
 
-  // 2.2 使用指定帧索引（默认第一帧）
+  // 2.2 Use specified frame index (default first frame)
   const frameIndex = prop.stillFrameIndex ?? 0
   const frame = prop.frames?.[frameIndex]
   if (frame) {
@@ -89,7 +89,7 @@ async function loadImage(id: string): Promise<string> {
   return ''
 }
 
-// 加载所有帧 URL - 用于 Hover 动画预览
+// Load all frame URLs - for hover animation preview
 async function loadAllFrames(id: string): Promise<string[]> {
   const prop = propStore.getProp(id)
   if (prop?.type !== 'animation' || !prop?.frames?.length) {

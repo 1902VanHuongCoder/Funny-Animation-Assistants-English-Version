@@ -1,10 +1,10 @@
 /**
- * AnimationSceneObjectStore — 动画编辑专用隔离 store
+ * AnimationSceneObjectStore - Isolated store dedicated to animation editing
  *
- * 实现 SceneObjectProvider 接口，从全局 sceneObjectStore 深拷贝目标对象及其子对象，
- * 提供完全独立的数据层。动画编辑期间的所有变换写入此 store，不影响全局状态。
+ * Implements SceneObjectProvider interface, deep-clones target object and its children from global sceneObjectStore,
+ * providing a completely independent data layer. All transforms during animation editing are written to this store without affecting global state.
  *
- * 用法:
+ * Usage:
  *   const animStore = createAnimationSceneObjectStore(objectIds, globalStore)
  *   const renderer = useSceneRenderer({ canvasContainer, storeOverride: animStore })
  */
@@ -16,17 +16,17 @@ import type { SceneObjectProvider } from '@/types/SceneObjectProvider'
 import { buildRenderChain } from '@/utils/renderChainUtils'
 
 export interface AnimationSceneObjectStoreOptions {
-  /** 需要包含的根对象 ID（composite 会自动收集所有后代） */
+  /** Root object ID to include (composite automatically collects all descendants) */
   rootObjectId: string
-  /** 全局 store 引用（只读取一次进行深拷贝） */
+  /** Global store reference (read only once for deep cloning) */
   globalStore: {
     objects: SceneObject[]
     getObject(id: string): SceneObject | undefined
     getSceneRenderChain(): string[]
   }
-  /** 预构建的对象列表（资源级预览，绕过从 globalStore 的拷贝） */
+  /** Prebuilt object list (resource-level preview, bypassing copy from globalStore) */
   prebuiltObjects?: SceneObject[]
-  /** 与 prebuiltObjects 对应的场景级 renderChain；不传时退化为对象列表顺序 */
+  /** Scene-level renderChain corresponding to prebuiltObjects; falls back to object list order if omitted */
   prebuiltRenderChain?: string[]
 }
 
@@ -36,8 +36,8 @@ export interface AnimationSceneObjectRuntimeStore extends SceneObjectProvider {
 }
 
 /**
- * 创建一个隔离的动画编辑 store 实例。
- * 返回的对象是 reactive 的，可直接作为 SceneObjectProvider 传入 useSceneRenderer。
+ * Create an isolated animation editing store instance.
+ * Returned object is reactive and can be passed directly as SceneObjectProvider into useSceneRenderer.
  */
 export function createAnimationSceneObjectStore(
   options: AnimationSceneObjectStoreOptions
@@ -48,13 +48,13 @@ export function createAnimationSceneObjectStore(
   let clonedRenderChain: string[]
 
   if (options.prebuiltObjects) {
-    // 资源级预览：直接使用预构建的对象
+    // Resource-level preview: directly use prebuilt objects
     clonedObjects = options.prebuiltObjects
     clonedRenderChain = options.prebuiltRenderChain
       ? [...options.prebuiltRenderChain]
       : options.prebuiltObjects.map(o => o.id)
   } else {
-    // 场景级入口：从全局 store 深拷贝
+    // Scene-level entry: deep-clone from global store
     const idsToClone = new Set<string>()
     collectObjectAndDescendants(rootObjectId, globalStore, idsToClone)
 
@@ -68,24 +68,24 @@ export function createAnimationSceneObjectStore(
 
     const globalRenderChain = globalStore.getSceneRenderChain()
     clonedRenderChain = globalRenderChain.filter(id => idsToClone.has(id))
-    // 当 rootObjectId 是 composite 子对象（不在场景级 renderChain 中）时，
-    // 上面的 filter 会过滤掉整个子树导致空渲染链、画面空白，需要兜底。
+    // When rootObjectId is a composite child (not in scene-level renderChain),
+    // the above filter strips the whole subtree causing empty render chain and blank canvas; fallback is needed.
     if (clonedRenderChain.length === 0) {
-      // 关键：让 rootObjectId 走"主画布工作路径" —— sortCompositeContainers
-      // 只会对 compositeMode === 'entity' 的 composite 安装 installRenderChainRenderer，
-      // 只有被安装的 composite 才会由 renderByRenderChain 显式调度其叶子。
-      // 若 root 是 union，union 本身既不进场景链也不会安装自定义 render，
-      // 依赖 PIXI 默认 Container.render 递归——目前这条路径会漏掉表情对象的渲染。
+      // Crucial: let rootObjectId take the "main canvas working path" - sortCompositeContainers
+      // only installs installRenderChainRenderer for composite with compositeMode === 'entity',
+      // and only installed composites have their leaves explicitly dispatched by renderByRenderChain.
+      // If root is union, union neither enters scene chain nor installs custom render,
+      // relying on PIXI default Container.render recursion - which misses expression object rendering.
       //
-      // 解决：将 root union 在隔离 store 中"虚拟提升"为 entity，
-      // 并为它构造一个 renderChain。
+      // Solution: "virtually promote" root union to entity in isolated store,
+      // and construct a renderChain for it.
       //
-      // 关键：renderChain 的顺序必须与主画布一致！
-      // 主画布中 head union 的 3 个子对象（expression + symB + symC）出现在
-      // 根 entity 的 14-leaf renderChain 中的某个连续片段内，顺序已按 Z 关系正确排列。
-      // 若直接用 buildRenderChain(clonedObjects, rootObjectId) 会按 zIndex 重新排序，
-      // 可能导致 expression 被不透明的 symbol（face/hair）覆盖而不可见。
-      // 正确做法是从全局链中**切片保留原顺序**。
+      // Crucial: renderChain order must match main canvas!
+      // In main canvas, head union's 3 children (expression + symB + symC) appear
+      // within a contiguous slice of root entity's 14-leaf renderChain, already ordered correctly by Z.
+      // If using buildRenderChain(clonedObjects, rootObjectId) directly, it would re-sort by zIndex,
+      // potentially causing expression to be hidden behind opaque symbols (face/hair).
+      // The correct approach is to slice from global chain while preserving original order.
       const rootObj = clonedObjects.find(o => o.id === rootObjectId)
       if (rootObj?.type === 'composite'
         && (rootObj as CompositeObject).compositeMode === 'union') {
@@ -126,11 +126,11 @@ export function createAnimationSceneObjectStore(
   }
 
   function getSortedObjects(): SceneObject[] {
-    // 按 renderChain 中出现的顺序排列
+    // Order by appearance in renderChain
     const orderMap = new Map<string, number>()
-    // 先处理场景级 renderChain
+    // First process scene-level renderChain
     clonedRenderChain.forEach((id, i) => orderMap.set(id, i))
-    // 再处理 composite 内部的 renderChain
+    // Then process composite internal renderChain
     for (const obj of objectsRef.value) {
       if (obj.type === 'composite') {
         const comp = obj as CompositeObject
@@ -204,11 +204,11 @@ export function createAnimationSceneObjectStore(
     id: string,
     updates: SceneObjectUpdateFor<T>,
   ): void {
-    // 隔离 store 中 setupObject 和 object 等价
+    // In isolated store, setupObject and object are equivalent
     updateObject(id, updates)
   }
 
-  // ---- 构造 reactive 对象以确保 Vue watch 可追踪 ----
+  // ---- Construct reactive object to ensure Vue watch tracking ----
   const store: AnimationSceneObjectRuntimeStore = reactive({
     objects,
     selectedObjectId,
@@ -226,7 +226,7 @@ export function createAnimationSceneObjectStore(
 }
 
 /**
- * 递归收集对象 ID 及其所有 composite 后代
+ * Recursively collect object ID and all its composite descendants
  */
 function collectObjectAndDescendants(
   objectId: string,
@@ -249,16 +249,16 @@ function collectObjectAndDescendants(
 }
 
 /**
- * 从全局 renderChain 中"切片"出 rootObjectId 子树下的叶子，保留原顺序。
+ * Slice leaves under rootObjectId subtree from global renderChain, preserving original order.
  *
- * 动机：当 rootObjectId 是 union（不自带 renderChain）时，其可渲染后代的 Z 顺序
- * 记录在**最近一个祖先 entity** 的 renderChain 中（union 的叶子被展开进祖先链）。
- * 动画编辑面板要保持与主画布一致的覆盖关系，必须沿用这个顺序，而不是按 zIndex 重排。
+ * Motivation: When rootObjectId is union (doesn't have its own renderChain), its renderable descendants' Z order
+ * is recorded in the nearest ancestor entity's renderChain (union leaves are unrolled into ancestor chain).
+ * Animation editing panel must maintain coverage consistent with main canvas, using this order rather than re-sorting by zIndex.
  *
- * 查找策略：向上走到第一个携带非空 renderChain 的祖先 entity；若找不到，
- * 则回退到场景级 renderChain（某些顶层 entity 的情形）。
+ * Search strategy: Walk up to first ancestor entity with non-empty renderChain; if not found,
+ * fall back to scene-level renderChain (for top-level entities).
  *
- * @returns 属于 idsToClone 且在 rootObjectId 子树内的叶子 ID，保持原顺序。
+ * @returns Leaf IDs belonging to idsToClone and within rootObjectId subtree, preserving original order.
  */
 function sliceGlobalRenderChainForSubtree(
   rootObjectId: string,
@@ -268,7 +268,7 @@ function sliceGlobalRenderChainForSubtree(
     getSceneRenderChain(): string[]
   },
 ): string[] {
-  // 1. 向上找到第一个带非空 renderChain 的祖先 entity
+  // 1. Walk up to find first ancestor entity with non-empty renderChain
   let chainSource: readonly string[] | null = null
   let cursor = globalStore.getObject(rootObjectId)?.parentId
   while (cursor) {
@@ -283,10 +283,10 @@ function sliceGlobalRenderChainForSubtree(
     }
     cursor = anc.parentId
   }
-  // 回退：场景级 renderChain
+  // Fallback: scene-level renderChain
     chainSource ??= globalStore.getSceneRenderChain()
 
-  // 2. 过滤保留：在 idsToClone 中、非 rootObjectId 本身、且确为子树成员的 ID
+  // 2. Filter and keep: IDs in idsToClone, not rootObjectId itself, and verified subtree members
   return chainSource.filter(id =>
     idsToClone.has(id) && id !== rootObjectId,
   )

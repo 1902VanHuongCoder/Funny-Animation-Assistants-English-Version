@@ -5,10 +5,10 @@
   >
     <div class="export-confirm-dialog">
       <div class="dialog-header">
-        <h3>导出视频</h3>
+        <h3>Export Video</h3>
         <button
           class="close-btn"
-          title="关闭"
+          title="Close"
           @click="$emit('cancel')"
         >
           ✕
@@ -17,13 +17,13 @@
       
       <div class="dialog-body">
         <p class="export-description">
-          🎬 将导出整个剧本为 MP4 视频
+          🎬 Export the full screenplay as an MP4 video
         </p>
         
-        <!-- 导出设置 -->
+        <!-- Export Settings -->
         <div class="export-settings">
           <div class="setting-item">
-            <label class="setting-label">分辨率</label>
+            <label class="setting-label">Resolution</label>
             <select
               v-model="localSettings.resolution"
               class="setting-select"
@@ -39,14 +39,14 @@
           </div>
           
           <div class="setting-item">
-            <label class="setting-label">帧率</label>
+            <label class="setting-label">Frame Rate</label>
             <div class="setting-value">
               60 FPS
             </div>
           </div>
           
           <div class="setting-item">
-            <label class="setting-label">质量</label>
+            <label class="setting-label">Quality</label>
             <select
               v-model="localSettings.quality"
               class="setting-select"
@@ -62,22 +62,22 @@
           </div>
 
           <div class="setting-item">
-            <label class="setting-label">编码器</label>
+            <label class="setting-label">Encoder</label>
             <select
               v-model="localSettings.encoder"
               class="setting-select"
             >
               <option value="hardware">
-                硬件编码 (快速)
+                Hardware Encoding (Fast)
               </option>
               <option value="software">
-                软件编码 (高画质)
+                Software Encoding (High Quality)
               </option>
             </select>
           </div>
         </div>
 
-        <!-- 字幕选项 -->
+        <!-- Subtitle Options -->
         <div class="subtitle-section">
           <label class="subtitle-label">
             <input
@@ -85,14 +85,14 @@
               type="checkbox"
               class="subtitle-checkbox"
             >
-            <span class="label-text">在视频底部显示字幕</span>
+            <span class="label-text">Show subtitles at the bottom of the video</span>
           </label>
           <div
             v-if="localSettings.showSubtitles"
             class="subtitle-style-panel"
           >
             <div class="subtitle-style-row">
-              <label class="subtitle-style-label">字体</label>
+              <label class="subtitle-style-label">Font</label>
               <select
                 v-model="localSettings.subtitleStyle.fontFamily"
                 class="subtitle-style-select"
@@ -108,7 +108,7 @@
             </div>
 
             <div class="subtitle-style-row">
-              <label class="subtitle-style-label">字号</label>
+              <label class="subtitle-style-label">Font Size</label>
               <select
                 :value="subtitleFontSizePresetMatch"
                 class="subtitle-style-select"
@@ -125,7 +125,7 @@
                   v-if="!FONT_SIZE_PRESETS.includes(localSettings.subtitleStyle.fontSize)"
                   :value="localSettings.subtitleStyle.fontSize"
                 >
-                  {{ localSettings.subtitleStyle.fontSize }} (自定义)
+                  {{ localSettings.subtitleStyle.fontSize }} (Custom)
                 </option>
               </select>
             </div>
@@ -135,13 +135,13 @@
                 class="subtitle-preview-text"
                 :style="subtitlePreviewStyle"
               >
-                字幕样例文字
+                Subtitle Sample Text
               </div>
             </div>
 
             <div class="subtitle-style-grid">
               <label class="subtitle-color-field">
-                <span>文字颜色</span>
+                <span>Text Color</span>
                 <input
                   v-model="localSettings.subtitleStyle.textColor"
                   type="color"
@@ -149,7 +149,7 @@
                 >
               </label>
               <label class="subtitle-color-field">
-                <span>背景颜色</span>
+                <span>Background Color</span>
                 <input
                   v-model="localSettings.subtitleStyle.backgroundColor"
                   type="color"
@@ -159,7 +159,7 @@
             </div>
 
             <label class="subtitle-range-field">
-              <span>背景透明度 {{ Math.round(localSettings.subtitleStyle.backgroundOpacity * 100) }}%</span>
+              <span>Background Opacity {{ Math.round(localSettings.subtitleStyle.backgroundOpacity * 100) }}%</span>
               <input
                 v-model.number="localSettings.subtitleStyle.backgroundOpacity"
                 type="range"
@@ -170,7 +170,7 @@
             </label>
 
             <label class="subtitle-range-field">
-              <span>字幕宽度 {{ localSettings.subtitleStyle.maxWidthPercent }}%</span>
+              <span>Subtitle Width {{ localSettings.subtitleStyle.maxWidthPercent }}%</span>
               <input
                 v-model.number="localSettings.subtitleStyle.maxWidthPercent"
                 type="range"
@@ -181,7 +181,7 @@
             </label>
 
             <label class="subtitle-range-field">
-              <span>底部距离 {{ localSettings.subtitleStyle.bottomPercent }}%</span>
+              <span>Bottom Offset {{ localSettings.subtitleStyle.bottomPercent }}%</span>
               <input
                 v-model.number="localSettings.subtitleStyle.bottomPercent"
                 type="range"
@@ -193,7 +193,7 @@
           </div>
         </div>
         
-        <!-- 水印选项 -->
+        <!-- Watermark Options -->
         <div class="watermark-section">
           <label class="watermark-label">
             <input
@@ -201,19 +201,18 @@
               type="checkbox"
               class="watermark-checkbox"
             >
-            <span class="label-text">在视频右下角显示项目水印</span>
+            <span class="label-text">Show project watermark in bottom-right corner</span>
           </label>
         </div>
         
-        <!-- 预估信息 -->
+        <!-- Estimated Info -->
         <div class="export-estimate">
           <div class="estimate-item">
-            <span class="label">预估时长:</span>
+            <span class="label">Estimated Duration:</span>
             <span class="value">{{ estimatedDuration }}</span>
           </div>
-          <!-- 预估文件大小已移除，因为 VBR 编码难以准确预估 -->
           <div class="estimate-item">
-            <span class="label">格式:</span>
+            <span class="label">Format:</span>
             <span class="value">MP4 (H.264 + AAC)</span>
           </div>
         </div>
@@ -224,13 +223,13 @@
           class="btn btn-secondary"
           @click="$emit('cancel')"
         >
-          取消
+          Cancel
         </button>
         <button
           class="btn btn-primary"
           @click="handleConfirm"
         >
-          开始导出
+          Start Export
         </button>
       </div>
     </div>
@@ -263,17 +262,17 @@ const emit = defineEmits<{
 const episodeStore = useEpisodeStore()
 const { loadAudioUrl, getAudioUrl } = useAssetAudio()
 
-// 本地设置（可编辑）
+// Local settings (editable)
 const localSettings = ref<ExportSettings>(normalizeExportSettings(props.settings))
 const resolvedDurationMs = ref<number | null>(null)
 const isResolvingDuration = ref(false)
 
 const subtitleFontOptions = [
-  { value: 'Noto Sans SC', label: '思源黑体' },
-  { value: 'Noto Serif SC', label: '思源宋体' },
-  { value: 'LXGW WenKai', label: '霞鹜文楷' },
-  { value: 'ZCOOL QingKe HuangYou', label: '站酷庆科黄油体' },
-  { value: 'Ma Shan Zheng', label: '马善政楷书' },
+  { value: 'Noto Sans SC', label: 'Noto Sans (Sans-serif)' },
+  { value: 'Noto Serif SC', label: 'Noto Serif (Serif)' },
+  { value: 'LXGW WenKai', label: 'LXGW WenKai' },
+  { value: 'ZCOOL QingKe HuangYou', label: 'ZCOOL QingKe HuangYou' },
+  { value: 'Ma Shan Zheng', label: 'Ma Shan Zheng' },
 ]
 
 const subtitlePreviewStyle = computed(() => {
@@ -313,7 +312,7 @@ function hexToRgba(hex: string, opacity: number): string {
 
 function preloadSubtitlePreviewFont() {
   if (!localSettings.value.showSubtitles) return
-  void ensureFontLoaded(localSettings.value.subtitleStyle.fontFamily, '字幕样例文字')
+  void ensureFontLoaded(localSettings.value.subtitleStyle.fontFamily, 'Subtitle Sample Text')
 }
 
 function handleSubtitleFontSizeChange(value: string) {
@@ -398,10 +397,10 @@ async function refreshEstimatedDuration() {
 
 let latestDurationRun: symbol | null = null
 
-// 计算预估时长
+// Calculate estimated duration
 const estimatedDuration = computed(() => {
   const duration = resolvedDurationMs.value ?? calculateStoredDurationMs()
-  const prefix = isResolvingDuration.value && resolvedDurationMs.value === null ? '计算中... ' : ''
+  const prefix = isResolvingDuration.value && resolvedDurationMs.value === null ? 'Calculating... ' : ''
   return `${prefix}${formatDuration(duration)}`
 })
 
@@ -420,7 +419,7 @@ watch(
   preloadSubtitlePreviewFont
 )
 
-// 确认导出
+// Confirm export
 const handleConfirm = () => {
   emit('confirm', { ...localSettings.value })
 }

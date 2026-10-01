@@ -1,6 +1,6 @@
 <template>
   <div class="action-list-panel">
-    <!-- 动作列表 -->
+    <!-- Action list -->
     <div class="action-list">
       <div
         v-for="(action, index) in sortedActions"
@@ -11,7 +11,7 @@
         @click="handleSelectAction(action)"
         @mouseenter="handleHoverAction(action)"
       >
-        <!-- 动作图标 -->
+        <!-- Action icon -->
         <div
           class="action-icon"
           :class="getActionIconClass(action.type)"
@@ -23,7 +23,7 @@
           >|</span>
         </div>
 
-        <!-- 动作信息 -->
+        <!-- Action info -->
         <div class="action-info">
           <div class="action-time">
             #{{ action.slotIndex + 1 }}
@@ -36,10 +36,10 @@
           </div>
         </div>
 
-        <!-- 删除按钮 -->
+        <!-- Delete button -->
         <button
           class="delete-btn"
-          title="删除动作"
+          title="Delete action"
           @click.stop="handleDeleteAction(action, index)"
         >
           ×
@@ -50,9 +50,9 @@
         v-if="sortedActions.length === 0"
         class="empty-state"
       >
-        <p>暂无动作</p>
+        <p>No actions</p>
         <p class="hint">
-          在画布上操作对象将自动录制为动作
+          Operating objects on the canvas will automatically record as actions
         </p>
       </div>
     </div>
@@ -80,7 +80,7 @@ interface LegacyTriggerAnimParams {
 
 const props = defineProps<{
   actions: Action[]
-  blockDuration: number // Block总时长（毫秒）
+  blockDuration: number // Block total duration (ms)
   selectedActionId?: string | null
 }>()
 
@@ -94,40 +94,35 @@ const emit = defineEmits<{
 const sceneObjectStore = useSceneObjectStore()
 
 
-// 监听选中动作变化，自动滚动到视口中间 (已移除：根据需求取消关联滚动)
-// watch(() => props.selectedActionId, async (newId) => {
-//   ...
-// })
-
-// 按槽位索引排序的动作列表
+// Action list sorted by slot index
 const sortedActions = computed(() => {
   return [...props.actions].sort((a, b) => a.slotIndex - b.slotIndex)
 })
 
-// 判断是否为瞬时动作
+// Check if point action
 function isPointAction(action: Action): boolean {
   return action.category === 'point'
 }
 
-// 获取动作图标样式类
+// Get action icon style class
 function getActionIconClass(type: string): string {
   return `action-icon-${type}`
 }
 
-// 获取目标对象名称
+// Get target object name
 function getTargetName(target: string): string {
-  // 如果是相机
+  // If camera
   if (target === 'camera') {
-    return '相机'
+    return 'Camera'
   }
   if (target === SCENE_ACTION_TARGET) {
-    return '当前场景'
+    return 'Current Scene'
   }
 
-  // v7.0: target 现在是实例ID，直接通过 sceneObjectStore 查找
+  // v7.0: target is instance ID, query directly through sceneObjectStore
   const obj = sceneObjectStore.getObject(target)
   if (obj) {
-    // v7.1: 优先使用实例别名（确保非空字符串）
+    // v7.1: Prioritize instance alias (ensure non-empty string)
     const alias = obj.alias
     if (alias?.trim()) {
       return alias
@@ -137,90 +132,90 @@ function getTargetName(target: string): string {
     }
   }
 
-  // 如果找不到对象，尝试从 target 中提取可读名称
-  // target 可能是 "char_xxx" 格式的ID，返回更友好的显示
+  // If object not found, extract readable display name from target
+  // target may be in "char_xxx" format, show friendly text
   if (target.startsWith('char_')) {
-    return '角色 ' + target.substring(5, 13) + '...'
+    return 'Character ' + target.substring(5, 13) + '...'
   }
   if (target.startsWith('bg_')) {
-    return '背景 ' + target.substring(3, 11) + '...'
+    return 'Background ' + target.substring(3, 11) + '...'
   }
   
   return target
 }
 
-// 获取动作描述 (v6.3)
+// Get action description (v6.3)
 function getActionDescription(action: Action): string {
   switch (action.type) {
     case 'set_transform': {
       const params = action.params as LegacySetTransformParams
       const transformParts: string[] = []
-      if (params.alpha !== undefined) transformParts.push('透明度')
-      if (params.visible !== undefined) transformParts.push(params.visible ? '显示' : '隐藏')
-      if (params.flipX !== undefined) transformParts.push('翻转')
-      if (params.zIndex !== undefined) transformParts.push('层级')
-      return transformParts.length > 0 ? transformParts.join('/') : '视觉变换'
+      if (params.alpha !== undefined) transformParts.push('Opacity')
+      if (params.visible !== undefined) transformParts.push(params.visible ? 'Show' : 'Hide')
+      if (params.flipX !== undefined) transformParts.push('Flip')
+      if (params.zIndex !== undefined) transformParts.push('Layer')
+      return transformParts.length > 0 ? transformParts.join('/') : 'Visual Transform'
     }
 
     case 'camera_cut':
-      return '镜头切'
+      return 'Camera Cut'
     case 'set_scene_structure':
-      return '结构变更'
+      return 'Structure Change'
     case 'tween_transform': {
       const tweenAction = action
       const tweenParts: string[] = []
       if (tweenAction.params?.x !== undefined || tweenAction.params?.y !== undefined) {
-        tweenParts.push('移动')
+        tweenParts.push('Move')
       }
       if (tweenAction.params?.scaleX !== undefined || tweenAction.params?.scaleY !== undefined) {
-        tweenParts.push('缩放')
+        tweenParts.push('Scale')
       }
       if (tweenAction.params?.rotation !== undefined) {
-        tweenParts.push('旋转')
+        tweenParts.push('Rotate')
       }
-      return tweenParts.length > 0 ? `补间: ${tweenParts.join('/')}` : '补间变换'
+      return tweenParts.length > 0 ? `Tween: ${tweenParts.join('/')}` : 'Tween Transform'
     }
     case 'camera_move':
-      return '运镜'
+      return 'Camera Move'
     case 'camera_shake': {
       const shakeAction = action
-      return `震动: ${shakeAction.params?.intensity || 0}px`
+      return `Shake: ${shakeAction.params?.intensity || 0}px`
     }
     case 'camera_follow': {
       const followAction = action
       const followTargetId = followAction.params?.followTarget || ''
-      // v7.0: 使用 getTargetName 获取别名
-      const followTargetName = followTargetId ? getTargetName(followTargetId) : '未设置'
-      return `跟随: ${followTargetName}`
+      // v7.0: Use getTargetName for alias
+      const followTargetName = followTargetId ? getTargetName(followTargetId) : 'Not set'
+      return `Follow: ${followTargetName}`
     }
     case 'set_anim': {
       const params = action.params as unknown as LegacyTriggerAnimParams
       const animCmd = params.action ?? 'play'
-      const animPartId = params.partId ?? (params.partId === '' ? '全部' : '默认')
+      const animPartId = params.partId ?? (params.partId === '' ? 'All' : 'Default')
       // Try to find part name if possible, otherwise use ID
       // But here we rely on what's stored. 
       // Ideally we would look up part name but ID is acceptable for now.
-      return `动画: ${animCmd} (${animPartId})`
+      return `Animation: ${animCmd} (${animPartId})`
     }
     default:
-      return '未知动作'
+      return 'Unknown Action'
   }
 }
 
 
-// 处理选中动作
+// Handle select action
 function handleSelectAction(action: Action) {
   emit('selectAction', action)
 }
 
-// 处理悬停动作
+// Handle hover action
 function handleHoverAction(action: Action) {
   emit('hoverAction', action)
 }
 
-// 处理删除动作
+// Handle delete action
 function handleDeleteAction(action: Action, index: number) {
-  // 发出请求确认事件，让父组件显示确认对话框
+  // Emit request confirm event to let parent component display confirm dialog
   emit('requestDeleteConfirm', action, index)
 }
 </script>

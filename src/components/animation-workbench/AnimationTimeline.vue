@@ -1,25 +1,25 @@
 <!--
-  AnimationTimeline.vue — 底部时间轴组件（HTML Canvas 渲染）
+  AnimationTimeline.vue — Bottom timeline component (HTML Canvas rendering)
   
-  v5.0: 轨道行模式 — 一行一条 Track（Adobe Animate 风格）
-  - 时间刻度尺 + 播放头（可拖拽 Scrub）
-  - 轨道行：每行一条 AnimationTrack，左侧显示目标名+轨道类型
-  - transform / visibility: ◆ 关键帧菱形
-  - frame_sequence / effect: 整条色带
-  - 关键帧交互：单击选中/拖拽改时间/多选/删除
-  - 播放控制条：⏮ ▶/⏸ ⏭ | 时间显示 | 循环
+  v5.0: Track row mode — One track per row (Adobe Animate style)
+  - Time ruler + playhead (draggable scrub)
+  - Track row: Each row represents one AnimationTrack, displays target name + track type on left
+  - transform / visibility: ◆ keyframe diamond
+  - frame_sequence / effect: colored ribbon strip
+  - Keyframe interaction: click select / drag time / multiselect / delete
+  - Playback control bar: ⏮ ▶/⏸ ⏭ | time display | loop
 -->
 <!-- eslint-disable vue/no-mutating-props -->
 <template>
   <div ref="rootRef" class="animation-timeline" tabindex="0" @contextmenu.prevent="onContextMenu">
-    <!-- 播放控制栏 -->
+    <!-- Playback control bar -->
     <div class="timeline-controls">
       <div class="controls-left">
-        <button class="btn-ctrl" title="上一帧 (←)" @click="ctx.seekPrevKeyframe()">⏮</button>
-        <button class="btn-ctrl btn-play" :title="ctx.isPlaying.value ? '暂停 (Space)' : '播放 (Space)'" @click="ctx.togglePlay()">
+        <button class="btn-ctrl" title="Previous Frame (←)" @click="ctx.seekPrevKeyframe()">⏮</button>
+        <button class="btn-ctrl btn-play" :title="ctx.isPlaying.value ? 'Pause (Space)' : 'Play (Space)'" @click="ctx.togglePlay()">
           {{ ctx.isPlaying.value ? '⏸' : '▶' }}
         </button>
-        <button class="btn-ctrl" title="下一帧 (→)" @click="ctx.seekNextKeyframe()">⏭</button>
+        <button class="btn-ctrl" title="Next Frame (→)" @click="ctx.seekNextKeyframe()">⏭</button>
         <span class="time-label">
           {{ formatTimeMs(ctx.playheadPosition.value * ctx.trackDuration.value) }}
           / {{ ctx.trackDuration.value }}ms
@@ -27,85 +27,85 @@
         <span class="progress-label">{{ Math.round(ctx.playheadPosition.value * 100) }}%</span>
         <span class="control-divider" />
         <label class="preview-range-label">
-          预览
+          Preview
           <select :value="previewMode" class="preview-range-select" @change="onPreviewModeChange">
-            <option value="current">当前轨道</option>
-            <option value="all">全部轨道</option>
-            <option value="custom">选择轨道...</option>
+            <option value="current">Current Track</option>
+            <option value="all">All Tracks</option>
+            <option value="custom">Select Tracks...</option>
           </select>
         </label>
         <button
           v-if="previewMode === 'custom'"
           class="btn-ctrl"
-          title="选择参与预览的轨道"
+          title="Select tracks to include in preview"
           @click="showPreviewPicker = !showPreviewPicker"
         >
-          {{ previewTrackIndexes.length }} 条
+          {{ previewTrackIndexes.length }} tracks
         </button>
       </div>
       <div class="track-toolbar">
-        <div class="track-toolbar-title">轨道</div>
+        <div class="track-toolbar-title">Tracks</div>
         <div class="add-track-dropdown-wrap">
-          <button class="btn-track-add" title="新增轨道" @click="showAddTrackMenu = !showAddTrackMenu">+ 新增</button>
+          <button class="btn-track-add" title="Add Track" @click="showAddTrackMenu = !showAddTrackMenu">+ Add</button>
           <div v-if="showAddTrackMenu" class="add-track-menu">
             <button class="add-track-menu-item" @click="onAddTrackType('transform')">
-              <span class="add-track-dot" style="background:#3B82F6" />变换
+              <span class="add-track-dot" style="background:#3B82F6" />Transform
             </button>
             <button class="add-track-menu-item" @click="onAddTrackType('visibility')">
-              <span class="add-track-dot" style="background:#22C55E" />透明度
+              <span class="add-track-dot" style="background:#22C55E" />Opacity
             </button>
             <button class="add-track-menu-item" @click="onAddTrackType('effect')">
-              <span class="add-track-dot" style="background:#A855F7" />特效
+              <span class="add-track-dot" style="background:#A855F7" />Effect
             </button>
             <button class="add-track-menu-item" @click="onAddTrackType('frame_sequence')">
-              <span class="add-track-dot" style="background:#9CA3AF" />帧序列
+              <span class="add-track-dot" style="background:#9CA3AF" />Frame Seq
             </button>
           </div>
         </div>
         <template v-if="hasSelectedTrack">
           <span class="toolbar-sep" />
-          <button class="btn-track-tool" title="在右侧编辑轨道" @click="onToolbarFocusTrack">📝 编辑</button>
-          <button class="btn-track-tool" title="复制轨道" @click="onToolbarDuplicateTrack">📋 复制</button>
-          <button class="btn-track-tool danger" title="删除轨道" @click="onToolbarDeleteTrack">删除</button>
+          <button class="btn-track-tool" title="Edit track on the right" @click="onToolbarFocusTrack">📝 Edit</button>
+          <button class="btn-track-tool" title="Duplicate track" @click="onToolbarDuplicateTrack">📋 Duplicate</button>
+          <button class="btn-track-tool danger" title="Delete track" @click="onToolbarDeleteTrack">Delete</button>
         </template>
         <template v-if="hasKeyframableTrack">
           <span class="toolbar-sep" />
-          <div class="track-toolbar-title">关键帧</div>
+          <div class="track-toolbar-title">Keyframes</div>
           <button
             class="btn-track-tool"
-            title="在播放头位置添加关键帧"
+            title="Add keyframe at playhead position"
             @click="onToolbarAddKeyframe"
-          >+ 添加</button>
+          >+ Add</button>
           <button
             class="btn-track-tool"
-            title="复制当前选中关键帧 (Ctrl+C)"
+            title="Copy selected keyframe (Ctrl+C)"
             :disabled="!hasSelectedKeyframe"
             @click="onToolbarCopyKeyframe"
-          >📋 复制</button>
+          >📋 Duplicate</button>
           <button
             class="btn-track-tool"
-            title="将当前选中关键帧直接复制到播放头"
+            title="Duplicate selected keyframe directly to playhead"
             :disabled="!canDuplicateSelectedKeyframe"
             @click="onToolbarDuplicateKeyframe"
-          >📑 复制到此处</button>
+          >📑 Copy to Here</button>
           <button
             class="btn-track-tool"
-            title="粘贴关键帧到播放头 (Ctrl+V)"
+            title="Paste keyframe to playhead (Ctrl+V)"
             :disabled="!canPasteKeyframeToCurrentTrack"
             @click="onToolbarPasteKeyframe"
-          >📌 粘贴</button>
+          >📌 Paste</button>
           <button
             class="btn-track-tool danger"
-            title="删除当前选中关键帧"
+            title="Delete selected keyframe"
             :disabled="!canDeleteSelectedKeyframe"
             @click="onToolbarDeleteKeyframe"
-          >删除帧</button>
+          >Delete Frame</button>
         </template>
         <div v-if="showPreviewPicker" class="preview-picker">
           <div class="preview-picker-actions">
-            <button @click="selectAllPreviewTracks">全选</button>
-            <button @click="clearPreviewTracks">清空</button>
-            <button @click="selectCurrentPreviewTrack">仅当前</button>
+            <button @click="selectAllPreviewTracks">Select All</button>
+            <button @click="clearPreviewTracks">Clear</button>
+            <button @click="selectCurrentPreviewTrack">Current Only</button>
           </div>
           <label
             v-for="{ track, index } in ctx.allTracks.value"
@@ -123,11 +123,11 @@
         </div>
       </div>
       <div class="controls-right">
-        <button class="btn-ctrl btn-collapse" title="折叠时间轴" @click="emit('collapse')">▾</button>
+        <button class="btn-ctrl btn-collapse" title="Collapse timeline" @click="emit('collapse')">▾</button>
       </div>
     </div>
 
-    <!-- 时间轴画布 -->
+    <!-- Timeline canvas -->
     <div ref="canvasWrapRef" class="timeline-canvas-wrap">
       <canvas
         ref="canvasRef"
@@ -147,53 +147,53 @@
         @contextmenu.prevent
       >
         <div v-if="contextMenuCanAddKeyframe || contextMenuHasKeyframe || contextMenuCanPasteKeyframe" class="context-menu-group">
-          <div class="context-menu-title">关键帧</div>
+          <div class="context-menu-title">Keyframes</div>
           <button
             v-if="contextMenuCanAddKeyframe"
             class="context-menu-item"
             @click="onContextAddKeyframe"
-          >添加关键帧</button>
+          >Add Keyframe</button>
           <button
             v-if="contextMenuCanCopyKeyframe"
             class="context-menu-item"
             @click="onContextCopyKeyframe"
-          >复制关键帧</button>
+          >Copy Keyframe</button>
           <button
             v-if="contextMenuCanPasteKeyframe"
             class="context-menu-item"
             @click="onContextPasteKeyframe"
-          >粘贴关键帧</button>
+          >Paste Keyframe</button>
           <button
             v-if="contextMenuCanSplitKeyframe"
             class="context-menu-item"
             @click="onContextSplitKeyframe"
-          >改为瞬变帧</button>
+          >Convert to Split Keyframe</button>
           <button
             v-if="contextMenuCanMergeKeyframe"
             class="context-menu-item"
             @click="onContextMergeKeyframe"
-          >改为平滑帧</button>
+          >Convert to Smooth Keyframe</button>
           <button
             v-if="contextMenuHasKeyframe"
             class="context-menu-item danger"
             :disabled="!contextMenuCanDeleteKeyframe"
             @click="onContextDeleteKeyframe"
-          >删除关键帧</button>
+          >Delete Keyframe</button>
         </div>
         <span v-if="contextMenuCanAddKeyframe || contextMenuHasKeyframe || contextMenuCanPasteKeyframe" class="context-menu-divider" />
         <div class="context-menu-group">
-          <div class="context-menu-title">轨道</div>
-          <button class="context-menu-item" @click="onContextFocusTrack">编辑轨道</button>
+          <div class="context-menu-title">Tracks</div>
+          <button class="context-menu-item" @click="onContextFocusTrack">Edit Track</button>
           <button
             v-if="contextMenuCanDuplicateTrack"
             class="context-menu-item"
             @click="onContextDuplicateTrack"
-          >复制轨道</button>
+          >Duplicate Track</button>
           <button
             v-if="contextMenuCanDeleteTrack"
             class="context-menu-item danger"
             @click="onContextDeleteTrack"
-          >删除轨道</button>
+          >Delete Track</button>
         </div>
       </div>
     </Teleport>
@@ -224,7 +224,7 @@ interface TimelineContextMenuState {
   trackIndex: number
   keyframeIndex: number | null
   time: number
-  /** true 表示未直接命中轨道/关键帧，由回退选中的轨道提供上下文时为 true 。 */
+  /** true indicates no direct hit on track/keyframe, fallback selected track provides context. */
   fromFallback: boolean
 }
 
@@ -269,10 +269,10 @@ const TRACK_COLORS: Record<AnimationTrackType, string> = {
 }
 
 const TRACK_LABELS: Record<AnimationTrackType, string> = {
-  transform: '变换',
-  visibility: '透明度',
-  frame_sequence: '帧序列',
-  effect: '特效',
+  transform: 'Transform',
+  visibility: 'Opacity',
+  frame_sequence: 'Frame Seq',
+  effect: 'Effect',
 }
 
 const CONTEXT_MENU_GAP = 8
@@ -290,10 +290,10 @@ let dragKeyframeIndex = -1
 // Selected keyframes (for multi-select)
 const selectedKeyframes = ref<Set<number>>(new Set())
 
-// 预览轨道选择器浮层
+// Preview tracks selector popover
 const showPreviewPicker = ref(false)
 
-// 新增轨道下拉菜单
+// Add track dropdown menu
 const showAddTrackMenu = ref(false)
 const contextMenu = ref<TimelineContextMenuState | null>(null)
 
@@ -302,7 +302,7 @@ function onAddTrackType(trackType: AnimationTrackType) {
   emit('add-track', trackType)
 }
 
-// ===== 工具栏：选中轨道派生状态 =====
+// ===== Toolbar: Selected track derived state =====
 const hasSelectedTrack = computed(() => props.ctx.currentTrackIndex.value >= 0)
 const hasKeyframableTrack = computed(() => {
   const track = props.ctx.currentTrackAny.value
@@ -327,7 +327,7 @@ const contextMenuTrack = computed(() => {
 const contextMenuCanAddKeyframe = computed(() => {
   const track = contextMenuTrack.value
   if (!track || !isKeyframable(track.trackType)) return false
-  // 回退菜单（未直接命中轨道行）时，隐藏添加关键帧（使用轨道上的点可能不是用户预期的位置）。
+  // In fallback menu (no direct track row hit), hide add keyframe (point on track might not be user expected position).
   return !contextMenu.value?.fromFallback
 })
 const contextMenuHasKeyframe = computed(() => contextMenu.value?.keyframeIndex != null)
@@ -347,21 +347,21 @@ const contextMenuKeyframeIsSplit = computed(() => {
 const contextMenuCanSplitKeyframe = computed(() => {
   const track = contextMenuTrack.value
   if (!track) return false
-  // 仅 transform / visibility 支持拆分
+  // Only transform / visibility support split
   if (track.trackType !== 'transform' && track.trackType !== 'visibility') return false
   return contextMenuHasKeyframe.value && !contextMenuKeyframeIsSplit.value
 })
 const contextMenuCanMergeKeyframe = computed(() =>
   contextMenuHasKeyframe.value && contextMenuKeyframeIsSplit.value,
 )
-// 粘贴关键帧：剪贴板非空 + 上下文轨道可承载关键帧 + 非回退菜单
+// Paste keyframe: clipboard non-empty + context track can hold keyframes + non-fallback menu
 const contextMenuCanPasteKeyframe = computed(() => {
   if (contextMenu.value?.fromFallback) return false
   const track = contextMenuTrack.value
   if (!track || !isKeyframable(track.trackType)) return false
   return props.ctx.keyframeClipboardType.value === track.trackType
 })
-// 回退菜单时隐藏所有破坏性/状态性的轨道操作，避免对非预期轨道执行删除/复制等动作。
+// Hide destructive/stateful track operations in fallback menu to prevent unintended actions.
 const contextMenuCanDeleteTrack = computed(() => !contextMenu.value?.fromFallback)
 const contextMenuCanDuplicateTrack = computed(() => !contextMenu.value?.fromFallback)
 
@@ -429,7 +429,7 @@ function getTargetSecondaryLabel(track: AnimationTrack): string | undefined {
 function getTrackTypeLabel(track: AnimationTrack): string {
   if (track.trackType === 'effect') {
     const effectTrack = track
-    return `特效:${effectTrack.effectParams.type}`
+    return `Effect:${effectTrack.effectParams.type}`
   }
   return TRACK_LABELS[track.trackType] ?? track.trackType
 }
@@ -506,9 +506,9 @@ function resizeCanvas() {
   if (!canvas || !wrap) return
 
   dpr = window.devicePixelRatio || 1
-  // 使用 canvas 自身的 rect 而非 wrap 的 rect，
-  // 因为 wrap 的 scrollbar-gutter: stable both-edges 会在两侧预留 gutter 空间，
-  // 导致 wrap.width > canvas.width，使绘图坐标系与 getCanvasPos 的点击坐标系产生偏移。
+  // Use canvas rect instead of wrap rect,
+  // because scrollbar-gutter: stable both-edges reserves gutter space on both sides,
+  // causing wrap.width > canvas.width, creating offset between draw and click coordinate systems.
   const rect = canvas.getBoundingClientRect()
   canvasWidth = rect.width
   const trackCount = Math.max(1, props.ctx.allTracks.value.length)
@@ -660,8 +660,8 @@ function drawTrackKeyframes(
     const stroke = isSelected ? '#1d4ed8' : color
 
     if (isSplit) {
-      // 拆分关键帧：左半菱形 = valueIn，右半菱形 = valueOut（deeper 色）
-      // 左半（valueIn）
+      // Split keyframe: left diamond = valueIn, right diamond = valueOut (deeper color)
+      // Left half (valueIn)
       c.beginPath()
       c.moveTo(x, centerY - DIAMOND_SIZE)
       c.lineTo(x, centerY + DIAMOND_SIZE)
@@ -674,7 +674,7 @@ function drawTrackKeyframes(
         c.lineWidth = 1.5
         c.stroke()
       }
-      // 右半（valueOut，用稍深颜色叠加透明度以示区分）
+      // Right half (valueOut, distinguished with deeper color overlay)
       c.beginPath()
       c.moveTo(x, centerY - DIAMOND_SIZE)
       c.lineTo(x + DIAMOND_SIZE, centerY)
@@ -687,7 +687,7 @@ function drawTrackKeyframes(
         c.lineWidth = 1.5
         c.stroke()
       }
-      // 中间分隔线
+      // Center dividing line
       c.beginPath()
       c.moveTo(x, centerY - DIAMOND_SIZE)
       c.lineTo(x, centerY + DIAMOND_SIZE)
@@ -718,7 +718,7 @@ function drawTrackKeyframes(
   })
 }
 
-/** 将色值(#RRGGBB)加深 ~20% 用作 valueOut 半侧的视觉区分 */
+/** Darken hex color (#RRGGBB) ~20% for valueOut half visual distinction */
 function darkenColor(hex: string): string {
   if (!hex.startsWith('#') || hex.length !== 7) return hex
   const r = Math.max(0, parseInt(hex.slice(1, 3), 16) - 50)
@@ -856,7 +856,7 @@ function onPointerDown(e: PointerEvent) {
   closeContextMenu()
   const pos = getCanvasPos(e)
 
-  // 关闭浮层
+  // Close popover
   showPreviewPicker.value = false
   showAddTrackMenu.value = false
 
@@ -916,7 +916,7 @@ function onPointerDown(e: PointerEvent) {
   }
 }
 
-// ===== 工具栏操作 =====
+// ===== Toolbar Operations =====
 
 function onToolbarFocusTrack() {
   const trackIndex = props.ctx.currentTrackIndex.value
@@ -937,7 +937,7 @@ function onToolbarDeleteTrack() {
   emit('delete-track', trackIndex)
 }
 
-// ---- 关键帧工具栏操作 ----
+// ---- Keyframe Toolbar Operations ----
 
 function currentTrackKeyframeCount(): number {
   const track = props.ctx.currentTrackAny.value
@@ -1016,8 +1016,8 @@ function onContextMenu(e: MouseEvent) {
     ? props.ctx.allTracks.value.find(item => item.index === hit.trackIndex)
     : getTrackEntryAtY(pos.y)
   const hitDirectly = !!trackEntry
-  // 回退：点击位置未命中轨道（标尺、空白、控制栏等）时，使用当前选中的轨道，
-  // 保证右键在时间轴任何位置都能弹出菜单。
+  // Fallback: when click misses tracks (ruler, empty area, controls), use currently selected track,
+  // ensuring right click pops up menu anywhere on timeline.
   if (!trackEntry) {
     const currentIdx = props.ctx.currentTrackIndex.value
     if (currentIdx != null && currentIdx >= 0) {
@@ -1043,7 +1043,7 @@ function onContextMenu(e: MouseEvent) {
     time,
     fromFallback: !hitDirectly,
   }
-  // 只有在直接命中轨道/关键帧时才变更选中状态；回退菜单仅展示，不改动当前轨道/播放头。
+  // Change selection only on direct hit; fallback menu displays without altering track/playhead.
   if (hitDirectly) {
     selectContextTrackAndKeyframe(contextMenu.value)
     emit('track-selected', trackEntry.index)
@@ -1089,7 +1089,7 @@ function onContextPasteKeyframe() {
   const menu = contextMenu.value
   if (!menu || !contextMenuCanPasteKeyframe.value) return
   props.ctx.selectTrack(menu.trackIndex)
-  // 粘贴到右键点击位置（若回退/无效时间则保持当前播放头）
+  // Paste at right-click position (keep playhead if fallback/invalid time)
   if (Number.isFinite(menu.time)) props.ctx.seekTo(menu.time)
   props.ctx.pasteKeyframe()
   closeContextMenu()
@@ -1133,7 +1133,7 @@ function onContextDeleteTrack() {
   closeContextMenu()
 }
 
-// ===== 双击添加关键帧 =====
+// ===== Double Click Add Keyframe =====
 
 function onDblClick(e: MouseEvent) {
   const pos = getCanvasPos(e)

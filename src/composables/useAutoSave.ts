@@ -1,6 +1,6 @@
 /**
- * 自动保存功能
- * 监听各个 Store 的变化，定期自动保存项目
+ * Auto-save functionality
+ * Watches Store changes and periodically auto-saves project
  */
 
 import { watch } from 'vue'
@@ -11,7 +11,7 @@ import { useExpressionStore } from '@/stores/expressionStore'
 import { useProjectStore } from '@/stores/projectStore'
 import { useSceneStore } from '@/stores/sceneStore'
 
-// 防抖函数
+// Debounce function
 function debounce<T extends (...args: unknown[]) => unknown>(
   func: T,
   wait: number
@@ -31,8 +31,8 @@ function debounce<T extends (...args: unknown[]) => unknown>(
 }
 
 /**
- * 启用自动保存
- * @param interval 自动保存间隔（毫秒），默认 30 秒
+ * Enable auto-save
+ * @param interval Auto-save interval (ms), default 30 seconds
  */
 export function useAutoSave(interval = 30000) {
   const expressionStore = useExpressionStore()
@@ -41,16 +41,16 @@ export function useAutoSave(interval = 30000) {
   const episodeStore = useEpisodeStore()
   const projectStore = useProjectStore()
 
-  // 创建防抖的自动保存函数
+  // Create debounced auto-save function
   const debouncedAutoSave = debounce(async () => {
     if (!projectStore.autoSaveEnabled) return
 
     await projectStore.autoSave()
   }, interval)
 
-  // characterStore watcher 已移除
+  // characterStore watcher has been removed
 
-  // 监听 expressionStore 变化
+  // Watch expressionStore changes
   watch(
     () => expressionStore.expressions,
     () => {
@@ -59,7 +59,7 @@ export function useAutoSave(interval = 30000) {
     { deep: true }
   )
 
-  // 监听 backgroundStore 变化
+  // Watch backgroundStore changes
   watch(
     () => backgroundStore.backgrounds,
     () => {
@@ -68,7 +68,7 @@ export function useAutoSave(interval = 30000) {
     { deep: true }
   )
 
-  // 监听 sceneStore 变化
+  // Watch sceneStore changes
   watch(
     () => sceneStore.currentScene,
     () => {
@@ -77,7 +77,7 @@ export function useAutoSave(interval = 30000) {
     { deep: true }
   )
 
-  // 监听 episodeStore 变化（新增）
+  // Watch episodeStore changes
   watch(
     () => episodeStore.episodes,
     () => {

@@ -24,7 +24,7 @@
       <span class="node-name">{{ node.name }}</span>
     </div>
     
-    <!-- 子节点 -->
+    <!-- Child nodes -->
     <div
       v-if="node.kind === 'directory' && expandedPaths.has(node.path) && node.children"
       class="node-children"
@@ -73,7 +73,7 @@ function getFileIcon(filename: string): string {
   const ext = filename.split('.').pop()?.toLowerCase() ?? ''
   
   const iconMap: Record<string, string> = {
-    // 图片
+    // Image
     'png': '🖼️',
     'jpg': '🖼️',
     'jpeg': '🖼️',
@@ -81,18 +81,18 @@ function getFileIcon(filename: string): string {
     'webp': '🖼️',
     'svg': '🖼️',
     'bmp': '🖼️',
-    // 音频
+    // Audio
     'mp3': '🎵',
     'wav': '🎵',
     'ogg': '🎵',
     'm4a': '🎵',
     'aac': '🎵',
-    // 视频
+    // Video
     'mp4': '🎬',
     'avi': '🎬',
     'mov': '🎬',
     'webm': '🎬',
-    // 其他
+    // Other
     'json': '📄',
     'txt': '📄',
     'md': '📄',

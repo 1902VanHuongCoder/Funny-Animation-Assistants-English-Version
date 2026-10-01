@@ -1,36 +1,36 @@
 /**
- * 画布尺寸常量
+ * Canvas dimension constants
  * 
- * 统一定义场景编辑器的物理画布尺寸和相关派生值。
- * 所有涉及画布尺寸的模块应从此文件导入常量，避免魔法数字。
+ * Unified definition of physical canvas dimensions and derived values for the scene editor.
+ * All modules involving canvas dimensions should import constants from this file to avoid magic numbers.
  */
 
 // ============================================================================
-// 物理画布尺寸
+// Physical Canvas Dimensions
 // ============================================================================
 
-/** 画布宽度（像素） */
+/** Canvas width (pixels) */
 export const CANVAS_WIDTH = 6720
 
-/** 画布高度（像素） */
+/** Canvas height (pixels) */
 export const CANVAS_HEIGHT = 2800
 
 // ============================================================================
-// 画布中心点（派生常量）
+// Canvas Center Point (Derived Constants)
 // ============================================================================
 
-/** 画布中心点 X 坐标 */
+/** Canvas center X coordinate */
 export const CANVAS_CENTER_X = CANVAS_WIDTH / 2 // 3360
 
-/** 画布中心点 Y 坐标 */
+/** Canvas center Y coordinate */
 export const CANVAS_CENTER_Y = CANVAS_HEIGHT / 2 // 1400
 
 // ============================================================================
-// 相机基准视口尺寸（16:9）
+// Camera Base Viewport Dimensions (16:9)
 // ============================================================================
 
-/** 相机基准视口宽度 */
+/** Camera base viewport width */
 export const CAMERA_BASE_WIDTH = 1456
 
-/** 相机基准视口高度 */
+/** Camera base viewport height */
 export const CAMERA_BASE_HEIGHT = 819

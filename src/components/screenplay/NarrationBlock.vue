@@ -4,39 +4,39 @@
     :class="{ selected: isSelected }"
     @click="handleClick"
   >
-    <!-- 第一行：控制行 -->
+    <!-- Row 1: Controls -->
     <div class="control-row">
-      <!-- 旁白图标和标题 -->
+      <!-- Narrator icon and title -->
       <div class="narration-header">
         <span class="narration-icon">📢</span>
-        <span class="narration-title">旁白</span>
+        <span class="narration-title">Narration</span>
       </div>
 
-      <!-- 编排动作按钮 -->
+      <!-- Choreograph action button -->
       <button 
         class="btn-action-mode" 
         :class="{ active: block.actions.length > 0 }"
-        title="编排动作"
+        title="Action Sequencer"
         @click.stop="$emit('enter-action-mode')"
       >
-        🎬 编排动作
+        🎬 Actions
       </button>
 
-      <!-- 删除按钮 -->
+      <!-- Delete button -->
       <button 
         class="btn-delete" 
-        title="删除" 
+        title="Delete" 
         @click.stop="$emit('delete')"
       >
         🗑️
       </button>
     </div>
 
-    <!-- 第二行：文本行 -->
+    <!-- Row 2: Text -->
     <textarea
       v-model="localText"
       class="text-area full-width"
-      placeholder="输入旁白内容..."
+      placeholder="Enter narration text..."
       rows="2"
       @input="handleTextInput"
       @click.stop
@@ -61,10 +61,10 @@ const emit = defineEmits<{
   'enter-action-mode': []
 }>()
 
-// 本地状态
+// Local state
 const localText = ref(props.block.text)
 
-// 监听 block 变化,同步本地状态
+// Watch block change, sync local state
 watch(() => props.block, (newBlock) => {
   localText.value = newBlock.text
 }, { deep: true })
@@ -100,7 +100,7 @@ function handleTextInput() {
   box-shadow: 0 0 0 3px rgba(234, 179, 8, 0.1);
 }
 
-/* 第一行：控制行 */
+/* Row 1: Controls */
 .control-row {
   display: flex;
   align-items: center;
@@ -160,7 +160,7 @@ function handleTextInput() {
   background: #fecaca;
 }
 
-/* 第二行：文本行 */
+/* Row 2: Text */
 .text-row {
   display: flex;
   gap: 8px;

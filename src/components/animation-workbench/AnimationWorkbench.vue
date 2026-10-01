@@ -1,26 +1,26 @@
 <!--
-  AnimationWorkbench.vue — 动画 WYSIWYG 编辑器（全屏叠加层）
+  AnimationWorkbench.vue — Animation WYSIWYG editor (fullscreen overlay)
   
-  架构：复用 useSceneRenderer setup 模式交互 + useAnimationEdit 关键帧引擎
-  数据隔离：编辑期间通过 AnimationSceneObjectStore 隔离，不影响全局场景数据
-  入口：ObjectPropertiesPanel / PropEditorModal → 打开此组件
-  左侧面板：动画列表 + 动作库（列表模式时）
+  Architecture: reuses useSceneRenderer setup mode interaction + useAnimationEdit keyframe engine
+  Data isolation: isolated via AnimationSceneObjectStore during editing, does not affect global scene data
+  Entry: ObjectPropertiesPanel / PropEditorModal -> opens this component
+  Left panel: animation list + action library (in list mode)
 -->
 <template>
   <Teleport to="body">
     <div v-if="visible" ref="overlayRef" class="animation-workbench-overlay" tabindex="0" @keydown="onKeydown">
-      <!-- 工具栏 -->
+      <!-- Toolbar -->
       <div class="workbench-toolbar">
         <div class="toolbar-left">
           <input
             v-if="hasActiveAnimation"
             v-model="animationDef.name"
             class="anim-name-input"
-            placeholder="动画名称"
+            placeholder="Animation Name"
             maxlength="50"
             @keydown.stop
           >
-          <span v-else class="empty-toolbar-hint">请先在左侧点击“新建”创建动画</span>
+          <span v-else class="empty-toolbar-hint">Please click "+ New" on the left to create an animation first</span>
         </div>
 
         <div class="toolbar-right">
@@ -28,7 +28,7 @@
             <button
               class="btn-toolbar object-tree-trigger"
               :class="{ active: showSceneObjectPanel }"
-              title="场景对象列表"
+              title="Scene object list"
               @click="toggleSceneObjectPanel"
             >
               <span class="object-tree-trigger-label">{{ selectedWorkbenchObjectLabel }}</span>
@@ -36,10 +36,10 @@
             </button>
             <div v-if="showSceneObjectPanel" class="workbench-popover object-list-popover">
               <div class="popover-header">
-                <span>场景对象</span>
+                <span>Scene Objects</span>
               </div>
               <div class="popover-content">
-                <div v-if="flatSceneObjectNodes.length === 0" class="popover-empty">暂无对象</div>
+                <div v-if="flatSceneObjectNodes.length === 0" class="popover-empty">No objects</div>
                 <button
                   v-for="node in flatSceneObjectNodes"
                   :key="node.id"
@@ -58,7 +58,7 @@
                   <span v-else class="tree-spacer" />
                   <span class="object-icon">{{ node.icon }}</span>
                   <span class="object-name">{{ node.name }}</span>
-                  <span v-if="passThroughIds.includes(node.id)" class="object-badge">穿透</span>
+                  <span v-if="passThroughIds.includes(node.id)" class="object-badge">Pass-Through</span>
                 </button>
               </div>
             </div>
@@ -68,27 +68,27 @@
             class="btn-toolbar pass-through-set-btn"
             :class="{ active: selectedObjectIsPassThrough }"
             :disabled="selectedObjectIsPassThrough"
-            :title="selectedObjectIsPassThrough ? '当前对象已在穿透列表中' : '将选中对象设为穿透'"
+            :title="selectedObjectIsPassThrough ? 'Current object is already in pass-through list' : 'Set selected object to pass-through'"
             @click="addSelectedObjectToPassThrough"
           >
-            设为穿透
+            Set to Pass-Through
           </button>
           <div class="toolbar-popover" @pointerdown.stop>
             <button
               class="btn-toolbar icon-toolbar-btn"
               :class="{ active: showPassThroughPanel }"
-              :title="`穿透列表：${passThroughEntries.length} 个对象`"
+              :title="`Pass-through list: ${passThroughEntries.length} object(s)`"
               @click="togglePassThroughPanel"
             >
               👻<span v-if="passThroughEntries.length > 0" class="icon-count">{{ passThroughEntries.length }}</span>
             </button>
             <div v-if="showPassThroughPanel" class="workbench-popover pass-through-popover">
               <div class="popover-header">
-                <span>穿透列表</span>
+                <span>Pass-Through List</span>
               </div>
               <div class="popover-content">
                 <div v-if="passThroughEntries.length === 0" class="popover-empty">
-                  选择对象后点击“设为穿透”
+                  Select an object and click "Set to Pass-Through"
                 </div>
                 <button
                   v-for="entry in passThroughEntries"
@@ -103,14 +103,14 @@
                     <button
                       class="mini-icon-btn"
                       :class="{ muted: !entry.visible }"
-                      :title="entry.visible ? '隐藏穿透对象' : '显示穿透对象'"
+                      :title="entry.visible ? 'Hide pass-through object' : 'Show pass-through object'"
                       @click.stop="togglePassThroughVisible(entry.objectId)"
                     >
                       {{ entry.visible ? '👁' : '🚫' }}
                     </button>
                     <button
                       class="mini-icon-btn danger"
-                      title="移出穿透列表"
+                      title="Remove from pass-through list"
                       @click.stop="removeFromPassThrough(entry.objectId)"
                     >
                       ×
@@ -121,16 +121,16 @@
             </div>
           </div>
           <span class="toolbar-divider" />
-          <button class="btn-toolbar" @click="handleClose">返回</button>
+          <button class="btn-toolbar" @click="handleClose">Back</button>
           <button class="btn-save" :disabled="(!hasActiveAnimation && !hasPendingProjectChanges) || isSavingProject" @click="handleSave">
-            {{ isSavingProject ? '保存中...' : '保存' }}
+            {{ isSavingProject ? 'Saving...' : 'Save' }}
           </button>
         </div>
       </div>
 
-      <!-- 主体区域 -->
+      <!-- Main area -->
       <div class="workbench-body">
-        <!-- 左侧动画列表面板（列表模式） -->
+        <!-- Left animation list panel (list mode) -->
         <aside
           v-if="listMode"
           v-show="!leftPanelCollapsed"
@@ -138,10 +138,10 @@
           :style="{ width: leftPanelWidth + 'px' }"
         >
           <div class="panel-header left-panel-header">
-            <h3>动画列表</h3>
+            <h3>Animation List</h3>
             <button
               class="collapse-btn"
-              title="折叠面板"
+              title="Collapse panel"
               @click="leftPanelCollapsed = true"
             >
               ◀
@@ -164,24 +164,24 @@
           />
         </aside>
 
-        <!-- 左侧分隔条 -->
+        <!-- Left splitter -->
         <div
           v-if="listMode && !leftPanelCollapsed"
           class="resizer left-resizer"
           @mousedown="startResizeLeftPanel"
         />
 
-        <!-- 左侧折叠按钮 -->
+        <!-- Left collapse button -->
         <button
           v-if="listMode && leftPanelCollapsed"
           class="expand-left-btn"
-          title="展开动画列表"
+          title="Expand animation list"
           @click="leftPanelCollapsed = false"
         >
           ▶
         </button>
 
-        <!-- 画布 -->
+        <!-- Canvas -->
         <div class="canvas-area">
           <LightweightCanvas
             ref="canvasRef"
@@ -203,24 +203,24 @@
           />
         </div>
 
-        <!-- 右侧分隔条 -->
+        <!-- Right splitter -->
         <div
           v-show="!rightPanelCollapsed"
           class="resizer right-resizer"
           @mousedown="startResizeRightPanel"
         />
 
-        <!-- 右侧折叠按钮（面板折叠时显示） -->
+        <!-- Right collapse button (shown when panel collapsed) -->
         <button
           v-show="rightPanelCollapsed"
           class="expand-btn"
-          title="展开面板"
+          title="Expand panel"
           @click="rightPanelCollapsed = false"
         >
           ◀
         </button>
 
-        <!-- 右侧属性面板 -->
+        <!-- Right property panel -->
         <aside
           v-show="!rightPanelCollapsed"
           class="right-panel"
@@ -229,7 +229,7 @@
           <div class="panel-header">
             <button
               class="collapse-btn"
-              title="折叠面板"
+              title="Collapse panel"
               @click="rightPanelCollapsed = true"
             >
               ▶
@@ -237,7 +237,7 @@
             <h3>{{ rightPanelTitle }}</h3>
           </div>
           <div v-if="!hasActiveAnimation" class="panel-empty-state">
-            从左侧动画列表新建或选择一条动画后，才可以编辑关键帧和轨道属性。
+            Create or select an animation from the left list to edit keyframes and track properties.
           </div>
           <KeyframePropertyPanel
             v-else
@@ -253,7 +253,7 @@
         </aside>
       </div>
 
-      <!-- 底部时间轴（可拖拽调节高度 / 折叠） -->
+      <!-- Bottom timeline (draggable height / collapsible) -->
       <div
         v-if="hasActiveAnimation"
         class="timeline-section"
@@ -281,32 +281,32 @@
                     @track-selected="locateTrackTarget"
         />
         <div v-if="timelineCollapsed" class="timeline-collapsed-bar" @click="timelineCollapsed = false">
-          🎬 {{ animationDef.tracks.length }} 条轨道
+          🎬 {{ animationDef.tracks.length }} tracks
           <button class="expand-timeline-btn">▲</button>
         </div>
       </div>
-      <div v-else class="timeline-empty-state">暂无动画时间轴</div>
+      <div v-else class="timeline-empty-state">No animation timeline</div>
 
-      <!-- 退出确认对话框（有未保存修改时显示） -->
+      <!-- Exit confirmation dialog (shown when unsaved changes exist) -->
       <div v-if="showCloseConfirm" class="close-confirm-overlay" @click.self="showCloseConfirm = false">
         <div class="close-confirm-dialog">
-          <p class="close-confirm-msg">动画已修改，请选择退出方式：</p>
+          <p class="close-confirm-msg">Animation has been modified, please choose how to exit:</p>
           <div class="close-confirm-actions">
-            <button class="btn-cancel-close" @click="showCloseConfirm = false">继续编辑</button>
-            <button class="btn-discard" @click="handleConfirmDiscard">放弃修改</button>
-            <button class="btn-save-exit" @click="handleSaveAndExit">保存并退出</button>
+            <button class="btn-cancel-close" @click="showCloseConfirm = false">Continue Editing</button>
+            <button class="btn-discard" @click="handleConfirmDiscard">Discard Changes</button>
+            <button class="btn-save-exit" @click="handleSaveAndExit">Save and Exit</button>
           </div>
         </div>
       </div>
 
-      <!-- 删除轨道确认对话框 -->
+      <!-- Delete track confirmation dialog -->
       <div v-if="trackDeleteDialog" class="close-confirm-overlay" @click.self="cancelDeleteTrack">
         <div class="close-confirm-dialog">
           <p class="close-confirm-title">{{ trackDeleteDialog.title }}</p>
           <p class="close-confirm-msg">{{ trackDeleteDialog.message }}</p>
           <div class="close-confirm-actions">
-            <button class="btn-cancel-close" @click="cancelDeleteTrack">取消</button>
-            <button class="btn-discard" @click="confirmDeleteTrack">删除</button>
+            <button class="btn-cancel-close" @click="cancelDeleteTrack">Cancel</button>
+            <button class="btn-discard" @click="confirmDeleteTrack">Delete</button>
           </div>
         </div>
       </div>
@@ -361,27 +361,27 @@ const props = defineProps<{
   resourceId: string
   sceneObjectId?: string
   targetObjectId?: string
-  /** 已有动画名称列表（用于防重名） */
+  /** Existing animation names list (for duplicate prevention) */
   existingNames?: string[]
-  /** 原始动画名称（编辑模式允许保留原名） */
+  /** Original animation name (edit mode allows keeping original name) */
   originalName?: string | undefined
-  // === 列表模式（Phase 3）===
-  /** 全部动画列表（列表模式） */
+  // === List Mode (Phase 3) ===
+  /** All animations list (list mode) */
   animations?: AnimationDefinition[]
-  /** 对象模式 */
+  /** Object mode */
   isObjectMode?: boolean
-  /** 场景对象 */
+  /** Scene object */
   sceneObject?: SceneObject
-  /** 根 Composite ID */
+  /** Root Composite ID */
   rootCompositeId?: string
-  /** 上层编辑器的持久化流程（如人物编辑器需先汇总对象再保存项目） */
+  /** Upper editor persistence flow (e.g. character editor aggregates objects before saving) */
   persistChanges?: (() => Promise<void>) | undefined
 }>()
 
 const emit = defineEmits<{
   save: [animation: AnimationDefinition]
   close: []
-  // 列表模式事件
+  // List mode events
   'animation-saved': [animation: AnimationDefinition]
   'animation-deleted': [animationId: string]
   'animation-created': [animation: AnimationDefinition]
@@ -398,20 +398,20 @@ const projectStore = useProjectStore()
 const toast = useToast()
 const isSavingProject = ref(false)
 
-// 右侧面板折叠 / 拉伸
+// Right panel collapse / resize
 const rightPanelCollapsed = ref(false)
 const rightPanelWidth = ref(360)
 
-// 左侧面板折叠 / 拉伸（列表模式）
+// Left panel collapse / resize (list mode)
 const leftPanelCollapsed = ref(false)
 const leftPanelWidth = ref(320)
 
-// 底部时间轴折叠 / 拉伸
+// Bottom timeline collapse / resize
 const timelineCollapsed = ref(false)
 const timelineHeight = ref(300)
 const hasPendingProjectChanges = ref(false)
 
-// 画布工具栏：场景对象 / 穿透列表
+// Canvas toolbar: scene objects / pass-through list
 const showSceneObjectPanel = ref(false)
 const showPassThroughPanel = ref(false)
 const expandedObjectIds = ref(new Set<string>())
@@ -475,7 +475,7 @@ interface TrackDeleteDialogState {
     message: string
 }
 
-// === 列表模式判断 ===
+// === List mode determination ===
 const listMode = computed(() => !!props.animations)
 const isObjectMode = computed(() => props.isObjectMode ?? false)
 const isCompositeMode = computed(() =>
@@ -484,10 +484,10 @@ const isCompositeMode = computed(() =>
 const allAnimationsList = computed(() => props.animations ?? [])
 const hasActiveAnimation = ref(!!props.animation)
 const rightPanelTitle = computed(() => {
-    if (!hasActiveAnimation.value) return '未选择动画'
-    if (ctx.selectionMode.value === 'keyframe') return '关键帧属性'
-    if (ctx.selectionMode.value === 'track') return '轨道属性'
-    return '动画概览'
+    if (!hasActiveAnimation.value) return 'No Animation Selected'
+    if (ctx.selectionMode.value === 'keyframe') return 'Keyframe Properties'
+    if (ctx.selectionMode.value === 'track') return 'Track Properties'
+    return 'Animation Overview'
 })
 
 const listPanelOptionalProps = computed(() => {
@@ -573,7 +573,7 @@ const baseStateCache = new Map<string, ContainerBaseState>()
 const initialContainerBaseStateCache = new Map<string, ContainerBaseState>()
 const objectBaseStateCache = new Map<string, ObjectTransformBaseState>()
 
-/** 当前编辑的对象在隔离 store 中的 ID */
+/** ID of currently edited object in isolated store */
 let currentTargetObjectId: string | null = null
 let pivotPreviewObjectId: string | null = null
 const WORKBENCH_STANDARD_PREVIEW_NAME = '__workbench_standard_preview__'
@@ -587,8 +587,8 @@ const expressionStore = useExpressionStore()
 const sceneObjectStore = useSceneObjectStore()
 const { getTexture, loadAssets } = useAssetLoader()
 
-// ===== 特效预览滤镜状态（effect 轨道 WYSIWYG 预览用） =====
-// v24: 按 target objectId 分别缓存，避免多部位预览时互相覆盖/清理
+// ===== Effect preview filter state (for effect track WYSIWYG preview) =====
+// v24: Cached by target objectId to avoid multi-part preview overwriting
 interface PreviewFilterBundle {
     glow: GlowFilter | null
     motionBlur: MotionBlurFilter | null
@@ -619,8 +619,8 @@ function clearEffectPreviewFiltersForKey(container: PIXI.Container, key: string)
 }
 
 /**
- * 单容器预览（previewMode === 'current' 等单轨预览入口）的滤镜清理辅助。
- * 使用当前编辑目标的 key 作为缓存键。
+ * Filter cleanup helper for single-container preview (previewMode === 'current' etc).
+ * Uses key of current edit target as cache key.
  */
 function clearEffectPreviewFilters(container: PIXI.Container) {
     clearEffectPreviewFiltersForKey(container, currentTargetObjectId ?? TARGET_SELF)
@@ -667,7 +667,7 @@ const hasUnsavedWorkbenchChanges = computed(() =>
     ctx.hasUnsavedChanges.value || hasPendingProjectChanges.value
 )
 
-/** 当前正在编辑的动画的"原始名称"，用于防重名校验，切换动画时同步更新 */
+/** 'Original name' of currently edited animation for duplicate check, synced on animation switch */
 const currentOriginalName = ref<string>(props.originalName ?? props.animation?.name ?? '')
 
 type PreviewMode = 'current' | 'all' | 'custom'
@@ -696,10 +696,10 @@ watch(
 )
 
 const trackTargetOptions = computed(() => {
-    const options: { id: string; label: string }[] = [{ id: TARGET_SELF, label: '自身' }]
+    const options: { id: string; label: string }[] = [{ id: TARGET_SELF, label: 'Self' }]
     const seen = new Set<string>([TARGET_SELF])
 
-    // 统一通过树遍历构建层级列表
+    // Uniformly build hierarchical list via tree traversal
     if (props.sceneObject?.type === 'composite') {
         buildTargetHierarchy(props.sceneObject as CompositeObject, 1, seen, options)
     }
@@ -708,7 +708,7 @@ const trackTargetOptions = computed(() => {
 })
 
 /**
- * 递归构建 composite 子对象层级树，通过缩进前缀表达父子关系。
+ * Recursively build composite child object hierarchy tree, expressing relations via indent prefixes.
  */
 function buildTargetHierarchy(
     composite: CompositeObject,
@@ -732,7 +732,7 @@ function buildTargetHierarchy(
 }
 
 function getTrackTargetLabel(targetObjectId: string | undefined): string {
-    return trackTargetOptions.value.find(option => option.id === (targetObjectId ?? TARGET_SELF))?.label ?? '自身'
+    return trackTargetOptions.value.find(option => option.id === (targetObjectId ?? TARGET_SELF))?.label ?? 'Self'
 }
 
 // Optional props for LightweightCanvas (avoid passing undefined with exactOptionalPropertyTypes)
@@ -770,7 +770,7 @@ const selectedWorkbenchObjectId = computed(() => {
 const selectedWorkbenchObjectLabel = computed(() => {
     const selectedId = selectedWorkbenchObjectId.value
     const selected = selectedId ? workbenchAnimStore.value?.getObject(selectedId) : null
-    if (!selected) return '选择场景对象'
+    if (!selected) return 'Select scene object'
     return `${getTypeIcon(selected.type)} ${getObjectDisplayName(selected)}`
 })
 
@@ -994,7 +994,7 @@ function onContainerReady(payload: {
     const resolved = resolveTargetContainer()
     targetContainer.value = resolved
 
-    // 记录当前目标对象 ID（用于从 store 读取拖拽后的值）
+    // Record current target object ID (used to read dragged values from store)
     resolveCurrentTargetObjectId()
 
     captureObjectBaseStateCache()
@@ -1038,7 +1038,7 @@ function resolveTargetContainerForTrack(track: AnimationTrack | null | undefined
     return root
 }
 
-/** 解析当前目标对象在隔离 store 中的 ID */
+/** Resolve current target object ID in isolated store */
 function resolveCurrentTargetObjectId() {
     const track = ctx.currentTrackAny.value
     currentTargetObjectId = resolveTargetObjectIdForTrack(track)
@@ -1198,8 +1198,8 @@ function syncObjectOriginPreview(objectId: string, transformOriginX: number, tra
         return false
     }
 
-    // 轨道 pivot 是动画轨道级状态，不应写入 preview store 的对象 transformOrigin。
-    // 否则预览合成会把 track.pivot 当成对象基准 pivot，导致 pivot delta 为 0。
+    // Track pivot is track-level state, should not be written to preview store transformOrigin.
+    // Otherwise preview composition treats track.pivot as base pivot, making pivot delta 0.
     container.pivot.set(expectedPivotX, expectedPivotY)
     container.position.set(expectedPositionX, expectedPositionY)
     return true
@@ -1410,7 +1410,7 @@ function getFrameSequencePreviewDurationMs(
     if (!track || !container) return null
     const sprite = findAnimatedSprite(container)
     if (!sprite || sprite.totalFrames <= 0) return null
-    // track.fps 优先，否则从 sprite 的 animationSpeed 反推资源 FPS（与角色预览对话框一致）
+    // track.fps preferred, otherwise derive resource FPS from sprite animationSpeed
     const resolvedFps = track.fps ?? (sprite.animationSpeed > 0 ? sprite.animationSpeed * 60 : 25)
     if (resolvedFps <= 0) return null
     return (sprite.totalFrames / resolvedFps) * 1000
@@ -1597,7 +1597,7 @@ watch(() => ctx.currentTrackIndex.value, () => {
     const prevTarget = targetContainer.value
     const prevTargetObjectId = currentTargetObjectId
 
-    // 无论是否切到同一目标，都先清除当前预览状态，避免上一条轨道残留
+    // Always clear current preview state to avoid leftovers from previous track
     if (prevTarget) {
         resetContainerPreviewState(prevTarget, prevTargetObjectId)
     }
@@ -1670,13 +1670,13 @@ watch([previewMode, activePreviewTrackIndexes], () => {
 // ===== Store Change → Keyframe =====
 
 /**
- * 统一的变换点提交入口。供以下三处调用：
- * 1. 主画布 onSetupChange('origin')（向后兼容，主画布已改为只读 gizmo）
- * 2. KeyframePropertyPanel 的数字输入框
- * 3. PivotEditorPanel 的可视化拖拽
+ * Unified pivot submission entry point. Called from three places:
+ * 1. Main canvas onSetupChange('origin') (backward compatibility, main canvas is read-only gizmo)
+ * 2. KeyframePropertyPanel numeric input
+ * 3. PivotEditorPanel visual dragging
  *
- * 只更新 transform track 自己的 pivot。该 pivot 是动画求值的基准点，
- * 不再反向补偿关键帧；当前帧会从 base 姿态重新计算并应用新 pivot。
+ * Only updates transform track's own pivot. This pivot is the benchmark for animation evaluation,
+ * no reverse keyframe compensation; current frame recalculates from base pose with new pivot.
  */
 function commitTrackPivotChange(targetObjectId: string, newPivot: { x: number; y: number }) {
     const activeTrack = ctx.currentTrack.value
@@ -1686,7 +1686,7 @@ function commitTrackPivotChange(targetObjectId: string, newPivot: { x: number; y
         restoreObjectPivotPreview(targetObjectId)
         syncCurrentTrackPivotPreview()
         applyTimeToCanvas(ctx.playheadPosition.value)
-        toast.info('当前仅在对应的变换轨道上编辑变换点。')
+        toast.info('Pivot can only be edited on the corresponding transform track.')
         return
     }
 
@@ -1700,8 +1700,8 @@ function commitTrackPivotChange(targetObjectId: string, newPivot: { x: number; y
 }
 
 /**
- * 属性面板（KeyframePropertyPanel）事件回调。
- * 轨道目标由当前 active track 决定，无需显式 targetObjectId。
+ * Property panel (KeyframePropertyPanel) event callback.
+ * Track target determined by active track, no explicit targetObjectId needed.
  */
 function onPropertyPanelPivotChange(pivot: { x: number; y: number }) {
     const activeTargetObjectId = resolveTargetObjectIdForTrack(ctx.currentTrack.value)
@@ -1719,28 +1719,28 @@ function onPropertyPanelPivotReset() {
 }
 
 /**
- * 画布上拖拽/缩放/旋转结束后，从隔离 store 读取对象最新状态，
- * 计算与基准姿态的差值，写入当前播放头位置的关键帧。
+ * After drag/scale/rotate ends on canvas, read latest object state from isolated store,
+ * compute delta against base pose, and write to keyframe at current playhead position.
  */
 function onSetupChange(change: SetupChangePayload) {
     if (change.type === 'origin') {
-        // v26: 主画布上的变换点手柄现在是只读 gizmo，不应再触发 origin 事件。
-        // 若收到（兼容旧路径），统一走 commitTrackPivotChange。
+        // v26: Pivot handle on main canvas is now read-only gizmo, should no longer trigger origin events.
+        // If received (legacy compatibility), uniformly route to commitTrackPivotChange.
         commitTrackPivotChange(change.objectId, change.pivot)
         return
     }
 
-    // 从隔离 store 读取实际被拖动的对象 ID，优先级高于 currentTargetObjectId
+    // Read actual dragged object ID from isolated store, higher priority than currentTargetObjectId
     const store = (canvasRef.value?.previewStore as WorkbenchPreviewStore | null)
     const draggedObjectId = change.objectId || store?.selectedObjectId || currentTargetObjectId
     if (!draggedObjectId) return
 
-    // 归一化根对象 ID：统一 TARGET_SELF / sceneObjectId / sceneObject.id 的比较语义
+    // Normalize root object ID: unify comparison semantics for TARGET_SELF / sceneObjectId / sceneObject.id
     const rootId = getRootPreviewObjectId()
     const isRootDrag = draggedObjectId === rootId ||
         (rootId === null && draggedObjectId === currentTargetObjectId)
 
-    // Auto-Key: 如果当前没有匹配的 transform 轨道，自动创建/选中一条
+    // Auto-Key: if no matching transform track exists, automatically create/select one
     const currentResolvedTarget = ctx.currentTrack.value
         ? resolveTargetObjectIdForTrack(ctx.currentTrack.value)
         : null
@@ -1750,10 +1750,10 @@ function onSetupChange(change: SetupChangePayload) {
     if (needsTrackSwitch) {
         const savedPlayhead = ctx.playheadPosition.value
 
-        // 查找匹配轨道：归一化 TARGET_SELF 与根对象 ID 的等价关系
+        // Find matching track: normalize equivalence between TARGET_SELF and root object ID
         const existingTransformTrack = animationDef.tracks.find(t => {
             if (t.trackType !== 'transform') return false
-            // 轨道的 TARGET_SELF 等价于根对象 ID
+            // Track TARGET_SELF is equivalent to root object ID
             if (t.targetObjectId === TARGET_SELF || !t.targetObjectId) {
                 return isRootDrag
             }
@@ -1761,18 +1761,18 @@ function onSetupChange(change: SetupChangePayload) {
         })
 
         if (!existingTransformTrack) {
-            // 仅当拖动的是根对象时使用 TARGET_SELF，否则用具体 ID
+            // Use TARGET_SELF only when dragging root object, otherwise use specific ID
             const trackTargetId = isRootDrag ? TARGET_SELF : draggedObjectId
             const track = buildDefaultTrack('transform', trackTargetId)
             const idx = ctx.addTrack(track)
             ctx.selectTrackOnly(idx)
         } else {
-            // 找到了匹配的 transform 轨道但未选中，自动选中（不重置播放头）
+            // Found matching transform track but unselected, auto-select (without resetting playhead)
             const matchIdx = animationDef.tracks.indexOf(existingTransformTrack)
             if (matchIdx >= 0) ctx.selectTrackOnly(matchIdx)
         }
 
-        // 同步刷新目标对象 ID 和 base 变换（不等异步 watcher）
+        // Synchronously refresh target object ID and base transform (do not wait for async watcher)
         currentTargetObjectId = draggedObjectId
         const newContainer = resolveTargetContainerForTrack(ctx.currentTrackAny.value)
         targetContainer.value = newContainer
@@ -1780,13 +1780,13 @@ function onSetupChange(change: SetupChangePayload) {
         warmPreviewBaseStateCache()
         syncRuntimeTrackDuration()
 
-        // 恢复播放头到用户实际操作位置
+        // Restore playhead to user actual operation position
         ctx.playheadPosition.value = savedPlayhead
     }
     const obj = store?.getObject(draggedObjectId)
     if (!obj) return
 
-    // 计算差值（关键帧存储的是相对于基准姿态的偏移量）
+    // Calculate delta (keyframes store offset relative to base pose)
     const deltaX = obj.x - baseObjectPosition.value.x
     const deltaY = obj.y - baseObjectPosition.value.y
     const deltaScaleX = obj.scaleX / baseObjectScale.value.x
@@ -1801,10 +1801,10 @@ function onSetupChange(change: SetupChangePayload) {
         rotation: deltaRotation,
     })
 
-    // 若播放头不在任何已有关键帧上，不自动创建关键帧：还原画布到插值姿态并提示用户。
+    // If playhead not on any existing keyframe, do not auto create: revert canvas to interpolated pose and notify user.
     if (result.status === 'skipped-no-keyframe-at-playhead') {
         applyTimeToCanvas(ctx.playheadPosition.value)
-        toast.info('当前播放头位置没有关键帧，变换已还原。请先在时间轴上添加关键帧再编辑。')
+        toast.info('No keyframe at current playhead position, transform reverted. Please add a keyframe on timeline before editing.')
     }
 }
 
@@ -1847,7 +1847,7 @@ function applyTimeToCanvas(time: number) {
         const output = ctx.evaluateAtTime(time)
         if (!output) return
         applyOutputToContainer(container, output)
-        // 同步隔离 store（使选择框位置与容器一致）
+        // Sync isolated store (keep selection box aligned with container)
         syncRuntimeStoreFromRenderedContainer(currentTargetObjectId, container)
         getWorkbenchRenderer()?.updateSelectionBox()
     } else if (trackType === 'visibility') {
@@ -1883,8 +1883,8 @@ function applyTimeToCanvas(time: number) {
 }
 
 /**
- * 上一轮预览涉及到的 target keys，用于在本轮预览范围收窄时，把那些不再被覆盖的
- * 目标也恢复到 base state，避免残留上一轮动画写入的变换。
+ * Target keys involved in previous preview round, used when preview scope narrows to revert
+ * targets no longer covered back to base state, avoiding leftover transforms.
  */
 const previouslyAffectedKeys = new Set<string>()
 
@@ -1913,8 +1913,8 @@ function restoreAllPreviewTargetsToBase() {
 }
 
 function applyPreviewTracksToCanvas(time: number) {
-    // Phase 2b: 实际合成逻辑已迁移到 useAnimationWorkbenchRenderer.ts。
-    // 本函数仅负责把组件内局部状态 / 解析器 / 回调组装成 deps，调用底层纯命令式 helper。
+    // Phase 2b: Actual composition logic migrated to useAnimationWorkbenchRenderer.ts.
+    // This function only bundles local state / parsers / callbacks into deps and calls imperative helper.
     runPreviewTracksOnCanvas({
         rootContainer: rootContainer.value,
         activePreviewTrackIndexes: activePreviewTrackIndexes.value,
@@ -1942,10 +1942,10 @@ function applyPreviewTracksToCanvas(time: number) {
 }
 
 /**
- * 按正式 AnimationPlayer 的规则计算单条轨道的归一化进度（0..1）。
- * - 轨道时长 >= 动画时长：使用全局进度
- * - 轨道时长 < 动画时长 且 动画循环：按轨道时长循环
- * - 轨道时长 < 动画时长 且 不循环：播放到末帧后停在 1
+ * Calculate normalized progress (0..1) for single track per AnimationPlayer rules.
+ * - Track duration >= animation duration: use global progress
+ * - Track duration < animation duration and loop: cycle per track duration
+ * - Track duration < animation duration and no loop: clamp at 1 after last frame
  */
 function computeTrackProgress(
     elapsedMs: number,
@@ -1965,7 +1965,7 @@ function computeTrackProgress(
     return Math.min(1, elapsedMs / trackDurationMs)
 }
 
-/** 按 target key 查找对应容器（cross-target 或 self） */
+/** Find corresponding container by target key (cross-target or self) */
 function resolveContainerForKey(key: string): PIXI.Container | null {
     if (key !== TARGET_SELF && allPartContainers.value?.has(key)) {
         return allPartContainers.value.get(key) ?? null
@@ -1975,15 +1975,15 @@ function resolveContainerForKey(key: string): PIXI.Container | null {
 
 function resetContainerToBaseStateWithKey(container: PIXI.Container, state: ContainerBaseState, key: string) {
     clearEffectPreviewFiltersForKey(container, key)
-    // Phase 1b: 几何量（position/scale/rotation/alpha/pivot）由 WorkbenchBaseTransformSnapshot 模块统一还原，
-    // 其中 pivot 必须被还原——切空动画时不恢复会残留上一条轨道的 track.pivot，导致对象整体偏移。
+    // Phase 1b: Geometries (position/scale/rotation/alpha/pivot) restored uniformly by WorkbenchBaseTransformSnapshot,
+    // pivot must be restored — otherwise track.pivot leaks on switching animations, causing offset.
     applyContainerBaseTransform(container, state)
     restoreAnimatedSpriteBaseFrame(container, state.objectId)
 }
 
 /**
- * 按 target key 为容器安装/更新/清理特效滤镜（glow / motion blur / petrify colorMatrix）。
- * 合并当轮所有 effect deltas 的滤镜字段。
+ * Install/update/clean effect filters (glow / motion blur / petrify colorMatrix) by target key.
+ * Merge filter fields from all effect deltas in current round.
  */
 function applyEffectFiltersForKey(
     container: PIXI.Container,
@@ -1996,7 +1996,7 @@ function applyEffectFiltersForKey(
 ) {
     const bundle = getOrCreateFilterBundle(key)
 
-    // 合并字段（后者覆盖前者，与旧单轨行为一致）
+    // Merge fields (latter overwrites former, consistent with single-track behavior)
     let glowColor: string | undefined
     let glowIntensity: number | undefined
     let glowSize: number | undefined
@@ -2042,7 +2042,7 @@ function applyEffectFiltersForKey(
         bundle.motionBlur = null
     }
 
-    // Petrify（灰度）
+    // Petrify (grayscale)
     if (petrifyProgress !== undefined && petrifyProgress > 0) {
         if (!bundle.colorMatrix) {
             bundle.colorMatrix = new PIXI.ColorMatrixFilter()
@@ -2073,8 +2073,8 @@ function applyVisibilityToContainer(container: PIXI.Container, output: Visibilit
 }
 
 /**
- * v24: 单轨 effect 预览（previewMode === 'current'）的应用入口。
- * 内部使用共享的 ComposedTransform + per-target 滤镜缓存，与多轨预览一致。
+ * v24: Application entry for single-track effect preview (previewMode === 'current').
+ * Internally uses shared ComposedTransform + per-target filter cache, consistent with multi-track.
  */
 function applyEffectDeltaToContainer(container: PIXI.Container, delta: {
     deltaX?: number; deltaY?: number
@@ -2098,7 +2098,7 @@ function applyEffectDeltaToContainer(container: PIXI.Container, delta: {
         bounds: baseBounds.value,
     }
 
-    // 1) Transform + alpha：走共享合成（等价于 base + effect delta）
+    // 1) Transform + alpha: shared composition (equivalent to base + effect delta)
     const composed = createEmptyComposedTransform()
     accumulateEffectDelta(composed, delta)
     if (delta.shatterAlpha !== undefined) {
@@ -2115,7 +2115,7 @@ function applyEffectDeltaToContainer(container: PIXI.Container, delta: {
         alpha: base.alpha,
     }, composed)
 
-    // 2) 滤镜：复用 per-target 缓存
+    // 2) Filters: reuse per-target cache
     applyEffectFiltersForKey(container, key, [delta])
 }
 
@@ -2128,12 +2128,12 @@ function applyFrameSequenceToContainer(container: PIXI.Container, time: number) 
 function applyFrameSequenceTrackToContainer(track: AnimationTrack & { trackType: 'frame_sequence' }, container: PIXI.Container, time: number) {
     const sprite = findAnimatedSprite(container)
     if (!sprite || sprite.totalFrames <= 1) return
-    // time 是归一化进度 (0-1)，直接映射到帧索引即可
-    // 无需通过 getTrackDurationMs() + fps 反推——那条路径在容器未就绪时
-    // 会退化为固定 1000ms，导致帧索引计算严重偏快
+    // time is normalized progress (0-1), map directly to frame index
+    // No need to derive via getTrackDurationMs() + fps — that path degenerates to
+    // fixed 1000ms when container not ready, causing frame index to run too fast
     const frameIndex = Math.min(sprite.totalFrames - 1, Math.floor(time * sprite.totalFrames))
     sprite.gotoAndStop(frameIndex)
-    void track // track.fps 已隐含在 getTrackDurationMs 用于 computeTrackProgress 中
+    void track // track.fps already implicit in getTrackDurationMs for computeTrackProgress
 }
 
 function applyOutputToContainer(container: PIXI.Container, output: TransformTrackOutput) {
@@ -2206,14 +2206,14 @@ function syncRuntimeStoreFromRenderedContainer(objectId: string | null, containe
 
     const flipX = container.scale.x < 0
 
-    // 从 container.pivot 反推当前应写回 store 的 transformOrigin：
-    //   pivotBase = baseContainer.pivot − baseObj.transformOrigin   （对象几何中心）
+    // Derive transformOrigin to write back to store from container.pivot:
+    //   pivotBase = baseContainer.pivot - baseObj.transformOrigin (object geometric center)
     //   newOrigin = container.pivot − pivotBase
-    // 无 track.pivot 时，container.pivot 仍为 baseContainer.pivot，newOrigin 退化为 baseObj.transformOrigin，
-    // 写入为 no-op；存在 track.pivot（或用户刚刚在 PivotEditorPanel 调整过 pivot）时，
-    // newOrigin 会随 container.pivot 同步更新——这样 Vue 深观察触发的 renderObjects
-    // 重新用 applyObjectState 应用 store 状态时，container.pivot 会稳定落在 track.pivot 上，
-    // 主画布的只读变换点手柄也会在下一次 updateSelectionBox 中绘制到正确位置。
+    // Without track.pivot, container.pivot remains baseContainer.pivot, newOrigin falls back to baseObj.transformOrigin,
+    // write is no-op; when track.pivot exists (or user adjusted pivot in PivotEditorPanel),
+    // newOrigin updates synchronously with container.pivot — so renderObjects triggered by deep watch
+    // reapplies store state via applyObjectState, and container.pivot lands stably on track.pivot,
+    // and main canvas read-only pivot handle will draw at correct position on next updateSelectionBox.
     const containerKey = getContainerBaseKey(objectId)
     const baseContainer = initialContainerBaseStateCache.get(containerKey) ?? baseStateCache.get(containerKey)
     const baseOriginX = baseObj.transformOriginX ?? 0
@@ -2227,8 +2227,8 @@ function syncRuntimeStoreFromRenderedContainer(objectId: string | null, containe
         newOriginY = container.pivot.y - pivotBaseY
     }
 
-    // 反算 store.x/y：renderObjects 下次会用 container.position = store.x + flipSign*newOrigin
-    // 重放，因此这里必须用 newOrigin 来反推，才能保证回传闭环不漂移。
+    // Recalculate store.x/y: renderObjects will replay container.position = store.x + flipSign*newOrigin,
+    // so newOrigin must be used to ensure the feedback loop does not drift.
     const cx = flipX ? -newOriginX : newOriginX
 
     store.updateObject(objectId, {
@@ -2461,25 +2461,25 @@ function onKeydown(e: KeyboardEvent) {
 // ===== Save / Close =====
 
 /**
- * 执行名称校验 + 关键帧清理 + emit save。
- * 返回 true 表示保存成功，false 表示校验未通过（已向用户 alert）。
+ * Execute name validation + keyframe cleanup + emit save.
+ * Returns true on save success, false on validation failure (alert shown to user).
  */
 function trySave(): boolean {
     if (!hasActiveAnimation.value) return false
     const trimmedName = animationDef.name.trim()
     if (!trimmedName) {
-        alert('请输入动画名称')
+        alert('Please enter an animation name')
         return false
     }
     if (props.existingNames && currentOriginalName.value !== undefined) {
         if (trimmedName !== currentOriginalName.value && props.existingNames.includes(trimmedName)) {
-            alert(`动画名称 "${trimmedName}" 已存在，请使用其他名称`)
+            alert(`Animation name "${trimmedName}" already exists, please use another name`)
             return false
         }
     }
     animationDef.name = trimmedName
 
-    // 保存前关键帧清理：排序 + 过滤 NaN/超范围帧
+    // Keyframe cleanup before save: sort + filter NaN/out-of-range frames
     for (const track of animationDef.tracks) {
         if (track.trackType === 'transform' || track.trackType === 'visibility') {
             const kfs = (track as { keyframes: { time: number }[] }).keyframes
@@ -2515,8 +2515,8 @@ async function saveCurrentAnimationToProject(): Promise<boolean> {
         hasPendingProjectChanges.value = false
         return true
     } catch (error) {
-        console.error('[AnimationWorkbench] 保存项目失败:', error)
-        alert(`保存项目失败：${error instanceof Error ? error.message : String(error)}`)
+        console.error('[AnimationWorkbench] Failed to save project:', error)
+        alert(`Failed to save project: ${error instanceof Error ? error.message : String(error)}`)
         return false
     } finally {
         isSavingProject.value = false
@@ -2529,18 +2529,18 @@ async function handleSave() {
 
 function handleSaveAsPreset(): void {
     if (!hasActiveAnimation.value) return
-    // 需要一个 SceneObject Map 以便通过 targetObjectId 反查 alias/name
+    // Need a SceneObject Map to lookup alias/name by targetObjectId
     const sceneObjectsMap = new Map<string, SceneObject>()
     for (const obj of sceneObjectStore.objects) sceneObjectsMap.set(obj.id, obj)
 
     const extract = extractPresetTargetsFromAnimation(animationDef, sceneObjectsMap)
     if (extract.expectedTargets.length === 0) {
-        toast.error('当前动画没有可导出的轨道（所有轨道均指向 _self 或缺失 alias/name）')
+        toast.error('Current animation has no exportable tracks (all tracks point to _self or lack alias/name)')
         return
     }
 
-    const defaultName = animationDef.name || '未命名动作'
-    const userName = window.prompt('请输入预定义动作名称：', defaultName)
+    const defaultName = animationDef.name || 'Untitled Action'
+    const userName = window.prompt('Please enter preset action name:', defaultName)
     const trimmedName = userName?.trim()
     if (!trimmedName) return
 
@@ -2559,14 +2559,14 @@ function handleSaveAsPreset(): void {
     projectStore.addCustomPreset(template)
 
     if (extract.warnings.length > 0) {
-        toast.info(`已保存预定义动作 "${trimmedName}"（含 ${extract.warnings.length} 条警告，请查看控制台）`)
-        console.warn('[AnimationWorkbench] 导出预定义动作警告:', extract.warnings)
+        toast.info(`Saved preset action "${trimmedName}" (${extract.warnings.length} warning(s), see console)`)
+        console.warn('[AnimationWorkbench] Export preset action warnings:', extract.warnings)
     } else {
-        toast.success(`已保存预定义动作 "${trimmedName}"`)
+        toast.success(`Saved preset action "${trimmedName}"`)
     }
 }
 
-/** 控制退出确认对话框可见性 */
+/** Control exit confirmation dialog visibility */
 const showCloseConfirm = ref(false)
 const trackDeleteDialog = ref<TrackDeleteDialogState | null>(null)
 
@@ -2659,7 +2659,7 @@ function duplicateTrack(trackIndex: number) {
     const source = animationDef.tracks[trackIndex]
     if (!source) return
     const cloned = JSON.parse(JSON.stringify(source)) as AnimationTrack
-    if (cloned.displayName) cloned.displayName = `${cloned.displayName} 副本`
+    if (cloned.displayName) cloned.displayName = `${cloned.displayName} Copy`
     const idx = ctx.addTrack(cloned)
     ctx.selectTrackOnly(idx)
 }
@@ -2671,10 +2671,10 @@ function deleteTrack(trackIndex: number) {
     const label = track.displayName?.trim() || getTrackTargetLabel(track.targetObjectId)
     trackDeleteDialog.value = {
         trackIndex,
-        title: `删除轨道「${label}」`,
+        title: `Delete Track "${label}"`, 
         message: keyframeCount > 0
-            ? `该轨道包含 ${keyframeCount} 个关键帧，删除后不可恢复。`
-            : '该轨道删除后不可恢复。',
+            ? `This track contains ${keyframeCount} keyframe(s); deletion cannot be undone.`
+            : 'Track deletion cannot be undone.',
     }
 }
 
@@ -2705,23 +2705,23 @@ function locateTrackTarget(trackIndex: number) {
     getWorkbenchRenderer()?.updateSelectionBox()
 }
 
-// ===== 列表模式事件 =====
+// ===== List Mode Events =====
 
 function handleListSelect(animationId: string) {
-    // 单击：先经过完整的保存校验和关键帧清理，再切换动画
+    // Click: validate and clean keyframes fully before switching animation
     const target = props.animations?.find(a => a.id === animationId)
     if (!target) return
     if (target.id === animationDef.id) {
         ctx.deselectAll()
         return
     }
-    // 若校验未通过（空名称/重名），放弃切换
+    // If validation fails (empty/duplicate name), abort switch
     if (hasActiveAnimation.value && ctx.hasUnsavedChanges.value && !trySave()) return
     restoreAllPreviewTargetsToBase()
-    // 更新防重名基线
+    // Update duplicate check baseline
     currentOriginalName.value = target.name
     hasActiveAnimation.value = true
-    // 重置编辑上下文为目标动画
+    // Reset edit context to target animation
     ctx.resetAnimation(target)
     ctx.deselectAll()
     warmPreviewBaseStateCache()
@@ -2730,7 +2730,7 @@ function handleListSelect(animationId: string) {
 }
 
 function handleListEdit(animationId: string) {
-    // 双击：与单击等效（已在 select 中切换），无需额外操作
+    // Double click: equivalent to single click (already switched in select)
     void animationId
 }
 
@@ -3346,7 +3346,7 @@ onBeforeUnmount(() => {
   font-size: 10px;
 }
 
-/* ===== 退出确认对话框 ===== */
+/* ===== Exit Confirmation Dialog ===== */
 .close-confirm-overlay {
   position: fixed;
   inset: 0;

@@ -15,7 +15,7 @@
       </div>
 
       <div class="dialog-body">
-        <!-- 文件夹路径 -->
+        <!-- Folder path -->
         <div class="form-group">
           <label>📁 Project Folder</label>
           <div class="folder-path">
@@ -23,7 +23,7 @@
           </div>
         </div>
 
-        <!-- 项目文件名 -->
+        <!-- Project filename -->
         <div class="form-group">
           <label>📄 File Name</label>
           <div class="filename-input-group">
@@ -50,7 +50,7 @@
           </div>
         </div>
 
-        <!-- 项目名称(可选) -->
+        <!-- Project name (optional) -->
         <div class="form-group">
           <label>Project Name (Optional)</label>
           <input
@@ -61,7 +61,7 @@
           >
         </div>
 
-        <!-- 现有文件列表 -->
+        <!-- Existing file list -->
         <div
           v-if="existingFiles.length > 0"
           class="existing-files"
@@ -122,12 +122,12 @@ const fileName = ref('')
 const projectName = ref('')
 const validationError = ref('')
 
-// 初始化时生成默认文件名
+// Generate default filename on initialization
 onMounted(() => {
   fileName.value = projectStore.generateUniqueFileName(props.existingFiles)
 })
 
-// 验证文件名
+// Validate filename
 function validateFileName() {
   const name = fileName.value.trim()
   
@@ -136,14 +136,14 @@ function validateFileName() {
     return
   }
 
-  // 检查非法字符
+  // Check illegal characters
   const invalidChars = /[<>:"/\\|?*]/
   if (invalidChars.test(name)) {
     validationError.value = 'File name contains invalid characters'
     return
   }
 
-  // 检查是否与现有文件重名 (不区分大小写)
+  // Check if duplicate with existing files (case-insensitive)
   const fullName = `${name}.anime`
   const existsIgnoreCase = props.existingFiles.some(
     existingFile => existingFile.toLowerCase() === fullName.toLowerCase()

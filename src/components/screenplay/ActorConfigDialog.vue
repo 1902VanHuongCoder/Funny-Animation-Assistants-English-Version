@@ -6,7 +6,7 @@
     <div class="actor-config-dialog">
       <div class="dialog-header">
         <h3 class="dialog-title">
-          {{ isEdit ? '编辑演员' : '添加演员' }}
+          {{ isEdit ? 'Edit Actor' : 'Add Actor' }}
         </h3>
         <button
           class="btn-close"
@@ -17,12 +17,12 @@
       </div>
 
       <div class="dialog-body">
-        <!-- 选择人物(仅新建时) -->
+        <!-- Select character (only when creating) -->
         <div
           v-if="!isEdit"
           class="form-group"
         >
-          <label class="form-label">选择人物</label>
+          <label class="form-label">Select Character</label>
           <div class="character-list">
             <div
               v-for="char in availableCharacters"
@@ -39,39 +39,39 @@
             v-if="availableCharacters.length === 0"
             class="empty-hint"
           >
-            暂无可用人物,请先在项目中定义人物
+            No characters available. Please define characters in the project first.
           </p>
         </div>
 
-        <!-- 演员名称 -->
+        <!-- Actor name -->
         <div class="form-group">
-          <label class="form-label">演员名称</label>
+          <label class="form-label">Actor Name</label>
           <input
             v-model="formData.name"
             type="text"
             class="form-input"
-            placeholder="例如: 阿强、小明"
+            placeholder="e.g., Alex, Jordan"
           >
         </div>
 
-        <!-- 演员别名 -->
+        <!-- Actor alias -->
         <div class="form-group">
-          <label class="form-label">演员别名(用于剧本)</label>
+          <label class="form-label">Actor Alias (Used in Script)</label>
           <input
             v-model="formData.alias"
             type="text"
             class="form-input"
-            placeholder="例如: boy, girl"
+            placeholder="e.g., boy, girl"
             :disabled="isEdit"
           >
         </div>
 
-        <!-- 配音设置 -->
+        <!-- Voice settings -->
         <div class="form-group">
-          <label class="form-label">配音设置</label>
+          <label class="form-label">Voice Settings</label>
           <div class="voice-config">
             <div class="voice-row">
-              <label>语速倍率:</label>
+              <label>Speech Speed:</label>
               <input
                 v-model.number="formData.voice.speed"
                 type="number"
@@ -91,21 +91,21 @@
           class="btn-delete"
           @click="handleDelete"
         >
-          删除演员
+          Delete Actor
         </button>
         <div class="footer-right">
           <button
             class="btn-cancel"
             @click="$emit('close')"
           >
-            取消
+            Cancel
           </button>
           <button
             class="btn-save"
             :disabled="!canSave"
             @click="handleSave"
           >
-            {{ isEdit ? '保存' : '添加' }}
+            {{ isEdit ? 'Save' : 'Add' }}
           </button>
         </div>
       </div>
@@ -120,8 +120,8 @@ import type { ActorConfig } from '@/types/screenplay'
 import { generateId } from '@/utils/uuid'
 
 const props = defineProps<{
-  actor?: ActorConfig // 编辑模式传入
-  existingAliases?: string[] // 已存在的别名
+  actor?: ActorConfig // Passed in edit mode
+  existingAliases?: string[] // Existing aliases
 }>()
 
 const emit = defineEmits<{
@@ -132,12 +132,12 @@ const emit = defineEmits<{
 
 const isEdit = !!props.actor
 
-// 模拟人物列表(TODO: 从项目数据获取)
+// Mock character list (TODO: get from project data)
 const availableCharacters = ref([
-  { id: 'char_boy_001', name: '男主角' },
-  { id: 'char_girl_001', name: '女主角' },
-  { id: 'char_teacher_001', name: '老师' },
-  { id: 'char_friend_001', name: '好友' }
+  { id: 'char_boy_001', name: 'Male Lead' },
+  { id: 'char_girl_001', name: 'Female Lead' },
+  { id: 'char_teacher_001', name: 'Teacher' },
+  { id: 'char_friend_001', name: 'Friend' }
 ])
 
 const selectedCharacterId = ref(props.actor?.characterId || '')
@@ -173,7 +173,7 @@ function handleSave() {
 }
 
 function handleDelete() {
-  if (confirm(`确定要删除演员"${props.actor?.name}"吗?`)) {
+  if (confirm(`Are you sure you want to delete actor "${props.actor?.name}"?`)) {
     emit('delete')
   }
 }

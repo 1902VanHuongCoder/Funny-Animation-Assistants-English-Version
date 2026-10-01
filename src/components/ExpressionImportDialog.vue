@@ -5,7 +5,7 @@
   >
     <div class="import-dialog">
       <div class="dialog-header">
-        <h3>📁 导入表情</h3>
+        <h3>📁 Import Expressions</h3>
         <button
           class="btn-close"
           @click="$emit('close')"
@@ -15,37 +15,37 @@
       </div>
 
       <div class="dialog-body">
-        <!-- 性别选择 -->
+        <!-- Gender Selection -->
         <div class="form-group">
-          <label>性别 *</label>
+          <label>Gender *</label>
           <div class="gender-selector">
             <label class="radio-label">
               <input
                 v-model="formData.gender"
                 type="radio"
                 value="male"
-              > 男
+              > Male
             </label>
             <label class="radio-label">
               <input
                 v-model="formData.gender"
                 type="radio"
                 value="female"
-              > 女
+              > Female
             </label>
             <label class="radio-label">
               <input
                 v-model="formData.gender"
                 type="radio"
                 value="other"
-              > 其他
+              > Other
             </label>
           </div>
         </div>
 
-        <!-- 标签编辑 -->
+        <!-- Tag Edit -->
         <div class="form-group">
-          <label>标签 (Tags)</label>
+          <label>Tags</label>
           <div class="tags-input-container">
             <div class="tags-list">
               <span
@@ -63,13 +63,13 @@
             <input
               v-model="newTagInput"
               type="text"
-              placeholder="按回车添加..."
+              placeholder="Press Enter to add..."
               class="tag-input"
               @keydown.enter.prevent="addTag"
               @blur="addTag"
             >
           </div>
-          <!-- 快速选择已有标签 -->
+          <!-- Quick select existing tags -->
           <div
             v-if="quickPickTags.length > 0"
             class="quick-tags"
@@ -85,29 +85,29 @@
           </div>
         </div>
 
-        <!-- 混合模式 -->
+        <!-- Blend Mode -->
         <div class="form-group">
-          <label>混合模式</label>
+          <label>Blend Mode</label>
           <select
             v-model="formData.blendMode"
             class="form-select"
           >
-            <option value="normal">正常 (Normal)</option>
-            <option value="multiply">正片叠底 (Multiply) - 适合白背景</option>
+            <option value="normal">Normal</option>
+            <option value="multiply">Multiply (for white background)</option>
           </select>
           <p class="form-hint">
-            💡 如果表情图片有白色背景，选择"正片叠底"可使白色透明化
+            💡 If expression images have a white background, choose "Multiply" to make white transparent
           </p>
         </div>
 
-        <!-- 文件夹选择 -->
+        <!-- Folder Selection -->
         <div class="form-group">
-          <label>导入文件夹</label>
+          <label>Import Folder</label>
           <button
             class="btn-select-folder"
             @click="openFolderBrowser"
           >
-            📁 选择文件夹...
+            📁 Select Folder...
           </button>
           <div
             v-if="selectedFolderPath"
@@ -118,26 +118,26 @@
               v-if="previewItems.length > 0"
               class="preview-count"
             >
-              ({{ previewItems.length }} 个表情待导入)
+              ({{ previewItems.length }} expressions to import)
             </span>
           </div>
         </div>
 
-        <!-- 导入规则说明 -->
+        <!-- Import Rules Hint -->
         <div class="rules-hint">
-          <div class="hint-title">⚡ 导入规则</div>
+          <div class="hint-title">⚡ Import Rules</div>
           <ul>
-            <li>单张图片 → 静态表情 (图片名 = 表情名)</li>
-            <li>子文件夹 → 动画表情 (文件夹名 = 表情名，图片按名称排序)</li>
+            <li>Single image → Static expression (File name = Expression name)</li>
+            <li>Subfolder → Animated expression (Folder name = Expression name, sorted by file name)</li>
           </ul>
         </div>
 
-        <!-- 预览列表 -->
+        <!-- Preview List -->
         <div
           v-if="previewItems.length > 0"
           class="preview-list"
         >
-          <div class="preview-header">预览</div>
+          <div class="preview-header">Preview</div>
           <div class="preview-items">
             <div
               v-for="item in previewItems"
@@ -147,7 +147,7 @@
               <span class="item-icon">{{ item.type === 'static' ? '🖼️' : '🎞️' }}</span>
               <span class="item-name">{{ item.name }}</span>
               <span class="item-info">
-                {{ item.type === 'static' ? '静态' : `${item.imageCount} 帧` }}
+                {{ item.type === 'static' ? 'Static' : `${item.imageCount} frames` }}
               </span>
             </div>
           </div>
@@ -159,23 +159,23 @@
           class="btn-cancel"
           @click="$emit('close')"
         >
-          取消
+          Cancel
         </button>
         <button
           :disabled="!canImport || isImporting"
           class="btn-import"
           @click="handleImport"
         >
-          <span v-if="isImporting">导入中... ({{ importProgress.current }}/{{ importProgress.total }})</span>
-          <span v-else>导入 ({{ previewItems.length }})</span>
+          <span v-if="isImporting">Importing... ({{ importProgress.current }}/{{ importProgress.total }})</span>
+          <span v-else>Import ({{ previewItems.length }})</span>
         </button>
       </div>
     </div>
 
-    <!-- 文件夹选择对话框 -->
+    <!-- File Browser Dialog -->
     <FileBrowserDialog
       v-if="showFolderBrowser"
-      title="选择表情文件夹"
+      title="Select Expression Folder"
       select-mode="directory"
       @select-directory="handleFolderSelect"
       @close="showFolderBrowser = false"
@@ -204,38 +204,38 @@ const emit = defineEmits<{
 
 const expressionStore = useExpressionStore()
 
-// 表单数据
+// Form data
 const formData = ref({
   gender: 'female' as 'male' | 'female' | 'other',
   tags: [] as string[],
   blendMode: 'normal' as 'normal' | 'multiply'
 })
 
-// 标签输入
+// Tag input
 const newTagInput = ref('')
 
-// 文件夹选择
+// Folder selection
 const showFolderBrowser = ref(false)
 const selectedFolderPath = ref<string | null>(null)
 const selectedFolderHandle = ref<FileSystemDirectoryHandle | null>(null)
 
-// 预览数据
+// Preview data
 const previewItems = ref<ImportPreviewItem[]>([])
 
-// 导入状态
+// Import status
 const isImporting = ref(false)
 const importProgress = ref({ current: 0, total: 0 })
 
-// 计算属性
+// Computed
 const canImport = computed(() => previewItems.value.length > 0 && !isImporting.value)
 
-// 获取所有表情的标签（去重）
+// Get all expression tags (deduplicated)
 const allExpressionTags = computed(() => {
   const tags = new Set<string>()
   Object.values(expressionStore.expressions).forEach((expr: Expression) => {
     expr.tags?.forEach((t: string) => {
-      // 排除性别标签
-      if (!['male', 'female', 'other', '男', '女', '其他'].includes(t)) {
+      // Exclude gender tags (including unicode escapes for legacy compatibility)
+      if (!['male', 'female', 'other', '\u7537', '\u5973', '\u5176\u4ed6'].includes(t)) {
         tags.add(t)
       }
     })
@@ -243,12 +243,12 @@ const allExpressionTags = computed(() => {
   return Array.from(tags).sort()
 })
 
-// 快速选择标签
+// Quick pick tags
 const quickPickTags = computed(() => {
   return allExpressionTags.value.filter(t => !formData.value.tags.includes(t))
 })
 
-// 标签操作
+// Tag operations
 function addTag() {
   const tag = newTagInput.value.trim()
   if (tag && !formData.value.tags.includes(tag)) {
@@ -267,27 +267,27 @@ function addTagDirectly(tag: string) {
   }
 }
 
-// 打开文件夹浏览器
+// Open folder browser
 function openFolderBrowser() {
   showFolderBrowser.value = true
 }
 
-// 处理文件夹选择
+// Handle folder selection
 async function handleFolderSelect(directory: SelectedDirectory) {
   showFolderBrowser.value = false
   selectedFolderPath.value = directory.path
   selectedFolderHandle.value = directory.handle
 
-  // 扫描文件夹
+  // Scan folder
   try {
     previewItems.value = await scanDirectoryForExpressions(directory.handle, directory.path)
   } catch (error) {
-    console.error('[ExpressionImportDialog] 扫描文件夹失败:', error)
+    console.error('[ExpressionImportDialog] Failed to scan folder:', error)
     previewItems.value = []
   }
 }
 
-// 执行导入
+// Execute import
 async function handleImport() {
   if (!canImport.value) return
 
@@ -301,7 +301,7 @@ async function handleImport() {
       try {
         const result = await processImportItem(item)
 
-        // 创建表情
+        // Create expression
         expressionStore.createExpression(result.name, result.defaultFrame, {
           gender: formData.value.gender,
           tags: [...formData.value.tags],
@@ -313,7 +313,7 @@ async function handleImport() {
 
         successCount++
       } catch (error) {
-        console.error(`[ExpressionImportDialog] 导入 "${item.name}" 失败:`, error)
+        console.error(`[ExpressionImportDialog] Failed to import "${item.name}":`, error)
       }
       importProgress.value.current++
     }
@@ -442,7 +442,7 @@ async function handleImport() {
   color: #6b7280;
 }
 
-/* 标签样式 */
+/* Tag styles */
 .tags-input-container {
   display: flex;
   flex-wrap: wrap;
@@ -518,7 +518,7 @@ async function handleImport() {
   color: #374151;
 }
 
-/* 文件夹选择 */
+/* Folder selection */
 .btn-select-folder {
   width: 100%;
   padding: 12px 16px;
@@ -556,7 +556,7 @@ async function handleImport() {
   margin-left: 8px;
 }
 
-/* 规则说明 */
+/* Rules hint */
 .rules-hint {
   background: #f0f9ff;
   border: 1px solid #bae6fd;
@@ -583,7 +583,7 @@ async function handleImport() {
   margin-bottom: 4px;
 }
 
-/* 预览列表 */
+/* Preview list */
 .preview-list {
   margin-top: 16px;
 }
@@ -629,7 +629,7 @@ async function handleImport() {
   color: #9ca3af;
 }
 
-/* 底部按钮 */
+/* Footer buttons */
 .dialog-footer {
   display: flex;
   justify-content: flex-end;

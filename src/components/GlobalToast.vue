@@ -131,7 +131,7 @@ function getIcon(type: ToastType): string {
   opacity: 1;
 }
 
-/* Toast 动画 */
+/* Toast animation */
 .toast-enter-active {
   animation: toast-in 0.3s ease-out;
 }

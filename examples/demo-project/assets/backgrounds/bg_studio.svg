@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+  <defs>
+    <linearGradient id="wallGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1e1b4b"/>
+      <stop offset="70%" stop-color="#312e81"/>
+      <stop offset="100%" stop-color="#4338ca"/>
+    </linearGradient>
+    <linearGradient id="floorGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1f2937"/>
+      <stop offset="20%" stop-color="#111827"/>
+      <stop offset="100%" stop-color="#030712"/>
+    </linearGradient>
+    <radialGradient id="stageLight" cx="50%" cy="30%" r="60%">
+      <stop offset="0%" stop-color="#60a5fa" stop-opacity="0.35"/>
+      <stop offset="60%" stop-color="#3b82f6" stop-opacity="0.1"/>
+      <stop offset="100%" stop-color="#1e1b4b" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Wall -->
+  <rect x="0" y="0" width="1920" height="760" fill="url(#wallGradient)"/>
+  
+  <!-- Studio Spotlights / Glow -->
+  <circle cx="600" cy="300" r="500" fill="url(#stageLight)"/>
+  <circle cx="1320" cy="300" r="500" fill="url(#stageLight)"/>
+
+  <!-- Wall Pattern Grid -->
+  <g stroke="#ffffff" stroke-width="1" stroke-opacity="0.05">
+    <line x1="240" y1="0" x2="240" y2="760"/>
+    <line x1="480" y1="0" x2="480" y2="760"/>
+    <line x1="720" y1="0" x2="720" y2="760"/>
+    <line x1="960" y1="0" x2="960" y2="760"/>
+    <line x1="1200" y1="0" x2="1200" y2="760"/>
+    <line x1="1440" y1="0" x2="1440" y2="760"/>
+    <line x1="1680" y1="0" x2="1680" y2="760"/>
+  </g>
+
+  <!-- Floor separator / baseboard -->
+  <rect x="0" y="756" width="1920" height="8" fill="#6366f1" opacity="0.6"/>
+
+  <!-- Floor -->
+  <rect x="0" y="764" width="1920" height="316" fill="url(#floorGradient)"/>
+
+  <!-- Floor Light reflection -->
+  <ellipse cx="960" cy="850" rx="600" ry="80" fill="#3b82f6" opacity="0.15"/>
+</svg>

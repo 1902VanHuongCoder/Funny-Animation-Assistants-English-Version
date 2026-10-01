@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="300" viewBox="0 0 240 300">
+  <!-- Legs / Pants -->
+  <rect x="75" y="170" width="35" height="110" rx="8" fill="#1e3a8a"/>
+  <rect x="130" y="170" width="35" height="110" rx="8" fill="#1e3a8a"/>
+  <!-- Shoes -->
+  <ellipse cx="88" cy="285" rx="25" ry="12" fill="#0f172a"/>
+  <ellipse cx="152" cy="285" rx="25" ry="12" fill="#0f172a"/>
+  <!-- Hoodie Torso -->
+  <path d="M55,30 L185,30 L195,180 L45,180 Z" fill="#2563eb" rx="15"/>
+  <!-- Hoodie Collar / V-neck -->
+  <path d="M85,30 Q120,70 155,30 Z" fill="#1d4ed8"/>
+  <circle cx="120" cy="50" r="14" fill="#fed7aa"/>
+  <!-- Pocket -->
+  <rect x="75" y="115" width="90" height="45" rx="10" fill="#1d4ed8"/>
+  <!-- Arms -->
+  <rect x="25" y="35" width="35" height="110" rx="15" fill="#3b82f6" transform="rotate(8 25 35)"/>
+  <circle cx="36" cy="155" r="14" fill="#fed7aa"/>
+  <rect x="180" y="40" width="35" height="110" rx="15" fill="#3b82f6" transform="rotate(-8 180 40)"/>
+  <circle cx="204" cy="160" r="14" fill="#fed7aa"/>
+</svg>

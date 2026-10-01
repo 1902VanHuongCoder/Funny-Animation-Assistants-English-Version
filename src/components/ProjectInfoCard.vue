@@ -2,7 +2,7 @@
   <div class="project-info-header">
     <!-- Row 1: Title (click to edit) -->
     <div class="header-top">
-      <!-- 编辑模式 -->
+      <!-- Edit mode -->
       <div
         v-if="isEditing"
         class="title-edit-wrapper"
@@ -16,11 +16,11 @@
           @blur="confirmEdit"
         >
       </div>
-      <!-- 显示模式 -->
+      <!-- Display mode -->
       <h1
         v-else
         class="project-title"
-        title="点击重命名"
+        title="Click to rename"
         @click="startEdit"
       >
         {{ name }}
@@ -32,9 +32,9 @@
     <div class="meta-row">
       <span
         class="meta-item"
-        title="动画数量"
+        title="Episode count"
       >
-        <span class="icon">🎬</span> {{ episodeCount }} 动画
+        <span class="icon">🎬</span> {{ episodeCount }} Episode(s)
       </span>
     </div>
   </div>

@@ -4,7 +4,7 @@
     <div class="toolbar">
       <div class="toolbar-left">
         <h2 class="page-title">
-          道具管理
+          Prop Management
         </h2>
         <div class="filter-controls">
           <button 
@@ -12,7 +12,7 @@
             :class="{ active: selectedTags.length > 0 }"
             @click="showFilterModal = true"
           >
-            筛选 <span v-if="selectedTags.length > 0">({{ selectedTags.length }})</span>
+            Filter <span v-if="selectedTags.length > 0">({{ selectedTags.length }})</span>
             <span class="icon">▼</span>
           </button>
         </div>
@@ -23,21 +23,21 @@
             :class="{ active: resourceType === 'all' }"
             @click="resourceType = 'all'"
           >
-            全部
+            All
           </button>
           <button 
             class="btn-filter-type" 
             :class="{ active: resourceType === 'dynamic' }"
             @click="resourceType = 'dynamic'"
           >
-            动态
+            Animated
           </button>
           <button 
             class="btn-filter-type" 
             :class="{ active: resourceType === 'static' }"
             @click="resourceType = 'static'"
           >
-            静态
+            Static
           </button>
         </div>
       </div>
@@ -49,10 +49,10 @@
             class="sort-select"
           >
             <option value="newest">
-              📅 最新创建
+              📅 Newest
             </option>
             <option value="oldest">
-              📅 最早创建
+              📅 Oldest
             </option>
           </select>
         </div>
@@ -61,7 +61,7 @@
           <input 
             v-model="searchKeyword" 
             type="text" 
-            placeholder="搜索道具..." 
+            placeholder="Search props..." 
             class="search-input"
           >
         </div>
@@ -70,7 +70,7 @@
           class="btn-batch"
           @click="toggleBatchMode"
         >
-          {{ isBatchMode ? '退出批量' : '⚙️ 批量管理' }}
+          {{ isBatchMode ? 'Exit Batch' : '⚙️ Batch Manage' }}
         </button>
 
         <template v-if="isBatchMode">
@@ -78,26 +78,26 @@
             class="btn-secondary"
             @click="selectAll"
           >
-            全选
+            Select All
           </button>
           <button
             class="btn-secondary"
             @click="deselectAll"
           >
-            全不选
+            Deselect All
           </button>
           <button
             class="btn-secondary"
             @click="invertSelection"
           >
-            反向选择
+            Invert Selection
           </button>
           <button
             class="btn-delete-batch"
             :disabled="selectedIds.size === 0"
             @click="batchDelete"
           >
-            删除 ({{ selectedIds.size }})
+            Delete ({{ selectedIds.size }})
           </button>
         </template>
 
@@ -106,14 +106,14 @@
           class="btn-new"
           @click="openCreateModal"
         >
-          + 新建道具
+          + New Prop
         </button>
         <button
           v-if="!isBatchMode"
           class="btn-import"
           @click="showImportDialog = true"
         >
-          📁 导入道具
+          📁 Import Props
         </button>
       </div>
     </div>
@@ -126,9 +126,9 @@
           v-if="filteredProps.length === 0"
           class="empty-state"
         >
-          <p>📭 暂无道具</p>
+          <p>📭 No props yet</p>
           <p class="hint">
-            点击"新建道具"开始创建
+            Click "New Prop" to get started
           </p>
         </div>
 
@@ -165,7 +165,7 @@
                 v-if="prop.type === 'animation'"
                 class="anim-badge"
               >
-                动画 ({{ prop.frames?.length || 0 }}帧)
+                Animated ({{ prop.frames?.length || 0 }} frames)
               </div>
             </div>
 
@@ -202,14 +202,14 @@
             >
               <button
                 class="btn-icon edit"
-                title="编辑"
+                title="Edit"
                 @click.stop="openEditModal(prop.id)"
               >
                 ✏️
               </button>
               <button
                 class="btn-icon delete"
-                title="删除"
+                title="Delete"
                 @click.stop="deleteProp(prop.id)"
               >
                 🗑️
@@ -220,7 +220,7 @@
       </div>
     </div>
 
-    <!-- 标签筛选对话框 -->
+    <!-- Tag filter dialog -->
     <TagSelectDialog
       v-model:visible="showFilterModal"
       :available-tags="allTags"
@@ -246,7 +246,7 @@
       @cancel="showDeleteConfirm = false"
     />
 
-    <!-- 导入对话框 -->
+    <!-- Import Dialog -->
     <AssetImportDialog
       v-if="showImportDialog"
       asset-type="prop"
@@ -281,7 +281,7 @@ const selectedIds = ref<Set<string>>(new Set())
 const editorVisible = ref(false)
 const editingPropId = ref<string | undefined>(undefined)
 
-// 导入对话框
+// Import Dialog
 const showImportDialog = ref(false)
 
 // Filter Modal
@@ -303,7 +303,7 @@ function handleTagsConfirm(tags: string[]) {
 const filteredProps = computed(() => {
   let list = propStore.props
   
-  // 多标签筛选：匹配任一选中标签
+  // Tag filter: Match any selected tag
   if (selectedTags.value.length > 0) {
     list = list.filter((p: PropAsset) => p.tags?.some((t: string) => selectedTags.value.includes(t)))
   }
@@ -354,9 +354,9 @@ function handleImageError(e: Event) {
 function formatTimeAgo(timestamp: number): string {
   const diff = Date.now() - timestamp
   const hours = Math.floor(diff / (1000 * 60 * 60))
-  if (hours < 1) return '刚刚'
-  if (hours < 24) return `${hours}小时前`
-  return `${Math.floor(hours / 24)}天前`
+  if (hours < 1) return 'Just now'
+  if (hours < 24) return `${hours}h ago`
+  return `${Math.floor(hours / 24)}d ago`
 }
 
 // Modal Logic
@@ -381,8 +381,8 @@ function handleSaved() {
 
 function deleteProp(id: string) {
   pendingDeleteIds.value = [id]
-  deleteConfirmTitle.value = '删除道具'
-  deleteConfirmMessage.value = '确定要删除这个道具吗？此操作不可恢复。'
+  deleteConfirmTitle.value = 'Delete Prop'
+  deleteConfirmMessage.value = 'Are you sure you want to delete this prop? This action cannot be undone.'
   showDeleteConfirm.value = true
 }
 
@@ -423,8 +423,8 @@ function toggleSelect(id: string) {
 
 function batchDelete() {
   pendingDeleteIds.value = Array.from(selectedIds.value)
-  deleteConfirmTitle.value = '批量删除道具'
-  deleteConfirmMessage.value = `确定要删除选中的 ${selectedIds.value.size} 个道具吗？此操作不可恢复。`
+  deleteConfirmTitle.value = 'Batch Delete Props'
+  deleteConfirmMessage.value = `Are you sure you want to delete the selected ${selectedIds.value.size} props? This action cannot be undone.`
   showDeleteConfirm.value = true
 }
 
@@ -446,9 +446,9 @@ function invertSelection() {
   })
 }
 
-// 处理导入完成
+// Handle import complete
 function handleImported(count: number) {
-  console.log(`[PropManager] 成功导入 ${count} 个道具`)
+  console.log(`[PropManager] Successfully imported ${count} props`)
 }
 </script>
 

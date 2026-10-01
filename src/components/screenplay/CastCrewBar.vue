@@ -1,20 +1,20 @@
 <template>
   <div class="cast-crew-bar">
-    <!-- 旁白设置 -->
+    <!-- Narrator settings -->
     <div class="crew-section">
       <button
         class="narrator-btn"
-        title="旁白设置"
+        title="Narrator Settings"
         @click="handleEditNarrator"
       >
         <span class="narrator-icon">👤</span>
-        <span class="narrator-label">旁白设置</span>
+        <span class="narrator-label">Narrator</span>
       </button>
     </div>
 
     <div class="divider" />
 
-    <!-- 演员列表 -->
+    <!-- Actor list -->
     <div class="actors-section">
       <div class="actors-list">
         <button
@@ -29,13 +29,13 @@
         </button>
       </div>
 
-      <!-- 添加演员按钮 -->
+      <!-- Add actor button -->
       <button
         class="btn-add-actor"
-        title="添加演员"
+        title="Add Actor"
         @click="$emit('addActor')"
       >
-        ➕ 添加演员
+        ➕ Add Actor
       </button>
     </div>
   </div>
@@ -171,7 +171,7 @@ function handleEditActor(alias: string) {
   color: #374151;
 }
 
-/* 横向滚动条样式 */
+/* Horizontal scrollbar styles */
 .actors-section::-webkit-scrollbar {
   height: 6px;
 }

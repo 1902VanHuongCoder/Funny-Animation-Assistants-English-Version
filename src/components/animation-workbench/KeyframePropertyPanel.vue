@@ -1,27 +1,27 @@
 <!--
-  KeyframePropertyPanel.vue — 右侧属性编辑面板（三态切换）
+  KeyframePropertyPanel.vue — Right property edit panel (three-state toggle)
   
-  v5.0: 三态面板
-  - 状态 A (none): 无选中 → 动画级属性（循环、填充模式、轨道列表）
-  - 状态 B (track): 选中轨道 → 轨道级属性（按 trackType 分类）
-  - 状态 C (keyframe): 选中关键帧 → 帧级属性（按 keyframe 类型分类）
+  v5.0: Three-state panel
+  - State A (none): No selection -> Animation-level properties (loop, fill mode, tracks)
+  - State B (track): Track selected -> Track-level properties (categorized by trackType)
+  - State C (keyframe): Keyframe selected -> Frame-level properties (categorized by keyframe type)
 -->
 <template>
   <div class="keyframe-property-panel">
-    <!-- ===== 状态 A: 无选中 → 引导提示 ===== -->
+    <!-- ===== State A: No Selection -> Guide Hint ===== -->
     <template v-if="selectionMode === 'none'">
       <div class="animation-overview">
-        <div class="section-header">动画属性</div>
+        <div class="section-header">Animation Properties</div>
         <div class="overview-row">
-          <span class="overview-label">名称</span>
+          <span class="overview-label">Name</span>
           <span class="overview-value">{{ ctx.animationDef.name }}</span>
         </div>
         <div class="overview-row">
-          <span class="overview-label">轨道</span>
+          <span class="overview-label">Tracks</span>
           <span class="overview-value">{{ ctx.allTracks.value.length }}</span>
         </div>
         <div class="section-divider" />
-        <div class="section-header">默认播放方式</div>
+        <div class="section-header">Default Playback Mode</div>
         <div class="timing-mode-options">
           <label
             class="timing-mode-option"
@@ -34,7 +34,7 @@
               :checked="currentTimingMode === 'continuous'"
               @change="onTimingModeChange('continuous')"
             >
-            <span>连续播放</span>
+            <span>Continuous Playback</span>
           </label>
           <label
             class="timing-mode-option"
@@ -47,36 +47,36 @@
               :checked="currentTimingMode === 'tts_speech'"
               @change="onTimingModeChange('tts_speech')"
             >
-            <span>跟随 TTS 有声片段</span>
+            <span>Follow TTS Voiced Segments</span>
           </label>
         </div>
         <div class="panel-empty-hint compact">
-          <div class="hint-text">在下方时间轴中点击轨道或关键帧即可编辑细节</div>
+          <div class="hint-text">Click on a track or keyframe in the timeline below to edit details</div>
         </div>
       </div>
     </template>
 
-    <!-- ===== 状态 B: 轨道级属性 ===== -->
+    <!-- ===== State B: Track-Level Properties ===== -->
     <template v-else-if="selectionMode === 'track'">
-      <div class="section-header">轨道: {{ trackTypeLabel(currentTrackAny!) }}</div>
+      <div class="section-header">Track: {{ trackTypeLabel(currentTrackAny!) }}</div>
       <div class="field-row">
-        <label>显示名</label>
+        <label>Display Name</label>
         <input
           type="text"
           class="text-input"
           :value="currentTrackAny?.displayName ?? ''"
-          placeholder="可选"
+          placeholder="Optional"
           maxlength="40"
           @change="onDisplayNameInput"
         />
       </div>
       <div class="field-row">
-        <label>目标</label>
+        <label>Target</label>
         <div class="target-picker" @pointerdown.stop>
           <button
             class="target-picker-trigger"
             :class="{ active: showTargetPicker }"
-            title="选择目标对象"
+            title="Select target object"
             @click="toggleTargetPicker"
           >
             <span class="target-picker-label">{{ currentTargetLabel }}</span>
@@ -90,7 +90,7 @@
             >
               <span class="tree-spacer" />
               <span class="target-icon">🎯</span>
-              <span class="target-name">自身</span>
+              <span class="target-name">Self</span>
             </button>
             <button
               v-for="node in flatTargetNodes"
@@ -115,27 +115,27 @@
         </div>
       </div>
 
-      <!-- TransformTrack 设置 -->
+      <!-- TransformTrack Settings -->
       <template v-if="currentTrackAny?.trackType === 'transform'">
         <div class="section-divider" />
-        <div class="section-header">时间</div>
+        <div class="section-header">Timing</div>
         <div class="field-row">
-          <label>时长</label>
+          <label>Duration</label>
           <div class="duration-mode">
-            <label><input type="radio" :checked="durationMode === 'fixed'" @change="setDurationMode('fixed')" /> 固定</label>
+            <label><input type="radio" :checked="durationMode === 'fixed'" @change="setDurationMode('fixed')" /> Fixed</label>
             <input v-if="durationMode === 'fixed'" type="number" :value="currentTrackDurationValue" min="10" step="10" class="duration-input" @change="onDurationInput" />
             <span v-if="durationMode === 'fixed'" class="unit">ms</span>
-            <label><input type="radio" :checked="durationMode === 'auto'" @change="setDurationMode('auto')" /> 自动</label>
+            <label><input type="radio" :checked="durationMode === 'auto'" @change="setDurationMode('auto')" /> Auto</label>
           </div>
         </div>
         <div class="easing-section">
-          <label class="easing-label">缓动</label>
+          <label class="easing-label">Easing</label>
           <EasingPicker :model-value="currentEasing" @update:model-value="onEasingChange" />
         </div>
         <div class="section-divider" />
-        <div class="section-header">基础</div>
+        <div class="section-header">Basic</div>
         <div class="field-row">
-          <label>变换点</label>
+          <label>Pivot</label>
           <div class="field-pair">
             <span class="field-label">X</span>
             <input type="number" :value="pivotDisplayPx.x" step="1" @change="e => onPivotInput('x', e)" />
@@ -146,7 +146,7 @@
           </div>
           <span class="unit">px</span>
           <span v-if="!hasPivotSet" class="default-hint">
-            ({{ pivotDefaultIsApproximate ? '默认 ≈' : '默认' }})
+            ({{ pivotDefaultIsApproximate ? 'Default ≈' : 'Default' }})
           </span>
         </div>
         <PivotEditorPanel
@@ -163,45 +163,45 @@
         />
       </template>
 
-      <!-- VisibilityTrack 设置 -->
+      <!-- VisibilityTrack Settings -->
       <template v-else-if="currentTrackAny?.trackType === 'visibility'">
         <div class="section-divider" />
-        <div class="section-header">时间</div>
+        <div class="section-header">Timing</div>
         <div class="field-row">
-          <label>时长</label>
+          <label>Duration</label>
           <div class="duration-mode">
-            <label><input type="radio" :checked="durationMode === 'fixed'" @change="setDurationMode('fixed')" /> 固定</label>
+            <label><input type="radio" :checked="durationMode === 'fixed'" @change="setDurationMode('fixed')" /> Fixed</label>
             <input v-if="durationMode === 'fixed'" type="number" :value="currentTrackDurationValue" min="10" step="10" class="duration-input" @change="onDurationInput" />
             <span v-if="durationMode === 'fixed'" class="unit">ms</span>
-            <label><input type="radio" :checked="durationMode === 'auto'" @change="setDurationMode('auto')" /> 自动</label>
+            <label><input type="radio" :checked="durationMode === 'auto'" @change="setDurationMode('auto')" /> Auto</label>
           </div>
         </div>
         <div class="easing-section">
-          <label class="easing-label">缓动</label>
+          <label class="easing-label">Easing</label>
           <EasingPicker :model-value="currentEasing" @update:model-value="onEasingChange" />
         </div>
       </template>
 
-      <!-- FrameSequenceTrack 设置 -->
+      <!-- FrameSequenceTrack Settings -->
       <template v-else-if="currentTrackAny?.trackType === 'frame_sequence'">
         <div class="section-divider" />
         <div class="field-row">
-          <label>帧率</label>
+          <label>Frame Rate</label>
           <div class="duration-mode">
-            <label><input type="radio" :checked="!hasCustomFps" @change="setFpsMode('source')" /> 跟随素材</label>
-            <label><input type="radio" :checked="hasCustomFps" @change="setFpsMode('custom')" /> 自定义</label>
+            <label><input type="radio" :checked="!hasCustomFps" @change="setFpsMode('source')" /> Follow Asset</label>
+            <label><input type="radio" :checked="hasCustomFps" @change="setFpsMode('custom')" /> Custom</label>
             <input v-if="hasCustomFps" type="number" :value="(currentTrackAny as FrameSequenceTrack).fps ?? sourceFps" min="1" max="60" step="1" class="duration-input" @change="onFpsInput" />
             <span v-if="hasCustomFps" class="unit">fps</span>
           </div>
-          <span v-if="!hasCustomFps" class="default-hint">(素材: {{ sourceFps }} fps)</span>
+          <span v-if="!hasCustomFps" class="default-hint">(Asset: {{ sourceFps }} fps)</span>
         </div>
         <div class="field-row">
-          <label>循环</label>
+          <label>Loop</label>
           <input type="checkbox" :checked="(currentTrackAny as FrameSequenceTrack).loop ?? true" @change="onFrameSeqLoopChange" />
         </div>
       </template>
 
-      <!-- EffectTrack 设置 -->
+      <!-- EffectTrack Settings -->
       <template v-else-if="currentTrackAny?.trackType === 'effect'">
         <EffectParamsEditor
           :track="currentTrackAny as EffectTrack"
@@ -212,11 +212,11 @@
 
       <div class="section-divider" />
       <div class="quick-actions">
-        <button class="btn-sm btn-danger" @click="onDeleteTrack">删除轨道</button>
+        <button class="btn-sm btn-danger" @click="onDeleteTrack">Delete Track</button>
       </div>
     </template>
 
-    <!-- ===== 状态 C: 关键帧属性 ===== -->
+    <!-- ===== State C: Keyframe Properties ===== -->
     <template v-else>
       <!-- TransformKeyframe -->
       <template v-if="currentTrackAny?.trackType === 'transform'">
@@ -227,28 +227,28 @@
               :key="index"
               :value="index"
             >
-              帧 {{ index + 1 }} / {{ ctx.keyframes.value.length }} · {{ Math.round(frame.time * 100) }}%
+              Frame {{ index + 1 }} / {{ ctx.keyframes.value.length }} · {{ Math.round(frame.time * 100) }}%
             </option>
           </select>
-          <span class="frame-bar-hint" title="在时间轴工具栏中添加/复制/粘贴/删除关键帧">⓵ 使用时间轴工具栏操作帧</span>
+          <span class="frame-bar-hint" title="Add/copy/paste/delete keyframes in timeline toolbar">⓵ Operate frames via timeline toolbar</span>
         </div>
 
         <div class="field-row">
-          <label>时间</label>
+          <label>Time</label>
           <input type="number" :value="timePercent" min="0" max="100" step="1" :disabled="isInterpolated" @change="onTimeInput" />
           <span class="unit">%</span>
         </div>
 
         <div class="section-divider" />
         <div class="section-header">
-          变换
-          <span v-if="isKeyframeSplit" class="mode-badge" title="此帧为瞬变帧：动画到达该帧的数值与离开该帧的数值不同，将在时间轴上瞬间跳变">瞬变帧</span>
+          Transform
+          <span v-if="isKeyframeSplit" class="mode-badge" title="Split keyframe: values arriving at and leaving this frame differ, jumping instantly on timeline">Split</span>
         </div>
 
-        <!-- === 平滑态：单列编辑（默认） === -->
+        <!-- === Smooth State: Single Column Edit (Default) === -->
         <div v-if="!isKeyframeSplit" :class="['field-group', { 'interpolated': isInterpolated }]">
           <div class="field-row">
-            <label>位移</label>
+            <label>Position</label>
             <div class="field-pair">
               <span class="field-label">X</span>
               <input type="number" :value="Math.round(displayValues.x)" step="1" :disabled="isInterpolated" @change="e => onValueInput('x', e)" />
@@ -260,7 +260,7 @@
           </div>
 
           <div class="field-row">
-            <label>缩放</label>
+            <label>Scale</label>
             <div class="field-pair">
               <span class="field-label">X</span>
               <input type="number" :value="Math.round(displayValues.scaleX * 100)" step="1" :disabled="isInterpolated" @change="e => onScaleInput('scaleX', e)" />
@@ -269,73 +269,73 @@
               <span class="field-label">Y</span>
               <input type="number" :value="Math.round(displayValues.scaleY * 100)" step="1" :disabled="isInterpolated" @change="e => onScaleInput('scaleY', e)" />
             </div>
-            <button class="btn-link" :class="{ active: scaleLocked }" title="等比锁定" @click="scaleLocked = !scaleLocked">🔗</button>
+            <button class="btn-link" :class="{ active: scaleLocked }" title="Lock Aspect Ratio" @click="scaleLocked = !scaleLocked">🔗</button>
           </div>
 
           <div class="field-row">
-            <label>旋转</label>
+            <label>Rotation</label>
             <input type="number" :value="displayRotationDeg" step="1" :disabled="isInterpolated" @change="onRotationInput" />
             <span class="unit">°</span>
             <label class="checkbox-inline">
               <input type="checkbox" :checked="displayValues.flipX" :disabled="isInterpolated" @change="onFlipXChange" />
-              翻转
+              Flip
             </label>
           </div>
         </div>
 
-        <!-- === 瞬变态：双列对比编辑 === -->
+        <!-- === Split State: Dual Column Comparison Edit === -->
         <div v-else :class="['field-group', 'split-group', { 'interpolated': isInterpolated }]">
-          <div class="split-hint">此帧为瞬变帧：动画在该时刻从「帧前值」瞬间跳变到「帧后值」。</div>
+          <div class="split-hint">Split keyframe: Animation jumps instantly from 'Value In' to 'Value Out' at this moment.</div>
           <div class="split-col-header-row">
             <span class="split-label-spacer"></span>
-            <span class="split-col-header">帧前值</span>
+            <span class="split-col-header">Value In</span>
             <span class="split-col-arrow-spacer"></span>
-            <span class="split-col-header">帧后值</span>
+            <span class="split-col-header">Value Out</span>
             <span class="split-sync-spacer"></span>
           </div>
 
           <div class="split-row" :class="{ 'has-diff': Math.round(displayValues.x) !== Math.round(valueOutDisplay.x) }">
-            <label class="split-label">位移 X</label>
+            <label class="split-label">Position X</label>
             <input class="split-input" type="number" :value="Math.round(displayValues.x)" step="1" :disabled="isInterpolated" @change="e => onValueInput('x', e)" />
             <span class="split-arrow">→</span>
             <input class="split-input" type="number" :value="Math.round(valueOutDisplay.x)" step="1" :disabled="isInterpolated" @change="e => onOutValueInput('x', e)" />
-            <button class="btn-sync" :disabled="isInterpolated || Math.round(displayValues.x) === Math.round(valueOutDisplay.x)" title="将帧后值同步为帧前值" @click="syncSplitField('x')">⇆</button>
+            <button class="btn-sync" :disabled="isInterpolated || Math.round(displayValues.x) === Math.round(valueOutDisplay.x)" title="Sync Value Out with Value In" @click="syncSplitField('x')">⇆</button>
           </div>
 
           <div class="split-row" :class="{ 'has-diff': Math.round(displayValues.y) !== Math.round(valueOutDisplay.y) }">
-            <label class="split-label">位移 Y</label>
+            <label class="split-label">Position Y</label>
             <input class="split-input" type="number" :value="Math.round(displayValues.y)" step="1" :disabled="isInterpolated" @change="e => onValueInput('y', e)" />
             <span class="split-arrow">→</span>
             <input class="split-input" type="number" :value="Math.round(valueOutDisplay.y)" step="1" :disabled="isInterpolated" @change="e => onOutValueInput('y', e)" />
-            <button class="btn-sync" :disabled="isInterpolated || Math.round(displayValues.y) === Math.round(valueOutDisplay.y)" title="将帧后值同步为帧前值" @click="syncSplitField('y')">⇆</button>
+            <button class="btn-sync" :disabled="isInterpolated || Math.round(displayValues.y) === Math.round(valueOutDisplay.y)" title="Sync Value Out with Value In" @click="syncSplitField('y')">⇆</button>
           </div>
 
           <div class="split-row" :class="{ 'has-diff': Math.round(displayValues.scaleX * 100) !== Math.round(valueOutDisplay.scaleX * 100) }">
-            <label class="split-label">缩放 X<span class="unit">%</span></label>
+            <label class="split-label">Scale X<span class="unit">%</span></label>
             <input class="split-input" type="number" :value="Math.round(displayValues.scaleX * 100)" step="1" :disabled="isInterpolated" @change="e => onScaleInput('scaleX', e)" />
             <span class="split-arrow">→</span>
             <input class="split-input" type="number" :value="Math.round(valueOutDisplay.scaleX * 100)" step="1" :disabled="isInterpolated" @change="e => onOutScaleInput('scaleX', e)" />
-            <button class="btn-sync" :disabled="isInterpolated || Math.round(displayValues.scaleX * 100) === Math.round(valueOutDisplay.scaleX * 100)" title="将帧后值同步为帧前值" @click="syncSplitField('scaleX')">⇆</button>
+            <button class="btn-sync" :disabled="isInterpolated || Math.round(displayValues.scaleX * 100) === Math.round(valueOutDisplay.scaleX * 100)" title="Sync Value Out with Value In" @click="syncSplitField('scaleX')">⇆</button>
           </div>
 
           <div class="split-row" :class="{ 'has-diff': Math.round(displayValues.scaleY * 100) !== Math.round(valueOutDisplay.scaleY * 100) }">
-            <label class="split-label">缩放 Y<span class="unit">%</span></label>
+            <label class="split-label">Scale Y<span class="unit">%</span></label>
             <input class="split-input" type="number" :value="Math.round(displayValues.scaleY * 100)" step="1" :disabled="isInterpolated" @change="e => onScaleInput('scaleY', e)" />
             <span class="split-arrow">→</span>
             <input class="split-input" type="number" :value="Math.round(valueOutDisplay.scaleY * 100)" step="1" :disabled="isInterpolated" @change="e => onOutScaleInput('scaleY', e)" />
-            <button class="btn-sync" :disabled="isInterpolated || Math.round(displayValues.scaleY * 100) === Math.round(valueOutDisplay.scaleY * 100)" title="将帧后值同步为帧前值" @click="syncSplitField('scaleY')">⇆</button>
+            <button class="btn-sync" :disabled="isInterpolated || Math.round(displayValues.scaleY * 100) === Math.round(valueOutDisplay.scaleY * 100)" title="Sync Value Out with Value In" @click="syncSplitField('scaleY')">⇆</button>
           </div>
 
           <div class="split-row" :class="{ 'has-diff': displayRotationDeg !== valueOutRotationDeg }">
-            <label class="split-label">旋转<span class="unit">°</span></label>
+            <label class="split-label">Rotation<span class="unit">°</span></label>
             <input class="split-input" type="number" :value="displayRotationDeg" step="1" :disabled="isInterpolated" @change="onRotationInput" />
             <span class="split-arrow">→</span>
             <input class="split-input" type="number" :value="valueOutRotationDeg" step="1" :disabled="isInterpolated" @change="onOutRotationInput" />
-            <button class="btn-sync" :disabled="isInterpolated || displayRotationDeg === valueOutRotationDeg" title="将帧后值同步为帧前值" @click="syncSplitField('rotation')">⇆</button>
+            <button class="btn-sync" :disabled="isInterpolated || displayRotationDeg === valueOutRotationDeg" title="Sync Value Out with Value In" @click="syncSplitField('rotation')">⇆</button>
           </div>
 
           <div class="split-row" :class="{ 'has-diff': displayValues.flipX !== valueOutDisplay.flipX }">
-            <label class="split-label">翻转</label>
+            <label class="split-label">Flip</label>
             <span class="split-input split-checkbox-cell">
               <input type="checkbox" :checked="displayValues.flipX" :disabled="isInterpolated" @change="onFlipXChange" />
             </span>
@@ -343,26 +343,26 @@
             <span class="split-input split-checkbox-cell">
               <input type="checkbox" :checked="valueOutDisplay.flipX" :disabled="isInterpolated" @change="onOutFlipXChange" />
             </span>
-            <button class="btn-sync" :disabled="isInterpolated || displayValues.flipX === valueOutDisplay.flipX" title="将帧后值同步为帧前值" @click="syncSplitField('flipX')">⇆</button>
+            <button class="btn-sync" :disabled="isInterpolated || displayValues.flipX === valueOutDisplay.flipX" title="Sync Value Out with Value In" @click="syncSplitField('flipX')">⇆</button>
           </div>
         </div>
 
         <div class="section-divider" />
         <div class="quick-actions">
-          <button class="btn-sm" title="重置帧为默认值" :disabled="isInterpolated" @click="ctx.resetKeyframe(selectedIndex)">重置帧</button>
+          <button class="btn-sm" title="Reset frame to defaults" :disabled="isInterpolated" @click="ctx.resetKeyframe(selectedIndex)">Reset Frame</button>
           <button
             v-if="!isKeyframeSplit"
             class="btn-sm"
-            title="切换为瞬变帧：允许设置该帧的「帧前值」与「帧后值」不同，在时间轴上瞬间跳变"
+            title="Switch to split keyframe: allows setting different Value In and Value Out"
             :disabled="isInterpolated"
             @click="onSplitKeyframe"
-          >改为瞬变帧</button>
+          >Convert to Split Keyframe</button>
           <button
             v-else
             class="btn-sm"
-            title="切换为平滑帧：合并帧前/帧后为单一数值"
+            title="Switch to smooth keyframe: merge Value In and Value Out into a single value"
             @click="onMergeKeyframe"
-          >改为平滑帧</button>
+          >Convert to Smooth Keyframe</button>
         </div>
       </template>
 
@@ -375,34 +375,34 @@
               :key="index"
               :value="index"
             >
-              帧 {{ index + 1 }} / {{ visibilityKeyframes.length }} · {{ Math.round((frame.time ?? 0) * 100) }}%
+              Frame {{ index + 1 }} / {{ visibilityKeyframes.length }} · {{ Math.round((frame.time ?? 0) * 100) }}%
             </option>
           </select>
-          <span class="frame-bar-hint" title="在时间轴工具栏中添加/复制/粘贴/删除关键帧">⓵ 使用时间轴工具栏操作帧</span>
+          <span class="frame-bar-hint" title="Add/copy/paste/delete keyframes in timeline toolbar">⓵ Operate frames via timeline toolbar</span>
         </div>
 
         <div class="field-row">
-          <label>时间</label>
+          <label>Time</label>
           <input type="number" :value="visibilityTimePercent" min="0" max="100" step="1" @change="onVisibilityTimeInput" />
           <span class="unit">%</span>
         </div>
 
         <div class="section-divider" />
         <div class="section-header">
-          透明度
-          <span v-if="isVisibilityKeyframeSplit" class="mode-badge" title="此帧为瞬变帧：帧前后 Alpha 不同，将在时间轴上瞬间跳变">瞬变帧</span>
+          Opacity
+          <span v-if="isVisibilityKeyframeSplit" class="mode-badge" title="Split keyframe: Alpha In and Alpha Out differ, jumping instantly on timeline">Split</span>
         </div>
         <div v-if="!isVisibilityKeyframeSplit" class="field-row">
           <label>Alpha</label>
           <input type="number" :value="visibilityAlpha" min="0" max="1" step="0.1" @change="onVisibilityAlphaInput" />
         </div>
         <div v-else class="field-group split-group">
-          <div class="split-hint">此帧为瞬变帧：Alpha 在该时刻从「帧前值」瞬间跳变到「帧后值」。</div>
+          <div class="split-hint">Split keyframe: Alpha jumps instantly from 'Value In' to 'Value Out' at this moment.</div>
           <div class="split-col-header-row">
             <span class="split-label-spacer"></span>
-            <span class="split-col-header">帧前值</span>
+            <span class="split-col-header">Value In</span>
             <span class="split-col-arrow-spacer"></span>
-            <span class="split-col-header">帧后值</span>
+            <span class="split-col-header">Value Out</span>
             <span class="split-sync-spacer"></span>
           </div>
           <div class="split-row" :class="{ 'has-diff': visibilityAlpha !== visibilityAlphaOut }">
@@ -410,7 +410,7 @@
             <input class="split-input" type="number" :value="visibilityAlpha" min="0" max="1" step="0.1" @change="onVisibilityAlphaInput" />
             <span class="split-arrow">→</span>
             <input class="split-input" type="number" :value="visibilityAlphaOut" min="0" max="1" step="0.1" @change="onVisibilityAlphaOutInput" />
-            <button class="btn-sync" :disabled="visibilityAlpha === visibilityAlphaOut" title="将帧后值同步为帧前值" @click="syncVisibilityAlpha">⇆</button>
+            <button class="btn-sync" :disabled="visibilityAlpha === visibilityAlphaOut" title="Sync Value Out with Value In" @click="syncVisibilityAlpha">⇆</button>
           </div>
         </div>
 
@@ -419,15 +419,15 @@
           <button
             v-if="!isVisibilityKeyframeSplit"
             class="btn-sm"
-            title="切换为瞬变帧：允许设置该帧的「帧前 Alpha」与「帧后 Alpha」不同"
+            title="Switch to split keyframe: allows setting different Alpha In and Alpha Out"
             @click="onSplitVisibilityKeyframe"
-          >改为瞬变帧</button>
+          >Convert to Split Keyframe</button>
           <button
             v-else
             class="btn-sm"
-            title="切换为平滑帧：合并帧前/帧后为单一数值"
+            title="Switch to smooth keyframe: merge Value In and Value Out into a single value"
             @click="onMergeVisibilityKeyframe"
-          >改为平滑帧</button>
+          >Convert to Smooth Keyframe</button>
         </div>
       </template>
     </template>
@@ -437,8 +437,8 @@
         <p class="panel-dialog-title">{{ deleteTrackDialog.title }}</p>
         <p class="panel-dialog-message">{{ deleteTrackDialog.message }}</p>
         <div class="panel-dialog-actions">
-          <button class="btn-sm" @click="cancelDeleteTrack">取消</button>
-          <button class="btn-danger" @click="confirmDeleteTrack">删除</button>
+          <button class="btn-sm" @click="cancelDeleteTrack">Cancel</button>
+          <button class="btn-danger" @click="confirmDeleteTrack">Delete</button>
         </div>
       </div>
     </div>
@@ -503,11 +503,11 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   /**
-   * 用户在面板内（数字输入或 PivotEditorPanel 拖拽）提交新的变换点。
-   * 父组件需做逐关键帧 (R·S − f·I)·ΔOrigin 补偿后再写入 track.pivot。
+   * User submits new pivot in panel (number input or PivotEditorPanel drag).
+   * Parent component performs per-keyframe (R*S - f*I)*dOrigin compensation before writing track.pivot.
    */
   'pivot-change': [pivot: { x: number; y: number }]
-  /** 清除 track.pivot，回退到对象默认变换点。 */
+  /** Clear track.pivot, fallback to object default pivot. */
   'pivot-reset': []
 }>()
 
@@ -525,9 +525,9 @@ function onTimingModeChange(timingMode: AnimationTimingMode) {
   props.ctx.updateTimingMode(timingMode)
 }
 
-// ===== FrameSequenceTrack 素材源 FPS/Loop =====
+// ===== FrameSequenceTrack Asset Source FPS/Loop =====
 
-/** 素材源的 FPS（当 track.fps 未定义时使用） */
+/** Asset source FPS (used when track.fps is undefined) */
 const sourceFps = computed(() => {
   const obj = props.sceneObject
   if (!obj) return 25
@@ -558,7 +558,7 @@ const sourceFps = computed(() => {
   return 25
 })
 
-/** 用户是否自定义了 FPS */
+/** Whether user customized FPS */
 const hasCustomFps = computed(() => {
   const track = currentTrackAny.value as FrameSequenceTrack | undefined
   return track?.trackType === 'frame_sequence' && track.fps !== undefined
@@ -575,8 +575,8 @@ const selectedKeyframeIndexRef = props.ctx.selectedKeyframeIndex
 // ===== Track display helpers =====
 
 function trackTypeLabel(track: AnimationTrack): string {
-  if (track.trackType === 'effect') return `特效:${(track).effectParams.type}`
-  const labels: Record<string, string> = { transform: '变换', visibility: '透明度', frame_sequence: '帧序列', effect: '特效' }
+  if (track.trackType === 'effect') return `Effect:${(track).effectParams.type}`
+  const labels: Record<string, string> = { transform: 'Transform', visibility: 'Opacity', frame_sequence: 'Frame Seq', effect: 'Effect' }
   return labels[track.trackType] ?? track.trackType
 }
 
@@ -696,7 +696,7 @@ const flatTargetNodes = computed<FlatTargetTreeNode[]>(() => {
 
 const currentTargetLabel = computed(() => {
   const current = currentTargetValue.value
-  if (current === TARGET_SELF) return '自身'
+  if (current === TARGET_SELF) return 'Self'
   const node = findTargetNode(current, props.targetTreeNodes)
   if (node) return `${node.icon} ${node.name}`
   return props.targetOptions.find(option => option.id === current)?.label ?? current
@@ -805,7 +805,7 @@ const effectUnsupportedTypes = computed<EffectUnsupportedMap>(() => {
   const target = currentTargetSceneObject.value
   if (!isUnionCompositeObject(target)) return {}
 
-  const reason = '联合组合不支持该特效'
+  const reason = 'Union composite does not support this effect'
   return {
     wave: reason,
     ribbon: reason,
@@ -822,8 +822,8 @@ function isUnionCompositeObject(object: SceneObject | null): boolean {
 const pivotDisplayRect = computed(() => getPivotDisplayRect(currentTargetSceneObject.value))
 
 /**
- * PivotEditorPanel 的资源信息：优先使用当前 active track 的 targetObjectId 对应的场景对象，
- * 否则回退到根 sceneObject。
+ * PivotEditorPanel asset info: prioritize scene object matching targetObjectId of active track,
+ * otherwise fallback to root sceneObject.
  */
 const pivotPanelResourceInfo = computed<{
   resourceType: 'prop' | 'background' | 'symbol' | 'composite' | 'expression'
@@ -844,15 +844,15 @@ const pivotPanelResourceInfo = computed<{
   }
 })
 
-// 默认像素 pivot = 对象当前 container.pivot 等价值（与 useSceneGraph 中 pivotBase + originX/Y 对齐）
-// - composite / expression: PivotBase = (0,0) → pivot = (originX, originY)，准确
-// - 其它类型：PivotBase ≈ bounds 中心，离线无法读取 localBounds.x/y：
-//     • 有 width/height 时：退化为 (width/2 + originX, height/2 + originY)——绝大多数 PIXI
-//       sprite/text/graphics 的 localBounds 以 (0,0) 为起点，该值与 runtime 一致；但对于
-//       localBounds 不以 (0,0) 为起点的对象（如带裁剪的合成 sprite）值是近似的、
-//       与 runtime 有 boundsX/Y 偏移，界面会通过“≈”标记提示用户；
-//     • 无 width/height 时：回退到 (originX, originY)。
-// 用户输入的值始终被当作真实像素坐标直接写入轨道。
+// Default pixel pivot = object container.pivot equivalent value (aligned with useSceneGraph)
+// - composite / expression: PivotBase = (0,0) -> pivot = (originX, originY), exact
+// - Other types: PivotBase ≈ bounds center, cannot read localBounds.x/y offline:
+//     - With width/height: (width/2 + originX, height/2 + originY)
+//       sprite/text/graphics localBounds starts at (0,0), consistent with runtime;
+//       for objects whose localBounds does not start at (0,0), value is approximate,
+//       indicated by '≈' symbol in UI;
+//     - Without width/height: fallback to (originX, originY).
+// User input value is always written to track as real pixel coordinates directly.
 const defaultPixelPivot = computed(() => {
   const target = currentTargetSceneObject.value
   const runtimeDefault = props.getDefaultPivot?.(currentTargetObjectId.value)
@@ -872,7 +872,7 @@ const defaultPixelPivot = computed(() => {
   }
 })
 
-// composite / expression 的默认值可精确推导；其它类型因缺少 localBounds.x/y 只能近似。
+// composite / expression defaults can be derived exactly; others approximate due to lacking localBounds.x/y.
 const pivotDefaultIsApproximate = computed(() => {
   if (props.getDefaultPivot?.(currentTargetObjectId.value)) return false
   const target = currentTargetSceneObject.value
@@ -884,7 +884,7 @@ const resolvedPivot = computed(() => props.ctx.currentTrack.value?.pivot ?? defa
 
 const hasPivotSet = computed(() => props.ctx.currentTrack.value?.pivot !== undefined)
 
-// pivot 已是像素本地坐标，直接展示即可
+// pivot is already local pixel coordinates, display directly
 const pivotDisplayPx = computed(() => ({
   x: Math.round(resolvedPivot.value.x),
   y: Math.round(resolvedPivot.value.y),
@@ -905,7 +905,7 @@ function onPivotInput(axis: 'x' | 'y', e: Event) {
   const val = parseFloat((e.target as HTMLInputElement).value)
   if (isNaN(val)) return
   const current = resolvedPivot.value
-  // v26: 不再直接 ctx.updatePivot——交由父组件执行逐关键帧 x/y 补偿
+  // v26: No longer ctx.updatePivot directly — parent component executes per-keyframe x/y compensation
   emit('pivot-change', { ...current, [axis]: val })
 }
 
@@ -957,13 +957,13 @@ function onDeleteTrack() {
   if (idx < 0) return
   const track = currentTrackAny.value
   const keyframeCount = track && (track.trackType === 'transform' || track.trackType === 'visibility') ? track.keyframes.length : 0
-  const label = track ? targetLabel(track) : '当前轨道'
+  const label = track ? targetLabel(track) : 'Current Track'
   deleteTrackDialog.value = {
     trackIndex: idx,
-    title: `删除轨道「${label}」`,
+    title: `Delete Track "${label}"`, 
     message: keyframeCount > 0
-      ? `该轨道包含 ${keyframeCount} 个关键帧，删除后不可恢复。`
-      : '该轨道删除后不可恢复。',
+      ? `This track contains ${keyframeCount} keyframe(s); deletion cannot be undone.`
+      : 'Track deletion cannot be undone.',
   }
 }
 
@@ -1105,9 +1105,9 @@ function onVisibilityAlphaInput(e: Event) {
   props.ctx.updateVisibilityKeyframe(selectedIndex.value, { alpha: Math.max(0, Math.min(1, val)) })
 }
 
-// ===== v13 (Scheme B): valueOut 拆分编辑 =====
+// ===== v13 (Scheme B): valueOut split edit =====
 
-/** 当前选中关键帧是否处于"拆分"态（存在至少一个 out 字段） */
+/** Whether currently selected keyframe is in 'split' state (at least one out field exists) */
 const isKeyframeSplit = computed(() => {
   const kf = props.ctx.selectedKeyframe.value
   return props.ctx.isKeyframeStructurallySplit(kf)
@@ -1120,7 +1120,7 @@ const isVisibilityKeyframeSplit = computed(() => {
   return props.ctx.isKeyframeStructurallySplit(kfs[idx])
 })
 
-/** valueOut 展示：若 out 字段缺失则回退到 valueIn 字段（fall-through 语义） */
+/** valueOut display: falls back to valueIn if out field missing (fall-through semantics) */
 const valueOutDisplay = computed(() => {
   const kf = props.ctx.selectedKeyframe.value
   if (!kf) return { x: 0, y: 0, scaleX: 1, scaleY: 1, rotation: 0, flipX: false }
@@ -1177,8 +1177,8 @@ function onOutFlipXChange(e: Event) {
 }
 
 /**
- * 将「帧后值」同步为「帧前值」：在 Scheme B fall-through 语义下，
- * 清除 out[field] 即等价于让帧后回退到帧前。
+ * Sync 'Value Out' to 'Value In': under Scheme B fall-through semantics,
+ * clearing out[field] is equivalent to reverting out to in.
  */
 function syncSplitField(field: 'x' | 'y' | 'scaleX' | 'scaleY' | 'rotation' | 'flipX') {
   props.ctx.updateKeyframeOut(selectedIndex.value, field, undefined)
@@ -1208,8 +1208,8 @@ function onVisibilityAlphaOutInput(e: Event) {
 }
 
 /**
- * 将「帧后 Alpha」同步为「帧前 Alpha」：传 undefined 清除 out.alpha，
- * 使帧后回退到帧前的 alpha 值。
+ * Sync 'Alpha Out' to 'Alpha In': pass undefined to clear out.alpha,
+ * reverting out to alpha in value.
  */
 function syncVisibilityAlpha() {
   props.ctx.updateVisibilityKeyframeOut(selectedIndex.value, undefined)
@@ -1324,7 +1324,7 @@ onBeforeUnmount(() => {
   line-height: 1.4;
 }
 
-/* === 瞬变帧双列对比布局 === */
+/* === Split keyframe dual-column comparison layout === */
 .mode-badge {
   display: inline-block;
   margin-left: 6px;

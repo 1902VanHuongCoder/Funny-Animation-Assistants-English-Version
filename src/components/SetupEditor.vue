@@ -3,16 +3,16 @@
     ref="setupEditorContainer"
     class="setup-editor"
   >
-    <!-- v8.6: 左侧边栏已删除，对象选择和别名编辑已移至右侧属性面板 -->
+    <!-- v8.6: Left sidebar removed, object selection and alias editing moved to right properties panel -->
 
-    <!-- 中间：画布区域 -->
+    <!-- Center: Canvas area -->
     <main class="canvas-area">
-      <!-- 顶部工具栏 -->
+      <!-- Top toolbar -->
       <div class="setup-toolbar">
         <div class="toolbar-left">
           <button
             class="toolbar-btn icon-only"
-            title="返回"
+            title="Back"
             @click="handleReturn"
           >
             🔙
@@ -21,7 +21,7 @@
             class="save-status"
             :class="{ unsaved: hasLocalChanges }"
           >
-            {{ hasLocalChanges ? '● 未保存' : '✓ 已保存' }}
+            {{ hasLocalChanges ? '● Unsaved' : '✓ Saved' }}
           </span>
           <span class="mouse-position">
             ({{ renderer?.mousePosition?.x || 0 }}, {{ renderer?.mousePosition?.y || 0 }})
@@ -35,11 +35,11 @@
           <div class="add-menu-container">
             <button
               class="toolbar-btn add-btn"
-              title="添加素材"
+              title="Add Asset"
               @click="toggleAddMenu"
             >
               <span class="btn-icon">+</span>
-              <span class="btn-text">添加素材</span>
+              <span class="btn-text">Add Asset</span>
             </button>
             <div
               v-if="showAddMenu"
@@ -51,83 +51,83 @@
                 @click="handleMenuItemClick('backgrounds')"
               >
                 <span class="menu-icon">🖼️</span>
-                <span>背景</span>
+                <span>Background</span>
               </button>
               <button
                 class="menu-item"
                 @click="handleMenuItemClick('props')"
               >
                 <span class="menu-icon">📦</span>
-                <span>道具</span>
+                <span>Prop</span>
               </button>
               <button
                 class="menu-item"
                 @click="handleMenuItemClick('sounds')"
               >
                 <span class="menu-icon">🔊</span>
-                <span>音效</span>
+                <span>Sound</span>
               </button>
               <button
                 class="menu-item"
                 @click="handleMenuItemClick('screen_effects')"
               >
                 <span class="menu-icon">🌟</span>
-                <span>视觉效果</span>
+                <span>Visual Effect</span>
               </button>
               <button
                 class="menu-item"
                 @click="handleMenuItemClick('symbol')"
               >
                 <span class="menu-icon">🔧</span>
-                <span>元件</span>
+                <span>Symbol</span>
               </button>
               <button
                 class="menu-item"
                 @click="handleMenuItemClick('expression')"
               >
                 <span class="menu-icon">😀</span>
-                <span>表情</span>
+                <span>Expression</span>
               </button>
               <button
                 class="menu-item"
                 @click="handleMenuItemClick('scene_templates')"
               >
                 <span class="menu-icon">🧩</span>
-                <span>场景模板</span>
+                <span>Scene Template</span>
               </button>
               <button
                 class="menu-item"
                 @click="handleMenuItemClick('actors')"
               >
                 <span class="menu-icon">🎭</span>
-                <span>演员</span>
+                <span>Actor</span>
               </button>
               <button
                 class="menu-item"
                 @click="handleMenuItemClick('characters')"
               >
                 <span class="menu-icon">👤</span>
-                <span>人物</span>
+                <span>Character</span>
               </button>
               <button
                 class="menu-item"
                 @click="handleMenuItemClick('light')"
               >
                 <span class="menu-icon">💡</span>
-                <span>光源</span>
+                <span>Light</span>
               </button>
               <button
                 class="menu-item"
                 @click="handleMenuItemClick('text')"
               >
                 <span class="menu-icon">📝</span>
-                <span>文本</span>
+                <span>Text</span>
               </button>
             </div>
           </div>
           <button 
             class="toolbar-btn icon-only" 
-            title="复制选中对象" 
+            title="Duplicate selected object" 
             :disabled="sceneObjectStore.getSelectedObject()?.type === 'camera'"
             @click="handleCopyObject"
           >
@@ -135,7 +135,7 @@
           </button>
           <button
             class="toolbar-btn icon-only"
-            title="组合"
+            title="Group"
             :disabled="sceneObjectStore.getSelectedObject()?.type === 'camera'"
             @click="handleStartGrouping"
           >
@@ -143,7 +143,7 @@
           </button>
           <button
             class="toolbar-btn icon-only"
-            title="保存为场景模板"
+            title="Save as scene template"
             :disabled="nonCameraObjects.length === 0"
             @click="showSaveTemplateDialog = true"
           >
@@ -151,7 +151,7 @@
           </button>
           <button 
             class="toolbar-btn danger icon-only" 
-            title="删除选中对象" 
+            title="Delete selected object" 
             :disabled="sceneObjectStore.getSelectedObject()?.type === 'camera' || (sceneObjectStore.getSelectedObject()?.type === 'light' && (sceneObjectStore.getSelectedObject() as any)?.lightType === 'ambient')"
             @click="handleDeleteObject()"
           >
@@ -159,7 +159,7 @@
           </button>
           <button
             class="toolbar-btn primary icon-only"
-            title="保存"
+            title="Save"
             @click="handleSaveSetup"
           >
             💾
@@ -167,7 +167,7 @@
           <button
             v-if="isDev"
             class="toolbar-btn icon-only"
-            title="查看场景 Render Chain"
+            title="View Scene Render Chain"
             @click="showRenderChainDialog = true"
           >
             RC
@@ -176,13 +176,13 @@
             <button
               class="toolbar-btn icon-only"
               :class="{ active: showPassThroughPanel }"
-              title="穿透管理"
+              title="Pass-through Management"
               @click="showPassThroughPanel = !showPassThroughPanel; showPassThroughTip = false"
             >
               👻{{ passThroughCount > 0 ? ` ${passThroughCount}` : '' }}
             </button>
             <div v-if="showPassThroughTip" class="pass-through-tip-bubble">
-              相机和环境光默认已设为穿透模式，点击管理
+              Camera and ambient light are set to pass-through mode by default, click to manage
             </div>
             <PassThroughPanel
               v-if="showPassThroughPanel"
@@ -195,7 +195,7 @@
           </div>
           <button
             class="toolbar-btn icon-only"
-            :title="isFullscreen ? '退出全屏' : '全屏'"
+            :title="isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'"
             @click="toggleFullscreen"
           >
             {{ isFullscreen ? '⛶' : '⛶' }}
@@ -203,7 +203,7 @@
         </div>
       </div>
 
-      <!-- P2: 成组模式浮动栏 -->
+      <!-- P2: Grouping mode floating bar -->
       <GroupingModePanel
         v-if="groupingState"
         v-model:composite-mode="selectedCompositeMode"
@@ -217,7 +217,7 @@
         @cancel="handleGroupingCancel"
       />
 
-      <!-- 画布容器 -->
+      <!-- Canvas container -->
       <div
         ref="canvasContainer"
         class="canvas-container"
@@ -245,24 +245,24 @@
       </div>
     </main>
 
-    <!-- 右侧分隔条 -->
+    <!-- Right resizer -->
     <div
       v-show="!rightPanelCollapsed"
       class="resizer right-resizer"
       @mousedown="startResizeRightPanel"
     />
 
-    <!-- 右侧折叠按钮 -->
+    <!-- Right collapse button -->
     <button
       v-show="rightPanelCollapsed"
       class="expand-btn right"
-      title="展开面板"
+      title="Expand Panel"
       @click="rightPanelCollapsed = false"
     >
       ◀
     </button>
 
-    <!-- 右侧：属性面板 -->
+    <!-- Right: Properties panel -->
     <aside
       v-show="!rightPanelCollapsed"
       class="right-panel"
@@ -271,7 +271,7 @@
       <div class="panel-header">
         <button
           class="collapse-btn"
-          title="折叠面板"
+          title="Collapse Panel"
           @click="rightPanelCollapsed = true"
         >
           ▶
@@ -300,7 +300,7 @@
       />
     </aside>
 
-    <!-- 素材选择对话框 -->
+    <!-- Asset picker dialogs -->
 
     <BackgroundPickerDialog
       v-if="showBackgroundPicker"
@@ -312,7 +312,7 @@
       @select="handlePropSelect"
       @close="showPropPicker = false"
     />
-    <!-- v7.3: EffectPickerDialog 已移除 -->
+    <!-- v7.3: EffectPickerDialog removed -->
     <SoundPickerDialog
       v-if="showSoundPicker"
       @select="handleSoundSelect"
@@ -335,28 +335,28 @@
       @close="showTemplatePicker = false"
     />
 
-    <!-- v18: 表情选择对话框 -->
+    <!-- v18: Expression picker dialog -->
     <ExpressionSelectorDialog
       v-if="showExpressionPicker"
       @select="handleExpressionSelect"
       @close="showExpressionPicker = false"
     />
 
-    <!-- v19: 人物选择对话框 -->
+    <!-- v19: Character picker dialog -->
     <CompositeCharacterPickerDialog
       v-if="showCharacterPicker"
       @select="handleCompositeCharacterSelect"
       @close="showCharacterPicker = false"
     />
 
-    <!-- 演员选择对话框 -->
+    <!-- Actor picker dialog -->
     <ActorPickerDialog
       v-if="showActorPicker"
       @select="handleActorSelect"
       @close="showActorPicker = false"
     />
 
-    <!-- v17: 保存为场景模板对话框 -->
+    <!-- v17: Save as scene template dialog -->
     <SaveTemplateDialog
       v-if="showSaveTemplateDialog"
       :visible="showSaveTemplateDialog"
@@ -366,7 +366,7 @@
       @saved="handleTemplateSaved"
     />
 
-    <!-- 确认对话框 -->
+    <!-- Confirm dialog -->
     <ConfirmDialog
       v-if="showConfirmDialog"
       :title="confirmDialogConfig.title"
@@ -381,17 +381,17 @@
       @cancel="showConfirmDialog = false"
     />
 
-    <!-- 保存确认对话框 -->
+    <!-- Save confirm dialog -->
     <SaveConfirmDialog
       v-if="showSaveConfirmDialog"
-      title="保存更改"
-      message="当前有未保存的修改，您想要如何处理？"
+      title="Save Changes"
+      message="There are unsaved changes. How would you like to proceed?"
       @save-and-exit="handleSaveAndExit"
       @discard="handleDiscardAndExit"
       @cancel="showSaveConfirmDialog = false"
     />
 
-    <!-- v7.1: 实例别名输入对话框（支持所有对象类型） -->
+    <!-- v7.1: Instance alias input dialog (supports all object types) -->
     <InstanceAliasDialog
       v-if="showAliasDialog"
       :actor-name="aliasDialogActorName"
@@ -403,7 +403,7 @@
       @cancel="handleAliasCancel"
     />
 
-    <!-- 保存提示 Toast -->
+    <!-- Save toast -->
     <SceneRenderChainDialog
       v-if="showRenderChainDialog"
       mode-description="Setup objects"
@@ -476,28 +476,28 @@ const isDev = import.meta.env.DEV
 
 const toast = useToast()
 
-// 画布容器元素
+// Canvas container element
 const canvasContainer = ref<HTMLElement>()
 const setupEditorContainer = ref<HTMLElement>()
 
-// 保存提示状态
+// Save toast status
 const showSaveToast = ref(false)
 const saveToastMessage = ref('')
 const saveToastType = ref<'success' | 'error'>('success')
 
-// 当前场景标题
+// Current scene title
 const currentSceneTitle = computed(() => {
   if (props.sceneId && props.episode) {
     const scene = props.episode.scenes.find((s) => s.id === props.sceneId)
-    return scene ? scene.title : '未命名场景'
+    return scene ? scene.title : 'Untitled Scene'
   }
-  return '未命名场景'
+  return 'Untitled Scene'
 })
 
-// ===== 场景特有：保存逻辑 =====
+// ===== Scene-specific: Save logic =====
 async function handleSaveSetup(): Promise<void> {
   if (!props.sceneId || !props.episode) {
-    console.error('[SetupEditor] 保存需要 sceneId 和 episode')
+    console.error('[SetupEditor] Save requires sceneId and episode')
     return
   }
 
@@ -509,14 +509,14 @@ async function handleSaveSetup(): Promise<void> {
   try {
     await projectStore.saveProject()
     workspace.resetLocalChanges()
-    toast.success('保存成功')
+    toast.success('Saved successfully')
   } catch (error) {
-    console.error('[SetupEditor] 保存失败:', error)
-    toast.error('保存失败: ' + ((error as Error).message || '未知错误'))
+    console.error('[SetupEditor] Save failed:', error)
+    toast.error('Failed to save: ' + ((error as Error).message || 'Unknown error'))
   }
 }
 
-// ===== 初始化 composable =====
+// ===== Initialize composable =====
 const workspace = useSetupWorkspace({
   canvasContainer,
   editorContainer: setupEditorContainer,
@@ -530,7 +530,7 @@ const workspace = useSetupWorkspace({
   onExit: () => emit('exitSceneEdit'),
 })
 
-// 从 composable 解构所有模板需要的变量
+// Destructure all needed template variables from composable
 const {
   renderer,
   hasLocalChanges,
@@ -608,13 +608,13 @@ const {
   cleanupEventListeners,
 } = workspace
 
-// actorCharacterIds 已不再需要 — ActorPickerDialog 直接从 projectStore.actors 获取数据
+// actorCharacterIds is no longer needed — ActorPickerDialog directly retrieves data from projectStore.actors
 
-// v17: 保存为场景模板
+// v17: Save as scene template
 const showSaveTemplateDialog = ref(false)
 const selectedCompositeMode = ref<'entity' | 'union'>('union')
 
-// ===== 穿透列表 UI 状态 =====
+// ===== Pass-through list UI state =====
 const showPassThroughPanel = ref(false)
 const showRenderChainDialog = ref(false)
 
@@ -665,20 +665,20 @@ function handlePassThroughToggle(objectId: string) {
   }
 }
 const nonCameraObjects = computed(() => sceneObjectStore.objects.filter(o => o.type !== 'camera' && o.spawned !== false))
-const propertyPanelTitle = computed(() => '属性')
+const propertyPanelTitle = computed(() => 'Properties')
 
 function handleTemplateSaved(_templateId: string) {
   showSaveTemplateDialog.value = false
 }
 
-// Clip-Mask Phase 1：视觉效果对话框中选择"裁切蒙版"分组时回调，
-// 走 handleMenuItemClick 复用现有 mask 创建路径。
+// Clip-Mask Phase 1: Callback when "Clip Mask" group is selected in visual effect dialog,
+// routes through handleMenuItemClick to reuse existing mask creation path.
 function handleMaskFromDialog(shape: 'rectangle' | 'ellipse') {
   showScreenEffectPicker.value = false
   handleMenuItemClick(shape === 'ellipse' ? 'mask_ellipse' : 'mask_rectangle')
 }
 
-// ===== 生命周期 =====
+// ===== Lifecycle =====
 
 onMounted(async () => {
   sceneObjectStore.setActionMode(false)
@@ -730,14 +730,14 @@ onBeforeUnmount(() => {
   sceneObjectStore.clearObjects()
 })
 
-// ===== 场景特有：日志 =====
+// ===== Scene-specific: Logging =====
 
 function logSetupState(setup: SceneSetup): void {
   const header = `\n========== Setup Mode Initial State ==========\nScene: ${props.sceneId}`
   logService.addLog(header)
 
   if (setup.camera) {
-    const log = `📷 相机 [Setup]: x=${setup.camera.x.toFixed(1)}, y=${setup.camera.y.toFixed(1)}, zoom=${setup.camera.zoom?.toFixed(2) ?? 1.0}`
+    const log = `📷 Camera [Setup]: x=${setup.camera.x.toFixed(1)}, y=${setup.camera.y.toFixed(1)}, zoom=${setup.camera.zoom?.toFixed(2) ?? 1.0}`
     logService.addLog(log)
   }
 
@@ -759,7 +759,7 @@ function logSetupState(setup: SceneSetup): void {
 <style scoped>
 .setup-editor {
   display: flex;
-  height: 100%;  /* v6.10: Overlay 模式下占满父容器 */
+  height: 100%;  /* v6.10: Fills parent container in Overlay mode */
   background: #f9fafb;
 }
 
@@ -818,7 +818,7 @@ function logSetupState(setup: SceneSetup): void {
   color: #374151;
 }
 
-/* v11.0: Tab 切换样式 */
+/* v11.0: Tab switcher styles */
 .panel-tabs {
   display: flex;
   gap: 4px;
@@ -930,7 +930,7 @@ function logSetupState(setup: SceneSetup): void {
   flex-direction: column;
   background: #1a1a1a;
   min-width: 0;
-  position: relative; /* P2: 成组模式浮动工具条定位上下文 */
+  position: relative; /* P2: Positioning context for grouping mode floating toolbar */
 }
 
 .setup-toolbar {
@@ -1218,5 +1218,5 @@ function logSetupState(setup: SceneSetup): void {
   }
 }
 
-/* 成组模式 CSS 已移至 GroupingModePanel.vue */
+/* Grouping mode CSS moved to GroupingModePanel.vue */
 </style>

@@ -15,9 +15,9 @@
       </div>
 
       <div class="dialog-body">
-        <!-- 标签编辑 -->
+        <!-- Tag edit -->
         <div class="form-group">
-          <label>标签 (Tags)</label>
+          <label>Tags</label>
           <div class="tags-input-container">
             <div class="tags-list">
               <span
@@ -35,13 +35,13 @@
             <input
               v-model="newTagInput"
               type="text"
-              placeholder="按回车添加..."
+              placeholder="Press Enter to add..."
               class="tag-input"
               @keydown.enter.prevent="addTag"
               @blur="addTag"
             >
           </div>
-          <!-- 快速选择已有标签 -->
+          <!-- Quick select existing tags -->
           <div
             v-if="quickPickTags.length > 0"
             class="quick-tags"
@@ -57,14 +57,14 @@
           </div>
         </div>
 
-        <!-- 文件夹选择 -->
+        <!-- Folder selection -->
         <div class="form-group">
-          <label>导入文件夹</label>
+          <label>Import Folder</label>
           <button
             class="btn-select-folder"
             @click="openFolderBrowser"
           >
-            📁 选择文件夹...
+            📁 Select Folder...
           </button>
           <div
             v-if="selectedFolderPath"
@@ -75,26 +75,26 @@
               v-if="previewItems.length > 0"
               class="preview-count"
             >
-              ({{ previewItems.length }} 个{{ assetTypeName }}待导入)
+              ({{ previewItems.length }} {{ assetTypeName }}s to import)
             </span>
           </div>
         </div>
 
-        <!-- 导入规则说明 -->
+        <!-- Import rules hint -->
         <div class="rules-hint">
-          <div class="hint-title">⚡ 导入规则</div>
+          <div class="hint-title">⚡ Import Rules</div>
           <ul>
-            <li>单张图片 → 静态{{ assetTypeName }}（图片名 = 名称）</li>
-            <li>子文件夹 → 动画{{ assetTypeName }}（文件夹名 = 名称，图片按名称排序）</li>
+            <li>Single image → Static {{ assetTypeName }} (File name = Name)</li>
+            <li>Subfolder → Animated {{ assetTypeName }} (Folder name = Name, sorted by file name)</li>
           </ul>
         </div>
 
-        <!-- 预览列表 -->
+        <!-- Preview list -->
         <div
           v-if="previewItems.length > 0"
           class="preview-list"
         >
-          <div class="preview-header">预览</div>
+          <div class="preview-header">Preview</div>
           <div class="preview-items">
             <div
               v-for="item in previewItems"
@@ -104,7 +104,7 @@
               <span class="item-icon">{{ item.type === 'static' ? '🖼️' : '🎞️' }}</span>
               <span class="item-name">{{ item.name }}</span>
               <span class="item-info">
-                {{ item.type === 'static' ? '静态' : `${item.imageCount} 帧` }}
+                {{ item.type === 'static' ? 'Static' : `${item.imageCount} frames` }}
               </span>
             </div>
           </div>
@@ -116,23 +116,23 @@
           class="btn-cancel"
           @click="$emit('close')"
         >
-          取消
+          Cancel
         </button>
         <button
           :disabled="!canImport || isImporting"
           class="btn-import"
           @click="handleImport"
         >
-          <span v-if="isImporting">导入中... ({{ importProgress.current }}/{{ importProgress.total }})</span>
-          <span v-else>导入 ({{ previewItems.length }})</span>
+          <span v-if="isImporting">Importing... ({{ importProgress.current }}/{{ importProgress.total }})</span>
+          <span v-else>Import ({{ previewItems.length }})</span>
         </button>
       </div>
     </div>
 
-    <!-- 文件夹选择对话框 -->
+    <!-- Folder Browser Dialog -->
     <FileBrowserDialog
       v-if="showFolderBrowser"
-      title="选择导入文件夹"
+      title="Select Import Folder"
       select-mode="directory"
       @select-directory="handleFolderSelect"
       @close="showFolderBrowser = false"
@@ -166,34 +166,34 @@ const emit = defineEmits<{
 const propStore = usePropStore()
 const backgroundStore = useBackgroundStore()
 
-// 计算属性
-const dialogTitle = computed(() => props.assetType === 'prop' ? '导入道具' : '导入背景')
-const assetTypeName = computed(() => props.assetType === 'prop' ? '道具' : '背景')
+// Computed
+const dialogTitle = computed(() => props.assetType === 'prop' ? 'Import Props' : 'Import Backgrounds')
+const assetTypeName = computed(() => props.assetType === 'prop' ? 'prop' : 'background')
 
-// 表单数据
+// Form data
 const formData = ref({
   tags: [] as string[]
 })
 
-// 标签输入
+// Tag input
 const newTagInput = ref('')
 
-// 文件夹选择
+// Folder selection
 const showFolderBrowser = ref(false)
 const selectedFolderPath = ref<string | null>(null)
 const selectedFolderHandle = ref<FileSystemDirectoryHandle | null>(null)
 
-// 预览数据
+// Preview data
 const previewItems = ref<ImportPreviewItem[]>([])
 
-// 导入状态
+// Import status
 const isImporting = ref(false)
 const importProgress = ref({ current: 0, total: 0 })
 
-// 计算属性
+// Computed
 const canImport = computed(() => previewItems.value.length > 0 && !isImporting.value)
 
-// 获取所有资产的标签（去重）
+// Get all asset tags (deduplicated)
 const allAssetTags = computed(() => {
   const tags = new Set<string>()
   if (props.assetType === 'prop') {
@@ -208,12 +208,12 @@ const allAssetTags = computed(() => {
   return Array.from(tags).sort()
 })
 
-// 快速选择标签
+// Quick pick tags
 const quickPickTags = computed(() => {
   return allAssetTags.value.filter(t => !formData.value.tags.includes(t))
 })
 
-// 标签操作
+// Tag operations
 function addTag() {
   const tag = newTagInput.value.trim()
   if (tag && !formData.value.tags.includes(tag)) {
@@ -232,27 +232,27 @@ function addTagDirectly(tag: string) {
   }
 }
 
-// 打开文件夹浏览器
+// Open folder browser
 function openFolderBrowser() {
   showFolderBrowser.value = true
 }
 
-// 处理文件夹选择
+// Handle folder selection
 async function handleFolderSelect(directory: SelectedDirectory) {
   showFolderBrowser.value = false
   selectedFolderPath.value = directory.path
   selectedFolderHandle.value = directory.handle
 
-  // 扫描文件夹
+  // Scan folder
   try {
     previewItems.value = await scanDirectoryForExpressions(directory.handle, directory.path)
   } catch (error) {
-    console.error('[AssetImportDialog] 扫描文件夹失败:', error)
+    console.error('[AssetImportDialog] Failed to scan folder:', error)
     previewItems.value = []
   }
 }
 
-// 执行导入
+// Execute import
 async function handleImport() {
   if (!canImport.value) return
 
@@ -265,10 +265,10 @@ async function handleImport() {
     for (const item of previewItems.value) {
       try {
         if (props.assetType === 'prop') {
-          // 创建道具
+          // Create prop
           const type = item.type === 'static' ? 'static' : 'animation'
           const newProp = propStore.createProp(item.name, type)
-          // 构建更新数据
+          // Build update data
           const updateData: { tags: string[]; url?: string; frames?: { url: string }[] } = {
             tags: [...formData.value.tags]
           }
@@ -280,10 +280,10 @@ async function handleImport() {
           }
           propStore.updateProp(newProp.id, updateData)
         } else {
-          // 创建背景
+          // Create background
           const type = item.type === 'static' ? 'static' : 'animation'
           const newBg = backgroundStore.createBackground(item.name, type)
-          // 构建更新数据
+          // Build update data
           const updateData: { tags: string[]; url?: string; frames?: { url: string }[] } = {
             tags: [...formData.value.tags]
           }
@@ -298,7 +298,7 @@ async function handleImport() {
 
         successCount++
       } catch (error) {
-        console.error(`[AssetImportDialog] 导入 "${item.name}" 失败:`, error)
+        console.error(`[AssetImportDialog] Failed to import "${item.name}":`, error)
       }
       importProgress.value.current++
     }
@@ -310,7 +310,7 @@ async function handleImport() {
   }
 }
 
-// 从目录获取帧列表
+// Get frame list from directory
 async function getFramesFromDir(item: ImportPreviewItem): Promise<{ url: string }[]> {
   if (!item.dirHandle || !item.dirPath) return []
 
@@ -323,7 +323,7 @@ async function getFramesFromDir(item: ImportPreviewItem): Promise<{ url: string 
     }
   }
 
-  // 按名称排序
+  // Sort by name
   entries.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }))
 
   for (const entry of entries) {
@@ -413,7 +413,7 @@ function isImageFile(filename: string): boolean {
   margin-bottom: 8px;
 }
 
-/* 标签样式 */
+/* Tag styles */
 .tags-input-container {
   display: flex;
   flex-wrap: wrap;
@@ -489,7 +489,7 @@ function isImageFile(filename: string): boolean {
   color: #374151;
 }
 
-/* 文件夹选择 */
+/* Folder selection */
 .btn-select-folder {
   width: 100%;
   padding: 12px 16px;
@@ -527,7 +527,7 @@ function isImageFile(filename: string): boolean {
   margin-left: 8px;
 }
 
-/* 规则说明 */
+/* Rules hint */
 .rules-hint {
   background: #f0f9ff;
   border: 1px solid #bae6fd;
@@ -554,7 +554,7 @@ function isImageFile(filename: string): boolean {
   margin-bottom: 4px;
 }
 
-/* 预览列表 */
+/* Preview list */
 .preview-list {
   margin-top: 16px;
 }
@@ -600,7 +600,7 @@ function isImageFile(filename: string): boolean {
   color: #9ca3af;
 }
 
-/* 底部按钮 */
+/* Footer buttons */
 .dialog-footer {
   display: flex;
   justify-content: flex-end;

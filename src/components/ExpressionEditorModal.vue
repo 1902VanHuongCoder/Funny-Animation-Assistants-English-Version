@@ -5,7 +5,7 @@
   >
     <div class="modal-dialog">
       <div class="dialog-header">
-        <h3>{{ isEditing ? '编辑表情' : '新建表情' }}: {{ formData.name || '未命名' }}</h3>
+        <h3>{{ isEditing ? 'Edit Expression' : 'New Expression' }}: {{ formData.name || 'Untitled' }}</h3>
         <button
           class="btn-close"
           @click="$emit('close')"
@@ -15,7 +15,7 @@
       </div>
 
       <div class="dialog-body">
-        <!-- 左侧：可视化校准区 (45%) -->
+        <!-- Left: Visual Calibration Area (45%) -->
         <div class="left-panel">
           <div class="canvas-wrapper">
             <ExpressionPreview
@@ -34,14 +34,14 @@
               @mouseup="handlePushToTalkEnd"
               @mouseleave="handlePushToTalkEnd"
             >
-              🎤 按住说话测试
+              🎤 Hold to Test Speaking
             </button>
           </div>
 
           <div class="preview-status">
-            <div>当前状态: {{ isSpeaking ? '说话' : '静止' }}</div>
+            <div>Status: {{ isSpeaking ? 'Speaking' : 'Idle' }}</div>
             <div v-if="isSpeaking && formData.speakingFrames.length > 0">
-              当前帧: {{ currentSpeakingFrame + 1 }} / {{ formData.speakingFrames.length }}
+              Frame: {{ currentSpeakingFrame + 1 }} / {{ formData.speakingFrames.length }}
             </div>
           </div>
 
@@ -54,51 +54,51 @@
           </div>
         </div>
 
-        <!-- 右侧：配置区 (55%) -->
+        <!-- Right: Config Area (55%) -->
         <div class="right-panel">
           <div class="config-section">
-            <!-- 1. 基础信息 -->
+            <!-- 1. Basic Info -->
             <div class="form-group">
-              <label>表情名称 *</label>
+              <label>Expression Name *</label>
               <input
                 v-model="formData.name"
                 type="text"
-                placeholder="选择图片后自动使用文件夹名称"
+                placeholder="Auto-uses folder name after selecting images"
                 class="form-input"
               >
             </div>
 
-            <!-- 1.5. 性别 & 标签 -->
+            <!-- 1.5. Gender & Tags -->
             <div class="form-group">
-              <label>性别 *</label>
+              <label>Gender *</label>
               <div class="gender-selector">
                 <label class="radio-label">
                   <input
                     v-model="formData.gender"
                     type="radio"
                     value="male"
-                  > 男
+                  > Male
                 </label>
                 <label class="radio-label">
                   <input
                     v-model="formData.gender"
                     type="radio"
                     value="female"
-                  > 女
+                  > Female
                 </label>
                 <label class="radio-label">
                   <input
                     v-model="formData.gender"
                     type="radio"
                     value="other"
-                  > 其他
+                  > Other
                 </label>
               </div>
             </div>
 
-            <!-- 1.6 标签 -->
+            <!-- 1.6 Tags -->
             <div class="form-group">
-              <label>标签 (Tags)</label>
+              <label>Tags</label>
               <div class="tags-input-container">
                 <div class="tags-list">
                   <span
@@ -116,13 +116,13 @@
                 <input
                   v-model="newTagInput"
                   type="text"
-                  placeholder="按回车添加..."
+                  placeholder="Press Enter to add..."
                   class="tag-input"
                   @keydown.enter.prevent="addTag"
                   @blur="addTag"
                 >
               </div>
-              <!-- 快速选择已有标签 -->
+              <!-- Quick select existing tags -->
               <div
                 v-if="quickPickTags.length > 0"
                 class="quick-tags"
@@ -138,9 +138,9 @@
               </div>
             </div>
 
-            <!-- 2. 锚点设置 -->
+            <!-- 2. Anchor Setting -->
             <div class="form-group">
-              <label>锚点设置 (Anchor)</label>
+              <label>Anchor Setting</label>
               <div class="anchor-inputs">
                 <div class="input-group">
                   <label>X:</label>
@@ -170,43 +170,43 @@
                   class="btn-reset"
                   @click="resetAnchor"
                 >
-                  ↺ 重置居中
+                  ↺ Center
                 </button>
               </div>
             </div>
 
-            <!-- 2.5. 水平翻转 -->
+            <!-- 2.5. Horizontal Flip -->
             <div class="form-group">
               <label>
                 <input
                   v-model="formData.flipHorizontal"
                   type="checkbox"
                 >
-                水平翻转
+                Flip Horizontal
               </label>
             </div>
 
-            <!-- 2.55. 混合模式 -->
+            <!-- 2.55. Blend Mode -->
             <div class="form-group">
-              <label>混合模式</label>
+              <label>Blend Mode</label>
               <select
                 v-model="formData.blendMode"
                 class="form-input"
               >
-                <option value="normal">正常 (Normal)</option>
-                <option value="multiply">正片叠底 (Multiply) - 适合白背景</option>
+                <option value="normal">Normal</option>
+                <option value="multiply">Multiply (for white background)</option>
               </select>
               <p class="form-hint">
-                💡 如果表情图片有白色背景，选择"正片叠底"可使白色透明化
+                💡 If expression images have a white background, choose "Multiply" to make white transparent
               </p>
             </div>
 
-            <!-- 2.6. 尺寸设置 -->
+            <!-- 2.6. Size Settings -->
             <div class="form-group">
-              <label>缩放设置</label>
+              <label>Scale Settings</label>
               <div class="size-settings">
                 <div class="setting-item">
-                  <label>缩放比例:</label>
+                  <label>Scale Ratio:</label>
                   <div class="scale-slider-group">
                     <input
                       :value="Math.round(formData.defaultScale * 100)"
@@ -231,10 +231,10 @@
                 </div>
                 
                 <div class="setting-item">
-                  <label>宽高设置:</label>
+                  <label>Dimensions:</label>
                   <div class="size-inputs">
                     <div class="input-group">
-                      <label>宽:</label>
+                      <label>W:</label>
                       <input
                         v-model.number="displaySizeInput.width"
                         type="number"
@@ -245,7 +245,7 @@
                       >
                     </div>
                     <div class="input-group">
-                      <label>高:</label>
+                      <label>H:</label>
                       <input
                         v-model.number="displaySizeInput.height"
                         type="number"
@@ -257,21 +257,21 @@
                     </div>
                   </div>
                   <p class="form-hint">
-                    图片原始尺寸: {{ originalImageSize.width }} × {{ originalImageSize.height }} px
+                    Original size: {{ originalImageSize.width }} × {{ originalImageSize.height }} px
                     <button
                       class="btn-reset-size"
                       @click="resetToOriginalSize"
                     >
-                      重置
+                      Reset
                     </button>
                   </p>
                 </div>
               </div>
             </div>
 
-            <!-- 3. 图片资源 -->
+            <!-- 3. Image Resources -->
             <div class="form-group">
-              <label>图片资源 *</label>
+              <label>Image Resources *</label>
               <div class="speaking-frames">
                 <div
                   v-if="formData.speakingFrames.length > 0"
@@ -286,16 +286,16 @@
                   >
                     <img 
                       :src="getImageUrl(frame.url)" 
-                      :alt="`帧 ${index + 1}`"
+                      :alt="`Frame ${index + 1}`"
                       :style="{ transform: formData.flipHorizontal ? 'scaleX(-1)' : 'none' }"
                     >
                     <div class="frame-index">{{ index + 1 }}</div>
-                    <div v-if="formData.defaultFrame.id === frame.id" class="default-badge">默认</div>
+                    <div v-if="formData.defaultFrame.id === frame.id" class="default-badge">Default</div>
                     <button class="btn-remove-frame" @click.stop="removeSpeakingFrame(index)">×</button>
                   </div>
                 </div>
                 <div class="frame-actions">
-                  <button class="btn-add-frames" @click="addSpeakingFrames">📁 上传动画序列</button>
+                  <button class="btn-add-frames" @click="addSpeakingFrames">📁 Upload Animation Sequence</button>
                 </div>
                 <input
                   ref="speakingFramesInput"
@@ -307,15 +307,15 @@
                 >
               </div>
 
-              <!-- 默认状态（静止图） -->
+              <!-- Default State (Still Image) -->
               <div class="default-frame-section">
-                <label class="sub-label">默认静止图 *</label>
+                <label class="sub-label">Default Still Image *</label>
                 <div v-if="formData.speakingFrames.length > 0" class="still-frame-source-selector">
                   <label class="radio-label">
-                    <input v-model="stillFrameSource" type="radio" value="frame"> 使用序列帧
+                    <input v-model="stillFrameSource" type="radio" value="frame"> Use Frame Sequence
                   </label>
                   <label class="radio-label">
-                    <input v-model="stillFrameSource" type="radio" value="custom"> 自定义上传
+                    <input v-model="stillFrameSource" type="radio" value="custom"> Custom Upload
                   </label>
                 </div>
                 
@@ -323,10 +323,10 @@
                   <div v-if="formData.defaultFrame.url" class="frame-preview">
                     <img :src="getImageUrl(formData.defaultFrame.url)" :style="{ transform: formData.flipHorizontal ? 'scaleX(-1)' : 'none' }">
                     <div v-if="stillFrameSource === 'custom'" class="preview-actions">
-                      <button class="btn-replace" @click="uploadDefaultFrame">替换</button>
+                      <button class="btn-replace" @click="uploadDefaultFrame">Replace</button>
                     </div>
                   </div>
-                  <div v-else class="upload-placeholder" @click="uploadDefaultFrame"><span>📁 点击上传默认图</span></div>
+                  <div v-else class="upload-placeholder" @click="uploadDefaultFrame"><span>📁 Click to upload default image</span></div>
                   <input ref="defaultFrameInput" type="file" accept="image/png,image/jpeg" style="display: none" @change="handleDefaultFrameUpload">
                 </div>
               </div>
@@ -337,7 +337,7 @@
                   <input v-model.number="formData.speakingFps" type="number" min="1" max="60" class="form-input-small">
                 </div>
                 <div class="setting-row">
-                  <label><input v-model="formData.speakingLoop" type="checkbox"> 循环播放</label>
+                  <label><input v-model="formData.speakingLoop" type="checkbox"> Loop playback</label>
                 </div>
               </div>
             </div>
@@ -347,10 +347,10 @@
 
       <div class="dialog-footer">
         <div class="footer-actions">
-          <button class="btn-cancel" @click="$emit('close')">取消</button>
+          <button class="btn-cancel" @click="$emit('close')">Cancel</button>
           <button :disabled="!canSave || isSaving" class="btn-save" @click="handleSave">
-            <span v-if="isSaving">保存中... ({{ saveProgress.current }}/{{ saveProgress.total }})</span>
-            <span v-else>✓ 确定</span>
+            <span v-if="isSaving">Saving... ({{ saveProgress.current }}/{{ saveProgress.total }})</span>
+            <span v-else>✓ Save</span>
           </button>
         </div>
       </div>
@@ -358,7 +358,7 @@
     
     <FileBrowserDialog
       v-if="showFileBrowser"
-      :title="fileBrowserMode === 'default' ? '选择默认帧图片' : '选择说话帧图片'"
+      :title="fileBrowserMode === 'default' ? 'Select Default Frame' : 'Select Speaking Frames'"
       :file-filter="imageFileFilter"
       :multiple="fileBrowserMode === 'speaking'"
       @select="handleFileBrowserSelect"
@@ -446,7 +446,7 @@ const displayAssetPath = computed(() => {
   if (browserPaths.speakingFrames.length > 0) {
     const firstPath = browserPaths.speakingFrames[0]
     if (firstPath) {
-      return `${firstPath} (共${browserPaths.speakingFrames.length}帧)`
+      return `${firstPath} (${browserPaths.speakingFrames.length} frames)`
     }
   }
   if (browserPaths.defaultFrame) {
@@ -456,7 +456,7 @@ const displayAssetPath = computed(() => {
   if (formData.value.speakingFrames.length > 0) {
     const firstUrl = formData.value.speakingFrames[0]?.url
     if (firstUrl && !firstUrl.startsWith('blob:') && !firstUrl.startsWith('data:')) {
-      return `${firstUrl} (共${formData.value.speakingFrames.length}帧)`
+      return `${firstUrl} (${formData.value.speakingFrames.length} frames)`
     }
   }
   const defaultUrl = formData.value.defaultFrame.url
@@ -471,7 +471,7 @@ watch(() => props.expression, async (expr) => {
     formData.value = {
       name: expr.name,
       gender: expr.gender ?? 'male',
-      tags: expr.tags.filter(t => !['male', 'female', 'other', '男', '女', '其他'].includes(t)),
+      tags: expr.tags.filter(t => !['male', 'female', 'other', '\u7537', '\u5973', '\u5176\u4ed6'].includes(t)),
       anchor: { ...expr.anchor },
       defaultFrame: { ...expr.defaultFrame },
       speakingFrames: expr.speakingFrames.map(f => ({ ...f })),
@@ -534,13 +534,13 @@ function addTag() {
 function removeTag(tag: string) { formData.value.tags = formData.value.tags.filter(t => t !== tag) }
 
 
-// 获取所有表情的标签（去重）
+// Get all expression tags (deduplicated)
 const allExpressionTags = computed(() => {
   const tags = new Set<string>()
   Object.values(expressionStore.expressions).forEach((expr: Expression) => {
     expr.tags?.forEach((t: string) => {
-      // 排除性别标签
-      if (!['male', 'female', 'other', '男', '女', '其他'].includes(t)) {
+      // Exclude gender tags (including unicode escapes for legacy compatibility)
+      if (!['male', 'female', 'other', '\u7537', '\u5973', '\u5176\u4ed6'].includes(t)) {
         tags.add(t)
       }
     })
@@ -548,13 +548,13 @@ const allExpressionTags = computed(() => {
   return Array.from(tags).sort()
 })
 
-// 快速选择标签（显示所有可用标签，排除当前已有的）
+// Quick pick tags (display all available tags excluding currently assigned)
 const quickPickTags = computed(() => {
   return allExpressionTags.value
     .filter(t => !formData.value.tags.includes(t))
 })
 
-// 直接添加标签（点击快速选择时）
+// Add tag directly (when clicking quick pick)
 function addTagDirectly(tag: string) {
   if (!formData.value.tags.includes(tag)) {
     formData.value.tags.push(tag)
@@ -594,7 +594,7 @@ async function loadImageSize(imageUrl: string) {
     if (token !== imageSizeLoadToken) return
     originalImageSize.value = { width: img.naturalWidth, height: img.naturalHeight }
     syncDisplaySizeFromScale()
-  } catch (error) { console.warn('[ExpressionEditorModal] 加载图片尺寸失败:', error) }
+  } catch (error) { console.warn('[ExpressionEditorModal] Failed to load image dimensions:', error) }
 }
 
 function handleScaleSliderChange(event: Event) {
@@ -653,7 +653,7 @@ function handleDefaultFrameUpload(event: Event) {
     formData.value.defaultFrame = { id: `frame_${Date.now()}`, url, file }
     stillFrameSource.value = 'custom'
     input.value = ''
-  } catch (error) { alert('图片上传失败') }
+  } catch (error) { alert('Failed to upload image') }
 }
 
 function addSpeakingFrames() {
@@ -685,7 +685,7 @@ function handleSpeakingFramesUpload(event: Event) {
       if (first) formData.value.defaultFrame = { ...first }
     }
     input.value = ''
-  } catch (error) { alert('图片上传失败') }
+  } catch (error) { alert('Failed to upload image') }
 }
 
 function setAsDefaultFrame(frame: ExpressionFrame) {
@@ -814,7 +814,7 @@ function handleSave() {
           speakingFrames: formData.value.speakingFrames
         })
       }
-    } catch (error) { alert('保存文件失败') }
+    } catch (error) { alert('Failed to save file') }
     finally { isSaving.value = false }
   }
   emit('saved', expressionId)
@@ -858,7 +858,7 @@ async function handleFileBrowserSelect(selectedFiles: SelectedFile[]) {
           stillFrameIndex.value = 0
         }
       }
-      // 自动设置表情名称：仅当新建表情且名称为空时
+      // Auto set expression name: only when new expression and name is empty
       if (!isEditing.value && !formData.value.name && selectedFiles.length > 0) {
         const firstFile = selectedFiles[0]
         if (firstFile) {
@@ -869,12 +869,12 @@ async function handleFileBrowserSelect(selectedFiles: SelectedFile[]) {
         }
       }
     }
-  } catch (error) { alert('加载图片失败') }
+  } catch (error) { alert('Failed to load image') }
 }
 
 /**
- * 从文件路径提取父文件夹名称
- * 例如: 'expressions/男-开心/frame_001.png' → '男-开心'
+ * Extract parent folder name from file path
+ * e.g.: 'expressions/male_happy/frame_001.png' → 'male_happy'
  */
 function extractFolderName(filePath: string): string {
   const parts = filePath.split('/')
@@ -885,8 +885,7 @@ function extractFolderName(filePath: string): string {
 }
 
 /**
- * 生成唯一的表情名称，如果已存在则添加数字后缀
- * 例如: '开心' → '开心', 如果已存在则 '开心 (2)', '开心 (3)' ...
+ * Generate unique expression name, add numeric suffix if exists
  */
 function generateUniqueName(baseName: string): string {
   const existingNames = new Set(
@@ -996,9 +995,9 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #1a1a2e; /* 深色背景，与道具对话框一致 */
+  background: #1a1a2e; /* Dark background, matching prop dialog */
   border-radius: 8px;
-  /* 棋盘格图案 */
+  /* Checkerboard pattern */
   background-image: 
     linear-gradient(45deg, #2a2a3e 25%, transparent 25%), 
     linear-gradient(-45deg, #2a2a3e 25%, transparent 25%), 

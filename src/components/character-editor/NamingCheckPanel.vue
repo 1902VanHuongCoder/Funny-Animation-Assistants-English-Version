@@ -7,8 +7,8 @@
       <div class="modal-container">
         <div class="modal-header">
           <div>
-            <h3>预定义名称检查</h3>
-            <p>让人物部件名称能被预定义动作稳定识别。</p>
+            <h3>Preset Name Check</h3>
+            <p>Ensures character part names can be reliably recognized by preset actions.</p>
           </div>
           <button
             class="btn-close"
@@ -21,39 +21,39 @@
             v-if="!rootCompositeId"
             class="empty-state"
           >
-            未设置角色根复合对象，无法执行检查。
+            Character root composite object not set, cannot run checks.
           </div>
           <template v-else>
             <div class="summary-grid">
               <div class="summary-card">
                 <span class="summary-value">{{ coveredRecommendedCount }}/{{ recommendedNameTotal }}</span>
-                <span class="summary-label">已覆盖推荐名</span>
+                <span class="summary-label">Covered Recommended</span>
               </div>
               <div class="summary-card" :class="{ warn: duplicateAliases.length > 0 }">
                 <span class="summary-value">{{ duplicateAliases.length }}</span>
-                <span class="summary-label">重复别名</span>
+                <span class="summary-label">Duplicate Aliases</span>
               </div>
               <div class="summary-card" :class="{ warn: nonStandard.length > 0 }">
                 <span class="summary-value">{{ nonStandard.length }}</span>
-                <span class="summary-label">可修正命名</span>
+                <span class="summary-label">Fixable Names</span>
               </div>
             </div>
 
-            <!-- D1 重复 alias -->
+            <!-- D1 Duplicate alias -->
             <section class="section">
               <div
                 class="section-header"
                 :class="duplicateAliases.length > 0 ? 'danger' : 'success'"
               >
                 <span class="section-icon">{{ duplicateAliases.length > 0 ? '⛔' : '✅' }}</span>
-                <span>重复预定义名称</span>
+                <span>Duplicate Preset Names</span>
                 <span class="section-count">{{ duplicateAliases.length }}</span>
               </div>
               <div
                 v-if="duplicateAliases.length === 0"
                 class="section-hint"
               >
-                未发现重复名称。
+                No duplicate names found.
               </div>
               <ul
                 v-else
@@ -64,7 +64,7 @@
                   :key="entry.alias"
                   class="entry-item"
                 >
-                  <div class="entry-title">"{{ entry.alias }}" 被 {{ entry.objectIds.length }} 个对象共用</div>
+                  <div class="entry-title">"{{ entry.alias }}" is shared by {{ entry.objectIds.length }} objects</div>
                   <div class="entry-sub">
                     <span
                       v-for="oid in entry.objectIds"
@@ -76,21 +76,21 @@
               </ul>
             </section>
 
-            <!-- D2 缺失推荐名 -->
+            <!-- D2 Missing recommended names -->
             <section class="section">
               <div
                 class="section-header"
                 :class="missingRecommended.length > 0 ? 'warning' : 'success'"
               >
                 <span class="section-icon">{{ missingRecommended.length > 0 ? '⚠️' : '✅' }}</span>
-                <span>缺失的预定义名称</span>
+                <span>Missing Preset Names</span>
                 <span class="section-count">{{ missingRecommended.length }}</span>
               </div>
               <div
                 v-if="missingRecommended.length === 0"
                 class="section-hint"
               >
-                {{ recommendedNameTotal }} 个系统推荐名都已被覆盖。
+                All {{ recommendedNameTotal }} system recommended names are covered.
               </div>
               <div
                 v-else
@@ -107,7 +107,7 @@
                     :value="missingAssignments[m.recommendedName] ?? ''"
                     @change="missingAssignments = { ...missingAssignments, [m.recommendedName]: ($event.target as HTMLSelectElement).value }"
                   >
-                    <option value="">选择对象设为该名称...</option>
+                    <option value="">Select object to assign this name...</option>
                     <option
                       v-for="opt in assignableObjectOptions"
                       :key="opt.id"
@@ -121,23 +121,23 @@
                     :disabled="!missingAssignments[m.recommendedName]"
                     @click="applyMissingRecommendedName(m.recommendedName)"
                   >
-                    应用
+                    Apply
                   </button>
                 </div>
               </div>
               <div class="section-hint subtle">
-                角色确实没有对应部位时可以忽略；细分动作会优先匹配精细名称，并在系统模板中回退到粗粒度名称。
+                Can be ignored if character lacks corresponding part; detailed actions prioritize fine-grained names and fallback to coarse names in system templates.
               </div>
             </section>
 
-            <!-- D3 非规范命名 -->
+            <!-- D3 Non-standard naming -->
             <section class="section">
               <div
                 class="section-header"
                 :class="nonStandard.length > 0 ? 'warning' : 'success'"
               >
                 <span class="section-icon">{{ nonStandard.length > 0 ? '📝' : '✅' }}</span>
-                <span>相近但不规范的名称</span>
+                <span>Similar but Non-Standard Names</span>
                 <span class="section-count">{{ nonStandard.length }}</span>
               </div>
               <div
@@ -148,14 +148,14 @@
                   class="btn-apply"
                   @click="applyAllSuggestions"
                 >
-                  应用全部建议
+                  Apply All Suggestions
                 </button>
               </div>
               <div
                 v-if="nonStandard.length === 0"
                 class="section-hint"
               >
-                未发现与推荐名高度相似却不规范的对象。
+                No objects with similar but non-standard names found.
               </div>
               <ul
                 v-else
@@ -168,21 +168,21 @@
                 >
                   <div class="entry-title">
                     <strong>{{ objectDisplayName(entry.objectId) }}</strong>
-                    的 {{ entry.field === 'alias' ? '别名' : '名称' }}
+                     {{ entry.field === 'alias' ? 'Alias' : 'Name' }}
                     "<em>{{ entry.value }}</em>"
                     →
-                    建议
+                    Suggested
                     "<strong>{{ entry.suggested }}</strong>"
                   </div>
                   <div class="entry-actions">
                     <button
                       class="btn-apply"
                       @click="applySuggestion(entry)"
-                    >应用建议</button>
+                    >Apply Suggestion</button>
                     <button
                       class="btn-secondary"
                       @click="handleSelectObject(entry.objectId)"
-                    >定位对象</button>
+                    >Locate Object</button>
                   </div>
                 </li>
               </ul>
@@ -194,7 +194,7 @@
           <button
             class="btn-secondary"
             @click="emit('close')"
-          >关闭</button>
+          >Close</button>
         </div>
       </div>
     </div>

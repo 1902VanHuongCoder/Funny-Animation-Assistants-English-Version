@@ -1,6 +1,6 @@
 <template>
   <div class="episode-edit-page">
-    <!-- 场景编辑模式 -->
+    <!-- Scene edit mode -->
     <SceneEditMode 
       v-if="isReady"
       :key="`${sceneMode}-${sceneId}-${blockId}`"
@@ -16,7 +16,7 @@
       v-else
       class="loading-page"
     >
-      <span>正在加载...</span>
+      <span>Loading...</span>
     </div>
   </div>
 </template>
@@ -42,7 +42,7 @@ const isReady = ref(false)
 
 const currentEpisode = computed(() => episodeStore.getEpisode(episodeId))
 
-// 从路由query参数更新场景编辑状态
+// Update scene edit state from route query parameters
 function updateFromRoute() {
   const mode = route.query['mode'] as string
   const sceneIdParam = route.query['sceneId'] as string
@@ -63,7 +63,7 @@ function updateFromRoute() {
 
 onMounted(() => {
   if (!currentEpisode.value) {
-    alert('动画不存在')
+    alert('Episode does not exist')
     void router.push('/project')
     return
   }
@@ -71,7 +71,7 @@ onMounted(() => {
   updateFromRoute()
 })
 
-// 监听路由变化，动态更新场景编辑状态
+// Watch route changes to dynamically update scene edit state
 watch(
   () => route.query,
   () => {
@@ -85,14 +85,14 @@ function handleExitSceneEdit() {
 }
 
 function handleSaveSetup(_savedSceneId: string, _setup: SceneSetup) {
-  // SceneEditMode已经调用了episodeStore.updateScene，这里只需要返回
+  // SceneEditMode has already called episodeStore.updateScene; only need to return here
   void router.push(`/screenplay/${episodeId}`)
 }
 </script>
 
 <style scoped>
 .episode-edit-page {
-  /* 不需要额外的padding，SceneEditMode已经处理了布局 */
+  /* No extra padding needed; SceneEditMode has already handled layout */
   height: 100%;
 }
 

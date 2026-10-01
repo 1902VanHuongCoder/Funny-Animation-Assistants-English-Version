@@ -6,7 +6,7 @@
     <div class="expression-selector-dialog">
       <div class="dialog-header">
         <h3 class="dialog-title">
-          选择表情
+          Select Expression
         </h3>
         <button
           class="btn-close"
@@ -17,7 +17,7 @@
       </div>
 
       <div class="dialog-body">
-        <!-- 性别 Tab 页 -->
+        <!-- Gender Tabs -->
         <div class="gender-tabs">
           <button
             v-for="gender in genderTabOptions"
@@ -30,12 +30,12 @@
           </button>
         </div>
 
-        <!-- 主内容区：侧边栏 + 表情网格 -->
+        <!-- Main content: Sidebar + Expression grid -->
         <div class="content-wrapper">
-          <!-- 标签侧边栏 -->
+          <!-- Tag sidebar -->
           <div class="tag-sidebar">
             <div class="sidebar-title">
-              标签
+              Tags
             </div>
             <div class="tag-list">
               <div
@@ -51,15 +51,15 @@
             </div>
           </div>
 
-          <!-- 表情网格 -->
+          <!-- Expression grid -->
           <div class="expression-content">
             <div
               v-if="filteredExpressions.length === 0"
               class="empty-state"
             >
-              <p>该分类下暂无表情</p>
+              <p>No expressions in this category</p>
               <p class="empty-hint">
-                请在素材管理中添加表情
+                Please add expressions in Asset Manager
               </p>
             </div>
             <div
@@ -98,14 +98,14 @@
           class="btn-cancel"
           @click="$emit('close')"
         >
-          取消
+          Cancel
         </button>
         <button
           class="btn-confirm"
           :disabled="!selectedExpression"
           @click="handleConfirm"
         >
-          确定
+          Confirm
         </button>
       </div>
     </div>
@@ -130,20 +130,20 @@ const emit = defineEmits<{
 const expressionStore = useExpressionStore()
 const { getImageUrl } = useAssetImage()
 
-// 获取所有表情
+// Get all expressions
 const allExpressions = computed(() => expressionStore.expressionList)
 
-// 性别 Tab 选项
-const genderTabOptions = ['全部', '男', '女', '其他']
-const activeGenderTab = ref<string>('全部')
+// Gender Tab options
+const genderTabOptions = ['All', 'Male', 'Female', 'Other']
+const activeGenderTab = ref<string>('All')
 
-// 标签侧边栏
-const selectedTag = ref<string>('全部')
+// Tag sidebar
+const selectedTag = ref<string>('All')
 
-// 计算可用标签（排除性别标签）
+// Calculate available tags (excluding gender tags)
 const availableTags = computed(() => {
   const tags = new Set<string>()
-  const genderTags = new Set(['男', '女', '其他'])
+  const genderTags = new Set(['Male', 'Female', 'Other', 'All'])
   
   allExpressions.value.forEach(expr => {
     expr.tags?.forEach(t => {
@@ -152,22 +152,22 @@ const availableTags = computed(() => {
       }
     })
   })
-  return ['全部', ...Array.from(tags).sort()]
+  return ['All', ...Array.from(tags).sort()]
 })
 
-// 按性别筛选的表情列表
+// Filtered expressions by gender
 const genderFilteredExpressions = computed(() => {
   let list = allExpressions.value
   
-  if (activeGenderTab.value !== '全部') {
+  if (activeGenderTab.value !== 'All') {
     const genderMap: Record<string, 'male' | 'female' | 'other'> = {
-      '男': 'male',
-      '女': 'female',
-      '其他': 'other'
+      'Male': 'male',
+      'Female': 'female',
+      'Other': 'other'
     }
     const targetGender = genderMap[activeGenderTab.value]
     list = list.filter(expr => {
-      if (activeGenderTab.value === '其他') {
+      if (activeGenderTab.value === 'Other') {
         return expr.gender === 'other' || !expr.gender
       }
       return expr.gender === targetGender
@@ -177,22 +177,22 @@ const genderFilteredExpressions = computed(() => {
   return list
 })
 
-// 组合筛选后的表情列表
+// Expressions after combined filtering
 const filteredExpressions = computed(() => {
   let list = genderFilteredExpressions.value
   
-  // 标签筛选
-  if (selectedTag.value !== '全部') {
+  // Tag filtering
+  if (selectedTag.value !== 'All') {
     list = list.filter(expr => expr.tags?.includes(selectedTag.value))
   }
   
   return list
 })
 
-// 计算每个标签的数量（受性别筛选影响）
+// Calculate count per tag (affected by gender filter)
 function getTagCount(tag: string): number {
   const list = genderFilteredExpressions.value
-  if (tag === '全部') return list.length
+  if (tag === 'All') return list.length
   return list.filter(expr => expr.tags?.includes(tag)).length
 }
 
@@ -209,7 +209,7 @@ function handleConfirm() {
   }
 }
 
-// 获取表情图片URL
+// Get expression image URL
 function getExpressionImageUrl(url: string): string {
   return getImageUrl(url)
 }
@@ -277,7 +277,7 @@ function getExpressionImageUrl(url: string): string {
   flex-direction: column;
 }
 
-/* 性别 Tab */
+/* Gender Tab */
 .gender-tabs {
   display: flex;
   gap: 8px;
@@ -309,14 +309,14 @@ function getExpressionImageUrl(url: string): string {
   color: white;
 }
 
-/* 主内容区 */
+/* Main content area */
 .content-wrapper {
   flex: 1;
   display: flex;
   overflow: hidden;
 }
 
-/* 标签侧边栏 */
+/* Tag sidebar */
 .tag-sidebar {
   width: 160px;
   border-right: 1px solid #e5e7eb;
@@ -379,7 +379,7 @@ function getExpressionImageUrl(url: string): string {
   color: #3b82f6;
 }
 
-/* 表情内容区 */
+/* Expression content area */
 .expression-content {
   flex: 1;
   overflow-y: auto;

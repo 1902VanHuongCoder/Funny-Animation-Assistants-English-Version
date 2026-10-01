@@ -1,12 +1,12 @@
 <template>
   <div class="voice-selector-panel">
-    <!-- 当前音色摘要 -->
+    <!-- Current voice summary -->
     <div class="current-voice-bar">
       <div class="current-voice-info">
-        <span class="current-label">当前音色</span>
+        <span class="current-label">Current Voice</span>
         <span class="current-voice-name">
           {{ currentVoiceInfo?.gender === 'female' ? '♀' : '♂' }}
-          {{ currentVoiceInfo?.name ?? '未设置' }}
+          {{ currentVoiceInfo?.name ?? 'Not set' }}
         </span>
         <span
           v-if="currentVoiceInfo"
@@ -20,34 +20,34 @@
         <span class="change-arrow">→</span>
         <span class="new-voice-name">
           {{ selectedVoiceInfo?.gender === 'female' ? '♀' : '♂' }}
-          {{ selectedVoiceInfo?.name ?? '未知' }}
+          {{ selectedVoiceInfo?.name ?? 'Unknown' }}
         </span>
-        <span class="change-hint">保存后生效</span>
+        <span class="change-hint">Takes effect after saving</span>
       </div>
       <button
         class="btn-current-preview"
         :class="{ 'is-playing': isPlaying && modelValue === playingVoiceId }"
         :disabled="isPlaying"
-        :title="isPlaying && modelValue === playingVoiceId ? '播放中...' : '试听当前选中音色'"
+        :title="isPlaying && modelValue === playingVoiceId ? 'Playing...' : 'Preview current selected voice'"
         @click="$emit('preview', modelValue)"
       >
         <span class="preview-icon">{{ isPlaying && modelValue === playingVoiceId ? '▶️' : '🔊' }}</span>
-        <span class="preview-label">{{ isPlaying && modelValue === playingVoiceId ? '播放中' : '试听' }}</span>
+        <span class="preview-label">{{ isPlaying && modelValue === playingVoiceId ? 'Playing' : 'Preview' }}</span>
       </button>
     </div>
 
-    <!-- 搜索框 -->
+    <!-- Search bar -->
     <div class="search-bar">
       <span class="search-icon">🔍</span>
       <input
         v-model="searchKeyword"
         type="text"
         class="search-input"
-        placeholder="搜索音色名称或描述..."
+        placeholder="Search voice name or description..."
       >
     </div>
 
-    <!-- 性别 Tab -->
+    <!-- Gender Tabs -->
     <div class="gender-tabs">
       <button
         v-for="tab in genderTabs"
@@ -61,7 +61,7 @@
       </button>
     </div>
 
-    <!-- 卡片网格 -->
+    <!-- Card Grid -->
     <div
       class="voice-grid-container"
     >
@@ -69,7 +69,7 @@
         v-if="filteredVoices.length === 0"
         class="empty-state"
       >
-        <p>未找到匹配的音色</p>
+        <p>No matching voices found</p>
       </div>
       <div
         v-else
@@ -86,7 +86,7 @@
           :data-voice-id="voice.id"
           @click="selectVoice(voice)"
         >
-          <!-- 选中角标 -->
+          <!-- Selected badge -->
           <div
             v-if="voice.id === modelValue && voice.engine === selectedEngine"
             class="selected-badge"
@@ -94,29 +94,29 @@
             ✓
           </div>
 
-          <!-- 性别图标 + 名称 -->
+          <!-- Gender icon + Name -->
           <div class="voice-header">
             <span class="gender-icon">{{ voice.gender === 'female' ? '♀' : '♂' }}</span>
             <span class="voice-name">{{ voice.name }}</span>
           </div>
 
-          <!-- 描述与成本档位 -->
+          <!-- Description and cost tier -->
           <div class="voice-meta">
             <span class="voice-desc">{{ voice.description }}</span>
             <span
               class="voice-price"
-              title="可选 TTS Provider 的成本提示，不代表开源版内置计费或默认云服务"
+              title="Cost tier hint for optional TTS providers; does not represent built-in billing or default cloud services"
             >
               {{ getVoiceCostTierLabel(voice) }}
             </span>
           </div>
 
-          <!-- 试听按钮 -->
+          <!-- Preview button -->
           <button
             class="btn-preview"
             :class="{ 'is-playing': isPlaying && voice.id === playingVoiceId }"
             :disabled="isPlaying && voice.id === playingVoiceId"
-            :title="isPlaying && voice.id === playingVoiceId ? '播放中...' : '试听'"
+            :title="isPlaying && voice.id === playingVoiceId ? 'Playing...' : 'Preview'"
             @click.stop="$emit('preview', voice.id)"
           >
             {{ isPlaying && voice.id === playingVoiceId ? '▶️' : '🔊' }}
@@ -133,13 +133,13 @@ import { computed, ref } from 'vue'
 import { getVoiceCostTierLabel, getVoiceEngine, getVoiceOptions,type VoiceOption } from '@/constants/voiceOptions'
 
 const props = defineProps<{
-  /** 当前选中的音色 ID（实时跟踪用户选择） */
+  /** Currently selected voice ID (tracks user choice in real time) */
   modelValue: number
-  /** 初始保存的音色 ID（打开对话框时的值） */
+  /** Initially saved voice ID (value when opening dialog) */
   initialVoiceId?: number | undefined
-  /** 是否正在试听 */
+  /** Whether preview is playing */
   isPlaying?: boolean
-  /** 正在试听的音色 ID */
+  /** ID of voice currently previewing */
   playingVoiceId?: number | undefined
 }>()
 
@@ -148,44 +148,44 @@ const emit = defineEmits<{
   'preview': [voiceId: number]
 }>()
 
-// ===== 状态 =====
+// ===== State =====
 const searchKeyword = ref('')
 const currentGender = ref<'all' | 'female' | 'male'>('all')
 
 
-// ===== 计算当前选中音色的引擎 =====
+// ===== Compute engine for currently selected voice =====
 const selectedEngine = computed(() => getVoiceEngine(props.modelValue))
 
-// ===== 所有音色 =====
+// ===== All Voices =====
 const allVoices = getVoiceOptions()
 
-// ===== 当前保存的音色信息 =====
+// ===== Currently saved voice info =====
 const savedVoiceId = computed(() => props.initialVoiceId ?? props.modelValue)
 
 const currentVoiceInfo = computed(() =>
   allVoices.find(v => v.id === savedVoiceId.value)
 )
 
-// ===== 用户新选的音色信息 =====
+// ===== Newly selected voice info =====
 const selectedVoiceInfo = computed(() =>
   allVoices.find(v => v.id === props.modelValue)
 )
 
-// ===== 是否有变更 =====
+// ===== Has Changes =====
 const hasChanged = computed(() =>
   props.initialVoiceId !== undefined && props.modelValue !== props.initialVoiceId
 )
 
-// ===== 筛选 =====
+// ===== Filter =====
 const filteredVoices = computed(() => {
   let list: VoiceOption[] = allVoices
 
-  // 性别筛选
+  // Gender filter
   if (currentGender.value !== 'all') {
     list = list.filter(v => v.gender === currentGender.value)
   }
 
-  // 关键词搜索
+  // Keyword search
   const kw = searchKeyword.value.trim().toLowerCase()
   if (kw) {
     list = list.filter(v =>
@@ -197,7 +197,7 @@ const filteredVoices = computed(() => {
   return list
 })
 
-// ===== 性别 Tab 计数 =====
+// ===== Gender Tab Counts =====
 const genderTabs = computed(() => {
   const kw = searchKeyword.value.trim().toLowerCase()
   const baseList = kw
@@ -205,20 +205,20 @@ const genderTabs = computed(() => {
     : allVoices
 
   return [
-    { label: '全部', value: 'all' as const, count: baseList.length },
-    { label: '♀ 女声', value: 'female' as const, count: baseList.filter(v => v.gender === 'female').length },
-    { label: '♂ 男声', value: 'male' as const, count: baseList.filter(v => v.gender === 'male').length },
+    { label: 'All', value: 'all' as const, count: baseList.length },
+    { label: '♀ Female', value: 'female' as const, count: baseList.filter(v => v.gender === 'female').length },
+    { label: '♂ Male', value: 'male' as const, count: baseList.filter(v => v.gender === 'male').length },
   ]
 })
 
-// ===== 选中音色 =====
+// ===== Select Voice =====
 function selectVoice(voice: VoiceOption): void {
   emit('update:modelValue', voice.id)
 }
 </script>
 
 <style scoped>
-/* ===== 当前音色摘要栏 ===== */
+/* ===== Current Voice Summary Bar ===== */
 .current-voice-bar {
   display: flex;
   align-items: center;
@@ -344,7 +344,7 @@ function selectVoice(voice: VoiceOption): void {
   gap: 10px;
 }
 
-/* ===== 搜索框 ===== */
+/* ===== Search Box ===== */
 .search-bar {
   display: flex;
   align-items: center;
@@ -379,7 +379,7 @@ function selectVoice(voice: VoiceOption): void {
   color: #9ca3af;
 }
 
-/* ===== 性别 Tab ===== */
+/* ===== Gender Tabs ===== */
 .gender-tabs {
   display: flex;
   gap: 4px;
@@ -425,7 +425,7 @@ function selectVoice(voice: VoiceOption): void {
   color: #93c5fd;
 }
 
-/* ===== 卡片网格容器 ===== */
+/* ===== Card Grid Container ===== */
 .voice-grid-container {
   max-height: 420px;
   overflow-y: auto;
@@ -458,7 +458,7 @@ function selectVoice(voice: VoiceOption): void {
   gap: 8px;
 }
 
-/* ===== 音色卡片 ===== */
+/* ===== Voice Cards ===== */
 .voice-card {
   position: relative;
   padding: 10px;
@@ -490,7 +490,7 @@ function selectVoice(voice: VoiceOption): void {
   background: #fffbeb;
 }
 
-/* 选中角标 */
+/* Selected badge */
 .selected-badge {
   position: absolute;
   top: -4px;
@@ -508,7 +508,7 @@ function selectVoice(voice: VoiceOption): void {
   box-shadow: 0 1px 3px rgba(59, 130, 246, 0.4);
 }
 
-/* 性别图标 + 名称 */
+/* Gender icon + name */
 .voice-header {
   display: flex;
   align-items: center;
@@ -539,7 +539,7 @@ function selectVoice(voice: VoiceOption): void {
   text-overflow: ellipsis;
 }
 
-/* 描述与成本档位 */
+/* Description and cost tier */
 .voice-meta {
   display: flex;
   align-items: center;
@@ -570,7 +570,7 @@ function selectVoice(voice: VoiceOption): void {
   white-space: nowrap;
 }
 
-/* 试听按钮 */
+/* Preview button */
 .btn-preview {
   align-self: flex-start;
   padding: 2px 6px;
@@ -605,7 +605,7 @@ function selectVoice(voice: VoiceOption): void {
   50% { opacity: 0.5; }
 }
 
-/* ===== 空状态 ===== */
+/* ===== Empty State ===== */
 .empty-state {
   text-align: center;
   padding: 30px 20px;

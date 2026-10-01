@@ -1,11 +1,11 @@
 /**
- * 灯光预设数据模块
+ * Light preset data module
  * 
- * 统一定义所有灯型（环境光 / 点光 / 聚光）的预设参数。
- * 供 LightPickerDialog（创建时选择）和 ObjectPropertiesPanel（面板内一键应用）共用。
+ * Defines preset parameters for all light types (ambient / point / spot).
+ * Shared between LightPickerDialog (selection on creation) and ObjectPropertiesPanel (one-click apply).
  */
 
-/** 点光/聚光预设应用的参数集 */
+/** Parameter set for point / spot light presets */
 export interface LightPresetParams {
   lightColor: string
   lightIntensity: number
@@ -16,64 +16,64 @@ export interface LightPresetParams {
   coneAngle?: number
 }
 
-/** 预设条目 */
+/** Preset entry */
 export interface LightPresetEntry {
-  /** 唯一标识，用于匹配和持久化 */
+  /** Unique identifier for matching and persistence */
   id: string
-  /** UI 显示名称 */
+  /** UI display name */
   label: string
-  /** 描述文案 */
+  /** Description text */
   description: string
-  /** 预设参数 */
+  /** Preset parameters */
   params: LightPresetParams
 }
 
-// ─── 环境光预设 ──────────────────────────────────────────
+// ─── Ambient Light Presets ──────────────────────────────────────────
 export const AMBIENT_PRESETS: LightPresetEntry[] = [
   {
     id: 'daylight',
-    label: '白天',
-    description: '明亮自然日光',
+    label: 'Daylight',
+    description: 'Bright natural sunlight',
     params: { lightColor: '#ffffff', lightIntensity: 1.0, lightRadius: 500, flicker: 0, flickerSpeed: 0.35 },
   },
   {
     id: 'overcast',
-    label: '阴天',
-    description: '灰蓝柔光',
+    label: 'Overcast',
+    description: 'Soft grayish-blue light',
     params: { lightColor: '#c8d0db', lightIntensity: 0.75, lightRadius: 500, flicker: 0, flickerSpeed: 0.35 },
   },
   {
     id: 'twilight',
-    label: '黄昏',
-    description: '暖橙夕照',
+    label: 'Twilight',
+    description: 'Warm orange sunset',
     params: { lightColor: '#e8a050', lightIntensity: 0.65, lightRadius: 500, flicker: 0, flickerSpeed: 0.35 },
   },
   {
     id: 'night',
-    label: '夜晚',
-    description: '深蓝夜幕',
+    label: 'Night',
+    description: 'Deep blue night sky',
     params: { lightColor: '#2a3a6a', lightIntensity: 0.30, lightRadius: 500, flicker: 0, flickerSpeed: 0.35 },
   },
   {
     id: 'candlelit',
-    label: '烛光',
-    description: '暖黄烛台',
+    label: 'Candlelight',
+    description: 'Warm yellow candle stand',
     params: { lightColor: '#d4956a', lightIntensity: 0.45, lightRadius: 500, flicker: 0, flickerSpeed: 0.35 },
   },
   {
     id: 'moonlight',
-    label: '月光',
-    description: '冷蓝月夜',
+    label: 'Moonlight',
+    description: 'Cool blue moonlight',
     params: { lightColor: '#8090c0', lightIntensity: 0.40, lightRadius: 500, flicker: 0, flickerSpeed: 0.35 },
   },
 ]
 
-// ─── 点光预设 (§10.2) ────────────────────────────────────
+// ─── Point Light Presets (§10.2) ────────────────────────────────────
 export const POINT_LIGHT_PRESETS: LightPresetEntry[] = [
   {
     id: 'bulb',
-    label: '电灯',
-    description: '稳定暖白灯泡',
+    label: 'Light Bulb',
+    description: 'Steady warm white bulb',
     params: {
       lightColor: '#fff5e0',
       lightIntensity: 1.0,
@@ -84,8 +84,8 @@ export const POINT_LIGHT_PRESETS: LightPresetEntry[] = [
   },
   {
     id: 'candle',
-    label: '蜡烛',
-    description: '暖黄微闪烛火',
+    label: 'Candle',
+    description: 'Warm flickering flame',
     params: {
       lightColor: '#ff9940',
       lightIntensity: 0.75,
@@ -96,8 +96,8 @@ export const POINT_LIGHT_PRESETS: LightPresetEntry[] = [
   },
   {
     id: 'torch',
-    label: '火把',
-    description: '暖橙强闪火焰',
+    label: 'Torch',
+    description: 'Warm orange blazing fire',
     params: {
       lightColor: '#ff6a20',
       lightIntensity: 1.1,
@@ -108,8 +108,8 @@ export const POINT_LIGHT_PRESETS: LightPresetEntry[] = [
   },
   {
     id: 'glitch',
-    label: '故障灯',
-    description: '快速不规则闪烁',
+    label: 'Glitch Light',
+    description: 'Fast irregular flickering',
     params: {
       lightColor: '#e0f0ff',
       lightIntensity: 0.9,
@@ -120,8 +120,8 @@ export const POINT_LIGHT_PRESETS: LightPresetEntry[] = [
   },
   {
     id: 'magic',
-    label: '魔法光',
-    description: '冷蓝柔闪魔力',
+    label: 'Magic Light',
+    description: 'Cool blue pulsing magical glow',
     params: {
       lightColor: '#80c0ff',
       lightIntensity: 0.85,
@@ -132,12 +132,12 @@ export const POINT_LIGHT_PRESETS: LightPresetEntry[] = [
   },
 ]
 
-// ─── 聚光预设 (§10.3) ────────────────────────────────────
+// ─── Spot Light Presets (§10.3) ────────────────────────────────────
 export const SPOT_LIGHT_PRESETS: LightPresetEntry[] = [
   {
     id: 'flashlight',
-    label: '手电',
-    description: '窄束白色聚光',
+    label: 'Flashlight',
+    description: 'Narrow white beam spotlight',
     params: {
       lightColor: '#ffffff',
       lightIntensity: 1.1,
@@ -150,8 +150,8 @@ export const SPOT_LIGHT_PRESETS: LightPresetEntry[] = [
   },
   {
     id: 'spotlight',
-    label: '舞台追光',
-    description: '高亮暖白追光',
+    label: 'Stage Spotlight',
+    description: 'Bright warm white follow spotlight',
     params: {
       lightColor: '#fffbe6',
       lightIntensity: 1.4,
@@ -164,8 +164,8 @@ export const SPOT_LIGHT_PRESETS: LightPresetEntry[] = [
   },
   {
     id: 'wallsconce',
-    label: '壁灯',
-    description: '半圆暖色壁灯',
+    label: 'Wall Sconce',
+    description: 'Semicircular warm wall lamp',
     params: {
       lightColor: '#ffe0b0',
       lightIntensity: 0.80,
@@ -178,21 +178,21 @@ export const SPOT_LIGHT_PRESETS: LightPresetEntry[] = [
   },
   {
     id: 'streetlamp',
-    label: '路灯',
-    description: '向下均匀路灯',
+    label: 'Street Lamp',
+    description: 'Downward even street light',
     params: {
       lightColor: '#fff0d0',
       lightIntensity: 0.95,
       lightRadius: 450,
       flicker: 0,
       flickerSpeed: 0.35,
-      directionAngle: Math.PI / 2,   // 向下
+      directionAngle: Math.PI / 2,   // Downward
       coneAngle: 110,
     },
   },
 ]
 
-/** 按灯型获取对应预设列表 */
+/** Get presets list by light type */
 export function getPresetsForLightType(lightType: 'ambient' | 'point' | 'spot'): LightPresetEntry[] {
   switch (lightType) {
     case 'ambient': return AMBIENT_PRESETS

@@ -4,14 +4,14 @@
     class="action-editor"
   >
 
-    <!-- 中间：画布区域 -->
+    <!-- Center: Canvas Area -->
     <main class="canvas-area">
-      <!-- 顶部工具栏 -->
+      <!-- Top Toolbar -->
       <div class="action-toolbar">
         <div class="toolbar-left">
           <button
             class="toolbar-btn icon-only"
-            title="返回"
+            title="Back"
             @click="handleReturn"
           >
             🔙
@@ -20,7 +20,7 @@
             class="save-status"
             :class="{ unsaved: hasLocalChanges }"
           >
-            {{ hasLocalChanges ? '● 未保存' : '✓ 已保存' }}
+            {{ hasLocalChanges ? '● Unsaved' : '✓ Saved' }}
           </span>
           <span class="mouse-position">
             ({{ currentMousePos.x }}, {{ currentMousePos.y }})
@@ -30,7 +30,7 @@
             <span class="block-description" :title="currentBlockDescription">{{ truncatedBlockDescription }}</span>
             <button 
               class="edit-text-btn" 
-              title="编辑文字" 
+              title="Edit Text" 
               @click="openTextEditDialog"
             >
               ✏️
@@ -38,17 +38,17 @@
           </div>
         </div>
         
-        <!-- v9.2: 右侧工具栏（与 Setup 模式布局一致） -->
+        <!-- v9.2: Right Toolbar (consistent with Setup mode layout) -->
         <div class="toolbar-right">
-          <!-- 添加素材 -->
+          <!-- Add Asset -->
           <div class="add-menu-container">
             <button
               class="toolbar-btn add-btn"
-              title="添加素材"
+              title="Add Asset"
               @click="toggleAddMenu"
             >
               <span class="btn-icon">+</span>
-              <span class="btn-text">添加素材</span>
+              <span class="btn-text">Add Asset</span>
             </button>
             <div
               v-if="showAddMenu"
@@ -60,128 +60,128 @@
                 @click="handleAddMenuItemClick('backgrounds')"
               >
                 <span class="menu-icon">🖼️</span>
-                <span>背景</span>
+                <span>Background</span>
               </button>
               <button
                 class="menu-item"
                 @click="handleAddMenuItemClick('props')"
               >
                 <span class="menu-icon">📦</span>
-                <span>道具</span>
+                <span>Prop</span>
               </button>
               <button
                 class="menu-item"
                 @click="handleAddMenuItemClick('sounds')"
               >
                 <span class="menu-icon">🔊</span>
-                <span>音效</span>
+                <span>Sound</span>
               </button>
               <button
                 class="menu-item"
                 @click="handleAddMenuItemClick('screen_effects')"
               >
                 <span class="menu-icon">🌟</span>
-                <span>视觉效果</span>
+                <span>Visual Effect</span>
               </button>
               <button
                 class="menu-item"
                 @click="handleAddMenuItemClick('symbol')"
               >
                 <span class="menu-icon">🔧</span>
-                <span>元件</span>
+                <span>Symbol</span>
               </button>
               <button
                 class="menu-item"
                 @click="handleAddMenuItemClick('expression')"
               >
                 <span class="menu-icon">😀</span>
-                <span>表情</span>
+                <span>Expression</span>
               </button>
               <button
                 class="menu-item"
                 @click="handleAddMenuItemClick('scene_templates')"
               >
                 <span class="menu-icon">🧩</span>
-                <span>场景模板</span>
+                <span>Scene Template</span>
               </button>
               <button
                 class="menu-item"
                 @click="handleAddMenuItemClick('actors')"
               >
                 <span class="menu-icon">🎭</span>
-                <span>演员</span>
+                <span>Actor</span>
               </button>
               <button
                 class="menu-item"
                 @click="handleAddMenuItemClick('characters')"
               >
                 <span class="menu-icon">👤</span>
-                <span>人物</span>
+                <span>Character</span>
               </button>
               <button
                 class="menu-item"
                 @click="handleAddMenuItemClick('light')"
               >
                 <span class="menu-icon">💡</span>
-                <span>光源</span>
+                <span>Light</span>
               </button>
               <button
                 class="menu-item"
                 @click="handleAddMenuItemClick('text')"
               >
                 <span class="menu-icon">📝</span>
-                <span>文本</span>
+                <span>Text</span>
               </button>
             </div>
           </div>
-          <!-- 复制按钮 -->
+          <!-- Duplicate Button -->
           <button 
             class="toolbar-btn icon-only" 
-            title="复制选中对象" 
+            title="Duplicate Selected Object" 
             :disabled="!canCopySelectedObject"
             @click="handleCopyObject"
           >
             ❐
           </button>
-          <!-- P2: 成组按钮 -->
+          <!-- P2: Group Button -->
           <button
             class="toolbar-btn icon-only"
-            title="组合"
+            title="Group"
             :disabled="!canCopySelectedObject"
             @click="handleStartGrouping"
           >
             🔗
           </button>
-          <!-- v17: 保存为场景模板 -->
+          <!-- v17: Save as Scene Template -->
           <button
             class="toolbar-btn icon-only"
-            title="保存为场景模板"
+            title="Save as Scene Template"
             :disabled="aliveNonCameraObjects.length === 0"
             @click="showSaveTemplateDialog = true"
           >
             🧩
           </button>
-          <!-- 删除按钮 -->
+          <!-- Delete Button -->
           <button 
             class="toolbar-btn danger icon-only" 
-            title="删除选中对象"
+            title="Delete Selected Object"
             :disabled="!canDeleteSelectedObject"
             @click="handleDeleteDynamicObject"
           >
             🗑️
           </button>
-          <!-- 预览 -->
+          <!-- Preview -->
           <button 
             class="toolbar-btn preview-btn icon-only" 
-            title="预览效果" 
+            title="Preview" 
             @click="handlePreview"
           >
             👁️
           </button>
-          <!-- 保存 -->
+          <!-- Save -->
           <button 
             class="toolbar-btn primary icon-only" 
-            title="保存" 
+            title="Save" 
             @click="handleSaveAction"
           >
             💾
@@ -189,7 +189,7 @@
           <button
             v-if="isDev"
             class="toolbar-btn icon-only"
-            title="查看场景 Render Chain"
+            title="View Scene Render Chain"
             @click="showRenderChainDialog = true"
           >
             RC
@@ -198,13 +198,13 @@
             <button
               class="toolbar-btn icon-only"
               :class="{ active: showPassThroughPanel }"
-              title="穿透管理"
+              title="Pass-through Management"
               @click="showPassThroughPanel = !showPassThroughPanel; showPassThroughTip = false"
             >
               👻{{ passThroughCount > 0 ? ` ${passThroughCount}` : '' }}
             </button>
             <div v-if="showPassThroughTip" class="pass-through-tip-bubble">
-              相机已设为穿透模式，点击管理
+              Camera is in pass-through mode, click to manage
             </div>
             <PassThroughPanel
               v-if="showPassThroughPanel"
@@ -215,10 +215,10 @@
               @close="showPassThroughPanel = false"
             />
           </div>
-          <!-- 全屏 -->
+          <!-- Fullscreen -->
           <button 
             class="toolbar-btn icon-only" 
-            :title="isFullscreen ? '退出全屏' : '全屏'" 
+            :title="isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'" 
             @click="toggleFullscreen"
           >
             {{ isFullscreen ? '⛶' : '⛶' }}
@@ -226,7 +226,7 @@
         </div>
       </div>
 
-      <!-- P2: 成组模式浮动栏 -->
+      <!-- P2: Group Mode Floating Bar -->
       <GroupingModePanel
         v-if="actionGroupingState"
         v-model:composite-mode="selectedCompositeMode"
@@ -241,7 +241,7 @@
         @cancel="handleGroupingCancel"
       />
 
-      <!-- 画布容器 -->
+      <!-- Canvas Container -->
       <div 
         ref="canvasContainer" 
         class="canvas-container recording-mode"
@@ -269,7 +269,7 @@
         />
       </div>
 
-      <!-- 底部动作编辑器 -->
+      <!-- Bottom Action Sequencer -->
       <ActionSequencer
         v-if="currentBlock"
         :block="currentBlock"
@@ -290,24 +290,24 @@
       />
     </main>
 
-    <!-- 右侧分隔条 -->
+    <!-- Right Divider -->
     <div 
       v-show="!rightPanelCollapsed"
       class="resizer right-resizer" 
       @mousedown="startResizeRightPanel"
     />
 
-    <!-- 右侧折叠按钮 -->
+    <!-- Right Collapse Button -->
     <button
       v-show="rightPanelCollapsed"
       class="expand-btn right"
-      title="展开面板"
+      title="Expand Panel"
       @click="rightPanelCollapsed = false"
     >
       ◀
     </button>
 
-    <!-- 右侧：属性面板 -->
+    <!-- Right: Properties Panel -->
     <aside
       v-show="!rightPanelCollapsed"
       class="right-panel"
@@ -316,21 +316,21 @@
       <div class="panel-header">
         <button
           class="collapse-btn"
-          title="折叠面板"
+          title="Collapse Panel"
           @click="rightPanelCollapsed = true"
         >
           ▶
         </button>
-        <!-- 未选中 Action 时显示标题 -->
+        <!-- Header shown when no action selected -->
         <template v-if="!selectedAction">
-          <h3>属性</h3>
+          <h3>Properties</h3>
         </template>
         <template v-else>
-          <h3>动作属性</h3>
+          <h3>Action Properties</h3>
         </template>
       </div>
       
-      <!-- 选中Action时显示ActionInspector -->
+      <!-- Show ActionInspector when action selected -->
       <ActionInspector
         v-if="selectedAction"
         :action="selectedAction"
@@ -343,9 +343,9 @@
         @update="handleActionInspectorUpdate"
         @delete="handleActionInspectorDelete"
       />
-      <!-- 未选中Action时显示属性面板 -->
+      <!-- Show properties panel when no action selected -->
       <template v-else>
-        <!-- 属性面板 -->
+        <!-- Properties panel -->
         <ObjectPropertiesPanel
           :selected-object="sceneObjectStore?.getSelectedObject()"
           :object-record-mode="objectRecordMode"
@@ -387,7 +387,7 @@
       </template>
     </aside>
 
-    <!-- 确认对话框 -->
+    <!-- Confirm dialog -->
     <ConfirmDialog
       v-if="showConfirmDialog"
       :title="confirmDialogConfig.title"
@@ -402,17 +402,17 @@
       @cancel="showConfirmDialog = false"
     />
     
-    <!-- 保存确认对话框 -->
+    <!-- Save confirmation dialog -->
     <SaveConfirmDialog
       v-if="showSaveConfirmDialog"
-      title="保存更改"
-      message="当前有未保存的修改，您想要如何处理？"
+      title="Save Changes"
+      message="There are unsaved changes. What would you like to do?"
       @save-and-exit="handleSaveAndExit"
       @discard="handleDiscardAndExit"
       @cancel="showSaveConfirmDialog = false"
     />
     
-    <!-- 动作预览对话框 -->
+    <!-- Action preview dialog -->
     <ActionPreviewDialog
       v-if="showPreviewDialog && episode"
       :visible="showPreviewDialog"
@@ -423,7 +423,7 @@
       @close="showPreviewDialog = false"
     />
 
-    <!-- 保存提示 Toast -->
+    <!-- Save Toast -->
     <SceneRenderChainDialog
       v-if="showRenderChainDialog"
       mode-description="Runtime objects"
@@ -441,19 +441,19 @@
       </div>
     </Transition>
 
-    <!-- v8.3: 文本编辑对话框 -->
+    <!-- v8.3: Text edit dialog -->
     <div v-if="showTextEditDialog" class="text-edit-dialog-overlay" @click.self="showTextEditDialog = false">
       <div class="text-edit-dialog">
         <div class="dialog-header">
-          <span>编辑文字</span>
+          <span>Edit Text</span>
           <button class="close-btn" @click="showTextEditDialog = false">×</button>
         </div>
         <div class="dialog-body">
           <textarea v-model="editingText" class="text-edit-textarea" rows="5" />
         </div>
         <div class="dialog-footer">
-          <button class="cancel-btn" @click="showTextEditDialog = false">取消</button>
-          <button class="confirm-btn" @click="saveEditedText">确定</button>
+          <button class="cancel-btn" @click="showTextEditDialog = false">Cancel</button>
+          <button class="confirm-btn" @click="saveEditedText">Confirm</button>
         </div>
       </div>
     </div>
@@ -496,21 +496,21 @@
       @close="showTemplatePicker = false"
     />
 
-    <!-- 演员选择对话框 -->
+    <!-- Actor selector dialog -->
     <ActorPickerDialog
       v-if="showActorPicker"
       @select="handleActorSelect"
       @close="showActorPicker = false"
     />
 
-    <!-- 人物选择对话框 -->
+    <!-- Character selector dialog -->
     <CompositeCharacterPickerDialog
       v-if="showCharacterPicker"
       @select="handleCharacterSelect"
       @close="showCharacterPicker = false"
     />
 
-    <!-- v17: 保存为场景模板对话框 -->
+    <!-- v17: Save as scene template dialog -->
     <SaveTemplateDialog
       v-if="showSaveTemplateDialog"
       :visible="showSaveTemplateDialog"
@@ -520,7 +520,7 @@
       @saved="handleSaveTemplateSaved"
     />
 
-    <!-- 实例别名编辑对话框 -->
+    <!-- Instance alias edit dialog -->
     <InstanceAliasDialog
       v-if="showAliasDialog"
       :actor-name="aliasDialogActorName"
@@ -547,19 +547,19 @@ import { Z_INDEX_SCREEN_EFFECT, Z_INDEX_TEXT } from '@/constants/zIndex'
 import { getTypeIcon } from '@/core/sceneObjectProviders/metadata'
 import { logService } from '@/services/LogService'
 import { useAnimationStore } from '@/stores/animationStore'
-import { useBackgroundStore } from '@/stores/backgroundStore'  // v7.1: 用于获取背景名称
+import { useBackgroundStore } from '@/stores/backgroundStore'  // v7.1: Used to get background name
 import type { Episode } from '@/stores/episodeStore'
 import { useEpisodeStore } from '@/stores/episodeStore'
 import { useExpressionStore } from '@/stores/expressionStore'
 import { useProjectStore } from '@/stores/projectStore'
-// P2: usePropStore 已不再需要（对象加载由 fromSetupObject 代理）
+// P2: usePropStore is no longer needed (object loading delegated by fromSetupObject)
 import type { AudioObject, CameraObject } from '@/stores/sceneObjectStore'
 import { useSceneObjectStore } from '@/stores/sceneObjectStore'
-// v7.3: useEffectStore 已移除
+// v7.3: useEffectStore removed
 import { useSoundStore } from '@/stores/soundStore'
 import type { AnimationTimingMode } from '@/types/animation'
 import type { CompositeCharacter } from '@/types/compositeCharacter'
-// Phase 4e: ObjectStateSnapshot 已由 SceneObject 替代
+// Phase 4e: ObjectStateSnapshot replaced by SceneObject
 import type { SceneObject as ActionRuntimeState } from '@/types/sceneObject'
 import type { LightObject,MaskObject,ScreenEffectObject, ScreenEffectPreset, SymbolMaterial, TextObject } from '@/types/sceneObject'
 import type { CompositeExtraInfo } from '@/types/sceneObject'
@@ -591,7 +591,7 @@ import {
 } from '@/utils/actionEvaluator'
 import { localToGlobal } from '@/utils/actionHandlers/matrixUtils'
 import type { WriteableState } from '@/utils/actionHandlers/types'
-// v9.3: 判断出生 action
+// v9.3: Determine spawn action
 import { isBirthAction } from '@/utils/actionHelpers'
 import {
   getActionOrderModeForSlot,
@@ -609,7 +609,7 @@ import {
 import { applyMeasuredDefaultSize } from '@/utils/sceneObjectDefaultSize'
 import { calculatePrevContext } from '@/utils/sceneStateCalculator'
 import { instantiateTemplate, snapshotToTemplate } from '@/utils/sceneTemplateEngine'
-// v9.1: Shadow Object 动态对象创建
+// v9.1: Shadow Object dynamic object creation
 import { createShadowObject } from '@/utils/shadowObject'
 import { detectSlotTextChanges, migrateActionsOnSlotDelete, migrateActionsOnSlotInsert, parseBlockToSlots } from '@/utils/slotUtils'
 import { 
@@ -622,7 +622,7 @@ import ActionInspector from './ActionInspector.vue'
 import ActionPreviewDialog from './ActionPreviewDialog.vue'
 import ActionSequencer from './ActionSequencer.vue'
 import ActorPickerDialog from './ActorPickerDialog.vue'
-// v9.1: 添加素材 Picker 组件
+// v9.1: Add asset Picker component
 import BackgroundPickerDialog from './BackgroundPickerDialog.vue'
 import CanvasScrollbars from './CanvasScrollbars.vue'
 import CompositeCharacterPickerDialog from './CompositeCharacterPickerDialog.vue'
@@ -658,17 +658,17 @@ const projectStore = useProjectStore()
 const episodeStore = useEpisodeStore()
 const sceneObjectStore = useSceneObjectStore()
 const isDev = import.meta.env.DEV
-const backgroundStore = useBackgroundStore()  // v7.1: 用于获取背景名称
-// v7.3: effectStore 已移除
-// P2: propStore 已不再直接使用（对象加载由 fromSetupObject 代理）
+const backgroundStore = useBackgroundStore()  // v7.1: Used to get background name
+// v7.3: effectStore removed
+// P2: propStore is no longer used directly (object loading delegated by fromSetupObject)
 const soundStore = useSoundStore()
 const canvasContainer = ref<HTMLElement>()
 const actionEditorContainer = ref<HTMLElement>()
 
-// 场景渲染器
+// Scene renderer
 const renderer = ref<ReturnType<typeof useSceneRenderer> | null>(null)
 
-// 当前鼠标位置 (Canvas Physical Coordinates)
+// Current mouse position (Canvas Physical Coordinates)
 const currentMousePos = ref({ x: 0, y: 0 })
 
 function handleMouseMove(event: MouseEvent) {
@@ -689,13 +689,13 @@ function handleMouseMove(event: MouseEvent) {
   }
 }
 
-// 确认对话框状态
+// Confirmation dialog state
 const showConfirmDialog = ref(false)
 const confirmDialogConfig = ref({
-  title: '确认',
+  title: 'Confirm',
   message: '',
-  confirmText: '确定',
-  cancelText: '取消',
+  confirmText: 'OK',
+  cancelText: 'Cancel',
   isDanger: false,
   showSecondaryConfirm: false,
   secondaryConfirmText: '',
@@ -703,7 +703,7 @@ const confirmDialogConfig = ref({
   onSecondaryConfirm: () => { /* empty */ },
 })
 
-// v9.1: 添加素材菜单状态
+// v9.1: Add asset menu state
 const showAddMenu = ref(false)
 
 const showBackgroundPicker = ref(false)
@@ -716,10 +716,10 @@ const showActorPicker = ref(false)
 const showLightPicker = ref(false)
 const showCharacterPicker = ref(false)
 
-// 演员关联的 characterId 列表（用于演员选择对话框的 includeIds）
-// actorCharacterIds 已不再需要 — ActorPickerDialog 直接从 projectStore.actors 获取数据
+// Actor-associated characterId list (used for actor picker dialog includeIds)
+// actorCharacterIds no longer needed — ActorPickerDialog gets data directly from projectStore.actors
 
-// 穿透列表管理
+// Through-list management
 const showPassThroughTip = ref(true)
 const showPassThroughPanel = ref(false)
 const showRenderChainDialog = ref(false)
@@ -802,7 +802,7 @@ function handlePassThroughToggle(objectId: string) {
   }
 }
 
-// 别名编辑对话框状态
+// Alias editing dialog state
 const showAliasDialog = ref(false)
 const editingAliasObjectId = ref<string | null>(null)
 
@@ -813,13 +813,13 @@ const aliasDialogActorName = computed(() => {
   if (obj.type === 'background') {
     const bgObj = obj as unknown as { refId: string }
     const bg = backgroundStore.getBackground(bgObj.refId)
-    return bg?.name || obj.name || '背景'
+    return bg?.name || obj.name || 'Background'
   } else if (obj.type === 'audio') {
     const audioObj = obj as unknown as { refId: string }
     const sound = soundStore.getSound(audioObj.refId)
-    return sound?.name || obj.name || '音效'
+    return sound?.name || obj.name || 'Sound'
   }
-  return obj.name || '未命名'
+  return obj.name || 'Untitled'
 })
 
 const aliasDialogSuggestedAlias = computed(() => {
@@ -841,7 +841,7 @@ const aliasDialogObjectType = computed(() => {
 })
 
 const existingAliases = computed(() => {
-  // v17: 命名空间感知 — 基于正在编辑的对象所在的命名空间收集 alias
+  // v17: Namespace aware — collect alias based on namespace where edited object resides
   const nsRoot = editingAliasObjectId.value
     ? sceneObjectStore.resolveNamespaceRoot(editingAliasObjectId.value)
     : null
@@ -864,7 +864,7 @@ async function handleAliasConfirm(alias: string) {
   const obj = sceneObjectStore.getObject(editingAliasObjectId.value)
   if (obj && obj.type !== 'camera') {
     const selectedObjectIdBeforeUpdate = sceneObjectStore.selectedObjectId
-    // v24: 通过 updateSetupObject 同时写入 setupState + runtimeState + episode
+    // v24: Write setupState + runtimeState + episode simultaneously via updateSetupObject
     sceneObjectStore.updateSetupObject(obj.id, {
       alias: alias
     } as unknown as Partial<SceneObject>)
@@ -885,12 +885,12 @@ function handleAliasCancel() {
   showAliasDialog.value = false
 }
 
-// v9.1: 切换添加菜单显示
+// v9.1: Toggle add asset menu visibility
 function toggleAddMenu() {
   showAddMenu.value = !showAddMenu.value
 }
 
-// v9.1: 处理添加菜单项点击
+// v9.1: Handle add asset menu item click
 function handleAddMenuItemClick(type: string) {
   showAddMenu.value = false
   
@@ -907,13 +907,13 @@ function handleAddMenuItemClick(type: string) {
       showScreenEffectPicker.value = true
       break
     case 'symbol': {
-      // v16: 走 Shadow Object 流程
+      // v16: Follow Shadow Object flow
       if (!props.sceneId || !props.episode) break
       const symScene = props.episode.scenes.find((s: SceneContainer) => s.id === props.sceneId)
       const symBlock = symScene?.script.find((b: ScriptBlock) => b.id === props.blockId)
       if (!symScene || !symBlock) break
       
-      const symName = sceneObjectStore.generateUniqueAlias('元件')
+      const symName = sceneObjectStore.generateUniqueAlias('Symbol')
       const symCameraCenter = getCameraCenterPosition()
       const { setupObject: symSetupObj, spawnAction: symSpawnAction } = createShadowObject({
         scene: symScene,
@@ -946,14 +946,14 @@ function handleAddMenuItemClick(type: string) {
     }
     case 'text': {
       if (!props.sceneId || !props.episode) break
-      const textName = sceneObjectStore.generateUniqueAlias('文本')
+      const textName = sceneObjectStore.generateUniqueAlias('Text')
       const textSetupObj: TextObject = {
         id: generateId('sceneobject'),
         type: 'text',
-        name: '文本',
+        name: 'Text',
         refId: '',
         alias: textName,
-        content: '文本',
+        content: 'Text',
         fontSize: 72,
         fontFamily: 'Noto Sans SC',
         fontWeight: 'normal',
@@ -995,12 +995,12 @@ function handleAddMenuItemClick(type: string) {
     case 'mask_ellipse': {
       if (!props.sceneId || !props.episode) break
       const maskShape: 'rectangle' | 'ellipse' = type === 'mask_ellipse' ? 'ellipse' : 'rectangle'
-      const maskName = sceneObjectStore.generateUniqueAlias(maskShape === 'ellipse' ? '椭圆蒙版' : '矩形蒙版')
+      const maskName = sceneObjectStore.generateUniqueAlias(maskShape === 'ellipse' ? 'Ellipse Mask' : 'Rectangle Mask')
       const maskCameraCenter = getCameraCenterPosition()
       const maskSetupObj: MaskObject = {
         id: generateId('sceneobject'),
         type: 'mask',
-        name: maskShape === 'ellipse' ? '椭圆蒙版' : '矩形蒙版',
+        name: maskShape === 'ellipse' ? 'Ellipse Mask' : 'Rectangle Mask',
         refId: '',
         alias: maskName,
         shape: maskShape,
@@ -1046,7 +1046,7 @@ function handleLightSelect(result: { lightType: 'point' | 'spot'; params?: { lig
 
   const isSpot = result.lightType === 'spot'
   const p = result.params
-  const lightName = sceneObjectStore.generateUniqueAlias(isSpot ? '聚光灯' : '点光源')
+  const lightName = sceneObjectStore.generateUniqueAlias(isSpot ? 'Spotlight' : 'Point Light')
   const lightCameraCenter = getCameraCenterPosition()
   const { setupObject: lightSetupObj, spawnAction: lightSpawnAction } = createShadowObject({
     scene: lightScene,
@@ -1083,7 +1083,7 @@ function handleLightSelect(result: { lightType: 'point' | 'spot'; params?: { lig
   addShadowObjectToScene(lightSetupObj, lightSpawnAction)
 }
 
-// v16: 处理场景模板选择 — 实例化并放置到画布（Shadow Object 模式）
+// v16: Handle scene template selection — instantiate and place on canvas (Shadow Object mode)
 function handleTemplateSelect(template: SceneTemplate) {
   showTemplatePicker.value = false
 
@@ -1097,22 +1097,22 @@ function handleTemplateSelect(template: SceneTemplate) {
   
   let firstObjectId: string | undefined
   for (const obj of result.objects) {
-    // 重新生成唯一 alias（基于场景命名空间）
+    // Regenerate unique alias (based on scene namespace)
     const uniqueAlias = sceneObjectStore.generateUniqueAlias(obj.alias ?? obj.name)
     if (uniqueAlias !== obj.alias) {
       obj.alias = uniqueAlias
     }
 
-    // 所有对象 spawned=false（由 entity root 的 set_lifecycle 级联激活）
+    // All objects spawned=false (cascade activated by entity root set_lifecycle)
     obj.spawned = false
 
-    // v24: 写入持久层（addSetupObject 自动同步到 episode）
+    // v24: Write to persistence layer (addSetupObject automatically synced to episode)
     sceneObjectStore.addSetupObject(obj)
     
     if (!firstObjectId) firstObjectId = obj.id
   }
 
-  // 仅对 entity root 创建 1 个 set_lifecycle
+  // Create 1 set_lifecycle only for entity root
   const entityRoot = result.objects.find(o => !o.parentId)
   if (entityRoot) {
     const spawnAction: SetLifecycleAction = {
@@ -1126,22 +1126,22 @@ function handleTemplateSelect(template: SceneTemplate) {
     appendActionWithSlotOrder(block.actions, spawnAction as unknown as Action)
   }
   
-  // 更新 Episode Store
+  // Update Episode Store
   const episodeId = route.params['id'] as string
   episodeStore.updateBlockInScene(episodeId, props.sceneId, props.blockId, {
     actions: block.actions
   })
   
-  // 刷新场景
+  // Refresh scene
   loadSetupToSceneObjects(scene.setup)
   void refreshGhostRealStates()
   
-  // 设置顶层根对象的 alias 和 extraInfo
+  // Set top-level root object alias and extraInfo
   const templateRoot = result.objects.find(o => !o.parentId)
   if (templateRoot) {
     const uniqueAlias = sceneObjectStore.generateUniqueAlias(template.name)
     const extraInfo: CompositeExtraInfo = { kind: 'template', templateId: template.id }
-    // v24: updateSetupObject 同时写入 setupState + runtimeState + episode
+    // v24: updateSetupObject writes setupState + runtimeState + episode simultaneously
     sceneObjectStore.updateSetupObject(templateRoot.id, { alias: uniqueAlias, extraInfo } as Partial<SceneObject>)
   }
 
@@ -1152,7 +1152,7 @@ function handleTemplateSelect(template: SceneTemplate) {
   markLocalChange()
 }
 
-// 演员/人物选择 — 实例化为 entity 模式的组合对象（Shadow Object 模式）
+// Actor/character selection — instantiate as entity mode composite object (Shadow Object mode)
 function handleCompositeCharacterSelectInAction(character: CompositeCharacter, displayName?: string, extraInfo?: CompositeExtraInfo): void {
   if (!props.sceneId || !props.episode) return
   const scene = props.episode.scenes.find((s: SceneContainer) => s.id === props.sceneId)
@@ -1175,23 +1175,23 @@ function handleCompositeCharacterSelectInAction(character: CompositeCharacter, d
   })
 
   let firstObjectId: string | undefined
-  // 构建查找表
+  // Build lookup table
   for (const obj of result.objects) {
     const uniqueAlias = sceneObjectStore.generateUniqueAlias(obj.alias ?? obj.name)
     if (uniqueAlias !== obj.alias) {
       obj.alias = uniqueAlias
     }
 
-    // 所有对象 spawned=false（由 entity root 的 set_lifecycle 级联激活）
+    // All objects spawned=false (cascade activated by entity root set_lifecycle)
     obj.spawned = false
 
-    // v24: 写入持久层（addSetupObject 自动同步到 episode）
+    // v24: Write to persistence layer (addSetupObject automatically synced to episode)
     sceneObjectStore.addSetupObject(obj)
 
     if (!firstObjectId) firstObjectId = obj.id
   }
 
-  // 仅对 entity root 创建 1 个 set_lifecycle
+  // Create 1 set_lifecycle only for entity root
   const entityRoot = result.objects.find(o => !o.parentId)
   if (entityRoot) {
     const spawnAction: SetLifecycleAction = {
@@ -1213,16 +1213,16 @@ function handleCompositeCharacterSelectInAction(character: CompositeCharacter, d
   loadSetupToSceneObjects(scene.setup)
   void refreshGhostRealStates()
 
-  // 设置顶层根对象的 alias 和 extraInfo
+  // Set top-level root object alias and extraInfo
   const targetName = displayName ?? character.name
   const resolvedExtraInfo = extraInfo ?? { kind: 'character' as const, characterId: character.id }
   const charRoot = result.objects.find(o => !o.parentId)
   if (charRoot) {
     const uniqueAlias = sceneObjectStore.generateUniqueAlias(targetName)
-    // v24: updateSetupObject 同时写入 setupState + runtimeState + episode
+    // v24: updateSetupObject writes setupState + runtimeState + episode simultaneously
     sceneObjectStore.updateSetupObject(charRoot.id, { alias: uniqueAlias, extraInfo: resolvedExtraInfo } as Partial<SceneObject>)
 
-    // 重映射 rootCompositeId（使用 idMap 将模板对象 ID 转为场景实例 ID）
+    // Remap rootCompositeId (use idMap to convert template object ID to scene instance ID)
     if (character.rootCompositeId) {
       const remappedRoot = result.idMap.get(character.rootCompositeId)
       if (remappedRoot) {
@@ -1250,14 +1250,14 @@ function handleCharacterSelect(character: CompositeCharacter): void {
   handleCompositeCharacterSelectInAction(character)
 }
 
-// Clip-Mask Phase 1：视觉效果对话框中选择"裁切蒙版"分组时回调，
-// 复用现有 mask_rectangle / mask_ellipse 路径
+// Clip-Mask Phase 1: Callback when 'Clipping Mask' group is selected in visual effects dialog,
+// Reuse existing mask_rectangle / mask_ellipse path
 function handleAddMaskFromDialog(shape: 'rectangle' | 'ellipse') {
   showScreenEffectPicker.value = false
   handleAddMenuItemClick(shape === 'ellipse' ? 'mask_ellipse' : 'mask_rectangle')
 }
 
-// Phase 1: 处理画面特效选择
+// Phase 1: Handle screen effect selection
 function handleScreenEffectSelect(preset: ScreenEffectPreset) {
   showScreenEffectPicker.value = false
 
@@ -1270,7 +1270,7 @@ function handleScreenEffectSelect(preset: ScreenEffectPreset) {
   const effectId = generateId('sceneobject')
   const effectAlias = sceneObjectStore.generateUniqueAlias(preset.name)
 
-  // 将对象加入 Scene Setup (spawned: false, 动态对象)
+  // Add object to Scene Setup (spawned: false, dynamic object)
   const setupObj = {
     id: effectId,
     refId: preset.effectClass,
@@ -1297,10 +1297,10 @@ function handleScreenEffectSelect(preset: ScreenEffectPreset) {
     visible: true,
     spawned: false
   } as SceneObject
-  // v24: addSetupObject 自动同步到 episode
+  // v24: addSetupObject automatically synced to episode
   sceneObjectStore.addSetupObject(setupObj)
 
-  // 添加出生 Action (set_lifecycle)
+  // Add spawn Action (set_lifecycle)
   const birthAction: SetLifecycleAction = {
     id: generateId('action'),
     type: 'set_lifecycle',
@@ -1312,21 +1312,21 @@ function handleScreenEffectSelect(preset: ScreenEffectPreset) {
   if (!block.actions) block.actions = []
   appendActionWithSlotOrder(block.actions, birthAction as unknown as Action)
 
-  // 更新 Store
+  // Update Store
   const episodeId = route.params['id'] as string
   episodeStore.updateBlockInScene(episodeId, props.sceneId, props.blockId, {
     actions: block.actions
   })
 
-  // 刷新状态
+  // Refresh state
   void refreshGhostRealStates()
   markLocalChange()
 
-  // 选中新对象
+  // Select new object
   sceneObjectStore.selectObject(effectId)
 }
 
-// 判断选中对象是否可复制（非相机 + 在当前 Slot 存活）
+// Determine whether selected object can be duplicated (non-camera + alive in current Slot)
 const canCopySelectedObject = computed(() => {
   const selectedObj = sceneObjectStore.getSelectedObject()
   if (!selectedObj) return false
@@ -1334,18 +1334,18 @@ const canCopySelectedObject = computed(() => {
   return aliveObjectIds.value.includes(selectedObj.id)
 })
 
-// v9.1: 判断选中对象是否可移除（所有存活的非相机对象均可移除）
+// v9.1: Determine whether selected object can be removed (all alive non-camera objects can be removed)
 const canDeleteSelectedObject = computed(() => {
   const selectedObj = sceneObjectStore.getSelectedObject()
   if (!selectedObj) return false
   if (selectedObj.type === 'camera') return false
-  // v25: 环境光不可删除
+  // v25: Ambient light cannot be deleted
   if (selectedObj.type === 'light' && (selectedObj as unknown as import('@/types/sceneObject').LightObject).lightType === 'ambient') return false
-  // 所有在当前 Slot 存活的非相机对象都可移除
+  // All non-camera objects alive in current Slot can be removed
   return aliveObjectIds.value.includes(selectedObj.id)
 })
 
-// v9.1: 处理删除动态对象
+// v9.1: Handle deleting dynamic object
 function handleDeleteDynamicObject() {
   const selectedObj = sceneObjectStore.getSelectedObject()
   if (!selectedObj) return
@@ -1357,12 +1357,12 @@ function handleDeleteDynamicObject() {
   const block = scene.script.find((b: ScriptBlock) => b.id === props.blockId)
   if (!block) return
   
-  // v9.3: 查找对象的出生 Slot (使用 SetLifecycleAction)
+  // v9.3: Find object's spawn Slot (using SetLifecycleAction)
   const lifecycleActions = (block.actions ?? []).filter(
     (a: Action) => a.type === 'set_lifecycle' && a.target === selectedObj.id
   ) as SetLifecycleAction[]
   
-  // 查找第一个 spawned: true 的出生 Action
+  // Find first spawn Action with spawned: true
   const birthAction = lifecycleActions
     .filter(a => a.params.spawned === true)
     .sort((a, b) => a.slotIndex - b.slotIndex)[0]
@@ -1372,12 +1372,12 @@ function handleDeleteDynamicObject() {
   const isShadowObject = sceneObjectStore.getSetupObject(selectedObj.id)?.spawned === false
   
   if (isShadowObject && isAtBirthSlot) {
-    // 出生 Slot 删除 = 真删 (Setup + 所有 Actions)
-    const alias = (selectedObj as unknown as { alias?: string }).alias || selectedObj.name || '该对象'
+    // Spawn Slot deletion = true delete (Setup + all Actions)
+    const alias = (selectedObj as unknown as { alias?: string }).alias || selectedObj.name || 'this object'
     const isCompositeObj = selectedObj.type === 'composite'
     
-    // 递归收集所有后代 ID（含孙对象），从 runtime 数据读取 childIds
-    // 方案A: setup 中 childIds 为空，需使用 getObject（runtimeObjects）
+    // Recursively collect all descendant IDs (including grandchildren), read childIds from runtime data
+    // Approach A: childIds empty in setup, need to use getObject (runtimeObjects)
     function collectAllDescendantIds(parentId: string): string[] {
       const parentObj = sceneObjectStore.getObject(parentId)
       if (parentObj?.type !== 'composite') return []
@@ -1394,12 +1394,12 @@ function handleDeleteDynamicObject() {
     if (isCompositeObj && descendantIds.length > 0) {
       const compositeMode = (selectedObj as unknown as { compositeMode?: string }).compositeMode ?? 'entity'
       if (compositeMode === 'entity') {
-        // entity: 直接级联删除（不提供"仅删除组合"选项）
+        // entity: Direct cascade deletion (no 'delete composite only' option provided)
         confirmDialogConfig.value = {
-          title: '删除组合对象',
-          message: `确定要删除 "${alias}" 及其 ${descendantIds.length} 个子对象吗？`,
-          confirmText: '删除',
-          cancelText: '取消',
+          title: 'Delete Composite Object',
+          message: `Are you sure you want to delete "${alias}" and its ${descendantIds.length} child object(s)?`,
+          confirmText: 'Delete',
+          cancelText: 'Cancel',
           isDanger: true,
           showSecondaryConfirm: false,
           secondaryConfirmText: '',
@@ -1411,12 +1411,12 @@ function handleDeleteDynamicObject() {
         }
         showConfirmDialog.value = true
       } else {
-        // union: 两选项对话框 — 仅删除组合（子对象由 onBeforeDelete 自动冒泡）
+        // union: Two-option dialog — delete composite only (child objects bubble automatically via onBeforeDelete)
         confirmDialogConfig.value = {
-          title: '解散分组',
-          message: `确定要解散 "${alias}" 吗？`,
-          confirmText: '删除',
-          cancelText: '取消',
+          title: 'Ungroup',
+          message: `Are you sure you want to ungroup "${alias}"?`,
+          confirmText: 'Delete',
+          cancelText: 'Cancel',
           isDanger: true,
           showSecondaryConfirm: false,
           secondaryConfirmText: '',
@@ -1431,12 +1431,12 @@ function handleDeleteDynamicObject() {
       return
     }
     
-    // 非 union 或无子对象：普通两选项删除
+    // Non-union or childless: Standard two-option deletion
     confirmDialogConfig.value = {
-      title: '删除对象',
-      message: `确定要删除 "${alias}" 吗？此操作将删除该对象及其所有关联动作。`,
-      confirmText: '删除',
-      cancelText: '取消',
+      title: 'Delete Object',
+      message: `Are you sure you want to delete "${alias}"? This will delete the object and all its associated actions.`,
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
       isDanger: true,
       showSecondaryConfirm: false,
       secondaryConfirmText: '',
@@ -1447,23 +1447,23 @@ function handleDeleteDynamicObject() {
       onSecondaryConfirm: () => { /* empty */ },
     }
   } else {
-    // v9.2: 其他 Slot 删除 = 插入 spawned: false Action (逻辑删除)
-    const objAlias = (selectedObj as unknown as { alias?: string }).alias || selectedObj.name || '该对象'
+    // v9.2: Other Slot deletion = insert spawned: false Action (logical deletion)
+    const objAlias = (selectedObj as unknown as { alias?: string }).alias || selectedObj.name || 'this object'
     const isUnionComposite = selectedObj.type === 'composite'
       && ((selectedObj as unknown as { compositeMode?: string }).compositeMode ?? 'entity') === 'union'
 
     confirmDialogConfig.value = {
-      title: isUnionComposite ? '解散分组' : '移除对象',
+      title: isUnionComposite ? 'Ungroup' : 'Remove Object',
       message: isUnionComposite
-        ? `确定要解散 "${objAlias}" 吗？`
-        : `确定要移除 "${objAlias}" 吗？该对象从此处开始将不再显示。`,
-      confirmText: isUnionComposite ? '删除' : '移除',
-      cancelText: '取消',
+        ? `Are you sure you want to ungroup "${objAlias}"?`
+        : `Are you sure you want to remove "${objAlias}"? This object will no longer be displayed from this point onwards.`,
+      confirmText: isUnionComposite ? 'Ungroup' : 'Remove',
+      cancelText: 'Cancel',
       isDanger: isUnionComposite,
       showSecondaryConfirm: false,
       secondaryConfirmText: '',
       onConfirm: () => {
-        // v9.3: 插入 set_lifecycle Action (消亡)
+        // v9.3: Insert set_lifecycle Action (despawn)
         const despawnAction: SetLifecycleAction = {
           id: `action_despawn_${Date.now()}`,
           type: 'set_lifecycle',
@@ -1480,7 +1480,7 @@ function handleDeleteDynamicObject() {
         }
         appendActionWithSlotOrder(block.actions, despawnAction as unknown as Action)
         
-        // 更新 Store
+        // Update Store
         const episodeId = route.params['id'] as string
         episodeStore.updateBlockInScene(episodeId, props.sceneId, props.blockId, {
           actions: block.actions
@@ -1497,7 +1497,7 @@ function handleDeleteDynamicObject() {
   showConfirmDialog.value = true
 }
 
-// P2: ActionEditor 成组模式状态机 (PRD 8.3/8.5)
+// P2: ActionEditor grouping mode state machine (PRD 8.3/8.5)
 type ActionGroupingState =
   | { mode: 'create'; pendingIds: string[] }
   | { mode: 'addTo'; compositeId: string; pendingIds: string[] }
@@ -1505,16 +1505,16 @@ type ActionGroupingState =
 
 const actionGroupingState = ref<ActionGroupingState>(null)
 
-// P2: 获取对象显示名称
+// P2: Get object display name
 function getObjectDisplayName(objectId: string): string {
   const obj = sceneObjectStore.getObject(objectId)
   if (!obj) return objectId
-  return (obj as unknown as { alias?: string }).alias ?? obj.name ?? '未命名'
+  return (obj as unknown as { alias?: string }).alias ?? obj.name ?? 'Untitled'
 }
 
-// P2: 获取组合对象显示名称（addTo 模式用）
+// P2: Get composite object display name (for addTo mode)
 function getCompositeDisplayName(compositeId: string | undefined): string {
-  if (!compositeId) return '未知'
+  if (!compositeId) return 'Unknown'
   return getObjectDisplayName(compositeId)
 }
 
@@ -1532,15 +1532,15 @@ function appendActionWithSlotOrder(actions: Action[], action: Action): void {
   }
 }
 
-// P2: 进入成组模式
+// P2: Enter grouping mode
 function handleStartGrouping() {
   actionGroupingState.value = { mode: 'create', pendingIds: [] }
 }
 
-// v19: 成组模式 compositeMode 选择
+// v19: Grouping mode compositeMode selection
 const selectedCompositeMode = ref<'entity' | 'union'>('union')
 
-/** 从运行时对象构建成组对象树（仅 spawned 且非 camera） */
+/** Build grouping object tree from runtime objects (spawned only and non-camera) */
 const actionGroupingTreeNodes = computed<GroupingTreeNode[]>(() => {
   const objects: SceneObject[] = sceneObjectStore.objects.filter(
     (o): o is SceneObject => o.type !== 'camera' && (o as unknown as { spawned?: boolean }).spawned !== false
@@ -1548,7 +1548,7 @@ const actionGroupingTreeNodes = computed<GroupingTreeNode[]>(() => {
   const objectMap = new Map<string, SceneObject>(objects.map(o => [o.id, o]))
 
   function buildNode(obj: SceneObject, depth: number): GroupingTreeNode {
-    const displayName = (obj as unknown as { alias?: string }).alias ?? obj.name ?? '未命名'
+    const displayName = (obj as unknown as { alias?: string }).alias ?? obj.name ?? 'Untitled'
     const children: GroupingTreeNode[] = []
 
     if (obj.type === 'composite') {
@@ -1577,7 +1577,7 @@ const actionGroupingTreeNodes = computed<GroupingTreeNode[]>(() => {
     .map(o => buildNode(o, 0))
 })
 
-/** 当前层级锁定的 parentId（由第一个 pending 对象决定） */
+/** Current level-locked parentId (determined by first pending object) */
 const lockedGroupingParentId = computed<string | undefined | null>(() => {
   if (!actionGroupingState.value) return null
   const ids = actionGroupingState.value.pendingIds
@@ -1586,7 +1586,7 @@ const lockedGroupingParentId = computed<string | undefined | null>(() => {
   return firstObj?.parentId
 })
 
-/** 内联列表 toggle 选中 */
+/** Inline list toggle selection */
 function handleGroupingToggleById(objectId: string): void {
   if (!actionGroupingState.value) return
 
@@ -1595,7 +1595,7 @@ function handleGroupingToggleById(objectId: string): void {
 
   const pendingIds = actionGroupingState.value.pendingIds
 
-  // addTo 模式下：不可选择目标 composite 自身或其后代
+  // In addTo mode: cannot select target composite itself or its descendants
   if (actionGroupingState.value.mode === 'addTo') {
     const compositeId = actionGroupingState.value.compositeId
     if (objectId === compositeId) return
@@ -1613,13 +1613,13 @@ function handleGroupingToggleById(objectId: string): void {
   if (idx !== -1) {
     pendingIds.splice(idx, 1)
   } else {
-    // 同级兄弟规则
+    // Peer sibling rule
     if (pendingIds.length > 0) {
       const firstObj = sceneObjectStore.getObject(pendingIds[0]!)
       const requiredParentId = firstObj?.parentId
       if (selectedObj.parentId !== requiredParentId) {
         const toast = useToast()
-        toast.warning('仅支持选择同级对象进行成组')
+        toast.warning('Only peer objects at the same level can be grouped')
         return
       }
     }
@@ -1627,31 +1627,31 @@ function handleGroupingToggleById(objectId: string): void {
   }
 }
 
-// P2: 画布点击 — 成组模式下 toggle 对象选中
+// P2: Canvas click — toggle object selection in grouping mode
 function handleCanvasClickForGrouping() {
   if (!actionGroupingState.value) return
 
-  // 获取当前选中的对象（通过 useSceneRenderer 的 hit-test）
+  // Get currently selected object (via useSceneRenderer hit-test)
   const selectedObj = sceneObjectStore.getSelectedObject()
   if (!selectedObj || selectedObj.type === 'camera') return
 
   const objectId = selectedObj.id
   const pendingIds = actionGroupingState.value.pendingIds
 
-  // addTo 模式下：不可选择目标 composite 自身或其后代
+  // In addTo mode: cannot select target composite itself or its descendants
   if (actionGroupingState.value.mode === 'addTo') {
     const compositeId = actionGroupingState.value.compositeId
     if (objectId === compositeId) {
       const toast = useToast()
-      toast.warning('不能将组合对象自身添加为其成员')
+      toast.warning('Cannot add composite object to itself')
       return
     }
-    // 沿 parentId 链向上遍历，检查是否已是目标 composite 的后代
+    // Traverse up parentId chain, check if already descendant of target composite
     let current = selectedObj
     while (current.parentId) {
       if (current.parentId === compositeId) {
         const toast = useToast()
-        toast.warning('该对象已是此组合对象的后代，不可重复添加')
+        toast.warning('This object is already a descendant of this composite, cannot add again')
         return
       }
       const parent = sceneObjectStore.getObject(current.parentId)
@@ -1660,19 +1660,19 @@ function handleCanvasClickForGrouping() {
     }
   }
 
-  // toggle: 已在列表中则移除，否则添加
+  // toggle: Remove if already in list, otherwise add
   const idx = pendingIds.indexOf(objectId)
   if (idx !== -1) {
     pendingIds.splice(idx, 1)
   } else {
-    // 同级兄弟规则：参与成组的对象必须共享同一个 parentId
-    // 第一个选入的对象确定 parentId 基准，后续选入的对象必须匹配
+    // Peer sibling rule: Objects participating in group must share same parentId
+    // First selected object establishes parentId benchmark, subsequent selections must match
     if (pendingIds.length > 0) {
       const firstObj = sceneObjectStore.getObject(pendingIds[0]!)
       const requiredParentId = firstObj?.parentId
       if (selectedObj.parentId !== requiredParentId) {
         const toast = useToast()
-        toast.warning('仅支持选择同级对象进行成组')
+        toast.warning('Only peer objects at the same level can be grouped')
         return
       }
     }
@@ -1859,10 +1859,10 @@ function getGroupingCompositePlacement(
 }
 
 /**
- * P2: 在同一 slot 下，确保一个 composite 对象只有一个 set_composite action（Upsert 语义）。
- * - 若已存在同 slot + 同 target 的 set_composite → 合并 params
- * - 若不存在 → 创建新 action 并 push
- * 创建/更新后自动选中该 action，跳转到 ActionInspector。
+ * P2: In same slot, ensure composite object has only one set_composite action (Upsert semantics).
+ * - If set_composite exists for same slot + target -> merge params
+ * - If not exists -> create new action and push
+ * Auto-select action after create/update, jump to ActionInspector.
  */
 function upsertSetCompositeAction(
   actions: Action[],
@@ -1874,10 +1874,10 @@ function upsertSetCompositeAction(
     (a) => a.type === 'set_composite' && a.target === target && a.slotIndex === slotIndex
   )
   if (existing) {
-    // 合并 params（保留已有的其他字段）
+    // Merge params (keep existing other fields)
     const existingParams = (existing as unknown as { params: Record<string, unknown> }).params
     Object.assign(existingParams, params)
-    // 自动选中
+    // Auto select
     selectedAction.value = existing
   } else {
     const newAction: Action = {
@@ -1889,16 +1889,16 @@ function upsertSetCompositeAction(
       params: { ...params }
     } as unknown as Action
     appendActionWithSlotOrder(actions, newAction)
-    // 自动选中
+    // Auto select
     selectedAction.value = newAction
   }
 }
 
 /**
- * Clip-Mask Phase 1 D2: Upsert set_mask Action（同 slot + 同 target 合并）。
- * - 若已存在同 slot + 同 target 的 set_mask → 合并 params（targetIds/shape/width/height 各自整段覆盖）
- * - 若不存在 → 创建新 action
- * 跨 mask 独占冲突由 sceneStateCalculator post-pass 处理（见 §3 D1.5）。
+ * Clip-Mask Phase 1 D2: Upsert set_mask Action (merge same slot + target).
+ * - If set_mask exists for same slot + target -> merge params (targetIds/shape/width/height full section override)
+ * - If not exists -> create new action
+ * Cross-mask exclusive conflict handled by sceneStateCalculator post-pass (see §3 D1.5).
  */
 function upsertSetMaskAction(
   actions: Action[],
@@ -1935,7 +1935,7 @@ function upsertSetMaskAction(
   }
 }
 
-// P2: 确认成组（Action Mode 特有逻辑）
+// P2: Confirm grouping (Action Mode specific logic)
 function handleGroupingConfirm() {
   if (!actionGroupingState.value) return
   if (!props.sceneId || !props.blockId || !props.episode) return
@@ -1955,7 +1955,7 @@ function handleGroupingConfirm() {
 
     const pendingIds = actionGroupingState.value.pendingIds
 
-    // 1. 检测公共父对象（用于嵌套组合自动继承）
+    // 1. Detect common parent object (for nested composite auto inheritance)
     let commonParentId: string | null = null
     let allSameParent = true
     for (const childId of pendingIds) {
@@ -1972,9 +1972,9 @@ function handleGroupingConfirm() {
     const namespaceRootId = getNamespaceRootForParentId(compositeParentId)
     const placement = getGroupingCompositePlacement(pendingIds, compositeParentId)
 
-    // 2. 在 sceneObjectStore + Setup 中创建 composite（spawned: false）
-    // Action Mode 成组固定为 union 模式
-    const composite = sceneObjectStore.createCompositeObject('组合', [], undefined, undefined, 'union', namespaceRootId)
+    // 2. Create composite in sceneObjectStore + Setup (spawned: false)
+    // Action Mode grouping is fixed to union mode
+    const composite = sceneObjectStore.createCompositeObject('Composite', [], undefined, undefined, 'union', namespaceRootId)
     const compositeSetupObj = {
       id: composite.id,
       type: 'composite' as const,
@@ -1996,12 +1996,12 @@ function handleGroupingConfirm() {
       zIndex: composite.zIndex,
       visible: true,
       spawned: false,
-      // 嵌套组合：如果所有待组对象有相同的父对象，composite 直接继承
+      // Nested composite: If all candidate objects share parent, composite inherits directly
       ...(compositeParentId ? { parentId: compositeParentId } : {}),
     } as SceneObject
-    // v24: addSetupObject 自动同步到 episode
+    // v24: addSetupObject automatically synced to episode
     sceneObjectStore.addSetupObject(compositeSetupObj)
-    // 3. 更新当前 slot 的唯一 set_scene_structure：保存这次用户成组操作
+    // 3. Update unique set_scene_structure of current slot: save user grouping operation
     upsertGroupSceneStructureOperation(block.actions, currentSlotIndex.value, composite.id, pendingIds, compositeParentId)
 
   } else if (actionGroupingState.value.mode === 'addTo') {
@@ -2015,18 +2015,18 @@ function handleGroupingConfirm() {
     )
   }
 
-  // 更新 Episode Store
+  // Update Episode Store
   const episodeId = route.params['id'] as string
   episodeStore.updateBlockInScene(episodeId, props.sceneId, props.blockId, {
     actions: block.actions
   })
 
-  // 刷新渲染（重新加载 Setup 以反映新的 composite）
+  // Refresh render (reload Setup to reflect new composite)
   loadSetupToSceneObjects(scene.setup)
 
-  // 关键：loadSetupToSceneObjects 调用 setActionMode(true)，重建 runtimeObjects（无 parentId）。
-  // 必须在 Vue 响应式 flush 前同步计算 slot states 并写入 parentId，
-  // 否则 ActionSequencer.allTracks 会在 parentId=undefined 时重算，导致无法正确渲染树形结构。
+  // Crucial: loadSetupToSceneObjects calls setActionMode(true), rebuilding runtimeObjects (without parentId).
+  // Must synchronously compute slot states and write parentId before Vue reactive flush,
+  // otherwise ActionSequencer.allTracks recalculates when parentId=undefined, failing to render tree structure correctly.
   const sceneGraph = renderer.value?.getSceneGraph()
   if (sceneGraph) {
     sceneGraph.updateSlotIndex(currentSlotIndex.value)
@@ -2042,15 +2042,15 @@ function handleGroupingConfirm() {
   actionGroupingState.value = null
 }
 
-// P2: 取消成组
+// P2: Cancel grouping
 function handleGroupingCancel() {
   actionGroupingState.value = null
 }
 
-// P2: 处理来自 ObjectPropertiesPanel 的 composite 操作事件 (方案 B)
+// P2: Handle composite action events from ObjectPropertiesPanel (Option B)
 function handleCompositeAction(payload: { action: 'removeChild'; childId: string } | { action: 'ungroupAll'; compositeId: string } | { action: 'addMember'; compositeId: string } | { action: 'setCompositeLocked'; compositeId: string; locked: boolean } | { action: 'reorderRenderChain'; compositeId: string; renderChain: string[] }) {
   if (payload.action === 'addMember') {
-    // P2: Action Mode 下进入 addTo 模式，通过场景级结构动作添加成员
+    // P2: Enter addTo mode in Action Mode, add members via scene-level structure action
     actionGroupingState.value = {
       mode: 'addTo',
       compositeId: payload.compositeId,
@@ -2083,13 +2083,13 @@ function handleCompositeAction(payload: { action: 'removeChild'; childId: string
     const nextParentId = composite.parentId ?? null
     appendUngroupSceneStructureOperation(block.actions, currentSlotIndex.value, payload.compositeId, childIds, nextParentId)
   } else if (payload.action === 'setCompositeLocked') {
-    // compositeLocked 是 UI-only 属性，不创建 Action
-    // 双层架构：通过 updateSetupObject 同时写入持久层和显示层
-    // v24: updateSetupObject 自动同步到 episode
+    // compositeLocked is UI-only property, does not create Action
+    // Dual-layer architecture: Write persistent and display layers simultaneously via updateSetupObject
+    // v24: updateSetupObject automatically synced to episode
     sceneObjectStore.updateSetupObject(payload.compositeId, { compositeLocked: payload.locked } as Partial<SceneObject>)
-    return  // 无需更新 block.actions
+    return  // No need to update block.actions
   } else if (payload.action === 'reorderRenderChain') {
-    // P2: Upsert set_composite Action 修改 renderChain 排序
+    // P2: Upsert set_composite Action to modify renderChain ordering
     upsertSetCompositeAction(
       block.actions,
       payload.compositeId,
@@ -2098,7 +2098,7 @@ function handleCompositeAction(payload: { action: 'removeChild'; childId: string
     )
   }
 
-  // 更新 Store
+  // Update Store
   const episodeId = route.params['id'] as string
   episodeStore.updateBlockInScene(episodeId, props.sceneId, props.blockId, {
     actions: block.actions
@@ -2109,10 +2109,10 @@ function handleCompositeAction(payload: { action: 'removeChild'; childId: string
 }
 
 /**
- * 复制选中对象（快照式复制）
- * - 在当前 Slot 创建一个新的 Shadow Object
- * - 使用原对象在当前 Slot 的完整 SceneObject 状态
- * - 不复制原对象的 Actions
+ * Duplicate selected object (snapshot copy)
+ * - Create a new Shadow Object in current Slot
+ * - Use source object's full SceneObject state in current Slot
+ * - Do not duplicate source object's Actions
  */
 function cloneSceneObjectSnapshot<T extends SceneObject>(obj: T): T {
   return JSON.parse(JSON.stringify(obj)) as T
@@ -2164,22 +2164,22 @@ function handleCopyObject() {
   const block = scene?.script.find((b: ScriptBlock) => b.id === props.blockId)
   if (!scene || !block) return
 
-  // 从持久层获取对象结构（type、refId 等不可变字段用于 spread 复制）
+  // Get object structure from persistence layer (immutable fields like type, refId used for spread copy)
   const originalSetup = sceneObjectStore.getSetupObject(selectedObj.id)
   if (!originalSetup) return
-  // 计算原对象在当前 Slot 的运行时状态
+  // Calculate original object runtime state at current Slot
   const prevContext = calculatePrevContext(scene, block.id)
   const slots = currentBlockSlots.value
   const currentSnapshot = getCurrentSlotObjectSnapshot(selectedObj.id, prevContext.objects, block, slots)
   if (!currentSnapshot) return
 
-  // 生成新 ID 和别名
+  // Generate new ID and alias
   const newId = generateId('sceneobject')
   const newAlias = sceneObjectStore.generateUniqueAlias(
-    originalSetup.alias || selectedObj.name || '副本'
+    originalSetup.alias || selectedObj.name || 'Copy'
   )
 
-  // composite 复制：按“模板实例化”路径复制整棵子树（ID/childIds/renderChain 一次性重映射）
+  // composite duplicate: copy entire subtree via 'template instantiation' path (one-shot ID/childIds/renderChain remap)
   if (originalSetup.type === 'composite') {
     const originalCompositeMode = (originalSetup as unknown as { compositeMode?: 'entity' | 'union' }).compositeMode ?? 'entity'
     const snapshotObjects = scene.setup.objects.map(obj =>
@@ -2188,7 +2188,7 @@ function handleCopyObject() {
     const template = snapshotToTemplate(
       [currentSnapshot],
       snapshotObjects,
-      `${originalSetup.name} 副本`
+      `${originalSetup.name} Copy`
     )
     const result = instantiateTemplate(template, currentSnapshot.x + 50, currentSnapshot.y + 50,
       originalCompositeMode === 'union'
@@ -2198,7 +2198,7 @@ function handleCopyObject() {
     const copiedRoot = result.objects.find(o => !o.parentId)
     if (!copiedRoot) return
 
-    // union 复制时会自动包装 entity 根，运行时姿态应应用到 union 本体而非 wrapper
+    // union duplicate wraps entity root automatically, runtime pose should apply to union itself rather than wrapper
     let poseTargetId = copiedRoot.id
     if (originalCompositeMode === 'union') {
       const copiedUnion = result.objects.find(o =>
@@ -2216,8 +2216,8 @@ function handleCopyObject() {
       sceneObjectStore.addSetupObject(obj)
     }
 
-    // 根对象使用当前 Slot 的运行时姿态，保持“快照复制”语义。
-    // 其他字段已由 snapshotToTemplate/instantiateTemplate 从当前快照复制。
+    // Root object uses runtime pose at current Slot, maintaining 'snapshot copy' semantics.
+    // Other fields already copied from current snapshot by snapshotToTemplate/instantiateTemplate.
     sceneObjectStore.updateSetupObject(poseTargetId, {
       alias: newAlias,
       x: currentSnapshot.x + 50,
@@ -2258,7 +2258,7 @@ function handleCopyObject() {
     return
   }
 
-  // 构造新的 Setup 对象 (spawned: false)
+  // Construct new Setup object (spawned: false)
   const newSetupObject: SceneObject = {
     ...currentSnapshot,
     id: newId,
@@ -2269,7 +2269,7 @@ function handleCopyObject() {
 
   }
 
-  // 创建出生 Action
+  // Create spawn Action
   const spawnAction: SetLifecycleAction = {
     id: generateId(),
     type: 'set_lifecycle',
@@ -2282,22 +2282,22 @@ function handleCopyObject() {
     }
   }
 
-  // 注入场景（复用已有逻辑）
+  // Inject into scene (reuse existing logic)
   addShadowObjectToScene(newSetupObject, spawnAction)
 }
 
-// v9.1: 获取相机中心位置
+// v9.1: Get camera center position
 function getCameraCenterPosition(): { x: number; y: number } {
   const cameraObj = sceneObjectStore.objects.find(obj => obj.type === 'camera')
   if (cameraObj) {
     return { x: cameraObj.x, y: cameraObj.y }
   }
-  // 默认画布中心
+  // Default canvas center
   return { x: 960, y: 540 }
 }
 
-// v9.1: 添加 Shadow Object 到场景
-// v9.3: spawnAction 类型改为 SetLifecycleAction
+// v9.1: Add Shadow Object to scene
+// v9.3: spawnAction type changed to SetLifecycleAction
 function addShadowObjectToScene(
   setupObject: SceneObject,
   spawnAction: SetLifecycleAction
@@ -2310,42 +2310,42 @@ function addShadowObjectToScene(
   const block = scene.script.find((b: ScriptBlock) => b.id === props.blockId)
   if (!block) return
   
-  // 1. v24: addSetupObject 自动同步到 episode
+  // 1. v24: addSetupObject automatically synced to episode
   sceneObjectStore.addSetupObject(setupObject)
-  // v16: 注入帧动画定义（元件等对象需要自动发现帧动画）
+  // v16: Inject frame animation definitions (symbols etc need auto discovery)
   useAnimationStore().hydrateObjectAnimations(setupObject)
-  // v24 (Review F1): hydration 修改了 setupObject.animations，需回写到 episode
+  // v24 (Review F1): hydration modified setupObject.animations, write back to episode
   if (setupObject.animations && Object.keys(setupObject.animations).length > 0) {
     sceneObjectStore.updateSetupObject(setupObject.id, {
       animations: setupObject.animations,
     } as Partial<SceneObject>)
   }
   
-  // 2. 添加出生 Action 到 Block
+  // 2. Add spawn Action to Block
   if (!block.actions) {
     block.actions = []
   }
   appendActionWithSlotOrder(block.actions, spawnAction as unknown as Action)
   
-  // 3. 更新 Episode Store
+  // 3. Update Episode Store
   const episodeId = route.params['id'] as string
   episodeStore.updateBlockInScene(episodeId, props.sceneId, props.blockId, {
     actions: block.actions
   })
   
-  // 4. 刷新场景对象和渲染
+  // 4. Refresh scene objects and rendering
   loadSetupToSceneObjects(scene.setup)
   void refreshGhostRealStates()
   
-  // 5. 选中新添加的对象
+  // 5. Select newly added object
   sceneObjectStore.selectObject(setupObject.id)
   
   markLocalChange()
 }
 
-// v24: syncEpisodeRenderChain 已迁移到 sceneObjectStore.syncRegisteredEpisodeRenderChain
+// v24: syncEpisodeRenderChain migrated to sceneObjectStore.syncRegisteredEpisodeRenderChain
 
-// v9.1: 处理背景选择
+// v9.1: Handle background selection
 async function handleBackgroundSelect(background: { id: string; name: string }) {
   showBackgroundPicker.value = false
   
@@ -2374,7 +2374,7 @@ async function handleBackgroundSelect(background: { id: string; name: string }) 
   addShadowObjectToScene(setupObject, spawnAction)
 }
 
-// v9.1: 处理道具选择
+// v9.1: Handle prop selection
 async function handlePropSelect(prop: { id: string; name?: string }) {
   showPropPicker.value = false
   
@@ -2403,7 +2403,7 @@ async function handlePropSelect(prop: { id: string; name?: string }) {
   addShadowObjectToScene(setupObject, spawnAction)
 }
 
-// v18: 处理表情选择 — 创建 Shadow Object
+// v18: Handle expression selection — create Shadow Object
 async function handleExpressionSelect(expressionId: string) {
   showExpressionPicker.value = false
   
@@ -2415,7 +2415,7 @@ async function handleExpressionSelect(expressionId: string) {
   
   const exprStore = useExpressionStore()
   const expr = exprStore.getExpression(expressionId)
-  const exprName = expr?.name ?? '表情'
+  const exprName = expr?.name ?? 'Expression'
   
   const cameraCenter = getCameraCenterPosition()
   
@@ -2436,7 +2436,7 @@ async function handleExpressionSelect(expressionId: string) {
   addShadowObjectToScene(setupObject, spawnAction)
 }
 
-// v9.1: 处理音频选择
+// v9.1: Handle audio selection
 function handleSoundSelect(sound: { id: string; name: string }) {
   showSoundPicker.value = false
   
@@ -2462,60 +2462,60 @@ function handleSoundSelect(sound: { id: string; name: string }) {
   addShadowObjectToScene(setupObject, spawnAction)
 }
 
-// 预览对话框
+// Preview dialog
 const showPreviewDialog = ref(false)
 
-// 保存提示状态
+// Save toast state
 const showSaveToast = ref(false)
 const saveToastMessage = ref('')
 const saveToastType = ref<'success' | 'error'>('success')
 
-// 全屏状态
+// Fullscreen state
 const isFullscreen = ref(false)
 
-// 侧边栏状态
-// v8.6: leftPanelCollapsed 和 leftPanelWidth 已移除（左侧边栏删除）
+// Sidebar state
+// v8.6: leftPanelCollapsed and leftPanelWidth removed (left sidebar removed)
 const rightPanelCollapsed = ref(false)
 const rightPanelWidth = ref(320)
 
 
-// Action 相关状态
+// Action-related state
 const selectedAction = ref<Action | null>(null)
 const currentSlotIndex = ref<number>(0)
-// v7.55: 进入 ActionInspector 时要自动聚焦的字段
+// v7.55: Field to auto-focus when entering ActionInspector
 const actionFocusField = ref<'pose' | 'layerPreset' | 'expression' | 'partAsset' | null>(null)
-// const currentTime = ref(0) // v7.17: 已移除，Action Mode 仅依赖 Slot
+// const currentTime = ref(0) // v7.17: Removed, Action Mode depends on Slot only
 
-// 页面级保存状态标记（仅跟踪本次编辑会话的修改）
+// Page-level save state flag (tracks modifications in this session only)
 const hasLocalChanges = ref(false)
 function markLocalChange() {
   hasLocalChanges.value = true
   projectStore.markAsUnsaved()
 }
 
-// v6.5: 相机动作录制模式 (Cut: 瞬时, Move: 运镜)
+// v6.5: Camera action recording mode (Cut: Instant, Move: Camera Movement)
 const cameraRecordMode = ref<'camera_cut' | 'camera_move'>('camera_cut')
 
-// v9.2: 对象录制模式 (动画: tween_transform, 布局: set_transform)
+// v9.2: Object recording mode (Animation: tween_transform, Layout: set_transform)
 const objectRecordMode = ref<'animation' | 'layout'>('layout')
 
-// 时间戳
+// Timestamp
 
 
-// 保存确认对话框状态
+// Save confirmation dialog state
 const showSaveConfirmDialog = ref(false)
 
-// v8.3: 文本编辑对话框状态
+// v8.3: Text editing dialog state
 const showTextEditDialog = ref(false)
 const editingText = ref('')
 
-// 是否有未保存的修改
+// Whether there are unsaved modifications
 
 
-// v8.6: isResizingLeftPanel 已移除（左侧边栏删除）
+// v8.6: isResizingLeftPanel removed (left sidebar removed)
 let isResizingRightPanel = false
 
-// 当前Block
+// Current Block
 const currentBlock = computed(() => {
   if (props.sceneId && props.blockId && props.episode) {
     const scene = props.episode.scenes.find((s: SceneContainer) => s.id === props.sceneId)
@@ -2536,12 +2536,12 @@ const currentBlockDescription = computed(() => {
           const instanceId = dialogueBlock.instanceId
           const instance = sceneObjectStore.getObject(instanceId)
           
-          let targetName = '未知角色'
+          let targetName = 'Unknown Character'
           if (instance) {
-            // v7.57: 优先使用别名，其次是演员名称，最后是ID
-            // 使用 length 判断以避免 eslint prefer-nullish-coalescing 报错，同时确保空字符串回退
+            // v7.57: Prefer alias, then actor name, finally ID
+            // Use length check to avoid eslint prefer-nullish-coalescing warning and ensure fallback on empty string
             if (instance.type === 'background') {
-               // 背景对象
+               // Background object
                targetName = instance.alias ?? instance.name ?? instance.id
             } else {
                const alias = instance.alias
@@ -2552,15 +2552,15 @@ const currentBlockDescription = computed(() => {
           
           return `${targetName}: ${dialogueBlock.text}`
         } else if (block.type === 'narration') {
-          return `旁白: ${(block).text}`
+          return `Narrator: ${(block).text}`
         }
       }
     }
   }
-  return '未知Block'
+  return 'Unknown Block'
 })
 
-// v8.3: 截断显示的描述（最多10字+省略号）
+// v8.3: Truncate displayed description (up to 10 chars + ellipsis)
 const truncatedBlockDescription = computed(() => {
   const desc = currentBlockDescription.value
   if (desc.length > 10) {
@@ -2589,22 +2589,22 @@ const currentBlockActions = computed(() => {
   return currentBlock.value?.actions ?? []
 })
 
-// 双层架构：accumulatedParentIds 已移除
-// parentId 由 applySlotState() 直接写入 runtimeObjects，所有消费者直接从 store 读取
+// Dual-layer architecture: accumulatedParentIds removed
+// parentId written directly to runtimeObjects by applySlotState(), all consumers read directly from store
 
-// v12.7: 计算当前 Slot 有生命的对象 ID 列表（用于 ObjectPropertiesPanel 过滤）
-// 由于 Action Mode 下 sceneObjectStore.objects 返回的是 runtimeState.objects，
-// 它们已经经过 sceneStateCalculator 基于动作 (含 set_lifecycle 级联) 计算过了，
-// 因此可以直接遍历出真正的生存状态。
-// 响应性保证：slot 切换时 handleSlotIndexChange 同步调用 applySlotState，
-// runtimeState.objects 在同一调用栈内完成更新，computed 惰性求值不会读到过期数据。
+// v12.7: Compute alive object ID list in current Slot (for ObjectPropertiesPanel filtering)
+// Since sceneObjectStore.objects in Action Mode returns runtimeState.objects,
+// they have been calculated by sceneStateCalculator based on actions (including set_lifecycle cascade),
+// so true alive state can be iterated directly.
+// Reactivity guarantee: handleSlotIndexChange synchronously calls applySlotState upon slot switch,
+// runtimeState.objects updates within same call stack, lazy computed will not read stale data.
 const aliveObjectIds = computed(() => {
   return sceneObjectStore.objects
     .filter(obj => obj.spawned !== false)
     .map(obj => obj.id)
 })
 
-// v17: 保存为场景模板
+// v17: Save as scene template
 const showSaveTemplateDialog = ref(false)
 const aliveNonCameraObjects = computed(() =>
   sceneObjectStore.objects.filter(o => o.type !== 'camera' && aliveObjectIds.value.includes(o.id))
@@ -2614,16 +2614,16 @@ function handleSaveTemplateSaved(_templateId: string) {
   showSaveTemplateDialog.value = false
 }
 
-// v9.3: 当 slot 切换导致选中对象失去生命时，自动取消选中
+// v9.3: Automatically deselect when slot switch causes selected object to lose life
 watch(aliveObjectIds, (newAliveIds) => {
   const selectedId = sceneObjectStore.selectedObjectId
   if (!selectedId) return
   
-  // 相机始终保持选中（不受 spawned 影响）
+  // Camera always remains selected (unaffected by spawned)
   const selectedObj = sceneObjectStore.getObject(selectedId)
   if (selectedObj?.type === 'camera') return
   
-  // 如果选中对象不在有生命列表中，取消选中
+  // If selected object is not in alive list, cancel selection
   if (!newAliveIds.includes(selectedId)) {
     sceneObjectStore.selectObject(null)
   }
@@ -2636,9 +2636,9 @@ const currentSlotText = computed(() => {
 })
 
 function loadSetupToSceneObjects(setup: SceneSetup) {
-  // 双层架构：与 sceneLoader.ts 的 loadSetupToSceneObjects 一致，
-  // 在 Action Mode 下临时切换为 Setup Mode 加载（确保 addObject 写入 setupObjects），
-  // 完成后恢复 Action Mode 并重建 runtimeObjects。
+  // Dual-layer architecture: Consistent with loadSetupToSceneObjects in sceneLoader.ts,
+  // temporarily switch to Setup Mode to load in Action Mode (ensuring addObject writes to setupObjects),
+  // restore Action Mode and rebuild runtimeObjects upon completion.
   const wasActionMode = sceneObjectStore.getIsActionMode()
   if (wasActionMode) {
     sceneObjectStore.setActionMode(false)
@@ -2647,16 +2647,16 @@ function loadSetupToSceneObjects(setup: SceneSetup) {
   sceneObjectStore.clearObjects()
   
 
-  // v7.56: 修复 Action Mode 下相机丢失的问题
-  // ActionEditor 之前只遍历 objects，忽略了 setup.camera 字段
+  // v7.56: Fix camera loss issue in Action Mode
+  // ActionEditor previously only iterated objects, ignoring setup.camera field
   if (setup.camera) {
     const camera = setup.camera
-    sceneObjectStore.createCameraObject('相机', {
+    sceneObjectStore.createCameraObject('Camera', {
       x: camera.x,
       y: camera.y
     }, camera.zoom ?? 1.0, 'camera')
     
-    // 确保更新相机尺寸以匹配 zoom
+    // Ensure camera size is updated to match zoom
     const cameraObj = sceneObjectStore.objects.find(obj => obj.type === 'camera')
     if (cameraObj) {
       const zoom = camera.zoom ?? 1.0
@@ -2668,13 +2668,13 @@ function loadSetupToSceneObjects(setup: SceneSetup) {
     }
   }
 
-  // P2: 委托 Store 反序列化，消除散弹式 type switch
-  // 与 sceneLoader.ts 一致，角色名称解析通过回调注入
+  // P2: Delegate Store deserialization, eliminating shotgun type switch
+  // Consistent with sceneLoader.ts, character name resolution injected via callback
   const resolveActorName = (refId: string, actorId?: string) => {
     const actor = actorId ? projectStore.getActor(actorId) : getActorByCharacterId(refId)
     if (!actor && !actorId) return null
     return {
-      displayName: actor?.name ?? '未知角色',
+      displayName: actor?.name ?? 'Unknown Character',
       resolvedActorId: actorId ?? (actor?.id ?? '')
     }
   }
@@ -2683,11 +2683,11 @@ function loadSetupToSceneObjects(setup: SceneSetup) {
     sceneObjectStore.fromSetupObject(objData, resolveActorName)
   }
 
-  // v16: animations 已持久化，不再需要运行时 hydrate
+  // v16: animations persisted, no longer need runtime hydration
 
-  // 双层架构：恢复 Action Mode，重建 runtimeObjects
+  // Dual-layer architecture: Restore Action Mode, rebuild runtimeObjects
   if (wasActionMode) {
-    sceneObjectStore.setActionMode(true) // 深拷贝 setupObjects → runtimeObjects
+    sceneObjectStore.setActionMode(true) // Deep copy setupObjects → runtimeObjects
   }
 
 
@@ -2695,8 +2695,8 @@ function loadSetupToSceneObjects(setup: SceneSetup) {
 
 
 /* 
- * v7.17: 重构：移除 BlockPlayer 和播放逻辑
- * 场景编辑页面不再负责播放，所有预览逻辑移至预览对话框
+ * v7.17: Refactor: Remove BlockPlayer and playback logic
+ * Scene edit page is no longer responsible for playback; all preview logic moved to preview dialog
 function initBlockPlayer() {
   // ... removed code
   // currentTime.value = time // removed
@@ -2704,30 +2704,30 @@ function initBlockPlayer() {
 */
 
 /**
- * v8.4: 统一刷新 Ghost/Real 状态
- * v8.8: 修复异步时序问题 - setActionModeContext 必须等待完成
- * 在 Action 创建/更新后调用此函数，确保画布正确显示最新状态
+ * v8.4: Unified refresh for Ghost/Real state
+ * v8.8: Fix async timing issue - setActionModeContext must await completion
+ * Call this function after Action create/update to ensure canvas correctly displays latest state
  */
 async function refreshGhostRealStates() {
   if (!renderer.value) return
   
   const sceneGraph = renderer.value.getSceneGraph()
   if (sceneGraph && props.sceneId && props.episode) {
-    // v8.4 Fix: 先更新上下文，确保 sceneGraph 拿到最新的 block.actions
+    // v8.4 Fix: Update context first to ensure sceneGraph gets latest block.actions
     const scene = props.episode.scenes.find((s: SceneContainer) => s.id === props.sceneId)
     const block = scene?.script?.find((b: ScriptBlock) => b.id === props.blockId)
     if (scene && block) {
-      // v8.8 Fix: await 异步上下文更新，确保资源预加载完成
+      // v8.8 Fix: await async context update to ensure asset preloading completes
       await sceneGraph.setActionModeContext(scene, block)
       
-      // v8.4 Fix: 同时更新 renderer 内部的 currentActions
+      // v8.4 Fix: Simultaneously update renderer internal currentActions
       renderer.value.setActions(block.actions ?? [])
     }
     
-    // 然后基于最新上下文重算 Slot 状态
+    // Then recompute Slot state based on latest context
     sceneGraph.updateSlotIndex(currentSlotIndex.value)
-    // v21: 始终调用 applySlotState，但排除正在交互的对象（部分 apply）。
-    // 旧逻辑在有交互锁时全量跳过 apply，导致所有非交互对象也停在旧 runtime 上。
+    // v21: Always call applySlotState, but exclude interacting objects (partial apply).
+    // Old logic skipped apply completely when interaction lock existed, causing non-interacting objects to stay on stale runtime.
     const slotStates = sceneGraph.getGhostStates()
     if (slotStates) {
       const excludeIds = renderer.value.getInteractionLockedIds()
@@ -2735,7 +2735,7 @@ async function refreshGhostRealStates() {
     }
   }
   
-  // 重新渲染对象
+  // Re-render objects
   void renderer.value.renderObjects()
   renderer.value.updateSelectionBox()
 }
@@ -2748,7 +2748,7 @@ async function refreshActionContextAndRender(scene: SceneContainer, block: Scrip
   renderer.value.setActions(block.actions ?? [])
   sceneGraph.updateSlotIndex(currentSlotIndex.value)
 
-  // v21: 始终调用 applySlotState，排除正在交互的对象（部分 apply）
+  // v21: Always call applySlotState, excluding interacting objects (partial apply)
   const slotStates = sceneGraph.getGhostStates()
   if (slotStates) {
     const excludeIds = renderer.value.getInteractionLockedIds()
@@ -2761,13 +2761,13 @@ async function refreshActionContextAndRender(scene: SceneContainer, block: Scrip
   }
 }
 
-// v7.25: 判断动作是否在指定槽位处于活跃状态
-// 逻辑：a. 动作以该 slot 为起始 slot；b. 动作的 span 通过或者到达该 slot
+// v7.25: Determine whether action is active at specified slot
+// Logic: a. Action starts at slot; b. Action span passes through or reaches slot
 function isActionActiveAtSlot(action: Action, slotIndex: number): boolean {
-  // a) 动作起始于该 slot
+  // a) Action starts at slot
   if (action.slotIndex === slotIndex) return true
   
-  // b) 持续动作且 span 覆盖该 slot
+  // b) Duration action and span covers slot
   if (action.category === 'duration') {
     const span = (action as { slotSpan?: number }).slotSpan ?? 1
     return slotIndex > action.slotIndex && slotIndex < action.slotIndex + span
@@ -2814,8 +2814,8 @@ function normalizeTransformPositionParams(action: ActionUpdatePayload, params: R
 }
 
 /**
- * 处理拖拽/缩放/旋转生成的Action更新
- * v9.2: 支持动画模式(tween_transform)和布局模式(set_transform)
+ * Handle Action update generated by drag/scale/rotate
+ * v9.2: Support animation mode (tween_transform) and layout mode (set_transform)
  */
 async function handleActionUpdate(action: ActionUpdatePayload): Promise<void> {
   if (!props.sceneId || !props.blockId || !props.episode) return
@@ -2826,25 +2826,25 @@ async function handleActionUpdate(action: ActionUpdatePayload): Promise<void> {
   const block = scene.script.find((b: ScriptBlock) => b.id === props.blockId)
   if (!block) return
 
-  // 相机特殊处理：使用 camera_move 动作
+  // Special camera handling: use camera_move action
   if (action.target === 'camera') {
     await handleCameraActionUpdate(action, block)
     return
   }
 
-  // v12.7: 检查对象是否已消亡，已消亡对象禁止创建 Action
-  // 直接从 store 获取当前环境对象 (Action Mode 下是完全解算后的 runtimeObj)
+  // v12.7: Check if object is despawned, despawned objects forbidden from creating Action
+  // Directly get current environment object from store (in Action Mode it is fully resolved runtimeObj)
   const currentObj = sceneObjectStore.getObject(action.target)
   if (currentObj?.spawned === false) {
-    console.warn('[ActionEditor] v12.7: 已消亡对象不允许创建 Action')
+    console.warn('[ActionEditor] v12.7: Cannot create action for despawned object')
     return
   }
 
-  // Transform Origin 变更始终使用 set_transform（瞬时 Action），
-  // 不能因为当前选中了 tween_transform 而被错误写入 duration action。
+  // Transform Origin change always uses set_transform (instant Action),
+  // cannot be erroneously written as duration action just because tween_transform is selected.
   if (action.type === 'set_origin') {
     handleSetTransformUpdate(action, block)
-  // v14.1: 如果用户选中了 transform action，优先更新该 action（与相机逻辑对齐）
+  // v14.1: If user selected transform action, prioritize updating that action (aligned with camera logic)
   } else if (selectedAction.value &&
       (selectedAction.value.type === 'set_transform' || selectedAction.value.type === 'tween_transform') &&
       selectedAction.value.target === action.target) {
@@ -2854,34 +2854,34 @@ async function handleActionUpdate(action: ActionUpdatePayload): Promise<void> {
       handleTweenTransformUpdate(action, block)
     }
   } else if (objectRecordMode.value === 'layout') {
-    // 瞬时模式 - 创建/更新 set_transform
+    // Instant mode - create/update set_transform
     handleSetTransformUpdate(action, block)
   } else {
-    // 补间模式 - 创建/更新 tween_transform
+    // Tween mode - create/update tween_transform
     handleTweenTransformUpdate(action, block)
   }
   
-  // v8.4: 刷新 Ghost/Real 状态
+  // v8.4: Refresh Ghost/Real state
   await refreshGhostRealStates()
   markLocalChange()
 }
 
 /**
- * v9.2: 处理布局模式下的拖拽 - 创建/更新 set_transform (point action)
+ * v9.2: Handle drag under layout mode - create/update set_transform (point action)
  */
 function handleSetTransformUpdate(action: ActionUpdatePayload, block: ScriptBlock) {
-  // 查找当前槽位是否已有针对该目标的 set_transform 动作（含几何属性）
+  // Check if current slot already has set_transform action for this target (including geometry attributes)
   const existingActionIndex = block.actions.findIndex((a: Action) => {
     if (a.type !== 'set_transform' || a.target !== action.target) return false
     return a.slotIndex === currentSlotIndex.value
   })
 
-  // 根据操作类型构建 params
+  // Build params based on operation type
   let params: Record<string, number> = {}
   if (action.type === 'move') {
     params = { x: action.params.x, y: action.params.y }
   } else if (action.type === 'scale') {
-    // v9.4: 缩放时同时保存位置补偿，确保视觉中心固定
+    // v9.4: Save position compensation during scaling to ensure visual center stays fixed
     params = {
       scaleX: action.params.scaleX,
       scaleY: action.params.scaleY,
@@ -2889,7 +2889,7 @@ function handleSetTransformUpdate(action: ActionUpdatePayload, block: ScriptBloc
       ...(action.params.y !== undefined ? { y: action.params.y } : {})
     }
   } else if (action.type === 'rotate') {
-    // Transform Origin 补偿：旋转改变逻辑中心，需同步保存 x/y
+    // Transform Origin compensation: rotation changes logic center, save x/y synchronously
     params = {
       rotation: action.params.rotation,
       ...(action.params.x !== undefined ? { x: action.params.x } : {}),
@@ -2903,12 +2903,12 @@ function handleSetTransformUpdate(action: ActionUpdatePayload, block: ScriptBloc
   }
 
   // v17/v27:
-  // - x/y 存储为全局坐标
-  // - rotation/scale/transformOrigin 保持对象自身局部值
+  // - x/y stored as global coordinates
+  // - rotation/scale/transformOrigin retain object's local values
   normalizeTransformPositionParams(action, params)
 
   if (existingActionIndex !== -1) {
-    // 更新现有 set_transform 动作
+    // Update existing set_transform action
     const existingAction = block.actions[existingActionIndex]! as SetTransformAction
     existingAction.params = { ...existingAction.params, ...params }
     
@@ -2919,7 +2919,7 @@ function handleSetTransformUpdate(action: ActionUpdatePayload, block: ScriptBloc
     
     selectedAction.value = block.actions[existingActionIndex]!
   } else {
-    // 创建新的 set_transform 动作 (point action)
+    // Create new set_transform action (point action)
     const actionId = `action_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
     
     const newAction: Action = {
@@ -2947,24 +2947,24 @@ function handleSetTransformUpdate(action: ActionUpdatePayload, block: ScriptBloc
 }
 
 /**
- * v9.2: 处理动画模式下的拖拽 - 创建/更新 tween_transform (duration action)
- * 逻辑与原 handleActionUpdate 相同
+ * v9.2: Handle drag under animation mode - create/update tween_transform (duration action)
+ * Logic is identical to original handleActionUpdate
  */
 function handleTweenTransformUpdate(action: ActionUpdatePayload, block: ScriptBlock) {
-  // 查找是否在当前槽位已有针对该目标的tween_transform动作（或覆盖该槽位的持续动作）
+  // Check if current slot already has tween_transform action for this target (or duration action covering slot)
   const existingActionIndex = block.actions.findIndex((a: Action) => {
       if (a.type !== 'tween_transform' || a.target !== action.target) return false
-      // v7.25: 使用 isActionActiveAtSlot 判断动作是否覆盖当前 slot
+      // v7.25: Use isActionActiveAtSlot to check if action covers current slot
       return isActionActiveAtSlot(a as Action, currentSlotIndex.value)
     }
   )
 
-  // 根据操作类型构建 params（统一在更新/创建之前构建）
+  // Build params based on operation type (unified before update/create)
   let params: Record<string, number> = {}
   if (action.type === 'move') {
     params = { x: action.params.x, y: action.params.y }
   } else if (action.type === 'scale') {
-    // v9.4: 缩放时同时保存位置补偿
+    // v9.4: Save position compensation during scaling
     params = {
       scaleX: action.params.scaleX,
       scaleY: action.params.scaleY,
@@ -2972,7 +2972,7 @@ function handleTweenTransformUpdate(action: ActionUpdatePayload, block: ScriptBl
       ...(action.params.y !== undefined ? { y: action.params.y } : {})
     }
   } else if (action.type === 'rotate') {
-    // Transform Origin 补偿：旋转改变逻辑中心，需同步保存 x/y
+    // Transform Origin compensation: rotation changes logic center, save x/y synchronously
     params = {
       rotation: action.params.rotation,
       ...(action.params.x !== undefined ? { x: action.params.x } : {}),
@@ -2986,12 +2986,12 @@ function handleTweenTransformUpdate(action: ActionUpdatePayload, block: ScriptBl
   }
 
   // v17/v27:
-  // - x/y 存储为全局坐标
-  // - rotation/scale/transformOrigin 保持对象自身局部值
+  // - x/y stored as global coordinates
+  // - rotation/scale/transformOrigin retain object's local values
   normalizeTransformPositionParams(action, params)
 
   if (existingActionIndex !== -1) {
-    // 更新现有动作（params 已转换为全局坐标）
+    // Update existing action (params converted to global coordinates)
     const existingAction = block.actions[existingActionIndex]! as TweenTransformAction
     if (existingAction.params) {
       Object.assign(existingAction.params, params)
@@ -3004,7 +3004,7 @@ function handleTweenTransformUpdate(action: ActionUpdatePayload, block: ScriptBl
     
     selectedAction.value = block.actions[existingActionIndex]!
   } else {
-    // 创建新的tween_transform动作（params 已转换为全局坐标）
+    // Create new tween_transform action (params converted to global coordinates)
     const actionId = `action_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
     
     const newAction: Action = {
@@ -3034,31 +3034,31 @@ function handleTweenTransformUpdate(action: ActionUpdatePayload, block: ScriptBl
 }
 
 /**
- * 处理相机的Action更新
- * v6.5: 支持 camera_cut 和 camera_move 两种模式
- * - 如果当前已有选中的相机动作，则更新该动作
- * - 如果没有，则根据 cameraRecordMode 创建新动作
+ * Handle camera Action update
+ * v6.5: Support both camera_cut and camera_move modes
+ * - If camera action is currently selected, update that action
+ * - If not, create new action according to cameraRecordMode
  */
 async function handleCameraActionUpdate(action: ActionUpdatePayload, block: ScriptBlock): Promise<void> {
   const slotIndex = currentSlotIndex.value
   
-  // 确定目标动作类型：
-  // 1. 如果当前选中的是相机动作，保持其类型
-  // 2. 否则使用 cameraRecordMode（默认 camera_cut）
+  // Determine target action type:
+  // 1. If current selection is camera action, preserve its type
+  // 2. Otherwise use cameraRecordMode (default camera_cut)
   let targetActionType: 'camera_cut' | 'camera_move' = cameraRecordMode.value
   if (selectedAction.value && 
       (selectedAction.value.type === 'camera_cut' || selectedAction.value.type === 'camera_move')) {
     targetActionType = selectedAction.value.type
   }
   
-  // v21: camera_cut + camera_move 允许共存（类比 set_transform + tween_transform）
-  // camera_follow 独占 → 禁止编辑
+  // v21: camera_cut + camera_move allowed to coexist (analogous to set_transform + tween_transform)
+  // camera_follow exclusive -> editing forbidden
   const hasFollow = block.actions.some((a: Action) =>
     a.type === 'camera_follow' && a.target === 'camera' && isActionActiveAtSlot(a, slotIndex)
   )
   if (hasFollow) return
 
-  // 分别查找 cut 和 move
+  // Search cut and move respectively
   const existingCutIndex = block.actions.findIndex((a: Action) =>
     a.type === 'camera_cut' && a.target === 'camera' && isActionActiveAtSlot(a, slotIndex)
   )
@@ -3066,7 +3066,7 @@ async function handleCameraActionUpdate(action: ActionUpdatePayload, block: Scri
     a.type === 'camera_move' && a.target === 'camera' && isActionActiveAtSlot(a, slotIndex)
   )
 
-  // 确定编辑目标：优先 selectedAction > cut > move
+  // Determine edit target: prioritize selectedAction > cut > move
   let editTargetIndex = -1
   if (selectedAction.value &&
       (selectedAction.value.type === 'camera_cut' || selectedAction.value.type === 'camera_move') &&
@@ -3079,7 +3079,7 @@ async function handleCameraActionUpdate(action: ActionUpdatePayload, block: Scri
     editTargetIndex = existingMoveIndex
   }
   
-  // v6.5: 相机缩放反向逻辑
+  // v6.5: Camera zoom inverse logic
   let zoomValue: number | undefined
   if (action.type === 'scale') {
     const inverseScale = 1 / action.params.scaleX
@@ -3088,7 +3088,7 @@ async function handleCameraActionUpdate(action: ActionUpdatePayload, block: Scri
   }
   
   if (editTargetIndex !== -1) {
-    // 更新已有的相机动作
+    // Update existing camera action
     const existingAction = block.actions[editTargetIndex]! as CameraCutAction | CameraMoveAction
     if (!existingAction.params) existingAction.params = { x: 0, y: 0, zoom: 1 }
     
@@ -3106,12 +3106,12 @@ async function handleCameraActionUpdate(action: ActionUpdatePayload, block: Scri
     
     selectedAction.value = block.actions[editTargetIndex]!
   } else {
-    // 创建新的相机动作（默认 camera_cut）
+    // Create new camera action (default camera_cut)
     const actionId = `action_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
     
     let params: Record<string, number> = {}
     if (action.type === 'move') {
-      // v21: 相机 zoom 已由 applySlotState 同步到 runtimeObjects
+      // v21: Camera zoom already synchronized to runtimeObjects by applySlotState
       const cameraObj = sceneObjectStore.objects.find(o => o.type === 'camera') as import('@/stores/sceneObjectStore').CameraObject | undefined
       const evaluatedZoom = cameraObj?.zoom ?? 1.0
       
@@ -3150,14 +3150,14 @@ async function handleCameraActionUpdate(action: ActionUpdatePayload, block: Scri
     selectedAction.value = newAction
   }
   
-  // v8.4: 刷新 Ghost/Real 状态
+  // v8.4: Refresh Ghost/Real state
   await refreshGhostRealStates()
   markLocalChange()
 }
 
 onMounted(async () => {
   if (!canvasContainer.value) {
-    console.error('[ActionEditor] 画布容器未找到')
+    console.error('[ActionEditor] Canvas container not found')
     return
   }
 
@@ -3176,37 +3176,37 @@ onMounted(async () => {
   rendererInstance.setAutoRenderEnabled(false)
   await rendererInstance.initRenderer()
   
-  // 初始化穿透列表默认值移往加载场景状态后
-  // 加载初始状态
+  // Initialize through-list defaults moved after loading scene state
+  // Load initial state
   if (props.sceneId && props.blockId && props.episode) {
     const scene = props.episode.scenes.find((s: SceneContainer) => s.id === props.sceneId)
     if (scene) {
       // const prevContext... (removed)
       const block = scene.script.find((b: ScriptBlock) => b.id === props.blockId)
       if (block) {
-        // v24: 注册 episode 自动同步目标
+        // v24: Register episode auto-sync target
         sceneObjectStore.registerEpisodeSync(scene.setup)
 
-        // v7.24: Action Mode 下，sceneObjectStore 应始终存储 Scene Setup State (scene.setup)
-        // 而不是 PrevContext 或 Final State，以确保属性面板显示场景的初始设定值
+        // v7.24: In Action Mode, sceneObjectStore should always store Scene Setup State (scene.setup)
+        // rather than PrevContext or Final State, ensuring properties panel displays scene initial setup values
         loadSetupToSceneObjects(scene.setup)
         
-        // 双层架构：初始进入 Action Mode 时，必须显式激活 Action Mode。
-        // loadSetupToSceneObjects 将数据加载到 setupObjects，
-        // setActionMode(true) 深拷贝 setupObjects → runtimeObjects，
-        // 确保后续 applySlotState 能将 parentId 等计算属性写入 runtimeObjects。
+        // Dual-layer architecture: When entering Action Mode initially, Action Mode must be explicitly activated.
+        // loadSetupToSceneObjects loads data into setupObjects,
+        // setActionMode(true) deep copies setupObjects -> runtimeObjects,
+        // ensuring subsequent applySlotState can write calculated properties like parentId into runtimeObjects.
         sceneObjectStore.setActionMode(true)
         // currentTime.value = 0 // removed
-        // v7.17: 重构：移除 BlockPlayer 和播放逻辑
-      // initBlockPlayer() // 移除
+        // v7.17: Refactor: Remove BlockPlayer and playback logic
+      // initBlockPlayer() // Removed
       
-      // 设置Action Mode上下文
+      // Set Action Mode context
       const sceneGraph = rendererInstance.getSceneGraph()
       if (sceneGraph) {
         await sceneGraph.setActionModeContext(scene, block)
         
-        // 同步计算并应用 slot states，确保 parentId 在 Vue 响应式 flush 前写入 runtimeObjects
-        sceneGraph.updateSlotIndex(0) // 初始状态为 slot 0
+        // Synchronously compute and apply slot states to ensure parentId is written to runtimeObjects before Vue reactive flush
+        sceneGraph.updateSlotIndex(0) // Initial state is slot 0
         const slotStates = sceneGraph.getGhostStates()
         if (slotStates) {
           sceneObjectStore.applySlotState(slotStates)
@@ -3216,23 +3216,23 @@ onMounted(async () => {
     }
   }
   
-  // 初始化穿透列表默认值（相机自动加入，必须在 loadSetupToSceneObjects 之后）
+  // Initialize through-list defaults (camera auto-added, must be after loadSetupToSceneObjects)
   rendererInstance.getSceneGraph().initPassThroughDefaults()
   await rendererInstance.renderObjects()
 
-  // v7.10: 初始状态下（Preroll），触发一次 Target State 计算与日志打印
-  // 确保进入页面时就能看到 Preroll 的状态日志
+  // v7.10: Under initial state (Preroll), trigger one Target State calculation and log output
+  // Ensure Preroll status log is visible upon entering page
   handleSceneUpdateBySlot()
 
-  // 双层架构：parentId 已由 applySlotState() 在 updateActionModeObjects 中自动同步
-  // 不再需要手动调用 setAccumulatedParentIds
+  // Dual-layer architecture: parentId automatically synced by applySlotState() in updateActionModeObjects
+  // No longer need to manually call setAccumulatedParentIds
 
   rendererInstance.setAutoRenderEnabled(true)
   setTimeout(() => {
     rendererInstance.scrollToCanvasCenter()
   }, 100)
 
-  // 监听对象变化
+  // Watch object changes
   watch(
     () => sceneObjectStore.objects.length,
     () => {
@@ -3260,29 +3260,29 @@ onMounted(async () => {
   document.addEventListener('click', handleClickOutside)
   document.addEventListener('fullscreenchange', handleFullscreenChange)
 
-  // v8.6: leftPanelCollapsed watcher 已移除（左侧边栏删除）
+  // v8.6: leftPanelCollapsed watcher removed (left sidebar removed)
   watch([rightPanelCollapsed], () => {
     setTimeout(() => {
       if (renderer.value) {
         renderer.value.updateTransformParams()
-        // v7.23: 使用 handleSceneUpdateBySlot() 确保 Action Mode 状态
+        // v7.23: Use handleSceneUpdateBySlot() to ensure Action Mode state
         handleSceneUpdateBySlot()
       }
     }, 300)
   })
 
-  // v8.6: leftPanelWidth watcher 已移除（左侧边栏删除）
+  // v8.6: leftPanelWidth watcher removed (left sidebar removed)
   watch([rightPanelWidth], () => {
     requestAnimationFrame(() => {
       if (renderer.value) {
         renderer.value.updateTransformParams()
-        // v7.23: 使用 handleSceneUpdateBySlot() 确保 Action Mode 状态
+        // v7.23: Use handleSceneUpdateBySlot() to ensure Action Mode state
         handleSceneUpdateBySlot()
       }
     })
   })
 
-  // P2: 组合模式高亮 — 监听 pendingIds 变化，同步到渲染器
+  // P2: Grouping mode highlight — watch pendingIds changes, sync to renderer
   watch(
     () => actionGroupingState.value?.pendingIds.slice() ?? [],
     (ids) => {
@@ -3293,10 +3293,10 @@ onMounted(async () => {
     { deep: true }
   )
 
-  // 双层架构：accumulatedParentIds watcher 已移除
-  // parentId 由 applySlotState() 在每次 updateActionModeObjects 时自动同步到 runtimeObjects
+  // Dual-layer architecture: accumulatedParentIds watcher removed
+  // parentId automatically synced to runtimeObjects by applySlotState() on each updateActionModeObjects
 
-  // 监听Block的actions变化
+  // Watch Block actions changes
   watch(
     () => {
       if (props.sceneId && props.blockId && props.episode) {
@@ -3317,8 +3317,8 @@ onMounted(async () => {
           const block = scene.script.find((b: ScriptBlock) => b.id === props.blockId)
           if (block) {
             const prevContext = calculatePrevContext(scene, props.blockId)
-            // v7.23: Action Mode 下，renderer 的基准状态应为 Setup State (prevContext)
-            // 避免重复叠加 Action
+            // v7.23: In Action Mode, renderer baseline state should be Setup State (prevContext)
+            // avoid redundant action stacking
             
             if (renderer.value?.updateActionModeState) {
               renderer.value.updateActionModeState(prevContext)
@@ -3338,7 +3338,7 @@ onBeforeUnmount(() => {
   
   
   if (renderer.value) {
-    // 清除Action Mode上下文
+    // Clear Action Mode context
     const sceneGraph = renderer.value.getSceneGraph()
     if (sceneGraph) {
       sceneGraph.clearActionModeContext()
@@ -3346,13 +3346,13 @@ onBeforeUnmount(() => {
     renderer.value.destroyRenderer()
     renderer.value = null
   }
-  // v24: 解注册 episode 同步目标
+  // v24: Unregister episode sync target
   sceneObjectStore.registerEpisodeSync(null)
   sceneObjectStore.clearObjects()
 })
 
-// v24.1: 防御性 watch — 如果父组件在同一 sceneId+blockId 下替换了 episode 对象
-// （例如 episodeStore 内部重建），需要重新注册同步目标，防止写入脱离的旧对象。
+// v24.1: Defensive watch — if parent component replaces episode object under same sceneId+blockId
+// (e.g. episodeStore internal rebuild), re-register sync target to prevent writing detached stale objects.
 watch(
   () => {
     if (!props.episode || !props.sceneId) return null
@@ -3371,13 +3371,13 @@ function handleFullscreenChange() {
   setTimeout(() => {
     if (renderer.value) {
       renderer.value.updateTransformParams()
-      // v7.23: 使用 handleSceneUpdateBySlot() 确保 Action Mode 状态
+      // v7.23: Use handleSceneUpdateBySlot() to ensure Action Mode state
       handleSceneUpdateBySlot()
     }
   }, 100)
 }
 
-// v9.2: 点击外部区域关闭添加素材菜单
+// v9.2: Click outside area to close add asset menu
 function handleClickOutside(event: MouseEvent) {
   const target = event.target as HTMLElement
   if (!target.closest('.add-menu-container')) {
@@ -3391,7 +3391,7 @@ function handleKeyDown(event: KeyboardEvent) {
     return
   }
 
-  // P2: ESC 退出成组模式
+  // P2: ESC to exit grouping mode
   if (event.key === 'Escape' && actionGroupingState.value) {
     actionGroupingState.value = null
     event.preventDefault()
@@ -3402,14 +3402,14 @@ function handleSelectObject(objectId: string | null) {
   sceneObjectStore.selectObject(objectId)
   if (objectId) {
     selectedAction.value = null
-    // v14.1: 切换对象时重置录制模式为瞬时（用户规则4）
+    // v14.1: Reset recording mode to instant when switching objects (User Rule 4)
     objectRecordMode.value = 'layout'
     
-    // v6.9: 当选中相机对象时，检查当前槽位是否有 camera_cut/camera_move 动作
-    // 只有存在这类动作时才允许拖动相机，否则不允许
+    // v6.9: When camera object selected, check if current slot has camera_cut/camera_move action
+    // Only allow dragging camera if such action exists, otherwise disallow
     const selectedObj = sceneObjectStore.getObject(objectId)
     if (selectedObj?.type === 'camera' && renderer.value) {
-      // 检查当前槽位是否有可拖动的相机动作
+      // Check if current slot has draggable camera action
       const currentCameraAction = currentSlotCameraAction.value
       const canDrag = currentCameraAction?.type === 'camera_cut' || currentCameraAction?.type === 'camera_move'
       renderer.value.setSelectedActionType(canDrag ? currentCameraAction.type : null)
@@ -3417,32 +3417,32 @@ function handleSelectObject(objectId: string | null) {
   }
 }
 
-// v6.5: 监听选中的相机动作类型变化，同步到 cameraRecordMode
-// v6.6: 同时通知渲染器当前选中的动作类型（用于限制相机拖动）
-// v6.8: 扩展逻辑：当选中相机对象但没选中动作时，使用 cameraRecordMode
+// v6.5: Watch selected camera action type change, sync to cameraRecordMode
+// v6.6: Simultaneously notify renderer of selected action type (used to constrain camera drag)
+// v6.8: Extended logic: when camera object selected but no action selected, use cameraRecordMode
 watch(selectedAction, (action) => {
   if (action && (action.type === 'camera_cut' || action.type === 'camera_move')) {
     cameraRecordMode.value = action.type
   }
   
-  // v21: camera_follow 禁止拖动，其他情况允许
+  // v21: camera_follow dragging forbidden, allowed in other cases
   if (renderer.value) {
     if (action?.type === 'camera_follow') {
       renderer.value.setSelectedActionType('camera_follow')
     } else if (action?.type === 'camera_cut' || action?.type === 'camera_move') {
       renderer.value.setSelectedActionType(action.type)
     } else {
-      // 未选中相机 action → 使用 cameraRecordMode（默认 camera_cut）
+      // No camera action selected -> use cameraRecordMode (default camera_cut)
       renderer.value.setSelectedActionType(cameraRecordMode.value)
     }
   }
 })
 
-// 监听场景对象选择变化：当用户在画布上拾取对象时，取消选中的 Action
+// Watch scene object selection change: deselect Action when user picks object on canvas
 watch(
   () => sceneObjectStore.selectedObjectId,
   (newObjectId, oldObjectId) => {
-    // 仅当对象选择确实发生变化时处理
+    // Process only when object selection actually changes
     if (newObjectId !== oldObjectId && newObjectId) {
       const currentAction = selectedAction.value
       const shouldKeepAction =
@@ -3453,7 +3453,7 @@ watch(
         selectedAction.value = null
       }
       
-      // v21: 选中相机对象时，camera_follow 禁止拖动，其他情况允许
+      // v21: When camera object selected, camera_follow dragging forbidden, allowed in other cases
       const selectedObj = sceneObjectStore.getObject(newObjectId)
       if (selectedObj?.type === 'camera' && renderer.value) {
         const actions = currentBlock.value?.actions ?? []
@@ -3463,7 +3463,7 @@ watch(
         if (hasFollow) {
           renderer.value.setSelectedActionType('camera_follow')
         } else {
-          // 有 cut/move 则使用其类型，否则使用 cameraRecordMode（默认 camera_cut）
+          // Use cut/move type if present, otherwise use cameraRecordMode (default camera_cut)
           const posAction = actions.find((a: Action) =>
             (a.type === 'camera_cut' || a.type === 'camera_move') && a.target === 'camera' && isActionActiveAtSlot(a, currentSlotIndex.value)
           )
@@ -3474,10 +3474,10 @@ watch(
   }
 )
 
-// v6.9: 监听 cameraRecordMode 变化
-// 当选中相机对象且没选中动作时，根据当前槽位的相机动作类型决定是否允许拖动
+// v6.9: Watch cameraRecordMode change
+// When camera selected and no action selected, decide whether drag allowed based on camera action type at current slot
 watch(cameraRecordMode, () => {
-  // v21: 切换 cameraRecordMode 时同步拖动权限
+  // v21: Sync drag permissions when switching cameraRecordMode
   if (renderer.value && !selectedAction.value) {
     const selectedObj = sceneObjectStore.getSelectedObject()
     if (selectedObj?.type === 'camera') {
@@ -3490,7 +3490,7 @@ watch(cameraRecordMode, () => {
   }
 })
 
-// DEBUG: 监听相机对象在 store 中的变化，确保 Setup 数据不被污染
+// DEBUG: Watch camera object in store, ensure Setup data not polluted
 watch(() => {
   const camera = sceneObjectStore.objects.find(o => o.type === 'camera')
   return camera ? { zoom: (camera as { zoom?: number }).zoom, width: camera.width, height: camera.height } : null
@@ -3500,29 +3500,29 @@ watch(() => {
   }
 }, { deep: true })
 
-// v6.5: 处理相机录制模式切换
+// v6.5: Handle camera recording mode switch
 function handleCameraRecordModeChange(mode: 'camera_cut' | 'camera_move') {
   cameraRecordMode.value = mode
 }
 
-// v9.2: 处理对象录制模式切换 (动画/布局)
+// v9.2: Handle object recording mode switch (Animation/Layout)
 function handleObjectRecordModeChange(mode: 'animation' | 'layout') {
   objectRecordMode.value = mode
 }
 
-// v9.3: handleVisualActionUpdate 已移至第 2547 行，支持自动选中功能
+// v9.3: handleVisualActionUpdate moved to line 2547, supporting auto-selection
 
-// v21: 相机动作互斥策略重构
-// camera_cut + camera_move 允许共存（类比 set_transform + tween_transform）
-// camera_follow 独占（与 cut/move 互斥）
-// camera_shake 与任何动作共存
-// v6.5: 当前槽位的相机动作
-// v6.7: 优先返回互斥类动作，震动可以共存
+// v21: Camera action mutual exclusion strategy refactored
+// camera_cut + camera_move allowed to coexist (analogous to set_transform + tween_transform)
+// camera_follow exclusive (mutually exclusive with cut/move)
+// camera_shake coexists with any action
+// v6.5: Camera action at current slot
+// v6.7: Prioritize returning mutually exclusive actions; shake can coexist
 const currentSlotCameraAction = computed((): Action | null => {
   if (!currentBlock.value) return null
   const actions = currentBlock.value.actions ?? []
   
-  // v21: 优先返回 camera_follow（独占类），然后 cut/move，最后 shake
+  // v21: Prioritize camera_follow (exclusive), then cut/move, finally shake
   const followAction = actions.find(
     (a: Action) => isCameraFollowAction(a.type) && a.target === 'camera' && isActionActiveAtSlot(a, currentSlotIndex.value)
   )
@@ -3538,7 +3538,7 @@ const currentSlotCameraAction = computed((): Action | null => {
   ) as Action | null
 })
 
-// v6.7: 当前槽位是否存在震动动作
+// v6.7: Whether shake action exists at current slot
 const currentSlotHasShake = computed((): boolean => {
   if (!currentBlock.value) return false
   const actions = currentBlock.value.actions ?? []
@@ -3575,8 +3575,8 @@ function upsertCameraAction(actions: Action[], candidate: Action): Action {
   return candidate
 }
 
-// v6.5: 处理来自相机属性面板的动作创建/更新
-// v6.7: 支持互斥逻辑 - camera_cut/camera_move/camera_follow 互斥，camera_shake 可共存
+// v6.5: Handle action create/update from camera properties panel
+// v6.7: Support mutual exclusion logic - camera_cut/camera_move/camera_follow mutually exclusive, camera_shake coexists
 function handleCameraActionFromPanel(
   actionType: 'camera_cut' | 'camera_move' | 'camera_follow' | 'camera_shake',
   params: Record<string, unknown>
@@ -3617,29 +3617,29 @@ function handleCameraActionFromPanel(
 
   selectedAction.value = upsertCameraAction(block.actions, newAction)
   
-  // 刷新 cameraRecordMode
+  // Refresh cameraRecordMode
   if (actionType === 'camera_cut' || actionType === 'camera_move') {
     cameraRecordMode.value = actionType
   }
   
-  // 保存到 store
+  // Save to store
   const episodeId = route.params['id'] as string
   episodeStore.updateBlockInScene(episodeId, props.sceneId, props.blockId, {
     actions: block.actions
   })
   
-  // v8.4: 使用统一刷新函数
+  // v8.4: Use unified refresh function
   void refreshGhostRealStates()
   markLocalChange()
 }
 
 /**
- * v7.55: handleEnterSetCharacterAction 已移除 - character 类型已删除
+ * v7.55: handleEnterSetCharacterAction removed - character type deleted
  */
 
 /**
- * 处理 Action Mode 下的对象属性更新
- * 自动生成 Point Action
+ * Handle object property updates under Action Mode
+ * Automatically generate Point Action
  */
 function handleObjectUpdateInActionMode(updatedObject: SceneObject) {
   if (!props.sceneId || !props.blockId || !props.episode) return
@@ -3647,12 +3647,12 @@ function handleObjectUpdateInActionMode(updatedObject: SceneObject) {
   const selected = sceneObjectStore.getSelectedObject()
   if (!selected) return
   
-  // 获取目标别名
+  // Get target alias
   const targetAlias = getTargetAliasFromObject(selected)
   if (!targetAlias) {
-    // 不支持的对象类型，仅更新显示
-    // v7.20: Action Mode 下不应修改 Store，但如果不支持生成 Action，这里可能需要保留或者直接 return
-    // 考虑到不支持的对象（如 BGM）通常没有可视属性，这里选择直接 return，避免污染 Store
+    // Unsupported object type, update display only
+    // v7.20: In Action Mode Store should not be modified; if action generation unsupported, return directly
+    // Considering unsupported objects (like BGM) usually have no visual properties, return directly to avoid polluting Store
     // sceneObjectStore.updateObject(selected.id, updatedObject)
     return
   }
@@ -3667,9 +3667,9 @@ function handleObjectUpdateInActionMode(updatedObject: SceneObject) {
     block.actions = []
   }
   
-  // v7.22: 使用 Setup State 作为基准进行 Diff
-  // 用户要求：属性面板仅显示 Setup 状态，因此这里的变更也是基于 Setup 值的
-  // 不再使用 selectedObjectRuntimeState
+  // v7.22: Use Setup State as baseline for Diff
+  // User requirement: properties panel displays Setup state only, so changes here are based on Setup values
+  // No longer use selectedObjectRuntimeState
   const updatedState = getObjectRuntimeState(updatedObject)
   const originalState = getObjectRuntimeState(selected)
   
@@ -3678,13 +3678,13 @@ function handleObjectUpdateInActionMode(updatedObject: SceneObject) {
     return
   }
   
-  // v7.20: Action Mode 下禁止修改 Store，仅通过 Action 驱动
+  // v7.20: Modifying Store forbidden in Action Mode, driven by Action only
   // sceneObjectStore.updateObject(selected.id, updatedObject)
   
-  // 判断是否为角色对象
-  // character 类型已移除
+  // Determine whether it is a character object
+  // character type removed
   
-  // v7.26: 音频对象处理
+  // v7.26: Audio object handling
   if (selected.type === 'audio') {
     type LegacyAudioObject = AudioObject & { autoPlay?: boolean }
     const audioObj = selected as unknown as LegacyAudioObject
@@ -3694,20 +3694,20 @@ function handleObjectUpdateInActionMode(updatedObject: SceneObject) {
     if (audioObj.volume !== updatedAudio.volume) diff['volume'] = updatedAudio.volume
     if (audioObj.loop !== updatedAudio.loop) diff['loop'] = updatedAudio.loop
     
-    // autoPlay 映射为 action: play/stop
+    // autoPlay mapped to action: play/stop
     if (audioObj.autoPlay !== updatedAudio.autoPlay) {
       diff['action'] = updatedAudio.autoPlay ? 'play' : 'stop'
     }
     
     if (Object.keys(diff).length > 0) {
-      // 如果没有显式 action 变更，补充默认 action 以确保动作有效
+      // If no explicit action change, supply default action to ensure action validity
       diff['action'] ??= updatedAudio.autoPlay ? 'play' : 'stop'
       upsertPointAction('set_audio', targetAlias, currentSlotIndex.value, { params: diff })
     }
     return
   }
 
-  // 文本对象处理：计算 text params diff，创建/更新 set_text
+  // Text object handling: calculate text params diff, create/update set_text
   if (selected.type === 'text') {
     const textObj = selected as TextObject
     const updatedText = updatedObject as TextObject
@@ -3738,11 +3738,11 @@ function handleObjectUpdateInActionMode(updatedObject: SceneObject) {
     if (Object.keys(textDiff).length > 0) {
       upsertPointAction('set_text', targetAlias, currentSlotIndex.value, { params: textDiff })
     }
-    // 不 return，fall-through 到通用 transform diff（处理 alpha/visible/flipX/zIndex）
+    // Do not return, fall through to generic transform diff (handles alpha/visible/flipX/zIndex)
   }
   
-  // 光源对象处理：计算 light params diff，根据录制模式创建 set_light 或 tween_light
-  // 注意：不 return，让后续代码继续处理 transform 属性（alpha/visible/flipX/zIndex）
+  // Light object handling: calculate light params diff, create set_light or tween_light based on recording mode
+  // Note: Do not return; let subsequent code continue processing transform properties (alpha/visible/flipX/zIndex)
   if (selected.type === 'light') {
     const lightObj = selected as LightObject
     const updatedLight = updatedObject as LightObject
@@ -3751,7 +3751,7 @@ function handleObjectUpdateInActionMode(updatedObject: SceneObject) {
     if (lightObj.lightColor !== updatedLight.lightColor) lightDiff['lightColor'] = updatedLight.lightColor
     if (lightObj.lightIntensity !== updatedLight.lightIntensity) lightDiff['lightIntensity'] = updatedLight.lightIntensity
     if (lightObj.lightRadius !== updatedLight.lightRadius) lightDiff['lightRadius'] = updatedLight.lightRadius
-    // Phase 1: 闪烁和方向性
+    // Phase 1: Flickering and directivity
     if (lightObj.flicker !== updatedLight.flicker) lightDiff['flicker'] = updatedLight.flicker
     if (lightObj.flickerSpeed !== updatedLight.flickerSpeed) lightDiff['flickerSpeed'] = updatedLight.flickerSpeed
     if (lightObj.directionMode !== updatedLight.directionMode) lightDiff['directionMode'] = updatedLight.directionMode
@@ -3765,17 +3765,17 @@ function handleObjectUpdateInActionMode(updatedObject: SceneObject) {
         upsertPointAction('set_light', targetAlias, currentSlotIndex.value, { params: lightDiff })
       }
     }
-    // 不 return，fall-through 到通用 transform diff（处理 alpha/visible 等）
+    // Do not return, fall through to generic transform diff (handles alpha/visible etc)
   }
   
-  // 画面特效对象处理：计算 params diff，根据录制模式创建 set_screen_effect 或 tween_screen_effect
-  // 注意：不 return，让后续代码继续处理 transform 属性（x/y/scaleX/scaleY/rotation/alpha/visible/flipX/zIndex）
+  // Screen effect object handling: calculate params diff, create set_screen_effect or tween_screen_effect based on recording mode
+  // Note: Do not return; let subsequent code continue processing transform properties (x/y/scaleX/scaleY/rotation/alpha/visible/flipX/zIndex)
   if (selected.type === 'screen_effect') {
     const effectObj = selected
     const updatedEffect = updatedObject as ScreenEffectObject
     const paramsDiff: Record<string, unknown> = {}
     
-    // 逐字段比较 params
+    // Compare params field by field
     const paramKeys = [
       'baseColor',
       'holeShape', 'holeCenterX', 'holeCenterY', 'holeWidth', 'holeHeight',
@@ -3795,19 +3795,19 @@ function handleObjectUpdateInActionMode(updatedObject: SceneObject) {
     
     if (Object.keys(paramsDiff).length > 0) {
       if (objectRecordMode.value === 'animation') {
-        // 补间模式：创建 tween_screen_effect
+        // Tween mode: create tween_screen_effect
         upsertDurationAction(targetAlias, currentSlotIndex.value, paramsDiff, 'tween_screen_effect')
       } else {
-        // 瞬时模式：创建 set_screen_effect
+        // Instant mode: create set_screen_effect
         upsertPointAction('set_screen_effect', targetAlias, currentSlotIndex.value, { params: paramsDiff })
       }
     }
-    // 不 return，继续 fall-through 到下方的通用 transform diff 逻辑
+    // Do not return, continue falling through to generic transform diff logic below
   }
   
-  // Clip-Mask Phase 1 D2: 蒙版专属字段 diff（targetIds / shape / width / height）→ set_mask
-  // 注意：mask 的 transform 字段（x/y/scaleX/scaleY/rotation/alpha/visible/flipX/zIndex）
-  // 仍走下方通用 transform diff。
+  // Clip-Mask Phase 1 D2: Mask exclusive field diff (targetIds / shape / width / height) -> set_mask
+  // Note: mask transform fields (x/y/scaleX/scaleY/rotation/alpha/visible/flipX/zIndex)
+  // still follow generic transform diff below.
   if (selected.type === 'mask') {
     const maskObj = selected as MaskObject
     const updatedMask = updatedObject as MaskObject
@@ -3831,21 +3831,21 @@ function handleObjectUpdateInActionMode(updatedObject: SceneObject) {
     if (Object.keys(maskDiff).length > 0) {
       upsertSetMaskAction(block.actions, targetAlias, currentSlotIndex.value, maskDiff)
     }
-    // 不 return，fall-through 处理 transform 属性
+    // Do not return, fall through to handle transform properties
   }
   
-  // character 类型已移除，isCharacter 始终为 false——直接进入else分支
+  // character type removed, isCharacter always false - enters else branch directly
   {
-    // 非角色对象：根据录制模式处理属性
-    // v9.4: alpha 在补间模式下创建 tween_transform，其他视觉属性始终使用 set_transform
+    // Non-character objects: handle properties based on recording mode
+    // v9.4: alpha creates tween_transform under tween mode; other visual properties always use set_transform
     const alphaChanged = originalState.alpha !== updatedState.alpha
     
-    // 补间模式下的 alpha 变更 → tween_transform
+    // alpha change in tween mode -> tween_transform
     if (alphaChanged && objectRecordMode.value === 'animation') {
       upsertDurationAction(targetAlias, currentSlotIndex.value, { alpha: updatedState.alpha })
     }
     
-    // 瞬时属性（alpha 瞬时模式 + visible/flipX/zIndex）→ set_transform
+    // Instant properties (alpha instant mode + visible/flipX/zIndex) -> set_transform
     const visualDiff: Record<string, unknown> = {}
     if (alphaChanged && objectRecordMode.value !== 'animation') {
       visualDiff['alpha'] = updatedState.alpha
@@ -3865,13 +3865,13 @@ function handleObjectUpdateInActionMode(updatedObject: SceneObject) {
     }
   }
   
-  // v8.4: 使用统一刷新函数
+  // v8.4: Use unified refresh function
   void refreshGhostRealStates()
 }
 
 /**
- * 创建或更新 Point Action
- * 同槽位同对象同类型的动作会被合并
+ * Create or update Point Action
+ * Actions of same slot, same object, and same type will be merged
  */
 function upsertPointAction(
   type: 'set_transform' | 'set_active' | 'set_anim' | 'camera_cut' | 'set_audio' | 'set_screen_effect' | 'set_light' | 'set_text' | 'set_text_reveal',
@@ -3891,16 +3891,16 @@ function upsertPointAction(
     block.actions = []
   }
   
-  // v6.4: trigger_anim 按 target + slotIndex 匹配，合并 animStates
+  // v6.4: trigger_anim matches by target + slotIndex, merges animStates
   const existingIndex = block.actions.findIndex(
     (a: Action) => a.type === type && a.target === target && isActionActiveAtSlot(a, slotIndex)
   )
   
   if (existingIndex !== -1) {
-    // 合并属性
+    // Merge properties
     const existing = block.actions[existingIndex]!
     if (type === 'set_anim') {
-      // v14.2: 按 animName 合并 animations 数组，避免整体替换丢失其他条目
+      // v14.2: Merge animations array by animName, avoiding replacing whole array and losing entries
       const existingParams = (existing.params ?? {}) as Record<string, unknown>
       const newParams = (data.params ?? {}) as Record<string, unknown>
       const existingAnims = (existingParams['animations'] ?? []) as {animName: string; [key: string]: unknown}[]
@@ -3923,29 +3923,29 @@ function upsertPointAction(
     } else if (type === 'set_active') {
       (existing as unknown as { visible?: boolean }).visible = (data as unknown as { visible?: boolean }).visible ?? true
     } else if (type === 'camera_cut') {
-      // 相机切换：合并 x, y, zoom 参数
+      // Camera cut: merge x, y, zoom params
       existing.params = { ...(existing.params ?? {}), ...(data.params ?? {}) }
     } else if (type === 'set_audio') {
-      // 音频触发：合并 action, volume, loop 参数
+      // Audio trigger: merge action, volume, loop params
       existing.params = { ...(existing.params ?? {}), ...(data.params ?? {}) }
     } else if (type === 'set_screen_effect') {
-      // 画面特效：合并特效参数
+      // Screen effect: merge effect params
       existing.params = { ...(existing.params ?? {}), ...(data.params ?? {}) }
     } else if (type === 'set_light') {
-      // 光源：合并光源参数
+      // Light: merge light params
       existing.params = { ...(existing.params ?? {}), ...(data.params ?? {}) }
     } else if (type === 'set_text') {
-      // 文本：合并文本属性参数
+      // Text: merge text property params
       existing.params = { ...(existing.params ?? {}), ...(data.params ?? {}) }
     } else if (type === 'set_text_reveal') {
-      // 文本显现：合并播放/停止参数
+      // Text reveal: merge play/stop params
       existing.params = { ...(existing.params ?? {}), ...(data.params ?? {}) }
     }
     
-    // 选中更新的动作
+    // Select updated action
     selectedAction.value = block.actions[existingIndex]!
   } else {
-    // 创建新动作
+    // Create new action
     const actionId = `action_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
     const newAction = {
       id: actionId,
@@ -3957,25 +3957,25 @@ function upsertPointAction(
     } as unknown as Action
     appendActionWithSlotOrder(block.actions, newAction)
     
-    // 选中新创建的动作
+    // Select newly created action
     selectedAction.value = newAction
   }
   
-  // 保存到 store
+  // Save to store
   const episodeId = route.params['id'] as string
   episodeStore.updateBlockInScene(episodeId, props.sceneId, props.blockId, {
     actions: block.actions
   })
   
-  // v8.4: 使用统一刷新函数
+  // v8.4: Use unified refresh function
   void refreshGhostRealStates()
   
   markLocalChange()
 }
 
 /**
- * v9.4: 创建或更新 tween_transform Duration Action
- * 用于从属性面板创建补间动作（如透明度渐变）
+ * v9.4: Create or update tween_transform Duration Action
+ * Used to create tween action from properties panel (e.g. opacity gradient)
  */
 function upsertDurationAction(
   target: string,
@@ -3995,19 +3995,19 @@ function upsertDurationAction(
     block.actions = []
   }
   
-  // 查找当前槽位是否已有针对该目标的同类型动作
+  // Check if current slot already has same type action for this target
   const existingIndex = block.actions.findIndex((a: Action) => {
     if (a.type !== actionType || a.target !== target) return false
     return isActionActiveAtSlot(a, slotIndex)
   })
   
   if (existingIndex !== -1) {
-    // 合并到现有动作
+    // Merge into existing action
     const existing = block.actions[existingIndex]!
     existing.params = { ...(existing.params ?? {}), ...params }
     selectedAction.value = existing
   } else {
-    // 创建新的补间动作
+    // Create new tween action
     const actionId = `action_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
     const newAction = {
       id: actionId,
@@ -4023,27 +4023,27 @@ function upsertDurationAction(
     selectedAction.value = newAction
   }
   
-  // 保存到 store
+  // Save to store
   const episodeId = route.params['id'] as string
   episodeStore.updateBlockInScene(episodeId, props.sceneId, props.blockId, {
     actions: block.actions
   })
   
-  // 刷新状态
+  // Refresh state
   void refreshGhostRealStates()
   markLocalChange()
 }
 
 /**
- * 插入或更新相机持续动作 (camera_move, camera_shake)
+ * Insert or update camera duration action (camera_move, camera_shake)
  */
 // function upsertCameraDurationAction... (removed)
 
-// v8.6: handleDeleteObject 已移除（左侧边栏删除，Action模式下不允许删除对象）
+// v8.6: handleDeleteObject removed (left sidebar removed, deleting objects forbidden in Action mode)
 
 function handleSaveAction() {
   if (!props.sceneId || !props.blockId || !props.episode) {
-    console.error('[ActionEditor] 保存需要 sceneId 和 blockId')
+    console.error('[ActionEditor] Saving requires sceneId and blockId')
     return
   }
 
@@ -4065,15 +4065,15 @@ function handleSaveAction() {
   projectStore.saveProject().then(() => {
     hasLocalChanges.value = false
 
-    saveToastMessage.value = '保存成功'
+    saveToastMessage.value = 'Saved successfully'
     saveToastType.value = 'success'
     showSaveToast.value = true
     setTimeout(() => {
       showSaveToast.value = false
     }, 2000)
   }).catch((err: unknown) => {
-    console.error('[ActionEditor] 保存失败:', err)
-    saveToastMessage.value = '保存失败，请重试'
+    console.error('[ActionEditor] Save failed:', err)
+    saveToastMessage.value = 'Save failed, please try again'
     saveToastType.value = 'error'
     showSaveToast.value = true
     setTimeout(() => {
@@ -4094,20 +4094,20 @@ function handleReturn() {
   }
 }
 
-// 保存并返回
+// Save and return
 async function handleSaveAndExit() {
   showSaveConfirmDialog.value = false
   await handleSaveActionAsync()
   emit('exitSceneEdit')
 }
 
-// 放弃修改并返回
+// Discard modifications and return
 function handleDiscardAndExit() {
   showSaveConfirmDialog.value = false
   emit('exitSceneEdit')
 }
 
-// v8.3: 打开文本编辑对话框
+// v8.3: Open text editing dialog
 function openTextEditDialog() {
   const block = currentBlock.value
   if (block && (block.type === 'dialogue' || block.type === 'narration')) {
@@ -4116,29 +4116,29 @@ function openTextEditDialog() {
   }
 }
 
-// v8.3: 保存编辑的文本
+// v8.3: Save edited text
 function saveEditedText() {
 
   const block = currentBlock.value
 
   if (block && props.episode && props.sceneId && props.blockId) {
-    // v9.3: 使用 props.episode.id 代替 route.params['id']
+    // v9.3: Use props.episode.id instead of route.params['id']
     const episodeId = props.episode.id
     const actions = block.actions ?? []
 
-    // ① 保存旧 slots 快照（在更新文本之前）
+    // ① Save old slots snapshot (before updating text)
     const oldSlots = parseBlockToSlots(block)
 
-    // ② 更新文本
+    // ② Update text
     episodeStore.updateBlockInScene(episodeId, props.sceneId, props.blockId, {
       text: editingText.value
     })
     
-    // ③ 解析新 slots
+    // ③ Parse new slots
     const newSlots = parseBlockToSlots({ ...block, text: editingText.value } as ScriptBlock)
     const maxSlotIndex = Math.max(0, newSlots.length - 1)
 
-    // ④ 检测 slot 变化并执行精确迁移
+    // ④ Detect slot changes and execute precise migration
     let actionsModified = false
     const change = detectSlotTextChanges(oldSlots, newSlots)
 
@@ -4150,13 +4150,13 @@ function saveEditedText() {
       actionsModified = true
     }
 
-    // ⑤ 兜底：Cap and Clamp（处理 complex 变化或任何遗漏的越界情况）
+    // ⑤ Fallback: Cap and Clamp (handles complex changes or any missed out-of-bound cases)
     for (const action of actions) {
       if (action.slotIndex > maxSlotIndex) {
         action.slotIndex = maxSlotIndex
         actionsModified = true
       }
-      // Duration slotSpan 越界修正
+      // Duration slotSpan out-of-bounds correction
       if (action.category === 'duration') {
         const dAction = action as BaseDurationAction
         const maxSpan = maxSlotIndex - action.slotIndex + 1
@@ -4167,14 +4167,14 @@ function saveEditedText() {
       }
     }
     
-    // ⑥ 如果有 Action 被修正，更新 store
+    // ⑥ If any Action was corrected, update store
     if (actionsModified) {
       episodeStore.updateBlockInScene(episodeId, props.sceneId, props.blockId, {
         actions: actions
       })
     }
     
-    // ⑦ 检查并修正 currentSlotIndex
+    // ⑦ Check and correct currentSlotIndex
     if (currentSlotIndex.value > maxSlotIndex) {
       currentSlotIndex.value = maxSlotIndex
     }
@@ -4182,15 +4182,15 @@ function saveEditedText() {
     showTextEditDialog.value = false
     markLocalChange()
     
-    // v9.2: 文本修改后需要重新解析 slots 并刷新动作编辑器
+    // v9.2: After text modification, reparse slots and refresh action editor
     void refreshGhostRealStates()
   }
 }
 
-// 异步保存函数
+// Async save function
 async function handleSaveActionAsync() {
   if (!props.sceneId || !props.blockId || !props.episode) {
-    console.error('[ActionEditor] 保存需要 sceneId 和 blockId')
+    console.error('[ActionEditor] Saving requires sceneId and blockId')
     return
   }
 
@@ -4214,7 +4214,7 @@ async function handleSaveActionAsync() {
     hasLocalChanges.value = false
 
   } catch (error) {
-    console.error('[ActionEditor] 保存失败:', error)
+    console.error('[ActionEditor] Save failed:', error)
   }
 }
 
@@ -4224,12 +4224,12 @@ function handleSelectAction(action: Action | null) {
   if (action) {
     currentSlotIndex.value = action.slotIndex
     
-    // v6.8: 选中动作时，同时选中对应的场景对象
+    // v6.8: When action selected, simultaneously select corresponding scene object
     const targetObjectId = findObjectIdByTarget(action.target)
     if (targetObjectId) {
       sceneObjectStore.selectObject(targetObjectId)
       
-      // 如果是相机动作，同步拖拽状态到渲染器
+      // If camera action, synchronize drag state to renderer
       if (action.target === 'camera' && renderer.value) {
         const canDrag = action.type === 'camera_cut' || action.type === 'camera_move'
         renderer.value.setSelectedActionType(canDrag ? action.type : null)
@@ -4239,17 +4239,17 @@ function handleSelectAction(action: Action | null) {
 }
 
 /**
- * v7.0: 根据动作的 target 查找对应的场景对象 ID
- * target 现在是实例ID，可能是: 'camera' 或对象 ID
+ * v7.0: Find corresponding scene object ID by action target
+ * target is now instance ID, may be: 'camera' or object ID
  */
 function findObjectIdByTarget(target: string): string | null {
-  // 1. 相机
+  // 1. Camera
   if (target === 'camera') {
     const cameraObj = sceneObjectStore.objects.find(obj => obj.type === 'camera')
     return cameraObj?.id ?? null
   }
   
-  // 2. v7.0: 直接通过实例ID查找
+  // 2. v7.0: Look up directly by instance ID
   const directObj = sceneObjectStore.getObject(target)
   if (directObj) {
     return directObj.id
@@ -4263,7 +4263,7 @@ function findObjectIdByTarget(target: string): string | null {
   return null
 }
 
-// ActionSequencer 事件处理
+// ActionSequencer event handling
 function handleSlotIndexChange(index: number) {
   currentSlotIndex.value = index
   selectedAction.value = null
@@ -4297,7 +4297,7 @@ function handleUpdateActionFromSequencer(action: Action, updates: Partial<Action
       const candidate = { ...targetAction, ...nextUpdates } as Action
       const conflict = findCameraConflict(block.actions, candidate, { excludeId: targetAction.id })
       if (conflict) {
-        saveToastMessage.value = '相机动作冲突：该时间段已有其他相机动作'
+        saveToastMessage.value = 'Camera action conflict: Another camera action already exists in this time range'
         saveToastType.value = 'error'
         showSaveToast.value = true
         setTimeout(() => {
@@ -4322,7 +4322,7 @@ function handleUpdateActionFromSequencer(action: Action, updates: Partial<Action
     actions: block.actions
   })
   
-  // Action Mode：更新场景图上下文并重新渲染
+  // Action Mode: Update scene graph context and re-render
   const sceneGraph3 = renderer.value?.getSceneGraph()
   if (renderer.value && sceneGraph3) {
     void refreshActionContextAndRender(scene, block)
@@ -4438,7 +4438,7 @@ function handleResetActionOrderInSlot(slotIndex: number) {
 
 
 /**
- * P2: 统一删除对象（支持多 ID）— PIXI 摘离 + Store/Episode 移除 + Actions 过滤 + 持久化 + 重渲染
+ * P2: Unified object deletion (supports multiple IDs) — PIXI detach + Store/Episode removal + Actions filter + persistence + re-render
  */
 function deleteCompositeObjects(idsToDelete: string[], compositeId?: string): void {
   const episode = props.episode
@@ -4448,7 +4448,7 @@ function deleteCompositeObjects(idsToDelete: string[], compositeId?: string): vo
   const block = scene.script.find((b: ScriptBlock) => b.id === props.blockId)
   if (!block) return
 
-  // 1. PIXI 层级清理：composite 容器的子容器需先摘离
+  // 1. PIXI hierarchy cleanup: child containers of composite container must be detached first
   const sceneGraphCleanup = renderer.value?.getSceneGraph()
   if (sceneGraphCleanup && compositeId) {
     const compositeContainer = sceneGraphCleanup.getContainer(compositeId)
@@ -4457,17 +4457,17 @@ function deleteCompositeObjects(idsToDelete: string[], compositeId?: string): vo
     }
   }
 
-  // 2. 删除 Store + Episode 持久数据
+  // 2. Delete Store + Episode persistent data
   const allDeletedIds = new Set(idsToDelete)
   for (const id of idsToDelete) {
     sceneObjectStore.removeSetupObject(id)
   }
-  // v24: removeSetupObject 内部自动整体覆盖到 episode（含 onBeforeDelete 级联修改 + renderChain）
+  // v24: removeSetupObject automatically overwrites episode internally (including onBeforeDelete cascade modifications + renderChain)
 
-  // 3. 过滤 actions（目标对象）
+  // 3. Filter actions (target object)
   block.actions = (block.actions ?? []).filter((a: Action) => !allDeletedIds.has(a.target))
 
-  // 4. 持久化 + 重渲染
+  // 4. Persistence + re-render
   const episodeId = route.params['id'] as string
   episodeStore.updateBlockInScene(episodeId, props.sceneId, props.blockId, {
     actions: block.actions
@@ -4492,17 +4492,17 @@ function handleDeleteActionFromSequencer(action: Action) {
   const index = block.actions.findIndex((a: Action) => a.id === action.id)
   if (index === -1) return
   
-  // v9.3: 检查是否为出生 action，如果是则级联删除
+  // v9.3: Check if spawn action, cascade delete if so
   if (isBirthAction(action)) {
     const targetId = action.target
     
-    // 双层架构：从持久层检查被删除的对象是否为 composite
+    // Dual-layer architecture: Check from persistence layer if deleted object is composite
     const setupObj = sceneObjectStore.getSetupObject(targetId)
     const isComposite = setupObj?.type === 'composite'
     
-    // P2: composite 级联处理 — 必须在过滤 actions 之前收集信息
+    // P2: composite cascade handling — must collect info before filtering actions
     if (isComposite) {
-      // 递归收集所有后代 ID
+      // Recursively collect all descendant IDs
       function collectAllDescendantIds(parentId: string): string[] {
         const parentSetup = sceneObjectStore.getSetupObject(parentId)
         let directChildIds: string[] = []
@@ -4523,31 +4523,31 @@ function handleDeleteActionFromSequencer(action: Action) {
       if (affectedChildIds.length > 0) {
         const compositeMode = (setupObj as unknown as { compositeMode?: string }).compositeMode ?? 'entity'
         if (compositeMode === 'entity') {
-          // entity: 直接级联删除（不弹三选项对话框）
+          // entity: Direct cascade deletion (no three-option dialog prompt)
           deleteCompositeObjects([targetId, ...affectedChildIds], targetId)
-          console.log(`[ActionEditor] 级联删除 entity composite ${targetId} + ${affectedChildIds.length} 个后代`)
+          console.log(`[ActionEditor] Cascade deleting entity composite ${targetId} + ${affectedChildIds.length} descendants`)
         } else {
-          // union: 仅删除组合（子对象由 onBeforeDelete 自动冒泡）
+          // union: Delete composite only (child objects bubble automatically via onBeforeDelete)
           deleteCompositeObjects([targetId], targetId)
-          console.log(`[ActionEditor] 仅删除 union composite ${targetId}，解绑 ${affectedChildIds.length} 个子对象`)
+          console.log(`[ActionEditor] Deleting only union composite ${targetId}, unbinding ${affectedChildIds.length} child objects`)
         }
       } else {
-        // 无子对象：直接删除
+        // No child objects: delete directly
         deleteCompositeObjects([targetId], targetId)
-        console.log(`[ActionEditor] 删除 composite ${targetId}（无子对象）`)
+        console.log(`[ActionEditor] Deleting composite ${targetId} (no children)`)
       }
     } else {
-      // 非 composite：直接删除该对象
+      // Non-composite: delete object directly
       deleteCompositeObjects([targetId])
-      console.log(`[ActionEditor] 删除动态对象 ${targetId} 及其所有 action`)
+      console.log(`[ActionEditor] Deleting dynamic object ${targetId} and all its actions`)
     }
-    // deleteCompositeObjects 已处理持久化 + 重渲染，清理选中状态后返回
+    // deleteCompositeObjects already handled persistence + re-render, clean selection state and return
     if (selectedAction.value?.id === action.id) {
       selectedAction.value = null
     }
     return
   } else {
-    // 普通 action：只删除该 action
+    // Normal action: delete action only
     block.actions.splice(index, 1)
   }
   
@@ -4560,7 +4560,7 @@ function handleDeleteActionFromSequencer(action: Action) {
     actions: block.actions
   })
   
-  // Action Mode：更新场景图上下文并重新渲染
+  // Action Mode: Update scene graph context and re-render
   const sceneGraph4 = renderer.value?.getSceneGraph()
   if (renderer.value && sceneGraph4) {
     void refreshActionContextAndRender(scene, block)
@@ -4620,7 +4620,7 @@ function handleAddActionFromSequencer(type: string, target: string, slotIndex: n
   
   let newAction: Action
   if (type === 'set_transform') {
-    // 视觉属性动作（替代原来的 set_active）
+    // Visual property action (replaces original set_active)
     newAction = {
       id: actionId,
       type: 'set_transform',
@@ -4630,17 +4630,17 @@ function handleAddActionFromSequencer(type: string, target: string, slotIndex: n
       params: { visible: true }
     } as Action
   } else if (type === 'camera_cut') {
-    // 相机切换（瞬时动作）
+    // Camera cut (instant action)
     newAction = {
       id: actionId,
       type: 'camera_cut',
       category: 'point',
       target: 'camera',
       slotIndex,
-      params: { x: CANVAS_CENTER_X, y: CANVAS_CENTER_Y, zoom: 1 }  // 默认画布中心
+      params: { x: CANVAS_CENTER_X, y: CANVAS_CENTER_Y, zoom: 1 }  // Default canvas center
     } as Action
   } else if (type === 'camera_move') {
-    // 运镜（持续动作）
+    // Camera move (duration action)
     newAction = {
       id: actionId,
       type: 'camera_move',
@@ -4652,7 +4652,7 @@ function handleAddActionFromSequencer(type: string, target: string, slotIndex: n
       params: { x: CANVAS_CENTER_X, y: CANVAS_CENTER_Y, zoom: 1 }
     } as Action
   } else if (type === 'camera_shake') {
-    // 震动（持续动作）
+    // Camera shake (duration action)
     newAction = {
       id: actionId,
       type: 'camera_shake',
@@ -4664,7 +4664,7 @@ function handleAddActionFromSequencer(type: string, target: string, slotIndex: n
       params: { intensity: 10, decay: true, frequency: 30 }
     } as Action
   } else if (type === 'set_material') {
-    // v16: 切换元件素材 / v18: 切换表情引用
+    // v16: Switch symbol asset / v18: Switch expression reference
     const symbolObj = sceneObjectStore.getObject(target)
     let currentMaterialId = ''
     if (symbolObj?.type === 'symbol') {
@@ -4696,18 +4696,18 @@ function handleAddActionFromSequencer(type: string, target: string, slotIndex: n
 }
 
 /* 
- * v7.17: 重构：移除播放控制函数
- * 播放/暂停逻辑已完全移至预览对话框
+ * v7.17: Refactor: Remove playback control functions
+ * Play/pause logic completely moved to preview dialog
 function handlePlay() { ... }
 function handlePause() { ... }
 function handleStopPlayback() { ... }
 */
 
-// v8.6: handleHoverAction 已移除（左侧边栏删除）
+// v8.6: handleHoverAction removed (left sidebar removed)
 
-// v8.6: handleRequestDeleteActionConfirm 已移除（ActionListPanel 删除，但保留在 ActionSequencer 中有别的删除逻辑）
+// v8.6: handleRequestDeleteActionConfirm removed (ActionListPanel removed, but other deletion logic kept in ActionSequencer)
 
-// v9.3: 处理视觉属性变更（创建或更新 set_visual action）
+// v9.3: Handle visual property change (create or update set_visual action)
 function handleVisualActionUpdate(params: { visible?: boolean; flipX?: boolean; zIndex?: number; receiveLighting?: boolean; castShadow?: boolean }) {
   if (!props.sceneId || !props.blockId || !props.episode) return
   
@@ -4724,7 +4724,7 @@ function handleVisualActionUpdate(params: { visible?: boolean; flipX?: boolean; 
     block.actions = []
   }
   
-  // 查找当前槽位是否已有该对象的 set_visual action
+  // Check if current slot already has set_visual action for this object
   const existingAction = block.actions.find((a: Action) => 
     a.type === 'set_visual' && 
     a.target === targetObject.id && 
@@ -4732,16 +4732,16 @@ function handleVisualActionUpdate(params: { visible?: boolean; flipX?: boolean; 
   )
   
   if (existingAction) {
-    // 更新已有的 set_visual action
+    // Update existing set_visual action
     const visualAction = existingAction as SetVisualAction
     visualAction.params = { ...visualAction.params, ...params }
     
-    // 选中这个 action
+    // Select this action
     selectedAction.value = visualAction
     
-    console.log(`[ActionEditor] 更新 set_visual action: ${visualAction.id}`, params)
+    console.log(`[ActionEditor] Update set_visual action: ${visualAction.id}`, params)
   } else {
-    // 创建新的 set_visual action
+    // Create new set_visual action
     const actionId = generateId('action')
     const newAction: SetVisualAction = {
       id: actionId,
@@ -4754,19 +4754,19 @@ function handleVisualActionUpdate(params: { visible?: boolean; flipX?: boolean; 
     
     appendActionWithSlotOrder(block.actions, newAction)
     
-    // 自动选中新创建的 action
+    // Auto-select newly created action
     selectedAction.value = newAction
     
-    console.log(`[ActionEditor] 创建 set_visual action: ${actionId}`, params)
+    console.log(`[ActionEditor] Create set_visual action: ${actionId}`, params)
   }
   
-  // 更新 store
+  // Update store
   const episodeId = route.params['id'] as string
   episodeStore.updateBlockInScene(episodeId, props.sceneId, props.blockId, {
     actions: block.actions
   })
   
-  // 刷新场景图上下文
+  // Refresh scene graph context
   const sceneGraph = renderer.value?.getSceneGraph()
   if (renderer.value && sceneGraph) {
     void refreshActionContextAndRender(scene, block)
@@ -4775,12 +4775,12 @@ function handleVisualActionUpdate(params: { visible?: boolean; flipX?: boolean; 
   markLocalChange()
 }
 
-// v16: 处理元件素材切换（创建或更新 set_material Action）
+// v16: Handle symbol asset switch (create or update set_material Action)
 function handleMaterialActionUpdate(materialId: string) {
   if (!props.sceneId || !props.blockId || !props.episode) return
   
   const targetObject = sceneObjectStore.getSelectedObject()
-  // v18: 同时支持 symbol 和 expression 类型
+  // v18: Supports both symbol and expression types
   if (!targetObject || (targetObject.type !== 'symbol' && targetObject.type !== 'expression')) return
   
   const scene = props.episode.scenes.find((s: SceneContainer) => s.id === props.sceneId)
@@ -4793,7 +4793,7 @@ function handleMaterialActionUpdate(materialId: string) {
     block.actions = []
   }
   
-  // 查找当前 Slot 是否已有该对象的 set_material Action
+  // Check if current Slot already has set_material Action for this object
   const existingAction = block.actions.find((a: Action) => 
     a.type === 'set_material' && 
     a.target === targetObject.id && 
@@ -4818,13 +4818,13 @@ function handleMaterialActionUpdate(materialId: string) {
     selectedAction.value = newAction
   }
   
-  // 更新 store
+  // Update store
   const episodeId = route.params['id'] as string
   episodeStore.updateBlockInScene(episodeId, props.sceneId, props.blockId, {
     actions: block.actions
   })
   
-  // 刷新场景图上下文
+  // Refresh scene graph context
   const sceneGraph = renderer.value?.getSceneGraph()
   if (renderer.value && sceneGraph) {
     void refreshActionContextAndRender(scene, block)
@@ -4833,22 +4833,22 @@ function handleMaterialActionUpdate(materialId: string) {
   markLocalChange()
 }
 
-// v16: 处理元件素材列表保存（同步到 Setup 持久层）
+// v16: Handle symbol asset list save (sync to Setup persistent layer)
 function handleMaterialSave(materials: SymbolMaterial[], _currentMaterialId: string | undefined) {
   if (!props.sceneId || !props.episode) return
   
   const targetObject = sceneObjectStore.getSelectedObject()
   if (targetObject?.type !== 'symbol') return
   
-  // v24: updateSetupObject 自动同步到 episode
+  // v24: updateSetupObject automatically synced to episode
   sceneObjectStore.updateSetupObject(targetObject.id, { materials } as Partial<SceneObject>)
   
   markLocalChange()
 }
 
-// v24: 处理动画更新（修复 bug：之前只写了 episode 未写 store）
+// v24: Handle animation update (fix bug: previously only wrote episode, not store)
 function handleAnimationsUpdated(objectId: string, animations: Record<string, import('@/types/animation').AnimationDefinition>) {
-  // v24: updateSetupObject 同时写入 setupState + runtimeState + episode
+  // v24: updateSetupObject writes setupState + runtimeState + episode simultaneously
   sceneObjectStore.updateSetupObject(objectId, { animations } as Partial<SceneObject>)
   markLocalChange()
 }
@@ -4874,21 +4874,21 @@ async function handleActionInspectorUpdate(updates: Partial<Action>) {
     if (conflict) {
       console.warn('[ActionEditor] Camera action conflict detected, update ignored')
       
-      saveToastMessage.value = '相机动作冲突：该时间段已有其他相机动作'
+      saveToastMessage.value = 'Camera action conflict: Another camera action already exists in this time range'
       saveToastType.value = 'error'
       showSaveToast.value = true
       setTimeout(() => {
         showSaveToast.value = false
       }, 3000)
       
-      // 强制刷新 Inspector 以回滚值 (通过重新赋值 selectedAction)
+      // Force refresh Inspector to rollback value (via reassigning selectedAction)
       selectedAction.value = { ...selectedAction.value } as Action
       return
     }
   }
 
-  // v6.12: 通用持续动作互斥性检查 (针对非相机对象，如 tween_transform)
-  // 确保 tween_transform 等持续动作不会重叠
+  // v6.12: Generic duration action mutual exclusion check (for non-camera objects, like tween_transform)
+  // Ensure duration actions like tween_transform do not overlap
   if ((updates.slotIndex !== undefined || (updates as { slotSpan?: number }).slotSpan !== undefined) && 
       selectedAction.value?.target !== 'camera' &&
       selectedAction.value.category === 'duration') {
@@ -4914,7 +4914,7 @@ async function handleActionInspectorUpdate(updates: Partial<Action>) {
       if (hasConflict) {
           console.warn('[ActionEditor] Duration action overlap detected, update ignored')
           
-          saveToastMessage.value = '动作冲突：该对象在此时段已有其他持续动作'
+          saveToastMessage.value = 'Action conflict: This object already has another duration action in this time range'
           saveToastType.value = 'error'
           showSaveToast.value = true
           setTimeout(() => {
@@ -4944,8 +4944,8 @@ async function handleActionInspectorUpdate(updates: Partial<Action>) {
     actions: block.actions
   })
   
-  // Action Mode：更新场景图上下文并重新渲染
-  // 必须先 await setActionModeContext（清除状态缓存），再 renderObjects
+  // Action Mode: Update scene graph context and re-render
+  // Must await setActionModeContext first (clearing state cache), then renderObjects
   const sceneGraph6 = renderer.value?.getSceneGraph()
   if (renderer.value && sceneGraph6) {
     await refreshActionContextAndRender(scene, block)
@@ -4959,12 +4959,12 @@ function handleActionInspectorDelete() {
   handleDeleteActionFromSequencer(selectedAction.value)
 }
 
-// v7.17: 重构：从 handleTimeUpdate 变更为 handleSceneUpdateBySlot
-// 移除 time 参数，完全依赖 currentSlotIndex 驱动
+// v7.17: Refactor: Changed from handleTimeUpdate to handleSceneUpdateBySlot
+// Remove time parameter, driven entirely by currentSlotIndex
 function handleSceneUpdateBySlot() {
   if (!renderer.value || !currentBlock.value) return
   
-  // 更新全局 currentTime (仅用于 UI 显示总时长等静态信息)
+  // Update global currentTime (used only for UI display of total duration etc)
   const slots = currentBlockSlots.value
   // const currentSlot = slots.find(s => s.index === currentSlotIndex.value)
   // if (currentSlot) {
@@ -4983,37 +4983,37 @@ function handleSceneUpdateBySlot() {
   const prevContext = sceneGraph.getActionModePrevContext?.() ?? calculatePrevContext(scene, props.blockId)
   
   if (renderer.value.updateSceneStateBySlot) {
-    // v7.17: 使用纯 Slot 驱动模式
-    // 注意：ActionSequencer 可能会提供 currentSlotIndex
+    // v7.17: Use pure Slot-driven mode
+    // Note: ActionSequencer might provide currentSlotIndex
     
-    // v8.3: 使用当前选中的 Slot 索引进行渲染
-    // 根据 Ghost Mode PRD 规范：
-    // - 情况 C（无动作）：Real 显示 Slot S 之前的累积状态 (State at Slot Start)
-    // 因此必须使用 currentSlotIndex 而非 finalSlotIndex
+    // v8.3: Use currently selected Slot index for rendering
+    // According to Ghost Mode PRD specification:
+    // - Case C (no action): Real displays cumulative state before Slot S (State at Slot Start)
+    // therefore currentSlotIndex must be used instead of finalSlotIndex
     
-    // 驱动渲染器更新状态 (基于 Slot)
+    // Drive renderer to update state (Slot-based)
     renderer.value.updateSceneStateBySlot(
-      currentSlotIndex.value, // v8.3: 使用当前选中的 Slot 索引
+      currentSlotIndex.value, // v8.3: Use currently selected Slot index
       block.actions ?? [],
       prevContext,
       slots
     )
     
-    // v7.17: 日志逻辑
-    // 为了保持调试信息的完整性，我们暂时保留 logTargetStates
-    // 计算 Target State 仅用于日志
-    // 注意：renderer 已经在内部计算并应用了，这里只是为了 logging
+    // v7.17: Logging logic
+    // To maintain completeness of debug info, temporarily retain logTargetStates
+    // Compute Target State for logging only
+    // Note: renderer already computed and applied internally, this is for logging only
     
     // const slots = currentBlockSlots.value // defined above
-    // 传递 0 作为 duration，因为 BySlot 函数不使用 duration
+    // Pass 0 as duration, since BySlot function does not use duration
     
     const targetStates = new Map<string, ActionRuntimeState>()
-    // 1. 计算对象 Target States
-    // v7.18: 日志改为打印 Block 最终状态 (Final State)
+    // 1. Compute object Target States
+    // v7.18: Change log to print Block Final State
 
     for (const obj of prevContext.objects) {
       const targetId = obj.id
-      // Phase 4e: obj 已是 SceneObject，直接传入
+      // Phase 4e: obj is already SceneObject, pass directly
       const objectActions = (block.actions ?? []).filter((a: Action) => a.target === targetId)
       
       const targetState = evaluateObjectStateBySlot(
@@ -5032,7 +5032,7 @@ function handleSceneUpdateBySlot() {
       if (targetState) targetStates.set(targetId, targetState)
     }
     
-    // 2. 计算相机 Target State
+    // 2. Compute camera Target State
     const visualCenters = new Map<string, { x: number, y: number }>()
     for (const obj of prevContext.objects) {
       if (targetStates.has(obj.id)) {
@@ -5049,7 +5049,7 @@ function handleSceneUpdateBySlot() {
         shakeOffsetX: 0, shakeOffsetY: 0
     }
     
-    // 同样使用 BySlot 函数计算相机状态
+    // Compute camera state using BySlot function as well
     const cameraTargetState = evaluateCameraStateBySlot(
         startCameraState, 
         cameraActions, 
@@ -5062,7 +5062,7 @@ function handleSceneUpdateBySlot() {
     if (cameraTargetState) targetStates.set('camera', cameraTargetState as unknown as ActionRuntimeState)
     
   } else if (renderer.value.updateTime) {
-    // 兼容旧模式 (Fallback - 虽然现在不应该走到这里)
+    // Compatibility old mode (Fallback - should not reach here now)
     let blockDuration = 0
     if (block.type === 'dialogue' || block.type === 'narration') {
         blockDuration = block.ttsConfig?.duration ?? 0
@@ -5070,7 +5070,7 @@ function handleSceneUpdateBySlot() {
         blockDuration = (block as { duration: number }).duration ?? 0
     }
 
-    // 尝试用 Slot 时间模拟 updateTime
+    // Attempt to simulate updateTime with Slot time
     const slots = currentBlockSlots.value
     const currentSlot = slots.find(s => s.index === currentSlotIndex.value)
     const time = currentSlot ? currentSlot.startTime : 0
@@ -5092,7 +5092,7 @@ function handleZIndexChanged() {
 }
 
 function handleInitialStateUpdate(_pose?: string, _expression?: string) {
-  // Action模式下不更新初始状态
+  // Do not update initial state in Action mode
 }
 
 function handleMoveUp() {
@@ -5100,13 +5100,13 @@ function handleMoveUp() {
   if (!selected) return
   
   const newZIndex = selected.zIndex + 1
-  // v7.20: Action Mode 禁止修改 Store
+  // v7.20: Modifying Store forbidden in Action Mode
   // sceneObjectStore.updateObject(selected.id, { zIndex: newZIndex })
   
-  // 在 Action Mode 下，将 z-index 变化合并到瞬时动作中
+  // In Action Mode, merge z-index changes into instant action
   const targetAlias = getTargetAliasFromObject(selected)
   if (targetAlias) {
-    // 所有对象统一使用 set_transform
+    // All objects uniformly use set_transform
     const actionType = 'set_transform' as const
     upsertPointAction(actionType, targetAlias, currentSlotIndex.value, { params: { zIndex: newZIndex } })
   }
@@ -5119,13 +5119,13 @@ function handleMoveDown() {
   if (!selected) return
   
   const newZIndex = Math.max(-10, selected.zIndex - 1)
-  // v7.20: Action Mode 禁止修改 Store
+  // v7.20: Modifying Store forbidden in Action Mode
   // sceneObjectStore.updateObject(selected.id, { zIndex: newZIndex })
   
-  // 在 Action Mode 下，将 z-index 变化合并到瞬时动作中
+  // In Action Mode, merge z-index changes into instant action
   const targetAlias = getTargetAliasFromObject(selected)
   if (targetAlias) {
-    // 所有对象统一使用 set_transform
+    // All objects uniformly use set_transform
     const actionType = 'set_transform' as const
     upsertPointAction(actionType, targetAlias, currentSlotIndex.value, { params: { zIndex: newZIndex } })
   }
@@ -5153,7 +5153,7 @@ function handleTriggerAnim(payload: { action: 'play'|'stop', animName: string, l
     animItem.timingMode = payload.timingMode
   }
 
-  // v11.88: 使用 animations 数组格式
+  // v11.88: Use animations array format
   const params: SetAnimAction['params'] = {
     animations: [animItem],
     ...(payload.speed !== undefined ? { speed: payload.speed } : {})
@@ -5189,32 +5189,32 @@ function toggleFullscreen() {
       container.requestFullscreen().then(() => {
         isFullscreen.value = true
       }).catch((err) => {
-        console.error('[ActionEditor] 进入全屏失败:', err)
+        console.error('[ActionEditor] Failed to enter fullscreen:', err)
       })
     }
   } else {
     document.exitFullscreen().then(() => {
       isFullscreen.value = false
     }).catch((err) => {
-      console.error('[ActionEditor] 退出全屏失败:', err)
+      console.error('[ActionEditor] Failed to exit fullscreen:', err)
     })
   }
 }
 
-// 处理底部动作编辑器折叠/展开状态变化
+// Handle bottom action editor collapse/expand state change
 function handleSequencerCollapseChange(_collapsed: boolean) {
-  // 等待 DOM 更新和 CSS 过渡动画完成后，重新计算视口尺寸
+  // Wait for DOM update and CSS transition animation to complete, then recompute viewport size
   setTimeout(() => {
     if (renderer.value) {
       renderer.value.updateTransformParams()
-      // v7.23: 使用 handleSceneUpdateBySlot() 代替 renderObjects()
-      // 确保 Action Mode 状态正确重新应用
+      // v7.23: Use handleSceneUpdateBySlot() instead of renderObjects()
+      // Ensure Action Mode state correctly reapplied
       handleSceneUpdateBySlot()
     }
   }, 300)
 }
 
-// v8.6: startResizeLeftPanel 已移除（左侧边栏删除）
+// v8.6: startResizeLeftPanel removed (left sidebar removed)
 
 function startResizeRightPanel(event: MouseEvent) {
   isResizingRightPanel = true
@@ -5234,7 +5234,7 @@ function startResizeRightPanel(event: MouseEvent) {
     
     if (renderer.value) {
       renderer.value.updateTransformParams()
-      // v7.23: 使用 handleSceneUpdateBySlot() 确保 Action Mode 状态
+      // v7.23: Use handleSceneUpdateBySlot() to ensure Action Mode state
       handleSceneUpdateBySlot()
     }
   }
@@ -5243,7 +5243,7 @@ function startResizeRightPanel(event: MouseEvent) {
   document.addEventListener('mouseup', handleMouseUp)
 }
 
-// 组件销毁时重置 Action Mode 标记，避免泄漏到 Setup Mode
+// Reset Action Mode flag on component unmount to prevent leaking into Setup Mode
 onBeforeUnmount(() => {
   sceneObjectStore.setActionMode(false)
 })
@@ -5252,7 +5252,7 @@ onBeforeUnmount(() => {
 <style scoped>
 .action-editor {
   display: flex;
-  height: 100%;  /* v6.10: Overlay 模式下占满父容器 */
+  height: 100%;  /* v6.10: Fill parent container in overlay mode */
   background: #f9fafb;
 }
 
@@ -5528,7 +5528,7 @@ onBeforeUnmount(() => {
   overflow-y: auto;
 }
 
-/* v11.0: Tab 切换样式 */
+/* v11.0: Tab switch styles */
 .panel-tabs {
   display: flex;
   gap: 4px;
@@ -5640,7 +5640,7 @@ onBeforeUnmount(() => {
   margin: 0 auto;
 }
 
-/* v8.3: 文本编辑按钮样式 */
+/* v8.3: Text edit button styles */
 .edit-text-btn {
   background: none;
   border: none;
@@ -5656,7 +5656,7 @@ onBeforeUnmount(() => {
   opacity: 1;
 }
 
-/* v8.3: 文本编辑对话框样式 */
+/* v8.3: Text edit dialog styles */
 .text-edit-dialog-overlay {
   position: fixed;
   top: 0;
@@ -5761,7 +5761,7 @@ onBeforeUnmount(() => {
   background: #0b5ed7;
 }
 
-/* v9.2: 添加素材按钮样式 (与 Setup Mode 保持一致) */
+/* v9.2: Add asset button styles (consistent with Setup Mode) */
 .toolbar-btn.add-btn {
   display: flex;
   align-items: center;
@@ -5831,7 +5831,7 @@ onBeforeUnmount(() => {
   font-weight: 500;
 }
 
-/* 成组模式 CSS 已移至 GroupingModePanel.vue */
+/* Grouping mode CSS moved to GroupingModePanel.vue */
 
 .pass-through-tip-bubble {
   position: absolute;

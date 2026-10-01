@@ -6,7 +6,7 @@
     >
       <div class="picker-dialog">
         <div class="dialog-header">
-          <h3>选择场景模板</h3>
+          <h3>Select Scene Template</h3>
           <button
             class="close-btn"
             @click="emit('close')"
@@ -18,14 +18,14 @@
         <div class="dialog-content">
           <div class="filter-sidebar">
             <div class="filter-group">
-              <h4>标签</h4>
+              <h4>Tags</h4>
               <div class="filter-list">
                 <button
                   class="filter-btn"
                   :class="{ active: currentTag === 'all' }"
                   @click="currentTag = 'all'"
                 >
-                  全部
+                  All
                 </button>
                 <button
                   v-for="tag in allTags"
@@ -47,7 +47,7 @@
                 v-model="searchKeyword"
                 type="text"
                 class="search-input"
-                placeholder="搜索模板..."
+                placeholder="Search templates..."
               >
             </div>
 
@@ -88,7 +88,7 @@
                       🧩
                     </div>
                     <div class="count-badge">
-                      {{ tpl.objects.length }} 个对象
+                      {{ tpl.objects.length }} objects
                     </div>
                   </div>
                   <div class="card-info">
@@ -124,14 +124,14 @@
                 class="btn-cancel"
                 @click="emit('close')"
               >
-                取消
+                Cancel
               </button>
               <button
                 class="btn-confirm"
                 :disabled="!selectedId"
                 @click="handleConfirm"
               >
-                放置到画布
+                Place onto Canvas
               </button>
             </div>
           </div>
@@ -163,9 +163,9 @@ const hasActiveFilters = computed(() =>
   searchKeyword.value.trim().length > 0 || currentTag.value !== 'all'
 )
 
-const emptyTitle = computed(() => hasActiveFilters.value ? '📭 没有匹配的场景模板' : '📭 暂无场景模板')
+const emptyTitle = computed(() => hasActiveFilters.value ? '📭 No matching scene templates' : '📭 No scene templates yet')
 const emptyHint = computed(() =>
-  hasActiveFilters.value ? '试试切换标签或调整搜索关键词' : '在场景编辑器中选中组合对象，右键保存为场景模板'
+  hasActiveFilters.value ? 'Try switching tags or adjusting search keywords' : 'Select a composite object in scene editor, right-click and save as scene template'
 )
 
 const filteredTemplates = computed(() => {

@@ -4,24 +4,24 @@
     class="expression-preview"
     @click="handleContainerClick"
   >
-    <!-- 图片展示 -->
+    <!-- Image display -->
     <img
       ref="imageRef"
       :src="displayImageUrl"
       class="preview-image"
       :style="imageStyle"
-      alt="表情预览"
+      alt="Expression Preview"
       @load="handleImageLoad"
     >
     
-    <!-- SVG锚点覆盖层 -->
+    <!-- SVG anchor overlay -->
     <svg
       v-if="imageLoaded && imageUrl"
       class="anchor-overlay"
       :viewBox="`0 0 ${containerWidth} ${containerHeight}`"
       preserveAspectRatio="none"
     >
-      <!-- 十字准星 -->
+      <!-- Crosshair -->
       <line
         :x1="anchorPixelX - 20"
         :y1="anchorPixelY"
@@ -40,7 +40,7 @@
         stroke-width="2"
         stroke-linecap="round"
       />
-      <!-- 中心圆点（可拖拽） -->
+      <!-- Center dot (draggable) -->
       <circle
         :cx="anchorPixelX"
         :cy="anchorPixelY"
@@ -64,7 +64,7 @@ const props = defineProps<{
   imageUrl?: string
   anchor: AnchorPoint
   flipHorizontal?: boolean
-  expressionId?: string  // 可选：如果提供，使用封装方法获取显示变换
+  expressionId?: string  // Optional: if provided, uses encapsulated method to get display transform
   blendMode?: 'normal' | 'multiply'
 }>()
 
@@ -86,12 +86,12 @@ const imageOffsetX = ref(0)
 const imageOffsetY = ref(0)
 const isDragging = ref(false)
 
-// 显示图片URL（使用统一的图片加载工具）
+// Display image URL (using unified image loader)
 const displayImageUrl = computed(() => {
   return props.imageUrl ? getImageUrl(props.imageUrl) : ''
 })
 
-// 图片样式（使用封装方法）
+// Image style (using encapsulated method)
 const imageStyle = computed(() => {
   const blend: 'normal' | 'multiply' = props.blendMode === 'multiply' ? 'multiply' : 'normal'
 
@@ -110,7 +110,7 @@ const imageStyle = computed(() => {
   }
 })
 
-// 获取实际的翻转状态（用于锚点坐标计算）
+// Get actual flip state (for anchor coordinate calculation)
 const actualFlipX = computed(() => {
   if (props.expressionId) {
     const { flipX } = expressionStore.getDisplayTransform(props.expressionId)
@@ -119,14 +119,14 @@ const actualFlipX = computed(() => {
   return props.flipHorizontal ?? false
 })
 
-// 计算锚点的像素坐标
+// Calculate anchor pixel coordinates
 const anchorPixelX = computed(() => {
   if (!imageLoaded.value || imageDisplayWidth.value === 0) return containerWidth.value / 2
   
-  // 计算图片在容器中的实际显示位置
+  // Calculate actual image display position in container
   const x = imageOffsetX.value + imageDisplayWidth.value * props.anchor.x
   
-  // 如果水平翻转，需要镜像
+  // Mirror if horizontally flipped
   if (actualFlipX.value) {
     return imageOffsetX.value + imageDisplayWidth.value * (1 - props.anchor.x)
   }
@@ -138,14 +138,14 @@ const anchorPixelY = computed(() => {
   return imageOffsetY.value + imageDisplayHeight.value * props.anchor.y
 })
 
-// 图片加载完成
+// Image load complete
 function handleImageLoad() {
   if (!imageRef.value || !containerRef.value) return
   
   const img = imageRef.value
   const container = containerRef.value
   
-  // 计算图片实际显示尺寸（保持宽高比）
+  // Calculate actual image display size (maintaining aspect ratio)
   const containerRect = container.getBoundingClientRect()
   const imgRect = img.getBoundingClientRect()
   
@@ -154,14 +154,14 @@ function handleImageLoad() {
   imageDisplayWidth.value = imgRect.width
   imageDisplayHeight.value = imgRect.height
   
-  // 计算居中偏移
+  // Calculate centering offset
   imageOffsetX.value = (containerRect.width - imgRect.width) / 2
   imageOffsetY.value = (containerRect.height - imgRect.height) / 2
   
   imageLoaded.value = true
 }
 
-// 容器点击（设置锚点）
+// Container click (set anchor)
 function handleContainerClick(event: MouseEvent) {
   if (isDragging.value || !imageRef.value || !containerRef.value) return
   
@@ -171,7 +171,7 @@ function handleContainerClick(event: MouseEvent) {
   const x = event.clientX - containerRect.left
   const y = event.clientY - containerRect.top
   
-  // 检查是否点击在图片区域内
+  // Check if click is within image area
   const imgLeft = imgRect.left - containerRect.left
   const imgTop = imgRect.top - containerRect.top
   
@@ -185,7 +185,7 @@ function handleContainerClick(event: MouseEvent) {
   updateAnchorFromPixel(x, y)
 }
 
-// 锚点拖拽开始
+// Anchor drag start
 function handleAnchorDragStart(event: MouseEvent) {
   event.stopPropagation()
   isDragging.value = true
@@ -206,21 +206,21 @@ function handleAnchorDragStart(event: MouseEvent) {
   document.addEventListener('mouseup', handleUp)
 }
 
-// 从像素坐标更新锚点
+// Update anchor from pixel coordinates
 function updateAnchorFromPixel(pixelX: number, pixelY: number) {
   if (!imageRef.value || !containerRef.value) return
   
   const containerRect = containerRef.value.getBoundingClientRect()
   const imgRect = imageRef.value.getBoundingClientRect()
   
-  // 计算相对于图片的坐标
+  // Calculate coordinates relative to image
   const imgLeft = imgRect.left - containerRect.left
   const imgTop = imgRect.top - containerRect.top
   
   const relativeX = (pixelX - imgLeft) / imgRect.width
   const relativeY = (pixelY - imgTop) / imgRect.height
   
-  // 考虑水平翻转
+  // Account for horizontal flip
   const finalX = actualFlipX.value ? 1 - relativeX : relativeX
   
   const newAnchor: AnchorPoint = {
@@ -231,23 +231,23 @@ function updateAnchorFromPixel(pixelX: number, pixelY: number) {
   emit('update:anchor', newAnchor)
 }
 
-// 监听图片URL变化
+// Watch image URL change
 watch(() => props.imageUrl, (newUrl) => {
   imageLoaded.value = false
   if (newUrl && imageRef.value) {
-    // 如果图片已经加载过，直接触发load处理
+    // If image already loaded, trigger load handler directly
     if (imageRef.value.complete && imageRef.value.src === newUrl) {
       void nextTick(() => {
         handleImageLoad()
       })
     } else {
-      // 重置图片src以触发load事件
+      // Reset image src to trigger load event
       imageRef.value.src = newUrl
     }
   }
 }, { immediate: true })
 
-// 监听容器尺寸变化
+// Watch container dimension change
 let resizeObserver: ResizeObserver | null = null
 
 onMounted(() => {
@@ -262,7 +262,7 @@ onMounted(() => {
     resizeObserver.observe(containerRef.value)
   }
   
-  // 如果图片已经加载完成，立即计算布局
+  // If image already loaded, compute layout immediately
   if (imageRef.value && imageRef.value.complete && props.imageUrl) {
     void nextTick(() => {
       handleImageLoad()
@@ -274,7 +274,7 @@ onUnmounted(() => {
   if (resizeObserver) {
     resizeObserver.disconnect()
   }
-  // 清理事件监听
+  // Clean up event listeners
   isDragging.value = false
 })
 </script>
@@ -287,11 +287,11 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #ffffff; /* 白色基底 */
+  background: #ffffff; /* White background */
   border: 1px solid #d1d5db;
   border-radius: 8px;
   overflow: hidden;
-  /* Photoshop 风格灰白棋盘格 - 更清晰显示透明区域 */
+  /* Photoshop style checkerboard - shows transparent areas clearly */
   background-image: 
     linear-gradient(45deg, #e0e0e0 25%, transparent 25%), 
     linear-gradient(-45deg, #e0e0e0 25%, transparent 25%), 

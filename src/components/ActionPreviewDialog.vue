@@ -6,23 +6,23 @@
       @click.self="handleClose"
     >
       <div class="preview-dialog">
-        <!-- 标题栏 -->
+        <!-- Title bar -->
         <div class="preview-header">
           <div class="header-left">
             <span class="preview-icon">👁️</span>
-            <span class="preview-title">动作预览</span>
+            <span class="preview-title">Action Preview</span>
             <span class="block-info">{{ blockDescription }}</span>
           </div>
           <button
             class="close-btn"
-            title="关闭"
+            title="Close"
             @click="handleClose"
           >
             ✕
           </button>
         </div>
 
-        <!-- 预览画布区域 -->
+        <!-- Preview canvas area -->
         <div class="preview-content">
           <div
             v-if="isLoading"
@@ -53,7 +53,7 @@
           />
         </div>
 
-        <!-- 控制栏 -->
+        <!-- Controls -->
         <div class="preview-controls">
           <button 
             class="control-btn play-btn" 
@@ -61,7 +61,7 @@
             @click="handlePlayPause"
           >
             <span class="btn-icon">{{ isPlaying ? '⏸' : '▶' }}</span>
-            <span class="btn-text">{{ isPlaying ? '暂停' : '播放' }}</span>
+            <span class="btn-text">{{ isPlaying ? 'Pause' : 'Play' }}</span>
           </button>
           
           <button 
@@ -70,7 +70,7 @@
             @click="handleReset"
           >
             <span class="btn-icon">⏮</span>
-            <span class="btn-text">重置</span>
+            <span class="btn-text">Reset</span>
           </button>
           
           <div class="progress-section">
@@ -127,18 +127,18 @@ const soundStore = useSoundStore()
 const { loadImageUrl, getImageUrl } = useAssetImage()
 const { loadAudioUrl, getAudioUrl } = useAssetAudio()
 
-// Teleport 目标 - 在全屏模式下需要 teleport 到全屏元素内
+// Teleport target - in fullscreen mode, needs to teleport into fullscreen element
 const teleportTarget = shallowRef<HTMLElement | string>('body')
 
-// 状态
+// State
 const isLoading = ref(true)
-const loadingMessage = ref('正在准备预览...')
+const loadingMessage = ref('Preparing preview...')
 const errorMessage = ref<string | null>(null)
 const isPlaying = ref(false)
 const currentTime = ref(0)
 const totalDuration = ref(0)
 
-// ScenePlayer 实例引用
+// ScenePlayer instance ref
 interface ScenePlayerInstance {
   play: () => Promise<void>
   pause: () => void
@@ -150,35 +150,35 @@ interface ScenePlayerInstance {
 }
 const scenePlayerRef = ref<ScenePlayerInstance | null>(null)
 
-// 资源管理
+// Asset management
 const loadedTextureUrls = new Set<string>()
 const loadedAudioUrls = new Set<string>()
 
-// Episode 深拷贝 (Playable Replica 模式)
+// Deep copy Episode (Playable Replica pattern)
 const episodeCopy = ref<Episode | null>(null)
 
-// 备份 SceneObjectStore 数据
+// Backup SceneObjectStore data
 const backupSceneObjects = ref<SceneObject[]>([])
 
-// 计算当前场景 (使用原始 props)
+// Compute current scene (using original props)
 const currentScene = computed(() => {
   if (!props.episode) return null
   return props.episode.scenes.find(s => s.id === props.sceneId) ?? null
 })
 
-// 计算当前场景副本
+// Compute current scene copy
 const currentSceneCopy = computed(() => {
   if (!episodeCopy.value) return null
   return episodeCopy.value.scenes.find(s => s.id === props.sceneId) ?? null
 })
 
-// 计算当前 Block
+// Compute current Block
 const currentBlock = computed(() => {
   if (!currentScene.value) return null
   return currentScene.value.script.find(b => b.id === props.blockId) ?? null
 })
 
-// Block 描述
+// Block description
 const blockDescription = computed(() => {
   const block = currentBlock.value
   if (!block) return ''
@@ -188,23 +188,23 @@ const blockDescription = computed(() => {
     const displayName = instance ? (instance.alias ?? instance.name) : block.instanceId
     return `${displayName}: "${block.text.substring(0, 15)}${block.text.length > 15 ? '...' : ''}"`
   } else if (block.type === 'narration') {
-    return `旁白: "${block.text.substring(0, 15)}${block.text.length > 15 ? '...' : ''}"`
+    return `Narrator: "${block.text.substring(0, 15)}${block.text.length > 15 ? '...' : ''}"`
   } else {
     const otherBlock = block as unknown as { type: string, description?: string }
     if (otherBlock.type === 'action') {
-      return otherBlock.description ?? '演出 (纯动作)'
+      return otherBlock.description ?? 'Action (Movement only)'
     }
   }
   return ''
 })
 
-// 更新 teleport 目标
+// Update teleport target
 function updateTeleportTarget() {
   const fullscreenElement = document.fullscreenElement
   teleportTarget.value = fullscreenElement ? fullscreenElement as HTMLElement : 'body'
 }
 
-// 格式化时间
+// Format time
 function formatTime(ms: number): string {
   const seconds = Math.floor(ms / 1000)
   const milliseconds = Math.floor((ms % 1000) / 10)
@@ -212,21 +212,21 @@ function formatTime(ms: number): string {
 }
 
 /**
- * 确保当前 Block 的 TTS 已生成并准备好
+ * Ensure current Block TTS is generated and ready
  */
 async function ensureBlockTTS() {
   const scene = currentSceneCopy.value
   const originalScene = currentScene.value
   if (!scene || !originalScene) return
 
-  // 找到目标 Block
+  // Find target Block
   const block = scene.script.find(b => b.id === props.blockId)
   const originalBlock = originalScene.script.find(b => b.id === props.blockId)
   if (!block || !originalBlock) return
   if (block.type !== 'dialogue' && block.type !== 'narration') return
   if (originalBlock.type !== 'dialogue' && originalBlock.type !== 'narration') return
 
-  loadingMessage.value = '正在检查语音资源...'
+  loadingMessage.value = 'Checking voice assets...'
 
   try {
     await sharedEnsureBlockTTS(originalBlock, block, {
@@ -238,17 +238,17 @@ async function ensureBlockTTS() {
       onProgress: (msg) => { loadingMessage.value = msg }
     })
   } catch (err) {
-    console.error('[ActionPreview] TTS生成失败:', err)
+    console.error('[ActionPreview] Failed to generate TTS:', err)
     const error = err as Error & { errorCode?: string }
     if (error.errorCode === 'TTS_PROVIDER_NOT_CONFIGURED') {
-      errorMessage.value = '本地 TTS Provider 尚未配置。请先为台词导入本地音频，或配置本地 TTS Provider。'
+      errorMessage.value = 'Local TTS Provider is not configured. Please import local audio for lines, or configure a local TTS Provider.'
     } else {
-      errorMessage.value = `TTS生成失败: ${error.message ?? '未知错误'}`
+      errorMessage.value = `Failed to generate TTS: ${error.message ?? 'Unknown error'}`
     }
     return
   }
 
-  // 预加载 TTS 音频 Blob URL
+  // Preload TTS audio Blob URL
   const finalBlock = scene.script.find(b => b.id === props.blockId)
   const audioPath = (finalBlock && finalBlock.type !== 'action') ? finalBlock.ttsConfig?.audioPath : undefined
   if (audioPath && !audioPath.startsWith('blob:') && !audioPath.startsWith('data:')) {
@@ -266,29 +266,29 @@ async function ensureBlockTTS() {
 }
 
 /**
- * 预加载场景图片资源
+ * Preload scene image assets
  */
 async function preloadSceneImages() {
   const scene = currentSceneCopy.value
   if (!scene) return
   
-  loadingMessage.value = '正在加载图片资源...'
+  loadingMessage.value = 'Loading image assets...'
   
   const { collectAssets, loadAssets } = useAssetLoader()
   const allImageUrls = new Set<string>()
   
-  // 收集 Setup 静态资源
+  // Collect Setup static assets
   const { imageUrls: setupImageUrls } = collectAssets(scene.setup, null)
   setupImageUrls.forEach(url => allImageUrls.add(url))
   
-  // 收集当前 Block 的动态资源 (set_character 切换的表情等)
+  // Collect dynamic assets for current Block (expressions switched by set_character, etc.)
   const block = scene.script.find(b => b.id === props.blockId)
   if (block) {
     const { imageUrls: blockImageUrls } = collectAssets(scene.setup, block)
     blockImageUrls.forEach(url => allImageUrls.add(url))
   }
   
-  // 加载资源
+  // Load assets
   await loadAssets(allImageUrls, new Set())
   
   for (const url of allImageUrls) {
@@ -299,19 +299,19 @@ async function preloadSceneImages() {
         loadedTextureUrls.add(blobUrl)
       }
     } catch {
-      // loadAssets 已处理
+      // loadAssets already handled
     }
   }
 }
 
 /**
- * 预加载场景音频资源 (SFX/BGM)
+ * Preload scene audio assets (SFX/BGM)
  */
 async function preloadSceneAudio() {
   const scene = currentSceneCopy.value
   if (!scene) return
 
-  loadingMessage.value = '正在加载音频资源...'
+  loadingMessage.value = 'Loading audio assets...'
   const audioPaths = new Set<string>()
   
   for (const obj of scene.setup.objects) {
@@ -339,39 +339,39 @@ async function preloadSceneAudio() {
 }
 
 /**
- * 初始化预览
+ * Initialize preview
  */
 async function initPreview() {
   isLoading.value = true
   errorMessage.value = null
   
   try {
-    loadingMessage.value = '正在初始化...'
+    loadingMessage.value = 'Initializing...'
     
     await audioKit.init()
     
-    // 1. 确保 TTS
+    // 1. Ensure TTS
     await ensureBlockTTS()
-    if (errorMessage.value) return  // TTS 失败已设置错误消息
+    if (errorMessage.value) return  // Error message already set on TTS failure
     
-    // 2. 预加载图片资源
+    // 2. Preload image assets
     await preloadSceneImages()
     
-    // 3. 预加载音频资源
+    // 3. Preload audio assets
     await preloadSceneAudio()
     
-    loadingMessage.value = '准备就绪'
+    loadingMessage.value = 'Ready'
     
     await nextTick()
   } catch (e) {
     console.error('[ActionPreview] Init preview failed:', e)
-    errorMessage.value = `初始化失败: ${e instanceof Error ? e.message : '未知错误'}`
+    errorMessage.value = `Initialization failed: ${e instanceof Error ? e.message : 'Unknown error'}`
   } finally {
     isLoading.value = false
   }
 }
 
-// 事件处理
+// Event handlers
 function handlePlayPause() {
   if (isPlaying.value) {
     scenePlayerRef.value?.pause()
@@ -404,7 +404,7 @@ function handlePlayerError(msg: string) {
 function handleClose() {
   scenePlayerRef.value?.pause()
   
-  // 释放预加载的纹理资源
+  // Release preloaded texture assets
   for (const url of loadedTextureUrls) {
     if (PIXI.Assets.cache.has(url)) {
       void PIXI.Assets.unload(url)
@@ -412,7 +412,7 @@ function handleClose() {
   }
   loadedTextureUrls.clear()
 
-  // 释放预加载的音频资源
+  // Release preloaded audio assets
   for (const url of loadedAudioUrls) {
     audioKit.unload(url)
   }
@@ -421,33 +421,33 @@ function handleClose() {
   emit('close')
 }
 
-// 恢复 SceneObjectStore 的备份数据
-// 提取为独立函数，供 onBeforeUnmount 和 watch 共用
+// Restore SceneObjectStore backup data
+// Extracted as standalone function, shared between onBeforeUnmount and watch
 function restoreSceneObjects() {
   if (backupSceneObjects.value.length > 0 || sceneObjectStore.objects.length === 0) {
-    // 双层架构：使用 initFromSetup 替代直接赋值
+    // Two-layer architecture: use initFromSetup instead of direct assignment
     sceneObjectStore.initFromSetup(backupSceneObjects.value)
     backupSceneObjects.value = []
   }
 }
 
-// 组件卸载前恢复 Store（v-if 控制的组件卸载时 watch 不会触发 visible=false）
+// Restore Store before component unmount (when v-if unmounts component, watch won't trigger visible=false)
 onBeforeUnmount(() => {
   restoreSceneObjects()
 })
 
-// 监听 visible 变化
+// Watch visible changes
 watch(() => props.visible, async (val) => {
   if (val) {
     updateTeleportTarget()
     
-    // 深拷贝 Episode，避免污染 Store
+    // Deep copy Episode to avoid mutating Store
     episodeCopy.value = JSON.parse(JSON.stringify(props.episode)) as Episode
     
-    // 同步 Scene Objects 到 Store
+    // Sync Scene Objects to Store
     backupSceneObjects.value = [...sceneObjectStore.setupState.objects]
     if (currentScene.value?.setup?.objects) {
-      // 双层架构：使用 initFromSetup 替代直接赋值
+      // Two-layer architecture: use initFromSetup instead of direct assignment
       sceneObjectStore.initFromSetup(currentScene.value.setup.objects)
     } else {
       sceneObjectStore.clearObjects()

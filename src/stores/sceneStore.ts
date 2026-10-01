@@ -1,6 +1,6 @@
 /**
- * 场景管理 Store
- * 管理当前场景及其脚本节点
+ * Scene management Store
+ * Manages current scene and its script nodes
  */
 
 import { defineStore } from 'pinia'
@@ -10,20 +10,20 @@ import type { Scene, TimelineNode } from '@/types/project'
 import type { ActorConfig } from '@/types/screenplay'
 
 export const useSceneStore = defineStore('scene', () => {
-  // 场景列表
+  // Scene list
   const scenes = ref<Scene[]>([])
-  // 当前场景
+  // Current scene
   const currentScene = ref<Scene | null>(null)
 
   /**
-   * 生成唯一ID
+   * Generate unique ID
    */
   function generateId(prefix = 'id'): string {
     return `${prefix}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
   }
 
   /**
-   * 创建新场景
+   * Create new scene
    */
   function createScene(name: string, backgroundId: string): Scene {
     const scene: Scene = {
@@ -43,7 +43,7 @@ export const useSceneStore = defineStore('scene', () => {
   }
 
   /**
-   * 切换当前场景
+   * Switch current scene
    */
   function switchScene(sceneId: string): boolean {
     const scene = scenes.value.find(s => s.id === sceneId)
@@ -54,14 +54,14 @@ export const useSceneStore = defineStore('scene', () => {
   }
 
   /**
-   * 设置当前场景
+   * Set current scene
    */
   function setCurrentScene(scene: Scene | null): void {
     currentScene.value = scene
   }
 
   /**
-   * 更新场景信息
+   * Update scene information
    */
   function updateScene(updates: Partial<Scene>): boolean {
     if (!currentScene.value) return false
@@ -71,7 +71,7 @@ export const useSceneStore = defineStore('scene', () => {
   }
 
   /**
-   * 添加角色到场景
+   * Add actor to scene
    */
   function addActor(actor: ActorConfig): boolean {
     if (!currentScene.value) return false
@@ -81,7 +81,7 @@ export const useSceneStore = defineStore('scene', () => {
   }
 
   /**
-   * 从场景移除角色
+   * Remove actor from scene
    */
   function removeActor(actorId: string): boolean {
     if (!currentScene.value) return false
@@ -95,7 +95,7 @@ export const useSceneStore = defineStore('scene', () => {
   }
 
   /**
-   * 获取场景中的角色
+   * Get actor in scene
    */
   function getActor(actorId: string): ActorConfig | undefined {
     if (!currentScene.value) return undefined
@@ -103,7 +103,7 @@ export const useSceneStore = defineStore('scene', () => {
   }
 
   /**
-   * 更新角色信息
+   * Update actor information
    */
   function updateActor(actorId: string, updates: Partial<ActorConfig>): boolean {
     const actor = getActor(actorId)
@@ -114,7 +114,7 @@ export const useSceneStore = defineStore('scene', () => {
   }
 
   /**
-   * 添加脚本节点
+   * Add script node
    */
   function addScriptNode(node: TimelineNode): boolean {
     if (!currentScene.value) return false
@@ -125,7 +125,7 @@ export const useSceneStore = defineStore('scene', () => {
   }
 
   /**
-   * 移除脚本节点
+   * Remove script node
    */
   function removeScriptNode(nodeId: string): boolean {
     if (!currentScene.value) return false
@@ -140,7 +140,7 @@ export const useSceneStore = defineStore('scene', () => {
   }
 
   /**
-   * 获取脚本节点
+   * Get script node
    */
   function getScriptNode(nodeId: string): TimelineNode | undefined {
     if (!currentScene.value) return undefined
@@ -148,7 +148,7 @@ export const useSceneStore = defineStore('scene', () => {
   }
 
   /**
-   * 更新脚本节点
+   * Update script node
    */
   function updateScriptNode(nodeId: string, updates: Partial<TimelineNode>): boolean {
     const node = getScriptNode(nodeId)
@@ -160,7 +160,7 @@ export const useSceneStore = defineStore('scene', () => {
   }
 
   /**
-   * 重新计算场景时长
+   * Recalculate scene duration
    */
   function recalculateDuration(): void {
     if (!currentScene.value) return
@@ -170,7 +170,7 @@ export const useSceneStore = defineStore('scene', () => {
       return
     }
 
-    // 找到最后一个节点的结束时间
+    // Find end time of the last node
     const maxEnd = Math.max(
       ...currentScene.value.script.map(node => node.start + node.duration)
     )
@@ -178,7 +178,7 @@ export const useSceneStore = defineStore('scene', () => {
   }
 
   /**
-   * 涟漪编辑：更新节点时长时自动推移后续节点
+   * Ripple editing: automatically push subsequent nodes when updating node duration
    */
   function updateNodeDurationWithRipple(nodeId: string, newDuration: number): boolean {
     if (!currentScene.value) return false
@@ -189,10 +189,10 @@ export const useSceneStore = defineStore('scene', () => {
     const oldDuration = node.duration
     const deltaTime = newDuration - oldDuration
 
-    // 更新当前节点时长
+    // Update current node duration
     node.duration = newDuration
 
-    // 推移后续节点
+    // Push subsequent nodes
     if (deltaTime !== 0) {
       currentScene.value.script.forEach(n => {
         if (n.start > node.start) {
@@ -206,7 +206,7 @@ export const useSceneStore = defineStore('scene', () => {
   }
 
   /**
-   * 排序脚本节点（按开始时间）
+   * Sort script nodes (by start time)
    */
   function sortScriptNodes(): void {
     if (!currentScene.value) return
@@ -214,14 +214,14 @@ export const useSceneStore = defineStore('scene', () => {
   }
 
   /**
-   * 清空场景
+   * Clear scene
    */
   function clearScene(): void {
     currentScene.value = null
   }
 
   /**
-   * 删除场景
+   * Delete scene
    */
   function deleteScene(sceneId: string): boolean {
     const index = scenes.value.findIndex(s => s.id === sceneId)
@@ -229,7 +229,7 @@ export const useSceneStore = defineStore('scene', () => {
 
     scenes.value.splice(index, 1)
 
-    // 如果删除的是当前场景，切换到第一个场景
+    // If deleted scene is current scene, switch to first scene
     if (currentScene.value?.id === sceneId) {
       const firstScene = scenes.value[0]
       currentScene.value = firstScene ?? null
@@ -238,14 +238,14 @@ export const useSceneStore = defineStore('scene', () => {
     return true
   }
 
-  // 计算属性
+  // Computed properties
   const hasScene = computed(() => currentScene.value !== null)
   const actorCount = computed(() => currentScene.value?.actors.length ?? 0)
   const nodeCount = computed(() => currentScene.value?.script.length ?? 0)
   const sceneDuration = computed(() => currentScene.value?.duration ?? 0)
 
   return {
-    // 状态
+    // State
     scenes,
     currentScene,
     hasScene,
@@ -253,7 +253,7 @@ export const useSceneStore = defineStore('scene', () => {
     nodeCount,
     sceneDuration,
 
-    // 场景管理
+    // Scene management
     createScene,
     switchScene,
     setCurrentScene,
@@ -261,13 +261,13 @@ export const useSceneStore = defineStore('scene', () => {
     clearScene,
     deleteScene,
 
-    // 角色管理
+    // Actor management
     addActor,
     removeActor,
     getActor,
     updateActor,
 
-    // 脚本节点管理
+    // Script node management
     addScriptNode,
     removeScriptNode,
     getScriptNode,

@@ -1,10 +1,10 @@
 <template>
   <div class="expression-manager">
-    <!-- 顶部工具栏 -->
+    <!-- Top toolbar -->
     <div class="toolbar">
       <div class="toolbar-left">
         <h2 class="page-title">
-          表情管理
+          Expression Management
         </h2>
         
         <div class="filter-controls">
@@ -13,7 +13,7 @@
             :class="{ active: selectedTags.length > 0 }"
             @click="showFilterModal = true"
           >
-            筛选 <span v-if="selectedTags.length > 0">({{ selectedTags.length }})</span>
+            Filter <span v-if="selectedTags.length > 0">({{ selectedTags.length }})</span>
             <span class="icon">▼</span>
           </button>
         </div>
@@ -32,27 +32,27 @@
       </div>
 
       <div class="toolbar-right">
-        <!-- 排序 -->
+        <!-- Sort -->
         <div class="sort-box">
           <select
             v-model="sortOrder"
             class="sort-select"
           >
             <option value="newest">
-              📅 最新创建
+              📅 Newest
             </option>
             <option value="oldest">
-              📅 最早创建
+              📅 Oldest
             </option>
           </select>
         </div>
 
-        <!-- 搜索框 -->
+        <!-- Search Box -->
         <div class="search-box">
           <input
             v-model="searchKeyword"
             type="text"
-            placeholder="搜索表情名称..."
+            placeholder="Search expressions..."
             class="search-input"
           >
         </div>
@@ -61,7 +61,7 @@
           class="btn-batch"
           @click="toggleBatchMode"
         >
-          {{ isBatchMode ? '退出批量' : '⚙️ 批量管理' }}
+          {{ isBatchMode ? 'Exit Batch' : '⚙️ Batch Manage' }}
         </button>
 
         <template v-if="isBatchMode">
@@ -69,26 +69,26 @@
             class="btn-secondary"
             @click="selectAll"
           >
-            全选
+            Select All
           </button>
           <button
             class="btn-secondary"
             @click="deselectAll"
           >
-            全不选
+            Deselect All
           </button>
           <button
             class="btn-secondary"
             @click="invertSelection"
           >
-            反向选择
+            Invert Selection
           </button>
           <button
             class="btn-delete-batch"
             :disabled="selectedIds.size === 0"
             @click="batchDelete"
           >
-            🗑️ 删除 ({{ selectedIds.size }})
+            🗑️ Delete ({{ selectedIds.size }})
           </button>
         </template>
         <template v-else>
@@ -96,27 +96,27 @@
             class="btn-new"
             @click="openCreateModal"
           >
-            + 新建表情
+            + New Expression
           </button>
           <button
             class="btn-import"
             @click="showImportDialog = true"
           >
-            📁 导入表情
+            📁 Import Expressions
           </button>
         </template>
       </div>
     </div>
 
-    <!-- 表情画廊 -->
+    <!-- Expression gallery -->
     <div class="gallery-container">
       <div
         v-if="filteredExpressions.length === 0"
         class="empty-state"
       >
-        <p>📭 暂无表情</p>
+        <p>📭 No expressions yet</p>
         <p class="hint">
-          点击"新建表情"开始创建
+          Click "New Expression" to get started
         </p>
       </div>
 
@@ -131,7 +131,7 @@
           :class="{ selected: isBatchMode && selectedIds.has(expr.id) }"
           @click="handleCardClick(expr)"
         >
-          <!-- 批量模式下的复选框 -->
+          <!-- Batch mode checkbox -->
           <div
             v-if="isBatchMode"
             class="card-checkbox"
@@ -143,7 +143,7 @@
             >
           </div>
 
-          <!-- 图片预览 -->
+          <!-- Image preview -->
           <div class="card-image">
             <img 
               :src="getImageUrlSync(expr)" 
@@ -153,7 +153,7 @@
             >
           </div>
 
-          <!-- 卡片信息 -->
+          <!-- Card info -->
           <div class="card-info">
             <div class="card-name">
               {{ expr.name }}
@@ -164,26 +164,26 @@
                 v-if="expr.speakingFrames.length > 0"
                 class="card-badge"
               >
-                动画 ({{ expr.speakingFrames.length }}帧)
+                Animated ({{ expr.speakingFrames.length }} frames)
               </span>
             </div>
           </div>
 
-          <!-- 操作按钮 -->
+          <!-- Actions -->
           <div
             v-if="!isBatchMode"
             class="card-actions"
           >
             <button
               class="btn-edit"
-              title="编辑"
+              title="Edit"
               @click.stop="openEditModal(expr)"
             >
               ✏️
             </button>
             <button
               class="btn-delete"
-              title="删除"
+              title="Delete"
               @click.stop="deleteExpression(expr.id)"
             >
               🗑️
@@ -195,7 +195,7 @@
 
     <!-- Batch Footer Removed -->
 
-    <!-- 编辑/新建弹窗 -->
+    <!-- Edit / Create Modal -->
     <ExpressionEditorModal
       v-if="editorModalVisible"
       :visible="editorModalVisible"
@@ -221,7 +221,7 @@
       @cancel="showDeleteConfirm = false"
     />
 
-    <!-- 导入对话框 -->
+    <!-- Import Dialog -->
     <ExpressionImportDialog
       v-if="showImportDialog"
       @close="showImportDialog = false"
@@ -245,31 +245,32 @@ import ExpressionImportDialog from './ExpressionImportDialog.vue'
 const expressionStore = useExpressionStore()
 const { getImageUrl, preloadImages, clearCache } = useAssetImage()
 
-// 选项
-const genderOptions = ['全部', '男', '女', '其他']
+// Options
+const genderOptions = ['All', 'Male', 'Female', 'Other']
 
-// 筛选状态
-const currentGenderTag = ref('全部')
+// Filter state
+const currentGenderTag = ref('All')
 const selectedTags = ref<string[]>([])
 const searchKeyword = ref('')
 const sortOrder = ref<'newest' | 'oldest'>('newest')
 const showFilterModal = ref(false)
 
-// 批量管理模式
+// Batch management mode
 const isBatchMode = ref(false)
 const selectedIds = ref<Set<string>>(new Set())
 
-// 编辑弹窗
+// Edit modal
 const editorModalVisible = ref(false)
 const editingExpression = ref<Expression | null>(null)
 
-// 导入对话框
+// Import dialog
 const showImportDialog = ref(false)
 
-// 计算所有可用标签（排除性别标签）
+// Calculate all available tags (exclude gender tags)
 const availableTags = computed(() => {
   const tags = new Set<string>()
-  const genderTags = new Set(['男', '女', '其他'])
+  // Include unicode escapes for legacy Chinese tags: \u5168\u90e8, \u7537, \u5973, \u5176\u4ed6
+  const genderTags = new Set(['All', 'Male', 'Female', 'Other', '\u5168\u90e8', '\u7537', '\u5973', '\u5176\u4ed6'])
   
   expressionStore.expressionList.forEach(expr => {
     expr.tags.forEach(t => {
@@ -281,32 +282,34 @@ const availableTags = computed(() => {
   return Array.from(tags).sort()
 })
 
-// 筛选后的表情列表
+// Filtered expression list
 const filteredExpressions = computed(() => {
   let expressions = expressionStore.expressionList
 
-  // 性别筛选
-  if (currentGenderTag.value !== '全部') {
+  // Gender filter
+  if (currentGenderTag.value !== 'All' && currentGenderTag.value !== '\u5168\u90e8') {
     const targetGender = currentGenderTag.value
     let mappedGender: 'male' | 'female' | 'other' | undefined
-    if (targetGender === '男') mappedGender = 'male'
-    else if (targetGender === '女') mappedGender = 'female'
-    else if (targetGender === '其他') mappedGender = 'other'
+    if (targetGender === 'Male' || targetGender === '\u7537') mappedGender = 'male'
+    else if (targetGender === 'Female' || targetGender === '\u5973') mappedGender = 'female'
+    else if (targetGender === 'Other' || targetGender === '\u5176\u4ed6') mappedGender = 'other'
 
     expressions = expressions.filter(expr => {
-      // 兼容旧数据（检查 tags）和新数据（检查 gender 字段）
-      const hasTag = expr.tags.includes(targetGender)
+      const hasTag = expr.tags.includes(targetGender) ||
+        (mappedGender === 'male' && expr.tags.includes('\u7537')) ||
+        (mappedGender === 'female' && expr.tags.includes('\u5973')) ||
+        (mappedGender === 'other' && expr.tags.includes('\u5176\u4ed6'))
       const hasGender = mappedGender && expr.gender === mappedGender
       return hasTag || hasGender
     })
   }
 
-  // 多标签筛选：匹配任一选中标签
+  // Tag filter: Match any selected tag
   if (selectedTags.value.length > 0) {
     expressions = expressions.filter(expr => expr.tags.some(t => selectedTags.value.includes(t)))
   }
 
-  // 搜索筛选
+  // Search filter
   if (searchKeyword.value.trim()) {
     const keyword = searchKeyword.value.toLowerCase()
     expressions = expressions.filter(expr =>
@@ -314,7 +317,7 @@ const filteredExpressions = computed(() => {
     )
   }
 
-  // 排序
+  // Sort
   return [...expressions].sort((a, b) => {
     if (sortOrder.value === 'newest') {
       return (b.createdAt || 0) - (a.createdAt || 0)
@@ -328,12 +331,12 @@ function handleTagsConfirm(tags: string[]) {
   selectedTags.value = tags
 }
 
-// 获取图片URL（同步版本，用于模板）
+// Get image URL (synchronous version for template)
 function getImageUrlSync(expr: Expression): string {
   return getImageUrl(expr.defaultFrame.url)
 }
 
-// 预加载所有表情的图片
+// Preload images for all expressions
 function preloadExpressionImages() {
   const paths = filteredExpressions.value
     .map(expr => expr.defaultFrame.url)
@@ -341,18 +344,17 @@ function preloadExpressionImages() {
   void preloadImages(paths)
 }
 
-// 处理图片加载错误
+// Handle image load error
 function handleImageError(event: Event) {
   const img = event.target as HTMLImageElement
   if (img) {
-    // 可以显示一个占位符
-    console.warn('[ExpressionManager] 图片加载失败:', img.src)
+    console.warn('[ExpressionManager] Image failed to load:', img.src)
   }
 }
 
-// 格式化时间
+// Format time
 function formatTime(timestamp?: number): string {
-  if (!timestamp) return '未知'
+  if (!timestamp) return 'Unknown'
   
   const date = new Date(timestamp)
   const now = new Date()
@@ -363,19 +365,19 @@ function formatTime(timestamp?: number): string {
     const hours = Math.floor(diff / (1000 * 60 * 60))
     if (hours === 0) {
       const minutes = Math.floor(diff / (1000 * 60))
-      return minutes <= 0 ? '刚刚' : `${minutes}分钟前`
+      return minutes <= 0 ? 'Just now' : `${minutes}m ago`
     }
-    return `${hours}小时前`
+    return `${hours}h ago`
   } else if (days === 1) {
-    return '昨天 ' + date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
+    return 'Yesterday ' + date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
   } else if (days < 7) {
-    return `${days}天前`
+    return `${days}d ago`
   } else {
-    return date.toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit' })
+    return date.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit' })
   }
 }
 
-// 批量管理模式
+// Batch management mode
 function toggleBatchMode() {
   isBatchMode.value = !isBatchMode.value
   selectedIds.value.clear()
@@ -418,8 +420,8 @@ function handleCardClick(expr: Expression) {
 function batchDelete() {
   if (selectedIds.value.size === 0) return
   pendingDeleteIds.value = Array.from(selectedIds.value)
-  deleteConfirmTitle.value = '批量删除表情'
-  deleteConfirmMessage.value = `确定要删除选中的 ${selectedIds.value.size} 个表情吗？此操作不可恢复！`
+  deleteConfirmTitle.value = 'Batch Delete Expressions'
+  deleteConfirmMessage.value = `Are you sure you want to delete the selected ${selectedIds.value.size} expressions? This action cannot be undone!`
   showDeleteConfirm.value = true
 }
 
@@ -441,7 +443,7 @@ function confirmDelete() {
   showDeleteConfirm.value = false
 }
 
-// 编辑弹窗
+// Edit modal
 function openCreateModal() {
   editingExpression.value = null
   editorModalVisible.value = true
@@ -458,22 +460,18 @@ function closeEditorModal() {
 }
 
 function handleExpressionSaved() {
-  // 弹窗关闭时会自动刷新列表
   closeEditorModal()
-  // 清除图片缓存，重新加载
   clearCache()
   preloadExpressionImages()
 }
 
 function handleExpressionDeleted() {
-  // 弹窗关闭时会自动刷新列表
   closeEditorModal()
-  // 清除图片缓存，重新加载
   clearCache()
   preloadExpressionImages()
 }
 
-// 监听表情列表变化，预加载图片
+// Watch filteredExpressions change and preload images
 watch(filteredExpressions, () => {
   preloadExpressionImages()
 }, { deep: true })
@@ -482,18 +480,17 @@ onMounted(() => {
   preloadExpressionImages()
 })
 
-// 删除表情
+// Delete expression
 function deleteExpression(id: string) {
   pendingDeleteIds.value = [id]
-  deleteConfirmTitle.value = '删除表情'
-  deleteConfirmMessage.value = '确定要删除这个表情吗？此操作不可恢复！'
+  deleteConfirmTitle.value = 'Delete Expression'
+  deleteConfirmMessage.value = 'Are you sure you want to delete this expression? This action cannot be undone!'
   showDeleteConfirm.value = true
 }
 
-// 处理导入完成
+// Handle import complete
 function handleImported(count: number) {
-  console.log(`[ExpressionManager] 成功导入 ${count} 个表情`)
-  // 清除图片缓存，重新加载
+  console.log(`[ExpressionManager] Successfully imported ${count} expressions`)
   clearCache()
   preloadExpressionImages()
 }
@@ -508,7 +505,7 @@ function handleImported(count: number) {
   overflow: hidden;
 }
 
-/* 顶部工具栏 */
+/* Top toolbar */
 .toolbar {
   padding: 16px 24px;
   background: white;
@@ -732,7 +729,7 @@ function handleImported(count: number) {
   border-color: #3b82f6;
 }
 
-/* 画廊容器 */
+/* Gallery container */
 .gallery-container {
   flex: 1;
   overflow-y: auto;

@@ -1,7 +1,7 @@
 /**
- * 项目 Store
- * 管理项目的生命周期：新建、打开、保存、关闭
- * 使用 File System Access API 管理文件夹结构
+ * Project Store
+ * Manages project lifecycle: create, open, save, close
+ * Uses File System Access API to manage folder structure
  */
 
 import { defineStore } from 'pinia'
@@ -31,7 +31,7 @@ import { usePropStore } from './propStore'
 import { useSceneStore } from './sceneStore'
 import { useSceneTemplateStore } from './sceneTemplateStore'
 import { useSoundStore } from './soundStore'
-// v7.3: useEffectStore 已移除，特效已合并到道具
+// v7.3: useEffectStore removed, effects merged into props
 
 interface WindowWithFSA extends Window {
   showDirectoryPicker(options?: { mode?: 'read' | 'readwrite' }): Promise<FileSystemDirectoryHandle>
@@ -69,44 +69,44 @@ function reconcileEpisodesHierarchy(episodes: Episode[], scope: string, warn = t
 }
 
 /**
- * 递归移除对象中以 _ 开头的运行时属性
- * 同时过滤掉 blob: URL
- * @param obj 待清理的对象
- * @returns 清理后的新对象（不修改原对象）
+ * Recursively removes runtime properties starting with _ from objects
+ * Simultaneously filters out blob: URLs
+ * @param obj Object to clean
+ * @returns Cleaned new object (original object not modified)
  */
 function stripRuntimeProps<T>(obj: T): T {
   if (obj === null || obj === undefined) {
     return obj
   }
 
-  // 处理数组
+  // Handle arrays
   if (Array.isArray(obj)) {
     const array = obj as unknown[]
     const mapped = array.map(item => stripRuntimeProps(item))
     return mapped as unknown as T
   }
 
-  // 处理普通对象
+  // Handle plain objects
   if (typeof obj === 'object') {
     const result: Record<string, unknown> = {}
     for (const key of Object.keys(obj)) {
-      // 跳过以 _ 开头的运行时属性
+      // Skip runtime properties starting with _
       if (key.startsWith('_')) {
         continue
       }
       const value = (obj as Record<string, unknown>)[key]
-      // 如果是 url 字段且以 blob: 开头，置空
+      // If it is a url field starting with blob:, clear it
       if (key === 'url' && typeof value === 'string' && value.startsWith('blob:')) {
         result[key] = ''
         continue
       }
-      // 递归处理嵌套对象/数组
+      // Recursively process nested objects/arrays
       result[key] = stripRuntimeProps(value)
     }
     return result as T
   }
 
-  // 基本类型直接返回
+  // Return primitive types directly
   return obj
 }
 
@@ -117,9 +117,9 @@ function stripRuntimeProps<T>(obj: T): T {
 export const useProjectStore = defineStore('project', () => {
   const projectHandle = ref<FileSystemDirectoryHandle | null>(null)
   const assetsHandle = ref<FileSystemDirectoryHandle | null>(null)
-  const projectName = ref<string>('未命名项目')
+  const projectName = ref<string>('Untitled Project')
   const projectMeta = ref<ProjectMeta>({
-    name: '未命名项目',
+    name: 'Untitled Project',
     resolution: { w: 1920, h: 1080 },
     fps: 25,
     version: '2.0.0'
@@ -127,22 +127,22 @@ export const useProjectStore = defineStore('project', () => {
   const isProjectOpen = ref<boolean>(false)
   const autoSaveEnabled = ref<boolean>(true)
   const hasUnsavedChanges = ref<boolean>(false)
-  const currentProjectFileName = ref<string>('project.anime') // 当前项目文件名
+  const currentProjectFileName = ref<string>('project.anime') // Current project file name
 
   const actors = ref<ActorConfig[]>([])
   const narrator = ref<NarratorConfig>({ voice: {} })
 
-  // v20: 用户自定义预制动作模板（项目级）
+  // v20: User-defined prefab action templates (project level)
   const customPresetAnimations = ref<PresetAnimationTemplate[]>([])
 
   const expressionStore = useExpressionStore()
   const backgroundStore = useBackgroundStore()
-  // const propStore = usePropStore() // 移除顶层调用，避免循环依赖
+  // const propStore = usePropStore() // Removed top-level call to avoid circular dependency
   const episodeStore = useEpisodeStore()
   const sceneStore = useSceneStore()
 
   /**
-   * 标记项目有未保存的更改
+   * Mark project as having unsaved changes
    */
   function markAsUnsaved(): void {
     if (isProjectOpen.value) {
@@ -151,16 +151,16 @@ export const useProjectStore = defineStore('project', () => {
   }
 
   /**
-   * 选择项目目录（必须在用户手势中调用）
-   * @returns 目录句柄
+   * Select project directory (must be called in user gesture)
+   * @returns Directory handle
    */
   async function selectProjectDirectory(): Promise<FileSystemDirectoryHandle> {
-    // 检查 File System Access API 支持
+    // Check File System Access API support
     if (!('showDirectoryPicker' in window)) {
-      throw new Error('File System Access API 不支持，请使用 Chrome 或 Edge 浏览器')
+      throw new Error('File System Access API is not supported. Please use Chrome or Edge browser.')
     }
 
-    // 让用户选择项目目录（必须在用户手势中直接调用）
+    // Prompt user to select project directory (must be called directly in user gesture)
     const handle = await (window as unknown as WindowWithFSA).showDirectoryPicker({
       mode: 'readwrite'
     })
@@ -169,43 +169,43 @@ export const useProjectStore = defineStore('project', () => {
   }
 
   /**
-   * 检查是否有未保存的更改，如果有则提示用户保存
-   * @returns true 如果用户选择继续（已保存或放弃），false 如果用户取消
+   * Check for unsaved changes, prompting user to save if any exist
+   * @returns true if user chooses to proceed (saved or discarded), false if cancelled
    */
   async function checkUnsavedChanges(): Promise<boolean> {
     if (!hasUnsavedChanges.value || !isProjectOpen.value) {
-      return true // 没有未保存更改，可以继续
+      return true // No unsaved changes, can proceed
     }
 
-    // 使用 confirm 实现三选项对话框
-    // 第一步: 询问是否保存
+    // Use confirm dialog for options
+    // Step 1: Ask whether to save
     const wantToSave = confirm(
-      '当前项目有未保存的修改。\n\n' +
-      '点击"确定"保存项目并继续\n' +
-      '点击"取消"放弃修改并继续'
+      'The current project has unsaved changes.\n\n' +
+      'Click "OK" to save the project and continue\n' +
+      'Click "Cancel" to discard changes and continue'
     )
 
     if (wantToSave) {
-      // 用户选择保存
+      // User chooses to save
       try {
         await saveProject()
         return true
       } catch (error) {
-        console.error('[ProjectStore] 保存失败:', error)
-        // 保存失败时询问是否继续
-        const continueAnyway = confirm('保存失败！\n\n点击"确定"放弃修改并继续\n点击"取消"返回编辑')
+        console.error('[ProjectStore] Save failed:', error)
+        // Ask whether to continue when save fails
+        const continueAnyway = confirm('Save failed!\n\nClick "OK" to discard changes and continue\nClick "Cancel" to return to editing')
         return continueAnyway
       }
     } else {
-      // 用户选择不保存,直接继续
+      // User chooses not to save, proceed directly
       return true
     }
   }
 
   /**
-   * 扫描目录下所有 .anime 项目文件
-   * @param handle 目录句柄
-   * @returns 文件信息列表
+   * Scan all .anime project files under directory
+   * @param handle Directory handle
+   * @returns File info list
    */
   async function scanAnimeFiles(handle: FileSystemDirectoryHandle): Promise<{ name: string; lastModified: Date }[]> {
     const files: { name: string; lastModified: Date }[] = []
@@ -222,30 +222,30 @@ export const useProjectStore = defineStore('project', () => {
         }
       }
     } catch (error) {
-      console.error('[scanAnimeFiles] 扫描失败:', error)
+      console.error('[scanAnimeFiles] Scan failed:', error)
     }
 
-    // 按修改时间降序排序（最新的在前）
+    // Sort in descending order by modified time (newest first)
     files.sort((a, b) => b.lastModified.getTime() - a.lastModified.getTime())
 
     return files
   }
 
   /**
-   * 生成唯一的项目文件名
-   * @param existingFiles 已存在的文件名列表（包含 .anime 扩展名）
-   * @returns 不重名的文件名（不含扩展名）
+   * Generate unique project file name
+   * @param existingFiles List of existing file names (including .anime extension)
+   * @returns Unique file name (without extension)
    */
   function generateUniqueFileName(existingFiles: string[]): string {
-    // 提取文件名（去除 .anime 扩展名）并转换为小写用于比较
+    // Extract file name (strip .anime extension) and convert to lowercase for comparison
     const existingNamesLower = existingFiles.map(f => f.replace(/\.anime$/, '').toLowerCase())
 
-    // 如果 "Untitled" 不存在，直接返回
+    // If "Untitled" does not exist, return directly
     if (!existingNamesLower.includes('untitled')) {
       return 'Untitled'
     }
 
-    // 否则尝试 Untitled01, Untitled02, ...
+    // Otherwise try Untitled01, Untitled02, ...
     for (let i = 1; i <= 999; i++) {
       const name = `Untitled${i.toString().padStart(2, '0')}`
       if (!existingNamesLower.includes(name.toLowerCase())) {
@@ -253,55 +253,55 @@ export const useProjectStore = defineStore('project', () => {
       }
     }
 
-    // 极端情况：生成随机名称
+    // Edge case: Generate random name
     return `Untitled_${Date.now()}`
   }
 
   /**
-   * 创建新项目
-   * @param name 项目名称
-   * @param fileName 项目文件名（不含 .anime 扩展名）
-   * @param handle 项目目录句柄（可选，如果不提供则会在方法内选择）
+   * Create new project
+   * @param name Project name
+   * @param fileName Project file name (without .anime extension)
+   * @param handle Project directory handle (optional; if not provided, selected in method)
    */
   async function newProject(name: string, fileName = 'project', handle?: FileSystemDirectoryHandle): Promise<void> {
-    // 检查是否有未保存的更改
+    // Check for unsaved changes
     if (!await checkUnsavedChanges()) {
-      throw new Error('用户取消操作')
+      throw new Error('Operation cancelled by user')
     }
 
     try {
       let directoryHandle = handle
 
-      // 如果没有提供句柄，则选择目录（注意：这必须在用户手势中调用）
+      // If handle not provided, select directory (note: must be called in user gesture)
       directoryHandle ??= await selectProjectDirectory()
 
       const fullFileName = `${fileName}.anime`
 
-      // 检查目录下是否已有同名文件
+      // Check whether file with same name exists under directory
       try {
         await directoryHandle.getFileHandle(fullFileName)
-        // 如果文件存在，抛出错误
-        throw new Error(`所选目录已包含项目文件（${fullFileName}），无法创建同名项目。请使用其他文件名。`)
+        // If file exists, throw error
+        throw new Error(`The selected directory already contains a project file (${fullFileName}). Cannot create project with identical name. Please choose a different file name.`)
       } catch (error: unknown) {
         const err = error as { name?: string; message?: string }
-        // 如果错误是 NotFoundError，说明文件不存在，可以继续
+        // If error is NotFoundError, file does not exist, can proceed
         if (err.name === 'NotFoundError') {
-          // 文件不存在，可以继续创建项目
-        } else if (err.message?.includes('已包含项目文件')) {
-          // 这是我们抛出的错误，直接抛出
+          // File does not exist, can proceed to create project
+        } else if (err.message?.includes('already contains a project file')) {
+          // This is our thrown error, rethrow directly
           throw error
         } else {
-          // 其他错误，也抛出
+          // Other error, rethrow as well
           throw error
         }
       }
 
-      // 设置项目句柄
+      // Set project handle
       projectHandle.value = directoryHandle
-      // 不再创建任何目录，让用户自由组织文件夹结构
+      // No longer create subdirectories, allowing user to organize folder structure freely
       assetsHandle.value = null
 
-      // 初始化项目元数据
+      // Initialize project metadata
       projectName.value = name
       projectMeta.value = {
         name,
@@ -310,61 +310,61 @@ export const useProjectStore = defineStore('project', () => {
         version: '2.0.0'
       }
 
-      // 清空所有 Store
+      // Clear all Stores
       const propStore = usePropStore()
-      // v7.3: effectStore 已移除，特效已合并到道具
+      // v7.3: effectStore removed, effects merged into props
       const soundStore = useSoundStore()
       expressionStore.clearAll()
       backgroundStore.clearAll()
       propStore.clearAll()
-      // v7.3: effectStore.clearAll() 已移除
+      // v7.3: effectStore.clearAll() removed
       soundStore.clearAll()
       episodeStore.clearAll()
       sceneStore.clearScene()
       useSceneTemplateStore().clearAll()
       useCompositeCharacterStore().clearAll()
 
-      // 创建初始项目文件（使用自定义文件名）
-      currentProjectFileName.value = fullFileName // 设置当前项目文件名
+      // Create initial project file (using custom file name)
+      currentProjectFileName.value = fullFileName // Set current project file name
       await saveProject(fullFileName)
 
       isProjectOpen.value = true
-      hasUnsavedChanges.value = false // 新创建的项目已保存，没有未保存更改
+      hasUnsavedChanges.value = false // Newly created project is saved, no unsaved changes
 
     } catch (error: unknown) {
       const err = error as { name?: string }
       if (err.name === 'AbortError') {
         return
       }
-      console.error('[ProjectStore] 创建项目失败:', error)
+      console.error('[ProjectStore] Failed to create project:', error)
       throw error
     }
   }
 
   /**
-   * 打开项目
-   * 采用"打开项目文件夹"的方式,类似 VS Code 或 Unity
-   * 用户选择项目文件夹,系统检查文件夹中的 .anime 文件
-   * @param selectedFileName 指定要打开的文件名(包含 .anime 扩展名),如果不提供则需要UI选择
-   * @param directoryHandle 可选的目录句柄
-   * @returns 如果有多个文件且未指定文件名,返回文件列表和目录句柄供UI选择;否则返回 undefined
+   * Open project
+   * Uses "open project folder" approach, similar to VS Code or Unity
+   * User selects project folder, system checks .anime files in folder
+   * @param selectedFileName File name to open (including .anime extension); UI prompt if not provided
+   * @param directoryHandle Optional directory handle
+   * @returns Returns file list and handle for UI selection if multiple files exist and none specified; otherwise undefined
    */
   async function openProject(selectedFileName?: string, directoryHandle?: FileSystemDirectoryHandle): Promise<{ files: { name: string; lastModified: Date }[]; handle: FileSystemDirectoryHandle } | undefined> {
 
-    // 只有在首次调用(没有directoryHandle)时才检查未保存的更改
-    // 如果已提供directoryHandle,说明是从文件选择对话框选择后的调用,不需要再检查
+    // Check unsaved changes only on first call (without directoryHandle)
+    // If directoryHandle provided, call originated from file selector dialog, no check needed
     if (!directoryHandle) {
       if (!await checkUnsavedChanges()) {
-        throw new Error('用户取消操作')
+        throw new Error('Operation cancelled by user')
       }
     }
 
     try {
       if (!('showDirectoryPicker' in window)) {
-        throw new Error('File System Access API 不支持,请使用 Chrome 或 Edge 浏览器')
+        throw new Error('File System Access API is not supported. Please use Chrome or Edge browser.')
       }
 
-      // 让用户选择项目文件夹(必须在用户手势中直接调用)
+      // Prompt user to select project folder (must be called directly in user gesture)
       let handle: FileSystemDirectoryHandle
       if (directoryHandle) {
         handle = directoryHandle
@@ -376,88 +376,88 @@ export const useProjectStore = defineStore('project', () => {
         } catch (error: unknown) {
           const err = error as { name?: string }
           if (err.name === 'AbortError') {
-            // 用户取消选择,不抛出错误,直接返回
+            // User cancelled selection, return directly without throwing error
             return undefined
           }
           throw error
         }
       }
 
-      // 扫描所有 .anime 文件
+      // Scan all .anime files
       const animeFiles = await scanAnimeFiles(handle)
 
       if (animeFiles.length === 0) {
-        throw new Error('所选文件夹不是有效的项目(未找到 .anime 文件)\n\n请选择包含 .anime 文件的项目文件夹')
+        throw new Error('The selected folder is not a valid project (no .anime file found)\n\nPlease select a project folder containing a .anime file')
       }
 
-      // 如果有多个文件且未指定文件名,返回文件列表和目录句柄供UI选择
+      // If multiple files exist and none specified, return file list and directory handle for UI selection
       if (animeFiles.length > 1 && !selectedFileName) {
         return { files: animeFiles, handle }
       }
 
-      // 确定要打开的文件名
+      // Determine file name to open
       const firstAnimeFile = animeFiles[0]
       if (!firstAnimeFile) {
-        throw new Error('未找到有效的 .anime 文件')
+        throw new Error('No valid .anime file found')
       }
       const fileNameToOpen = selectedFileName ?? firstAnimeFile.name
 
-      // 检查文件是否存在
+      // Check whether file exists
       let projectFileHandle: FileSystemFileHandle
       try {
         projectFileHandle = await handle.getFileHandle(fileNameToOpen)
       } catch {
-        throw new Error(`项目文件 ${fileNameToOpen} 不存在`)
+        throw new Error(`Project file ${fileNameToOpen} does not exist`)
       }
 
-      // 读取 project.anime 文件内容
+      // Read project.anime file contents
       const projectFile = await projectFileHandle.getFile()
       const projectDataJson = await projectFile.text()
 
-      // 设置当前项目文件名
+      // Set current project file name
       currentProjectFileName.value = fileNameToOpen
 
-      // 设置项目句柄（现在有了整个文件夹的访问权限）
+      // Set project handle (now having access permission for entire folder)
       projectHandle.value = handle
-      // 不再检查或创建任何目录，直接使用用户现有的文件夹结构
+      // No longer check or create directories, directly use user existing folder structure
       assetsHandle.value = null
 
-      // 解析项目数据
+      // Parse project data
       const projectData = JSON.parse(projectDataJson) as ProjectData
 
-      // ===== .anime 格式版本校验 (v1.0.0 标准) =====
+      // ===== .anime format version validation (v1.0.0 standard) =====
       const CURRENT_FORMAT_VERSION = '2.0.0'
       const fileVersion = projectData.meta?.version ?? '0.0.0'
 
-      // 版本兼容性检查
+      // Version compatibility check
       const fileMajorParsed = fileVersion.split('.').map(Number)[0]
       const currentMajorParsed = CURRENT_FORMAT_VERSION.split('.').map(Number)[0]
       const fileMajor = fileMajorParsed ?? 0
       const currentMajor = currentMajorParsed ?? 1
 
       if (fileMajor > currentMajor) {
-        // 文件版本高于当前支持版本，拒绝打开
+        // File version is higher than supported version, reject opening
         throw new Error(
-          `项目文件格式版本 (${fileVersion}) 高于当前支持版本 (${CURRENT_FORMAT_VERSION})。\n` +
-          `请更新 沙雕动画小助手 编辑器后重试。`
+          `Project file format version (${fileVersion}) is higher than the supported version (${CURRENT_FORMAT_VERSION}).\n` +
+          `Please update Funny Animation Assistant and try again.`
         )
       }
 
       if (fileMajor < currentMajor) {
-        // 文件版本低于当前支持版本，拒绝打开
+        // File version is lower than supported version, reject opening
         throw new Error(
-          `项目文件格式版本 (${fileVersion}) 低于当前支持版本 (${CURRENT_FORMAT_VERSION})。\n` +
-          `当前版本的 沙雕动画小助手 无法打开该项目文件。`
+          `Project file format version (${fileVersion}) is lower than the supported version (${CURRENT_FORMAT_VERSION}).\n` +
+          `The current version of Funny Animation Assistant cannot open this project file.`
         )
       }
 
 
 
-      // 更新项目元数据
+      // Update project metadata
       projectName.value = projectData.meta.name
       projectMeta.value = projectData.meta
 
-      // 清空所有 Store
+      // Clear all Stores
       const propStore = usePropStore()
       expressionStore.clearAll()
       backgroundStore.clearAll()
@@ -469,13 +469,13 @@ export const useProjectStore = defineStore('project', () => {
       const compositeCharacterStore = useCompositeCharacterStore()
       compositeCharacterStore.clearAll()
 
-      // 加载背景数据到 Store
-      // 优先从 assets.backgrounds 加载完整数据
-      // 兼容逻辑：如果 assets.backgrounds 仅包含简略信息（旧版），则尝试从根级 backgrounds 加载
+      // Load background data into Store
+      // Prefer loading full data from assets.backgrounds
+      // Compatibility logic: if assets.backgrounds only contains summary info (legacy), attempt loading from root-level backgrounds
       let backgroundsLoaded = false
       if (projectData.assets?.backgrounds && projectData.assets.backgrounds.length > 0) {
         const firstBg = projectData.assets.backgrounds[0]
-        // 检查是否有完整字段（如 type）
+        // Check whether full fields (such as type) are present
         if (firstBg?.type) {
           backgroundStore.setBackgrounds(projectData.assets.backgrounds)
           backgroundsLoaded = true
@@ -487,25 +487,25 @@ export const useProjectStore = defineStore('project', () => {
         backgroundStore.setBackgrounds(backgroundsList as Background[])
       }
 
-      // 加载表情数据到 Store
+      // Load expression data into Store
       if (projectData.expressions) {
         expressionStore.setExpressions(projectData.expressions)
       }
 
-      // 加载道具数据到 Store
+      // Load prop data into Store
       if (projectData.assets?.props) {
         propStore.setProps(projectData.assets.props)
       }
 
-      // v7.3: 特效已合并到道具，不再单独加载
+      // v7.3: Effects merged into props, no longer loaded separately
 
-      // 加载音效数据到 Store
+      // Load sound effect data into Store
       const soundStore = useSoundStore()
       if (projectData.assets?.sounds) {
         soundStore.setSounds(projectData.assets.sounds)
       }
 
-      // v6.0: 加载剧集列表数据到 Store（已合并 Screenplay）
+      // v6.0: Load episode list data into Store (Screenplay merged)
       if (projectData.episodes && Array.isArray(projectData.episodes) && projectData.episodes.length > 0) {
         episodeStore.episodes = projectData.episodes.map((val) => {
           const ep = val as Episode
@@ -525,7 +525,7 @@ export const useProjectStore = defineStore('project', () => {
         })
       }
 
-      // v6.0: 加载项目级演员和旁白配置
+      // v6.0: Load project-level actor and narrator configuration
       if (projectData.actors && Array.isArray(projectData.actors)) {
         actors.value = projectData.actors
       }
@@ -533,7 +533,7 @@ export const useProjectStore = defineStore('project', () => {
         narrator.value = projectData.narrator
       }
 
-      // 兼容旧版本：如果有 screenplays 字段，进行数据迁移
+      // Legacy compatibility: if screenplays field exists, perform data migration
       const anyProjectData = projectData as unknown as { screenplays?: Record<string, { scenes: SceneContainer[] }> }
       if (anyProjectData.screenplays && Object.keys(anyProjectData.screenplays).length > 0) {
         Object.entries(anyProjectData.screenplays).forEach(([episodeId, screenplay]) => {
@@ -545,48 +545,48 @@ export const useProjectStore = defineStore('project', () => {
       }
       const hierarchyChanged = reconcileEpisodesHierarchy(episodeStore.episodes, 'openProject')
 
-      // v16: 加载场景模板
+      // v16: Load scene templates
       const sceneTemplatesData = (projectData as Record<string, unknown>)['sceneTemplates']
       if (Array.isArray(sceneTemplatesData) && sceneTemplatesData.length > 0) {
         sceneTemplateStore.setTemplates(sceneTemplatesData as SceneTemplate[])
       }
 
-      // v16: 场景模板缩略图水合（thumbnailPath → BlobURL）
+      // v16: Scene template thumbnail hydration (thumbnailPath -> BlobURL)
       for (const tpl of sceneTemplateStore.templates) {
         if (tpl.thumbnailPath && !tpl.thumbnailPath.startsWith('blob:') && !tpl.thumbnailPath.startsWith('data:')) {
           try {
             tpl._runtimeThumbnailUrl = await loadAssetFromDisk(handle, tpl.thumbnailPath)
           } catch {
-            console.warn(`[ProjectStore] 场景模板缩略图加载失败: ${tpl.thumbnailPath}`)
+            console.warn(`[ProjectStore] Failed to load scene template thumbnail: ${tpl.thumbnailPath}`)
           }
         }
       }
 
-      // v18: 加载组合式人物
+      // v18: Load composite characters
       const compositeCharsData = (projectData as Record<string, unknown>)['compositeCharacters']
       if (Array.isArray(compositeCharsData) && compositeCharsData.length > 0) {
         compositeCharacterStore.setCharacters(compositeCharsData as import('@/types/compositeCharacter').CompositeCharacter[])
       }
 
-      // v18: 组合式人物缩略图水合（thumbnailPath → BlobURL）
+      // v18: Composite character thumbnail hydration (thumbnailPath -> BlobURL)
       for (const char of compositeCharacterStore.characters) {
         if (char.thumbnailPath && !char.thumbnailPath.startsWith('blob:') && !char.thumbnailPath.startsWith('data:')) {
           try {
             char._runtimeThumbnailUrl = await loadAssetFromDisk(handle, char.thumbnailPath)
           } catch {
-            console.warn(`[ProjectStore] 组合式人物缩略图加载失败: ${char.thumbnailPath}`)
+            console.warn(`[ProjectStore] Failed to load composite character thumbnail: ${char.thumbnailPath}`)
           }
         }
       }
 
-      // v20: 加载自定义预制动作模板
+      // v20: Load custom prefab action templates
       const customPresetsData = (projectData as Record<string, unknown>)['customPresetAnimations']
       if (Array.isArray(customPresetsData) && customPresetsData.length > 0) {
         const validated: PresetAnimationTemplate[] = []
         for (const tpl of customPresetsData as PresetAnimationTemplate[]) {
           const errors = validatePresetTemplate(tpl)
           if (errors.length > 0) {
-            console.warn(`[ProjectStore] 加载自定义模板 "${tpl.id ?? 'unknown'}" 校验失败: ${errors.join('; ')}`)
+            console.warn(`[ProjectStore] Loading custom template "${tpl.id ?? 'unknown'}" validation failed: ${errors.join('; ')}`)
           }
           validated.push(tpl)
         }
@@ -595,11 +595,11 @@ export const useProjectStore = defineStore('project', () => {
         customPresetAnimations.value = []
       }
 
-      // 加载资产（从路径创建 Blob URLs）
+      // Load assets (create Blob URLs from paths)
       hydrateAssets(projectData)
 
 
-      // v16: 将资源级动画填充到 SceneObject.animations（向后兼容迁移）
+      // v16: Populate resource-level animations into SceneObject.animations (backward-compatibility migration)
       populateObjectAnimationsOnLoad()
 
       isProjectOpen.value = true
@@ -610,36 +610,36 @@ export const useProjectStore = defineStore('project', () => {
       if (err.name === 'AbortError') {
         return undefined
       }
-      console.error('[ProjectStore] 打开项目失败:', error)
+      console.error('[ProjectStore] Failed to open project:', error)
       throw error
     }
   }
 
   /**
-   * 从磁盘加载资产并创建 Blob URLs
-   * v12.8: 重构为懒加载模式 - 仅将数据分发到 Store，不预加载任何二进制资源
-   * 资源将在 UI 组件需要时通过 useAssetImage/useAssetAudio 按需加载
-   * @param projectData 项目数据
+   * Load assets from disk and create Blob URLs
+   * v12.8: Refactored to lazy-load mode - only dispatches data to Store without preloading binary assets
+   * Assets loaded on-demand via useAssetImage/useAssetAudio when requested by UI components
+   * @param projectData Project data
    */
   function hydrateAssets(_projectData: ProjectData): void {
     if (!projectHandle.value) {
-      throw new Error('项目未打开')
+      throw new Error('No project is open')
     }
 
-    // Character 数据加载已移除
+    // Character data loading removed
 
-    // 2-5: 表情、背景、道具、音效数据已在 openProject 中分发到各 Store
-    // 不再预加载任何二进制资源，由各组件按需加载
+    // 2-5: Expression, background, prop, sound data dispatched to Stores in openProject
+    // No longer preloading binary assets; loaded on demand by components
   }
 
 
 
 
   /**
-   * v16: 将资源级动画填充到 SceneObject.animations
-   * 项目加载时执行，遍历所有场景的所有对象，
-   * 将资源级 store 中的动画复制到对象的 animations 字段。
-   * 已有 animations 的对象不会被覆盖。
+   * v16: Populate resource-level animations into SceneObject.animations
+   * Executed on project load, traverses all objects across all scenes,
+   * copying animations from resource-level store to object animations field.
+   * Objects with existing animations will not be overwritten.
    */
   function populateObjectAnimationsOnLoad(): void {
     const animationStore = useAnimationStore()
@@ -648,7 +648,7 @@ export const useProjectStore = defineStore('project', () => {
       for (const scene of episode.scenes ?? []) {
         for (const obj of scene.setup?.objects ?? []) {
           if (obj.animations && Object.keys(obj.animations).length > 0) {
-            continue // 已有对象级动画，跳过
+            continue // Object-level animation exists, skip
           }
           populateObjectAnimationsForObject(obj, animationStore)
         }
@@ -657,8 +657,8 @@ export const useProjectStore = defineStore('project', () => {
   }
 
   /**
-   * v16: 将资源级动画填充到单个 SceneObject.animations
-   * 可用于项目加载时的批量迁移，也可用于新对象放置时的单次填充。
+   * v16: Populate resource-level animations into single SceneObject.animations
+   * Usable for batch migration on project load or single population upon placing new objects.
    */
   function populateObjectAnimationsForObject(
     obj: { type: string; refId: string; animations?: Record<string, unknown> },
@@ -677,63 +677,63 @@ export const useProjectStore = defineStore('project', () => {
     }
   }
 
-  // 防止并发保存标志
+  // Concurrency guard flag for saving
   const isSaving = ref(false)
 
   /**
-   * 保存项目
-   * @param fileName 项目文件名（包含 .anime 扩展名），默认为 'project.anime'
+   * Save project
+   * @param fileName Project file name (including .anime extension), default 'project.anime'
    */
   async function saveProject(fileName?: string): Promise<void> {
-    // 如果正在保存中，则跳过（避免并发写入导致 InvalidStateError）
+    // Skip if currently saving (avoids InvalidStateError from concurrent writes)
     if (isSaving.value) {
 
       return
     }
 
-    // 使用传入的文件名,或者使用当前项目文件名
+    // Use provided file name or current project file name
     const targetFileName = fileName ?? currentProjectFileName.value
     if (!projectHandle.value) {
-      throw new Error('项目未打开')
+      throw new Error('No project is open')
     }
 
     isSaving.value = true
 
     try {
       const propStore = usePropStore()
-      // v7.3: effectStore 已移除，特效已合并到道具
+      // v7.3: effectStore removed, effects merged into props
       const soundStore = useSoundStore()
-      // 收集所有 Store 的数据
+      // Collect data from all Stores
       const projectData: ProjectData = {
         meta: projectMeta.value,
         assets: {
-          // 使用 stripRuntimeProps 递归清理运行时属性
+          // Recursively strip runtime properties using stripRuntimeProps
           backgrounds: backgroundStore.backgrounds.map((bg: Background) => stripRuntimeProps(bg)),
           props: propStore.props.map(prop => stripRuntimeProps(prop)),
           sounds: soundStore.sounds.map(sound => stripRuntimeProps(sound)),
           musics: [], // Deprecated: kept for backwards compatibility
         },
-        expressions: {}, // 保存完整的表情数据
+        expressions: {}, // Save complete expression data
       }
 
-      // 处理缩略图缓存文件夹
+      // Process thumbnail cache directory
       const cacheDirName = currentProjectFileName.value.replace(/\.anime$/, '') + '_cache'
 
 
-      // 保存完整的背景数据 (已合并到 assets.backgrounds，此处移除冗余写入)
+      // Save complete background data (merged into assets.backgrounds, redundant write removed)
       // backgroundStore.backgrounds.forEach(bg => { ... })
 
-      // 保存完整的表情数据（确保 URL 是路径而不是 Blob URL）
+      // Save complete expression data (ensuring URL is a path rather than Blob URL)
       const expressionStore = useExpressionStore()
       if (expressionStore.expressions) {
         Object.values(expressionStore.expressions).forEach(expr => {
           const exprCopy: Record<string, unknown> = {}
 
-          // 复制所有非 _ 开头的字段
+          // Copy all fields not starting with _
           Object.keys(expr).forEach(key => {
             if (!key.startsWith('_')) {
               if (key === 'defaultFrame') {
-                // 处理 defaultFrame
+                // Process defaultFrame
                 const frameCopy: Record<string, unknown> = {}
                 Object.keys(expr.defaultFrame).forEach(frameKey => {
                   if (!frameKey.startsWith('_')) {
@@ -742,7 +742,7 @@ export const useProjectStore = defineStore('project', () => {
                 })
                 exprCopy['defaultFrame'] = frameCopy
               } else if (key === 'speakingFrames') {
-                // 处理 speakingFrames
+                // Process speakingFrames
                 exprCopy['speakingFrames'] = expr.speakingFrames.map(frame => {
                   const frameCopy: Record<string, unknown> = {}
                   Object.keys(frame).forEach(frameKey => {
@@ -758,15 +758,15 @@ export const useProjectStore = defineStore('project', () => {
             }
           })
 
-          // 确保 URL 是路径
+          // Ensure URL is a path
           if ((exprCopy['defaultFrame'] as ExpressionFrame)?.url?.startsWith('blob:')) {
-            console.warn(`[ProjectStore] 表情 ${expr.id} 的 defaultFrame URL 是 Blob URL，清空`)
+            console.warn(`[ProjectStore] Expression ${expr.id} defaultFrame URL is Blob URL, cleared`)
               ; (exprCopy['defaultFrame'] as ExpressionFrame).url = ''
           }
 
           (exprCopy['speakingFrames'] as ExpressionFrame[])?.forEach((frame, index: number) => {
             if (frame.url?.startsWith('blob:')) {
-              console.warn(`[ProjectStore] 表情 ${expr.id} 的 speakingFrame[${index}] URL 是 Blob URL，清空`)
+              console.warn(`[ProjectStore] Expression ${expr.id} speakingFrame[${index}] URL is Blob URL, cleared`)
               frame.url = ''
             }
           })
@@ -777,8 +777,8 @@ export const useProjectStore = defineStore('project', () => {
 
       reconcileEpisodesHierarchy(episodeStore.episodes, 'saveProject', false)
 
-      // v6.0: 保存剧集列表数据（已合并 Screenplay，直接包含 scenes）
-      // v12.8: TTS 音频使用 audioPath 外置存储，不再需要 blob URL 转换
+      // v6.0: Save episode list data (Screenplay merged, directly contains scenes)
+      // v12.8: TTS audio uses external storage via audioPath, no longer needs blob URL conversion
       const processedEpisodes = episodeStore.episodes.map(ep => {
         const epCopy = { ...ep }
 
@@ -786,8 +786,8 @@ export const useProjectStore = defineStore('project', () => {
           epCopy.scenes = epCopy.scenes.map(scene => {
             const sceneCopy = { ...scene }
 
-            // 防止 setup.objects 中的运行时属性泄漏到项目文件
-            // （如 SymbolMaterial 的历史遗留 _runtimeUrl 等以 _ 开头的字段）
+            // Prevent runtime properties in setup.objects from leaking into project file
+            // (such as legacy SymbolMaterial _runtimeUrl and other fields starting with _)
             if (sceneCopy.setup?.objects) {
               sceneCopy.setup = {
                 ...sceneCopy.setup,
@@ -799,8 +799,8 @@ export const useProjectStore = defineStore('project', () => {
               sceneCopy.script = sceneCopy.script.map(block => {
                 const blockCopy = { ...block }
 
-                // v12.8: audioPath 已经是相对路径，直接保存
-                // 移除旧的 blob URL 转 Base64 逻辑
+                // v12.8: audioPath is already relative path, save directly
+                // Removed legacy blob URL to Base64 conversion logic
                 return blockCopy
               })
             }
@@ -813,7 +813,7 @@ export const useProjectStore = defineStore('project', () => {
           episodeNumber: epCopy.episodeNumber,
           name: epCopy.name,
           scenes: epCopy.scenes ?? [],
-          bgmTracks: epCopy.bgmTracks ?? [], // 保存 BGM 轨道 (v7.5)
+          bgmTracks: epCopy.bgmTracks ?? [], // Save BGM tracks (v7.5)
           duration: epCopy.duration,
           thumbnail: epCopy.thumbnail,
           createdAt: epCopy.createdAt,
@@ -824,18 +824,18 @@ export const useProjectStore = defineStore('project', () => {
 
       projectData.episodes = processedEpisodes
 
-      // v6.0: 保存项目级演员和旁白配置
+      // v6.0: Save project-level actor and narrator configuration
       projectData.actors = actors.value
       projectData.narrator = narrator.value
 
-      // v16: 保存场景模板（含缩略图持久化）
+      // v16: Save scene templates (including thumbnail persistence)
       const sceneTemplateStore = useSceneTemplateStore()
       if (sceneTemplateStore.templates.length > 0) {
         const processedTemplates: SceneTemplate[] = []
         for (const tpl of sceneTemplateStore.templates) {
           const tplCopy = stripRuntimeProps(tpl) as SceneTemplate
 
-          // 缩略图持久化：DataURL → cache 文件
+          // Thumbnail persistence: DataURL -> cache file
           if (tpl._runtimeThumbnailUrl?.startsWith('data:image')) {
             const extMatch = /data:image\/(.*?);/.exec(tpl._runtimeThumbnailUrl)
             const ext = extMatch?.[1] ?? 'jpg'
@@ -844,7 +844,7 @@ export const useProjectStore = defineStore('project', () => {
             const file = dataURLtoFile(tpl._runtimeThumbnailUrl, thumbFileName)
             await saveFileToDisk(projectHandle.value, relativePath, file)
 
-            // 更新 store 中的引用
+            // Update reference in store
             tpl.thumbnailPath = relativePath
             tpl._runtimeThumbnailUrl = URL.createObjectURL(file)
             tplCopy.thumbnailPath = relativePath
@@ -857,14 +857,14 @@ export const useProjectStore = defineStore('project', () => {
         projectData.sceneTemplates = processedTemplates
       }
 
-      // v18: 保存组合式人物（含缩略图持久化）
+      // v18: Save composite characters (including thumbnail persistence)
       const compositeCharacterStore = useCompositeCharacterStore()
       if (compositeCharacterStore.characters.length > 0) {
         const processedChars: import('@/types/compositeCharacter').CompositeCharacter[] = []
         for (const char of compositeCharacterStore.characters) {
           const charCopy = stripRuntimeProps(char) as import('@/types/compositeCharacter').CompositeCharacter
 
-          // 缩略图持久化：DataURL → cache 文件
+          // Thumbnail persistence: DataURL -> cache file
           if (char._runtimeThumbnailUrl?.startsWith('data:image')) {
             const extMatch = /data:image\/(.*?);/.exec(char._runtimeThumbnailUrl)
             const ext = extMatch?.[1] ?? 'jpg'
@@ -873,7 +873,7 @@ export const useProjectStore = defineStore('project', () => {
             const file = dataURLtoFile(char._runtimeThumbnailUrl, thumbFileName)
             await saveFileToDisk(projectHandle.value, relativePath, file)
 
-            // 更新 store 中的引用
+            // Update reference in store
             char.thumbnailPath = relativePath
             char._runtimeThumbnailUrl = URL.createObjectURL(file)
             charCopy.thumbnailPath = relativePath
@@ -886,21 +886,21 @@ export const useProjectStore = defineStore('project', () => {
         projectData.compositeCharacters = processedChars
       }
 
-      // v20: 保存自定义预制动作模板
+      // v20: Save custom prefab action templates
       if (customPresetAnimations.value.length > 0) {
         projectData.customPresetAnimations = customPresetAnimations.value
       }
 
-      // 将 Blob URLs 替换为相对路径
-      // TODO: 实现路径转换逻辑
-      // 需要遍历所有资产，将 Blob URL 替换为相对路径
-      // 写入项目文件
+      // Replace Blob URLs with relative paths
+      // TODO: Implement path conversion logic
+      // Needs to traverse all assets, replacing Blob URLs with relative paths
+      // Write project file
       const jsonString = JSON.stringify(projectData, null, 2)
       await writeFileAsText(projectHandle.value, targetFileName, jsonString)
 
       hasUnsavedChanges.value = false
     } catch (error) {
-      console.error('[ProjectStore] 保存项目失败:', error)
+      console.error('[ProjectStore] Failed to save project:', error)
       throw error
     } finally {
       isSaving.value = false
@@ -908,23 +908,23 @@ export const useProjectStore = defineStore('project', () => {
   }
 
   /**
-   * 关闭项目
-   * @param skipCheck 是否跳过未保存更改检查（内部使用）
+   * Close project
+   * @param skipCheck Whether to skip unsaved changes check (internal use)
    */
   async function closeProject(skipCheck = false): Promise<void> {
-    // 检查是否有未保存的更改
+    // Check for unsaved changes
     if (!skipCheck && !await checkUnsavedChanges()) {
-      throw new Error('用户取消操作')
+      throw new Error('Operation cancelled by user')
     }
-    // 清理所有 Blob URLs
-    // TODO: 遍历所有 Store，释放 Blob URLs
+    // Clean up all Blob URLs
+    // TODO: Traverse all Stores to release Blob URLs
 
     projectHandle.value = null
     assetsHandle.value = null
-    projectName.value = '未命名项目'
-    currentProjectFileName.value = 'project.anime' // 重置为默认值
+    projectName.value = 'Untitled Project'
+    currentProjectFileName.value = 'project.anime' // Reset to default
     projectMeta.value = {
-      name: '未命名项目',
+      name: 'Untitled Project',
       resolution: { w: 1920, h: 1080 },
       fps: 25,
       version: '2.0.0'
@@ -942,22 +942,22 @@ export const useProjectStore = defineStore('project', () => {
   }
 
   /**
-   * v12.8: 保存 TTS 音频到项目缓存目录
-   * @param base64Audio Base64 编码的音频数据
-   * @param cacheKey 缓存键 (用于生成文件名哈希)
-   * @returns 相对路径，如 "{project}_cache/tts/{hash}.mp3"
+   * v12.8: Save TTS audio to project cache directory
+   * @param base64Audio Base64 encoded audio data
+   * @param cacheKey Cache key (used to generate filename hash)
+   * @returns Relative path, such as "{project}_cache/tts/{hash}.mp3"
    */
   async function saveTTSAudio(base64Audio: string, cacheKey: string): Promise<string> {
     if (!projectHandle.value) {
-      throw new Error('项目未打开')
+      throw new Error('No project is open')
     }
 
-    // 生成文件名哈希
+    // Generate file name hash
     const hash = await generateHash(cacheKey)
     const cacheDirName = currentProjectFileName.value.replace(/\.anime$/, '') + '_cache'
     const relativePath = `${cacheDirName}/tts/${hash}.mp3`
 
-    // Base64 转 File
+    // Base64 to File
     const byteCharacters = atob(base64Audio)
     const byteNumbers = new Array(byteCharacters.length)
     for (let i = 0; i < byteCharacters.length; i++) {
@@ -967,14 +967,14 @@ export const useProjectStore = defineStore('project', () => {
     const blob = new Blob([byteArray], { type: 'audio/mp3' })
     const file = new File([blob], `${hash}.mp3`, { type: 'audio/mp3' })
 
-    // 保存到磁盘
+    // Save to disk
     await saveFileToDisk(projectHandle.value, relativePath, file)
 
     return relativePath
   }
 
   /**
-   * 生成字符串哈希 (用于 TTS 缓存文件名)
+   * Generate string hash (for TTS cache filename)
    */
   async function generateHash(str: string): Promise<string> {
     const encoder = new TextEncoder()
@@ -985,15 +985,15 @@ export const useProjectStore = defineStore('project', () => {
   }
 
   /**
-   * 检测 TTS 音频文件是否存在
-   * @param audioPath 音频文件相对路径
-   * @returns 文件是否存在
+   * Detect whether TTS audio file exists
+   * @param audioPath Relative path of audio file
+   * @returns Whether file exists
    */
   async function checkTTSAudioExists(audioPath: string): Promise<boolean> {
     if (!projectHandle.value) {
       return false
     }
-    // 跳过 blob: 和 data: URL（这些不是有效的文件路径）
+    // Skip blob: and data: URLs (not valid file paths)
     if (audioPath.startsWith('blob:') || audioPath.startsWith('data:')) {
       return false
     }
@@ -1005,19 +1005,19 @@ export const useProjectStore = defineStore('project', () => {
   }
 
   /**
-   * v21: 保存 TTS 音频的 pause/speech sidecar timing 文件
-   * @returns 相对路径，如 "{project}_cache/tts/{hash}.timing.json"
+   * v21: Save TTS audio pause/speech sidecar timing file
+   * @returns Relative path, such as "{project}_cache/tts/{hash}.timing.json"
    */
   async function saveTTSTiming(audioPath: string, timing: TTSTimingFile): Promise<string> {
     if (!projectHandle.value) {
-      throw new Error('项目未打开')
+      throw new Error('No project is open')
     }
 
     return saveTTSTimingFile(projectHandle.value, audioPath, timing)
   }
 
   /**
-   * v21: 加载 TTS timing sidecar 文件
+   * v21: Load TTS timing sidecar file
    */
   async function loadTTSTiming(audioPath: string): Promise<TTSTimingFile | null> {
     if (!projectHandle.value) {
@@ -1028,7 +1028,7 @@ export const useProjectStore = defineStore('project', () => {
   }
 
   /**
-   * v21: 检测 TTS timing sidecar 文件是否存在
+   * v21: Detect whether TTS timing sidecar file exists
    */
   async function checkTTSTimingExists(audioPath: string): Promise<boolean> {
     if (!projectHandle.value) {
@@ -1043,47 +1043,47 @@ export const useProjectStore = defineStore('project', () => {
   }
 
   /**
-   * v21: 确保 TTS timing sidecar 已生成。已有且参数匹配时复用，否则重新分析并写入。
+   * v21: Ensure TTS timing sidecar is generated. Reuse if existing with matching parameters; otherwise reanalyze and write.
    */
   async function ensureTTSTiming(audioPath: string, audioBuffer: AudioBuffer): Promise<string> {
     if (!projectHandle.value) {
-      throw new Error('项目未打开')
+      throw new Error('No project is open')
     }
 
     return ensureTTSTimingFile(projectHandle.value, audioPath, audioBuffer)
   }
 
   /**
-   * 自动保存（保存到文件系统和 localStorage）
+   * Auto save (save to file system and localStorage)
    */
   async function autoSave(): Promise<void> {
-    // 如果项目已打开，则保存到文件系统
+    // If project is open, save to file system
     if (isProjectOpen.value && projectHandle.value) {
       try {
         await saveProject()
       } catch (error) {
-        console.error('[ProjectStore] 文件系统保存失败:', error)
-        // 如果文件系统保存失败，则保存到 localStorage
+        console.error('[ProjectStore] File system save failed:', error)
+        // If file system save fails, save to localStorage
         saveToLocalStorage()
       }
     } else {
-      // 否则保存到 localStorage，以便下次恢复
+      // Otherwise save to localStorage for subsequent restoration
       saveToLocalStorage()
     }
   }
 
   /**
-   * 保存到 localStorage（降级方案）
+   * Save to localStorage (fallback)
    */
   function saveToLocalStorage(): void {
     const propStore = usePropStore()
-    // v7.3: effectStore 已移除，特效已合并到道具
+    // v7.3: effectStore removed, effects merged into props
     const soundStore = useSoundStore()
     const projectData: ProjectData = {
       meta: projectMeta.value,
       assets: {
         backgrounds: backgroundStore.backgrounds.map((bg: Background) => {
-          // 创建背景副本，跳过以 _ 开头的运行时字段
+          // Create background copy, skipping runtime fields starting with _
           const bgCopy: Record<string, unknown> = {}
           Object.keys(bg).forEach(key => {
             if (!key.startsWith('_')) {
@@ -1107,16 +1107,16 @@ export const useProjectStore = defineStore('project', () => {
 
           // 2.3 Cast properties for checking
           if ((bgCopy['url'] as string)?.startsWith('blob:')) {
-            console.warn(`[ProjectStore] (AutoSave) 背景 ${bg.id} 的 URL 仍为 Blob URL: ${bgCopy['url'] as string}`)
+            console.warn(`[ProjectStore] (AutoSave) Background ${bg.id} URL is still Blob URL: ${bgCopy['url'] as string}`)
           }
           if ((bgCopy['stillFrameCustomUrl'] as string)?.startsWith('blob:')) bgCopy['stillFrameCustomUrl'] = ''
-          // 兼容处理
+          // Compatibility handling
           if ((bgCopy['backgroundImage'] as string)?.startsWith('blob:')) bgCopy['backgroundImage'] = undefined
 
           return bgCopy as Background
         }),
         props: propStore.props.map(prop => {
-          // 深拷贝并移除运行时字段
+          // Deep copy and strip runtime fields
           const propCopy: Record<string, unknown> = {}
           Object.keys(prop).forEach(key => {
             if (!key.startsWith('_')) {
@@ -1128,7 +1128,7 @@ export const useProjectStore = defineStore('project', () => {
                       frameCopy[frameKey] = frame[frameKey]
                     }
                   })
-                  // 确保 URL 是相对路径
+                  // Ensure URL is relative path
                   if ((frameCopy['url'] as string)?.startsWith('blob:')) frameCopy['url'] = ''
                   return frameCopy
                 })
@@ -1137,15 +1137,15 @@ export const useProjectStore = defineStore('project', () => {
               }
             }
           })
-          // 确保 URL 是相对路径
+          // Ensure URL is relative path
           if ((propCopy['url'] as string)?.startsWith('blob:')) {
-            console.warn(`[ProjectStore] (AutoSave) 道具 ${prop.id} 的 URL 仍为 Blob URL: ${propCopy['url'] as string}`)
+            console.warn(`[ProjectStore] (AutoSave) Prop ${prop.id} URL is still Blob URL: ${propCopy['url'] as string}`)
           }
           if ((propCopy['stillFrameCustomUrl'] as string)?.startsWith('blob:')) propCopy['stillFrameCustomUrl'] = ''
 
           return propCopy as PropAsset
         }),
-        // v7.3: 特效已合并到道具，不再单独保存
+        // v7.3: Effects merged into props, no longer saved separately
         sounds: soundStore.sounds.map(sound => {
           const soundCopy: Record<string, unknown> = {}
           Object.keys(sound).forEach(key => {
@@ -1154,7 +1154,7 @@ export const useProjectStore = defineStore('project', () => {
             }
           })
           if ((soundCopy['url'] as string)?.startsWith('blob:')) {
-            console.warn(`[ProjectStore] (AutoSave) 音效 ${sound.id} 的 URL 仍为 Blob URL: ${soundCopy['url'] as string}`)
+            console.warn(`[ProjectStore] (AutoSave) Sound ${sound.id} URL is still Blob URL: ${soundCopy['url'] as string}`)
           }
           return soundCopy as SoundAsset
         }),
@@ -1163,10 +1163,10 @@ export const useProjectStore = defineStore('project', () => {
       expressions: {},
     }
 
-    // 保存完整的背景数据 (已合并到 assets.backgrounds，此处移除冗余写入)
+    // Save complete background data (merged into assets.backgrounds, redundant write removed)
     // backgroundStore.backgrounds.forEach(bg => { ... })
 
-    // 保存完整的道具数据
+    // Save complete prop data
     // if (propStore.props) {
     //   propStore.props.forEach(prop => {
     //     if (!projectData.props) projectData.props = {}
@@ -1174,7 +1174,7 @@ export const useProjectStore = defineStore('project', () => {
     //   })
     // }
 
-    // 保存完整的表情数据
+    // Save complete expression data
     const expressionStore = useExpressionStore()
     if (expressionStore.expressions) {
       Object.values(expressionStore.expressions).forEach(expr => {
@@ -1182,10 +1182,10 @@ export const useProjectStore = defineStore('project', () => {
       })
     }
 
-    // Character 数据保存已移除
+    // Character data saving removed
 
 
-    // 保存剧集列表数据到 localStorage
+    // Save episode list data to localStorage
     projectData.episodes = episodeStore.episodes.map(ep => ({ ...ep }))
 
     localStorage.setItem('animeStudio_autosave', JSON.stringify(projectData))
@@ -1193,14 +1193,14 @@ export const useProjectStore = defineStore('project', () => {
   }
 
   /**
-   * 检查是否有自动保存数据
+   * Check whether auto-save data exists
    */
   function hasAutoSave(): boolean {
     return localStorage.getItem('animeStudio_autosave') !== null
   }
 
   /**
-   * 获取自动保存的时间
+   * Get timestamp of auto-save
    */
   function getAutoSaveTime(): Date | null {
     const timeStr = localStorage.getItem('animeStudio_autosave_time')
@@ -1211,7 +1211,7 @@ export const useProjectStore = defineStore('project', () => {
   }
 
   /**
-   * 恢复自动保存的数据
+   * Restore auto-saved data
    */
   function restoreFromAutoSave(): boolean {
     try {
@@ -1222,35 +1222,35 @@ export const useProjectStore = defineStore('project', () => {
       projectName.value = projectData.meta.name
       projectMeta.value = projectData.meta
 
-      // TODO: 恢复所有 Store 的数据
-      // 需要将 Base64 转换为 Blob URLs
+      // TODO: Restore data for all Stores
+      // Needs to convert Base64 to Blob URLs
 
       isProjectOpen.value = true
       return true
     } catch (error) {
-      console.error('[ProjectStore] 恢复自动保存失败:', error)
+      console.error('[ProjectStore] Failed to restore auto-save:', error)
       return false
     }
   }
 
   /**
-   * 导出到目录（已废弃，现在直接保存）
+   * Export to directory (deprecated, directly saved now)
    */
   async function exportToDirectory(): Promise<void> {
-    // 这个方法现在等同于 saveProject
+    // This method is now equivalent to saveProject
     await saveProject()
   }
 
   /**
-   * 保存到文件（降级方案，用于不支持 File System API 的情况）
+   * Save to file (fallback for browsers without File System API support)
    */
   function saveToFile(): void {
-    // 收集所有数据
+    // Collect all data
     const projectData: ProjectData = {
       meta: projectMeta.value,
       assets: {
         backgrounds: backgroundStore.backgrounds.map((bg: Background) => {
-          // 创建背景副本，跳过以 _ 开头的运行时字段
+          // Create background copy, skipping runtime fields starting with _
           const bgCopy: Record<string, unknown> = {}
           Object.keys(bg).forEach(key => {
             if (!key.startsWith('_')) {
@@ -1273,21 +1273,21 @@ export const useProjectStore = defineStore('project', () => {
 
           if ((bgCopy['url'] as string)?.startsWith('blob:')) bgCopy['url'] = ''
           if ((bgCopy['stillFrameCustomUrl'] as string)?.startsWith('blob:')) bgCopy['stillFrameCustomUrl'] = ''
-          // 兼容处理
+          // Compatibility handling
           if ((bgCopy['backgroundImage'] as string)?.startsWith('blob:')) bgCopy['backgroundImage'] = undefined
 
           return bgCopy as Background
         }),
         props: [],
-        // v7.3: effects 字段已移除
+        // v7.3: effects field removed
         sounds: [],
         musics: []
       },
     }
 
-    // TODO: 将 Blob URLs 转换为 Base64（用于文件下载）
+    // TODO: Convert Blob URLs to Base64 (for file download)
 
-    // 创建下载链接
+    // Create download link
     const jsonString = JSON.stringify(projectData, null, 2)
     const blob = new Blob([jsonString], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
@@ -1299,14 +1299,14 @@ export const useProjectStore = defineStore('project', () => {
   }
 
   /**
-   * 从文件加载（降级方案）
+   * Load from file (fallback)
    */
   async function loadFromFile(file: File): Promise<boolean> {
     try {
       const text = await file.text()
       const projectData = JSON.parse(text) as ProjectData
 
-      // ===== .anime 格式版本校验 =====
+      // ===== .anime format version validation =====
       const CURRENT_FORMAT_VERSION = '2.0.0'
       const fileVersion = projectData.meta?.version ?? '0.0.0'
       const fileMajorParsed = fileVersion.split('.').map(Number)[0]
@@ -1316,49 +1316,49 @@ export const useProjectStore = defineStore('project', () => {
 
       if (fileMajor > currentMajor) {
         throw new Error(
-          `项目文件格式版本 (${fileVersion}) 高于当前支持版本 (${CURRENT_FORMAT_VERSION})。\n` +
-          `请更新 沙雕动画小助手 编辑器后重试。`
+          `Project file format version (${fileVersion}) is higher than the supported version (${CURRENT_FORMAT_VERSION}).\n` +
+          `Please update Funny Animation Assistant and try again.`
         )
       }
 
       if (fileMajor < currentMajor) {
         throw new Error(
-          `项目文件格式版本 (${fileVersion}) 低于当前支持版本 (${CURRENT_FORMAT_VERSION})。\n` +
-          `当前版本的 沙雕动画小助手 不兼容旧版工程文件，请使用旧版编辑器打开。`
+          `Project file format version (${fileVersion}) is lower than the supported version (${CURRENT_FORMAT_VERSION}).\n` +
+          `The current version of Funny Animation Assistant cannot open this project file.`
         )
       }
 
       projectName.value = projectData.meta.name
       projectMeta.value = projectData.meta
 
-      // TODO: 加载所有数据到 Store
-      // 需要将 Base64 转换为 Blob URLs
+      // TODO: Load all data into Store
+      // Needs to convert Base64 to Blob URLs
 
       isProjectOpen.value = true
       return true
     } catch (error) {
-      console.error('[ProjectStore] 从文件加载失败:', error)
+      console.error('[ProjectStore] Failed to load from file:', error)
       return false
     }
   }
 
   /**
-   * 生成项目名称（新建项目1、新建项目2 等）
+   * Generate project name (New Project 1, New Project 2, etc.)
    */
   function generateProjectName(): string {
-    // 从 localStorage 获取已使用的项目名称计数
+    // Get used project name counter from localStorage
     const key = 'animeStudio_projectNameCounter'
     let counter = parseInt(localStorage.getItem(key) ?? '0', 10)
     counter++
     localStorage.setItem(key, counter.toString())
-    return `新建项目${counter}`
+    return `New Project ${counter}`
   }
 
-  // ==================== 演员/旁白管理 ====================
+  // ==================== Actor / Narrator Management ====================
 
   /**
-   * 添加演员
-   * v7.0: 演员使用 id 作为标识符
+   * Add actor
+   * v7.0: Actors use id as identifier
    */
   function addActor(actor: ActorConfig): void {
     actors.value.push(actor)
@@ -1366,8 +1366,8 @@ export const useProjectStore = defineStore('project', () => {
   }
 
   /**
-   * 更新演员
-   * v7.0: 使用 id 查找演员
+   * Update actor
+   * v7.0: Use id to find actor
    */
   function updateActor(actorId: string, updates: Partial<Omit<ActorConfig, 'id'>>): void {
     const index = actors.value.findIndex(a => a.id === actorId)
@@ -1378,8 +1378,8 @@ export const useProjectStore = defineStore('project', () => {
   }
 
   /**
-   * 删除演员
-   * v7.0: 使用 id 查找演员
+   * Delete actor
+   * v7.0: Use id to find actor
    */
   function deleteActor(actorId: string): void {
     const index = actors.value.findIndex(a => a.id === actorId)
@@ -1390,7 +1390,7 @@ export const useProjectStore = defineStore('project', () => {
   }
 
   /**
-   * 更新旁白配置
+   * Update narrator configuration
    */
   function updateNarrator(config: NarratorConfig): void {
     narrator.value = config
@@ -1398,36 +1398,36 @@ export const useProjectStore = defineStore('project', () => {
   }
 
   /**
-   * 通过ID获取演员
-   * v7.0: 使用 id 查找演员
+   * Get actor by ID
+   * v7.0: Use id to find actor
    */
   function getActor(actorId: string): ActorConfig | undefined {
     return actors.value.find(a => a.id === actorId)
   }
 
   /**
-   * 通过 characterId 获取演员
-   * v7.0: 新增
+   * Get actor by characterId
+   * v7.0: Added
    */
   function getActorByCharacterId(characterId: string): ActorConfig | undefined {
     return actors.value.find(a => a.characterId === characterId)
   }
 
   /**
-   * 仅供自动化测试使用：直接从 JSON 字符串加载项目数据
-   * 绕过 File System Access API
-   * 不需要 FileSystemHandle，只解析 JSON 并填充 Store
+   * For automated testing only: load project data directly from JSON string
+   * Bypass File System Access API
+   * Does not require FileSystemHandle, parses JSON and populates Stores only
    */
   async function OnlyForAutoTestCase_OpenProject(jsonContent: string): Promise<void> {
     await Promise.resolve()
     try {
       const projectData = JSON.parse(jsonContent) as ProjectData
 
-      // 更新项目元数据
+      // Update project metadata
       projectName.value = projectData.meta.name
       projectMeta.value = projectData.meta
 
-      // 清空所有 Store
+      // Clear all Stores
       const propStore = usePropStore()
       expressionStore.clearAll()
       backgroundStore.clearAll()
@@ -1435,7 +1435,7 @@ export const useProjectStore = defineStore('project', () => {
       episodeStore.clearAll()
       sceneStore.clearScene()
 
-      // 加载背景数据
+      // Load background data
       let backgroundsLoaded = false
       if (projectData.assets?.backgrounds && projectData.assets.backgrounds.length > 0) {
         const firstBg = projectData.assets.backgrounds[0]
@@ -1449,23 +1449,23 @@ export const useProjectStore = defineStore('project', () => {
         backgroundStore.setBackgrounds(backgroundsList as Background[])
       }
 
-      // 加载表情数据
+      // Load expression data
       if (projectData.expressions) {
         expressionStore.setExpressions(projectData.expressions)
       }
 
-      // 加载道具数据
+      // Load prop data
       if (projectData.assets?.props) {
         propStore.setProps(projectData.assets.props)
       }
 
-      // 加载音效数据
+      // Load sound effect data
       const soundStore = useSoundStore()
       if (projectData.assets?.sounds) {
         soundStore.setSounds(projectData.assets.sounds)
       }
 
-      // 加载剧集列表
+      // Load episode list
       if (projectData.episodes && Array.isArray(projectData.episodes) && projectData.episodes.length > 0) {
         episodeStore.episodes = projectData.episodes.map((val) => {
           const ep = val as Episode
@@ -1485,7 +1485,7 @@ export const useProjectStore = defineStore('project', () => {
         })
       }
 
-      // 加载演员和旁白
+      // Load actors and narrator
       if (projectData.actors && Array.isArray(projectData.actors)) {
         actors.value = projectData.actors
       }
@@ -1493,7 +1493,7 @@ export const useProjectStore = defineStore('project', () => {
         narrator.value = projectData.narrator
       }
 
-      // 迁移 Screenplay 数据 (兼容旧逻辑)
+      // Migrate Screenplay data (legacy compatibility)
       const anyProjectData = projectData as unknown as { screenplays?: Record<string, { scenes: unknown[] }> }
       if (anyProjectData.screenplays && Object.keys(anyProjectData.screenplays).length > 0) {
         Object.entries(anyProjectData.screenplays).forEach(([episodeId, screenplay]) => {
@@ -1505,10 +1505,10 @@ export const useProjectStore = defineStore('project', () => {
       }
       const hierarchyChanged = reconcileEpisodesHierarchy(episodeStore.episodes, 'loadProjectFromJson')
 
-      // Character 数据加载已移除
+      // Character data loading removed
 
 
-      // 设置状态
+      // Set state
       isProjectOpen.value = true
       hasUnsavedChanges.value = hierarchyChanged
 
@@ -1519,13 +1519,13 @@ export const useProjectStore = defineStore('project', () => {
   }
 
   // ═══════════════════════════════════════════════════════════════════
-  // v20: 自定义预制动作模板 CRUD
+  // v20: Custom prefab action template CRUD
   // ═══════════════════════════════════════════════════════════════════
 
   function addCustomPreset(template: PresetAnimationTemplate): void {
     const errors = validatePresetTemplate(template)
     if (errors.length > 0) {
-      console.warn(`[ProjectStore] 自定义模板校验失败: ${errors.join('; ')}`)
+      console.warn(`[ProjectStore] Custom template validation failed: ${errors.join('; ')}`)
     }
     customPresetAnimations.value = [...customPresetAnimations.value, template]
     markAsUnsaved()
@@ -1544,7 +1544,7 @@ export const useProjectStore = defineStore('project', () => {
   }
 
   return {
-    // 状态
+    // State
     projectHandle,
     assetsHandle,
     projectName,
@@ -1553,11 +1553,11 @@ export const useProjectStore = defineStore('project', () => {
     autoSaveEnabled,
     hasUnsavedChanges,
 
-    // v6.0: 项目级演员和旁白配置
+    // v6.0: Project-level actor and narrator configuration
     actors,
     narrator,
 
-    // 方法
+    // Methods
     selectProjectDirectory,
     scanAnimeFiles,
     generateUniqueFileName,
@@ -1576,7 +1576,7 @@ export const useProjectStore = defineStore('project', () => {
     loadFromFile,
     generateProjectName,
 
-    // v6.0: 演员/旁白管理
+    // v6.0: Actor/narrator management
     addActor,
     updateActor,
     deleteActor,
@@ -1584,7 +1584,7 @@ export const useProjectStore = defineStore('project', () => {
     getActor,
     getActorByCharacterId,
 
-    // v12.8: TTS 缓存
+    // v12.8: TTS cache
     saveTTSAudio,
     checkTTSAudioExists,
     saveTTSTiming,
@@ -1592,7 +1592,7 @@ export const useProjectStore = defineStore('project', () => {
     checkTTSTimingExists,
     ensureTTSTiming,
 
-    // v20: 自定义预制动作模板
+    // v20: Custom prefab action templates
     customPresetAnimations,
     addCustomPreset,
     deleteCustomPreset,

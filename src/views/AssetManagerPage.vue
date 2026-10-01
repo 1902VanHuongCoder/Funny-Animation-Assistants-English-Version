@@ -1,6 +1,6 @@
 <template>
   <div class="asset-manager-page">
-    <!-- 根据类型显示不同的管理器 -->
+    <!-- Display different manager based on type -->
     <ExpressionManager v-if="assetType === 'expressions'" />
     <BackgroundManager v-else-if="assetType === 'backgrounds'" />
     <PropManager v-else-if="assetType === 'props'" />
@@ -8,7 +8,7 @@
       v-else
       class="coming-soon"
     >
-      <p>{{ assetType }} 管理功能开发中...</p>
+      <p>{{ assetType }} management feature is under development...</p>
     </div>
   </div>
 </template>
@@ -20,7 +20,7 @@ import { useRoute } from 'vue-router'
 import BackgroundManager from '@/components/BackgroundManager.vue'
 import ExpressionManager from '@/components/ExpressionManager.vue'
 import PropManager from '@/components/PropManager.vue'
-// v7.3: EffectManager 已移除
+// v7.3: EffectManager has been removed
 
 const route = useRoute()
 const assetType = computed(() => route.params['type'] as string)

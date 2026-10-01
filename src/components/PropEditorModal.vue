@@ -10,7 +10,7 @@
     >
       <!-- Header -->
       <div class="modal-header">
-        <h3>{{ isNew ? '新建道具' : '编辑道具' }}</h3>
+        <h3>{{ isNew ? 'New Prop' : 'Edit Prop' }}</h3>
         <button
           class="close-btn"
           @click="close"
@@ -41,15 +41,15 @@
                 class="animation-preview"
               >
                 <img 
-                  v-if="currentFrameUrl"
-                  :src="currentFrameUrl"
+                  v-if="currentFrameUrl" 
+                  :src="currentFrameUrl" 
                   class="preview-image"
                 >
                 <div
                   v-else
                   class="empty-preview"
                 >
-                  无帧数据
+                  No frame data
                 </div>
                  
                 <!-- Animation Controls -->
@@ -62,9 +62,9 @@
                     @mouseup="stopPlaying"
                     @mouseleave="stopPlaying"
                   >
-                    ▶ 按住播放
+                    ▶ Hold to Play
                   </button>
-                  <span class="frame-info">帧: {{ currentFrameIndex + 1 }} / {{ totalFrames }}</span>
+                  <span class="frame-info">Frame: {{ currentFrameIndex + 1 }} / {{ totalFrames }}</span>
                 </div>
               </div>
 
@@ -72,7 +72,7 @@
                 v-else
                 class="empty-preview"
               >
-                <span>暂无图片</span>
+                <span>No image</span>
               </div>
             </div>
           </div>
@@ -91,17 +91,17 @@
           <!-- Basic Info -->
           <div class="form-section">
             <div class="form-group">
-              <label>道具名称 <span class="required">*</span></label>
+              <label>Prop Name <span class="required">*</span></label>
               <input 
                 v-model="localProp.name" 
                 type="text" 
                 class="input-field" 
-                placeholder="请输入名称"
+                placeholder="Enter name"
               >
             </div>
 
             <div class="form-group">
-              <label>类型</label>
+              <label>Type</label>
               <div class="radio-group">
                 <label class="radio-label">
                   <input
@@ -109,7 +109,7 @@
                     type="radio"
                     value="static"
                   >
-                  静态图片
+                  Static Image
                 </label>
                 <label class="radio-label">
                   <input
@@ -117,14 +117,14 @@
                     type="radio"
                     value="animation"
                   >
-                  序列帧动画
+                  Frame Animation
                 </label>
               </div>
             </div>
 
             <!-- Tag Management -->
             <div class="form-group">
-              <label>标签</label>
+              <label>Tags</label>
               <div class="tags-input-container">
                 <div class="tags-list">
                   <span
@@ -143,7 +143,7 @@
                   v-model="tagInput"
                   type="text"
                   class="tag-input"
-                  placeholder="输入标签按回车添加..."
+                  placeholder="Type tag and press Enter..."
                   @keydown.enter.prevent="addTag"
                 >
               </div>
@@ -169,7 +169,7 @@
           <!-- Resource Upload -->
           <div class="form-section resource-section">
             <div class="section-title">
-              资源配置
+              Resource Configuration
             </div>
 
             <!-- Static Mode -->
@@ -187,7 +187,7 @@
                 >
                   <img :src="displayUrl">
                   <div class="upload-overlay">
-                    点击替换
+                    Click to replace
                   </div>
                 </div>
                 <div
@@ -195,7 +195,7 @@
                   class="upload-placeholder"
                 >
                   <span class="icon">☁️</span>
-                  <span>点击上传图片</span>
+                  <span>Click to upload image</span>
                 </div>
               </div>
             </div>
@@ -228,7 +228,7 @@
                     v-if="localProp.stillFrameSource === 'frame' && localProp.stillFrameIndex === index"
                     class="badge-default"
                   >
-                    默认
+                    Default
                   </div>
                 </div>
                 
@@ -237,7 +237,7 @@
                   @click="triggerUpload('frames')"
                 >
                   <span>+</span>
-                  <span class="text">添加帧</span>
+                  <span class="text">Add Frame</span>
                 </div>
               </div>
 
@@ -257,21 +257,21 @@
                     <input
                       v-model="localProp.loop"
                       type="checkbox"
-                    > 循环播放
+                    > Loop playback
                   </label>
                 </div>
 
                 <div class="setting-row">
-                  <label>默认静止图</label>
+                  <label>Default Still Frame</label>
                   <select
                     v-model="localProp.stillFrameSource"
                     class="select-field"
                   >
                     <option value="frame">
-                      使用序列帧
+                      Use Frame Sequence
                     </option>
                     <option value="custom">
-                      自定义上传
+                      Custom Upload
                     </option>
                   </select>
                 </div>
@@ -280,12 +280,12 @@
                   v-if="localProp.stillFrameSource === 'frame'"
                   class="setting-row"
                 >
-                  <span class="hint-text">在上方帧列表中点击帧设为默认</span>
+                  <span class="hint-text">Click frame above to set as default</span>
                   <button
                     class="btn-set-current"
                     @click="setStillFrameToCurrent"
                   >
-                    设当前帧为默认
+                    Set Current Frame as Default
                   </button>
                 </div>
 
@@ -301,14 +301,14 @@
                       v-if="customStillUrl"
                       :src="customStillUrl"
                     >
-                    <span v-else>点击上传静止帧</span>
+                    <span v-else>Click to upload still frame</span>
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- 动画管理入口（仅编辑已有道具时显示） -->
+          <!-- Animation management entry (only shown when editing existing prop) -->
           <div
             v-if="!isNew"
             class="form-section"
@@ -318,7 +318,7 @@
               class="btn-anim-manager"
               @click="showAnimManager = true"
             >
-              🎬 动画管理
+              🎬 Animation Manager
             </button>
           </div>
         </div>
@@ -331,14 +331,14 @@
           class="btn-cancel"
           @click="close"
         >
-          取消
+          Cancel
         </button>
         <button 
           class="btn-save" 
           :disabled="!isValid"
           @click="save"
         >
-          确定
+          Save
         </button>
       </div>
     </div>
@@ -376,7 +376,7 @@
       @close="showFileBrowser = false"
     />
 
-    <!-- v20: 动画工作台（资源级，替代旧 AnimationManager） -->
+    <!-- v20: Animation Workbench (resource level, replaces legacy AnimationManager) -->
     <AnimationWorkbench
       v-if="showAnimManager && propId && propWorkbenchInitialAnim"
       :visible="showAnimManager"
@@ -431,7 +431,7 @@ const showFileBrowser = ref(false)
 const fileBrowserTarget = ref<'static' | 'frames' | 'still'>('static')
 const showAnimManager = ref(false)
 
-// v20: Workbench 资源级动画
+// v20: Workbench resource-level animation
 const animationStore = useAnimationStore()
 
 const propWorkbenchResourceType = computed((): 'prop' | 'background' | 'symbol' | 'composite' =>
@@ -450,7 +450,7 @@ const propWorkbenchInitialAnim = computed((): import('@/types/animation').Animat
   return {
     type: 'track' as const,
     id: `animation_${crypto.randomUUID()}`,
-    name: '新动画',
+    name: 'New Animation',
     loop: false,
     tracks: [{
       trackType: 'transform' as const,
@@ -527,7 +527,7 @@ const displayAssetPath = computed(() => {
     if (!frames || frames.length === 0) return ''
     const firstUrl = frames[0]?.url
     if (!firstUrl || firstUrl.startsWith('blob:') || firstUrl.startsWith('data:')) return ''
-    return `${firstUrl} (共${frames.length}帧)`
+    return `${firstUrl} (${frames.length} frames)`
   }
   return ''
 })
@@ -553,9 +553,9 @@ const recommendedTags = computed(() => {
 })
 
 const fileBrowserTitle = computed(() => {
-  if (fileBrowserTarget.value === 'static') return '选择静态图片'
-  if (fileBrowserTarget.value === 'frames') return '选择序列帧图片'
-  return '选择静止帧图片'
+  if (fileBrowserTarget.value === 'static') return 'Select Static Image'
+  if (fileBrowserTarget.value === 'frames') return 'Select Animation Frames'
+  return 'Select Still Frame Image'
 })
 
 const fileBrowserMultiple = computed(() => fileBrowserTarget.value === 'frames')
@@ -662,7 +662,7 @@ async function handleFileSelect(files: SelectedFile[]) {
       const blob = await file.handle.getFile()
       localProp.value._runtimeUrl = URL.createObjectURL(blob)
       
-      // 自动设置名称：单个文件使用文件名
+      // Auto set name: use file name for single file
       if (isNew.value && !localProp.value.name) {
         const fileName = file.name.replace(/\.[^/.]+$/, '')
         localProp.value.name = generateUniquePropName(fileName)
@@ -689,16 +689,16 @@ async function handleFileSelect(files: SelectedFile[]) {
         _runtimeUrl: blobUrl
       })
     }
-    // 自动设置名称：多个文件使用文件夹名，单个文件使用文件名
+    // Auto set name: use folder name for multiple files, file name for single file
     if (isNew.value && !localProp.value.name && files.length > 0) {
       const firstFile = files[0]
       if (firstFile) {
         let baseName: string
         if (files.length > 1) {
-          // 多个文件：使用文件夹名
+          // Multiple files: use folder name
           baseName = extractFolderName(firstFile.path) || firstFile.name.replace(/\.[^/.]+$/, '')
         } else {
-          // 单个文件：使用文件名
+          // Single file: use file name
           baseName = firstFile.name.replace(/\.[^/.]+$/, '')
         }
         localProp.value.name = generateUniquePropName(baseName)
@@ -708,8 +708,8 @@ async function handleFileSelect(files: SelectedFile[]) {
 }
 
 /**
- * 从文件路径提取父文件夹名称
- * 例如: 'props/道具文件夹/image.png' → '道具文件夹'
+ * Extract parent folder name from file path
+ * e.g.: 'props/prop_folder/image.png' → 'prop_folder'
  */
 function extractFolderName(filePath: string): string {
   const parts = filePath.split('/')
@@ -720,7 +720,7 @@ function extractFolderName(filePath: string): string {
 }
 
 /**
- * 生成唯一的道具名称，如果已存在则添加数字后缀
+ * Generate unique prop name, add numeric suffix if exists
  */
 function generateUniquePropName(baseName: string): string {
   const existingNames = new Set(

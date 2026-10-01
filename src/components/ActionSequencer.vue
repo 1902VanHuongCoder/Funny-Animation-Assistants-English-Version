@@ -4,7 +4,7 @@
     :class="{ collapsed: isCollapsed }"
     :style="containerStyle"
   >
-    <!-- 顶部 Resizer 手柄 -->
+    <!-- Top Resizer Handle -->
     <div 
       class="resizer-handle"
       @mousedown="startResize"
@@ -12,14 +12,14 @@
       <div class="resizer-grip" />
     </div>
 
-    <!-- 顶部工具栏 -->
+    <!-- Top Toolbar -->
     <div
       v-show="!isCollapsed"
       class="sequencer-toolbar"
     >
       <div class="toolbar-left">
-        <!-- 过滤器 -->
-        <label class="filter-label">过滤器:</label>
+        <!-- Filter -->
+        <label class="filter-label">Filter:</label>
         <div
           ref="filterWrapperRef"
           class="filter-wrapper"
@@ -30,34 +30,34 @@
             @change="handleFilterChange"
           >
             <option value="active">
-              👁️ 仅活跃对象
+              👁️ Active only
             </option>
             <option value="all">
-              📦 全部显示
+              📦 Show all
             </option>
             <option value="selected">
-              ✓ 仅选中
+              ✓ Selected only
             </option>
             <option value="custom">
-              ⚙️ 自定义...
+              ⚙️ Custom...
             </option>
           </select>
         </div>
-        <!-- 折叠组合按钮 -->
+        <!-- Collapse composites button -->
         <button
           class="toolbar-btn"
-          title="折叠所有组合对象"
+          title="Collapse all composite objects"
           @click="collapseAllTracks"
         >
-          📂 折叠组合
+          📂 Collapse composites
         </button>
         <button
           class="toolbar-btn"
           :class="{ active: showActionOrder }"
-          title="显示并调整同一槽位内动作执行顺序"
+          title="Display and adjust action execution order within same slot"
           @click="showActionOrder = !showActionOrder"
         >
-          动作顺序
+          Action Order
         </button>
         <div
           v-if="showActionOrder && currentSlotOrderActionCount > 1"
@@ -67,11 +67,11 @@
             v-if="selectedActionOrderInfo"
             class="order-label"
           >
-            执行顺序 {{ selectedActionOrderInfo.index + 1 }}/{{ selectedActionOrderInfo.total }}
+            Order {{ selectedActionOrderInfo.index + 1 }}/{{ selectedActionOrderInfo.total }}
           </span>
           <button
             class="order-btn"
-            title="提前执行"
+            title="Move Earlier"
             :disabled="!selectedActionOrderInfo || selectedActionOrderInfo.index === 0"
             @click="handleMoveSelectedActionOrder(-1)"
           >
@@ -79,7 +79,7 @@
           </button>
           <button
             class="order-btn"
-            title="延后执行"
+            title="Move Later"
             :disabled="!selectedActionOrderInfo || selectedActionOrderInfo.index === selectedActionOrderInfo.total - 1"
             @click="handleMoveSelectedActionOrder(1)"
           >
@@ -87,10 +87,10 @@
           </button>
           <button
             class="order-btn order-default-btn"
-            title="清除当前槽位的自定义执行顺序，恢复系统默认顺序"
+            title="Clear custom execution order for current slot and restore system default order"
             @click="handleResetCurrentSlotActionOrder"
           >
-            恢复默认
+            Reset Default
           </button>
         </div>
       </div>
@@ -98,7 +98,7 @@
       <div class="toolbar-spacer" />
 
       <div class="toolbar-right">
-        <!-- 缩放控制 -->
+        <!-- Zoom controls -->
         <span class="zoom-label">🔍</span>
         <button
           class="zoom-btn"
@@ -125,42 +125,42 @@
         <span class="zoom-value">{{ Math.round(zoomLevel * 100) }}%</span>
       </div>
 
-      <!-- 折叠按钮 - 最右侧 -->
+      <!-- Collapse button - far right -->
       <button 
         class="collapse-btn" 
-        :title="isCollapsed ? '展开' : '折叠'"
+        :title="isCollapsed ? 'Expand' : 'Collapse'"
         @click="toggleCollapse"
       >
         ▼
       </button>
     </div>
 
-    <!-- 折叠状态时的简化标题栏 -->
+    <!-- Collapsed header bar -->
     <div
       v-show="isCollapsed"
       class="collapsed-header"
       @click="toggleCollapse"
     >
-      <span class="collapsed-title">🎬 动作编辑</span>
-      <span class="collapsed-info">{{ actions.length }} 个动作</span>
+      <span class="collapsed-title">🎬 Action Sequencer</span>
+      <span class="collapsed-info">{{ actions.length }} actions</span>
       <div class="collapsed-spacer" />
       <button class="collapse-btn expand">
         ▲
       </button>
     </div>
 
-    <!-- 主内容区域 - 统一滚动容器 -->
+    <!-- Main content area - Unified scroll container -->
     <div
       v-show="!isCollapsed"
       ref="scrollContainer"
       class="sequencer-content"
       @scroll="handleContainerScroll"
     >
-      <!-- 台词轨道行 -->
+      <!-- Subtitle track row -->
       <div class="track-row subtitle-row">
         <div class="track-header subtitle-header">
           <span class="header-icon">🗣️</span>
-          <span class="header-label">参考台词</span>
+          <span class="header-label">Reference Script</span>
         </div>
         <div class="track-content">
           <div class="subtitle-track">
@@ -188,7 +188,7 @@
         </div>
       </div>
 
-      <!-- 对象动作轨道行 -->
+      <!-- Object action track row -->
       <div 
         v-for="track in sortedFilteredTracks" 
         v-show="isTrackVisible(track)"
@@ -216,7 +216,7 @@
         </div>
         <div class="track-content">
           <div class="action-track">
-            <!-- 网格背景 -->
+            <!-- Grid background -->
             <div class="track-grid">
               <div 
                 v-for="slot in slots" 
@@ -227,9 +227,9 @@
               />
             </div>
 
-            <!-- 动作渲染 -->
+            <!-- Action rendering -->
             <div class="track-actions">
-              <!-- Duration Actions (长条) -->
+              <!-- Duration Actions (bars) -->
               <div 
                 v-for="action in getDurationActionsForTrack(track.targetId)" 
                 :key="action.id"
@@ -247,14 +247,14 @@
                   class="action-order-badge action-order-badge-bar"
                 >{{ getActionOrderLabel(action) }}</span>
                 <span class="action-bar-label">{{ getActionLabel(action) }}</span>
-                <!-- 右侧拖拽手柄 -->
+                <!-- Right resize handle -->
                 <div 
                   class="resize-handle"
                   @mousedown.stop="handleActionResizeStart($event, action)"
                 />
               </div>
 
-              <!-- Point Actions (图标) -->
+              <!-- Point Actions (icons) -->
               <div 
                 v-for="action in getPointActionsForTrack(track.targetId)" 
                 :key="action.id"
@@ -265,7 +265,7 @@
                 }"
                 :style="getActionIconStyle(action)"
                 :draggable="!isBirthAction(action)"
-                :title="isBirthAction(action) ? '出生动作不可拖拽' : ''"
+                :title="isBirthAction(action) ? 'Spawn action cannot be dragged' : ''"
                 @click.stop="handleSelectAction(action)"
                 @dragstart="handleActionDragStart($event, action)"
               >
@@ -281,7 +281,7 @@
       </div>
     </div>
 
-    <!-- 右键菜单 -->
+    <!-- Context menu -->
     <Teleport to="body">
       <div 
         v-if="contextMenu.visible" 
@@ -292,12 +292,12 @@
           class="menu-item danger"
           @click="handleDeleteTrackActions"
         >
-          🗑️ 删除该对象的所有动作
+          🗑️ Delete all actions for this object
         </button>
       </div>
     </Teleport>
 
-    <!-- 自定义筛选器对话框 -->
+    <!-- Custom filter dialog -->
     <Teleport to="body">
       <div
         v-if="customFilterPopover.visible"
@@ -309,7 +309,7 @@
           @click.stop
         >
           <div class="dialog-header">
-            <span class="dialog-title">⚙️ 自定义筛选器</span>
+            <span class="dialog-title">⚙️ Custom Filter</span>
             <button
               class="dialog-close"
               @click="closeCustomFilterPopover"
@@ -321,12 +321,12 @@
             <input 
               v-model="customFilterPopover.searchText" 
               type="text" 
-              placeholder="🔍 搜索对象名称..." 
+              placeholder="🔍 Search object name..." 
               class="search-input"
             >
           </div>
           <div class="dialog-content">
-            <!-- 按类型分组显示 -->
+            <!-- Group by type -->
             <div 
               v-for="group in groupedTracks" 
               :key="group.type" 
@@ -339,7 +339,7 @@
                 <span class="group-icon">{{ group.collapsed ? '▶' : '▼' }}</span>
                 <span class="group-type-icon">{{ group.icon }}</span>
                 <span class="group-label">{{ group.label }}</span>
-                <span class="group-count">{{ group.tracks.length }} 个</span>
+                <span class="group-count">{{ group.tracks.length }}</span>
                 <label
                   class="group-checkbox"
                   @click.stop
@@ -350,7 +350,7 @@
                     :indeterminate="isGroupPartialSelected(group.type)"
                     @change="toggleGroupSelection(group.type)"
                   >
-                  <span class="checkbox-label">全选</span>
+                  <span class="checkbox-label">Select All</span>
                 </label>
               </div>
               <div
@@ -374,7 +374,7 @@
                     v-if="track.actions.length > 0"
                     class="track-actions-count"
                   >
-                    {{ track.actions.length }} 个动作
+                    {{ track.actions.length }} actions
                   </span>
                 </label>
               </div>
@@ -383,31 +383,31 @@
               v-if="groupedTracks.length === 0"
               class="empty-state"
             >
-              <span>暂无可筛选的对象</span>
+              <span>No objects to filter</span>
             </div>
           </div>
           <div class="dialog-footer">
             <div class="footer-info">
-              已选择 <strong>{{ customFilterPopover.selectedTrackIds.length }}</strong> / {{ allTracks.length }} 个对象
+              Selected <strong>{{ customFilterPopover.selectedTrackIds.length }}</strong> / {{ allTracks.length }} objects
             </div>
             <div class="footer-actions">
               <button
                 class="btn-secondary"
                 @click="selectAllTracks"
               >
-                全选
+                Select All
               </button>
               <button
                 class="btn-secondary"
                 @click="clearSelection"
               >
-                清空
+                Clear
               </button>
               <button
                 class="btn-primary"
                 @click="applyCustomFilter"
               >
-                应用筛选
+                Apply Filter
               </button>
             </div>
           </div>
@@ -466,18 +466,18 @@ const sceneObjectStore = useSceneObjectStore()
 
 // ==================== State ====================
 
-// 容器状态
+// Container state
 const isCollapsed = ref(false)
 const panelHeight = ref(250)
 const minHeight = 150
 const maxHeight = 600
 
-// 工具栏状态
+// Toolbar state
 const filterMode = ref<'active' | 'all' | 'selected' | 'custom'>('active')
 const zoomLevel = ref(1)
 const showActionOrder = ref(false)
 
-// 自定义筛选器状态
+// Custom filter state
 const filterWrapperRef = ref<HTMLElement>()
 const customFilterPopover = ref({
   visible: false,
@@ -486,10 +486,10 @@ const customFilterPopover = ref({
   collapsedGroups: new Set<string>()
 })
 
-// P2: 组合轨道折叠状态
+// P2: Composite track collapsed state
 const collapsedComposites = reactive(new Set<string>())
 
-// 右键菜单
+// Context menu
 const contextMenu = ref({
   visible: false,
   x: 0,
@@ -498,14 +498,14 @@ const contextMenu = ref({
   slotIndex: 0
 })
 
-// 拖拽状态
+// Drag state
 const isDragging = ref(false)
 const isResizing = ref(false)
 const dragAction = ref<Action | null>(null)
 const dragStartX = ref(0)
 const dragStartSlotIndex = ref(0)
 
-// 滚动容器引用
+// Scroll container ref
 const scrollContainer = ref<HTMLElement>()
 
 const objectIndexMap = computed(() => {
@@ -518,34 +518,34 @@ const objectIndexMap = computed(() => {
 
 // ==================== Computed ====================
 
-// 容器样式
+// Container style
 const containerStyle = computed(() => ({
   height: isCollapsed.value ? '36px' : `${panelHeight.value}px`
 }))
 
-// 解析槽位
+// Parse slots
 const slots = computed<RuntimeSlot[]>(() => {
   if (!props.block) return []
   return parseBlockToSlots(props.block)
 })
 
-// 轨道数据接口
+// Track data interface
 interface TrackData {
   targetId: string
   targetName: string
   type: SceneObject['type']
   icon: string
   actions: Action[]
-  parentId?: string  // P2: composite 分组
-  compositeMode?: 'entity' | 'union'  // P2: 组合模式（用于默认折叠判断）
+  parentId?: string  // P2: composite grouping
+  compositeMode?: 'entity' | 'union'  // P2: Composite mode (used for default collapse determination)
 }
 
-// 从场景对象和动作生成轨道数据
+// Generate track data from scene objects and actions
 const allTracks = computed<TrackData[]>(() => {
   const tracks: TrackData[] = []
   const targetSet = new Set<string>()
   
-  // 1. 从动作中收集目标
+  // 1. Collect targets from actions
   for (const action of props.actions) {
     if (!targetSet.has(action.target)) {
       targetSet.add(action.target)
@@ -553,13 +553,13 @@ const allTracks = computed<TrackData[]>(() => {
     }
   }
   
-  // 2. 从场景对象补充（确保相机始终显示）
+  // 2. Complement from scene objects (ensure camera is always shown)
   for (const obj of sceneObjectStore.objects) {
     let targetId = ''
     if (obj.type === 'camera') {
       targetId = 'camera'
     } else {
-      // v7.0: 其他对象（角色、道具、背景、音频等）都使用实例ID
+      // v7.0: Other objects (character, prop, background, audio, etc.) all use instance ID
       targetId = obj.id
     }
     
@@ -569,26 +569,26 @@ const allTracks = computed<TrackData[]>(() => {
     }
   }
   
-  // 为每个轨道分配动作
+  // Assign actions to each track
   for (const track of tracks) {
     track.actions = props.actions.filter(a => a.target === track.targetId)
   }
   
-  // 双层架构：parentId 已由 applySlotState() 写入 runtimeObjects
-  // 不再需要 accumulatedParentIds 覆盖
+  // Two-layer architecture: parentId is already written to runtimeObjects by applySlotState()
+  // No longer need accumulatedParentIds override
   
   return tracks
 })
 
-// 根据过滤模式筛选轨道
+// Filter tracks according to filter mode
 const filteredTracks = computed<TrackData[]>(() => {
   switch (filterMode.value) {
     case 'active': {
-      // 仅显示有动作的轨道 + 相机
-      // P2: 后代活跃时，祖先 composite 也自动纳入
+      // Only show tracks with actions + camera
+      // P2: When descendant is active, ancestor composite is also included
       const activeTracks = allTracks.value.filter(t => t.actions.length > 0 || t.type === 'camera')
       const activeIds = new Set(activeTracks.map(t => t.targetId))
-      // 沿 parentId 链向上收集所有祖先
+      // Collect all ancestors along the parentId chain
       for (const t of activeTracks) {
         let pid = t.parentId
         while (pid && !activeIds.has(pid)) {
@@ -600,9 +600,9 @@ const filteredTracks = computed<TrackData[]>(() => {
       return allTracks.value.filter(t => activeIds.has(t.targetId))
     }
     case 'selected': {
-      // 仅显示选中的对象 - 需要将 selectedObjectId 转换为 targetId
+      // Only show selected object - need to convert selectedObjectId to targetId
       if (!props.selectedObjectId) {
-        return [] // 没有选中对象时显示空
+        return [] // Empty when no object is selected
       }
       const selectedObj = sceneObjectStore.getObject(props.selectedObjectId)
       if (!selectedObj) return []
@@ -611,7 +611,7 @@ const filteredTracks = computed<TrackData[]>(() => {
       if (selectedObj.type === 'camera') {
         matchTargetId = 'camera'
       } else {
-        // v7.0: 其他对象都使用实例ID
+        // v7.0: Other objects all use instance ID
         matchTargetId = selectedObj.id
       }
       
@@ -621,9 +621,9 @@ const filteredTracks = computed<TrackData[]>(() => {
       return []
     }
     case 'custom':
-      // 自定义筛选 - 根据用户选中的轨道ID过滤
+      // Custom filter - filter by user-selected track IDs
       if (customFilterPopover.value.selectedTrackIds.length === 0) {
-        return allTracks.value // 如果没有选择，显示全部
+        return allTracks.value // Show all if none selected
       }
       return allTracks.value.filter(t => 
         customFilterPopover.value.selectedTrackIds.includes(t.targetId)
@@ -634,7 +634,7 @@ const filteredTracks = computed<TrackData[]>(() => {
   }
 })
 
-// P2: 按 composite parent→children 排序的轨道列表（递归深度优先）
+// P2: Sorted track list by composite parent→children (recursive depth-first)
 const sortedFilteredTracks = computed<TrackData[]>(() => {
   const tracks = filteredTracks.value
   const result: TrackData[] = []
@@ -642,7 +642,7 @@ const sortedFilteredTracks = computed<TrackData[]>(() => {
   const rootTracks: TrackData[] = []
   const inserted = new Set<string>()
 
-  // 分类：root vs child
+  // Classify: root vs child
   for (const t of tracks) {
     if (t.parentId) {
       const children = childMap.get(t.parentId) ?? []
@@ -653,7 +653,7 @@ const sortedFilteredTracks = computed<TrackData[]>(() => {
     }
   }
 
-  // 递归深度优先平铺
+  // Recursive depth-first flattening
   function flattenTrack(track: TrackData): void {
     if (inserted.has(track.targetId)) return
     inserted.add(track.targetId)
@@ -670,7 +670,7 @@ const sortedFilteredTracks = computed<TrackData[]>(() => {
     flattenTrack(track)
   }
 
-  // 孤儿 children（parent 不在当前 filter 中）
+  // Orphan children (parent not in current filter)
   for (const [, children] of childMap) {
     for (const child of children) {
       if (!inserted.has(child.targetId)) {
@@ -682,7 +682,7 @@ const sortedFilteredTracks = computed<TrackData[]>(() => {
   return result
 })
 
-// 轨道分组接口
+// Track group interface
 interface TrackGroup {
   type: string
   label: string
@@ -691,17 +691,17 @@ interface TrackGroup {
   tracks: TrackData[]
 }
 
-// 按类型分组的轨道
+// Tracks grouped by type
 const groupedTracks = computed<TrackGroup[]>(() => {
   const groups: Record<string, TrackGroup> = {
-    camera: { type: 'camera', label: '相机', icon: '🎥', collapsed: false, tracks: [] },
-    character: { type: 'character', label: '角色', icon: '👤', collapsed: false, tracks: [] },
-    prop: { type: 'prop', label: '道具', icon: '📦', collapsed: false, tracks: [] },
-    background: { type: 'background', label: '背景', icon: '🖼️', collapsed: false, tracks: [] },
-    audio: { type: 'audio', label: '音频', icon: '🎵', collapsed: false, tracks: [] },
-    screen_effect: { type: 'screen_effect', label: '画面特效', icon: '🌟', collapsed: false, tracks: [] },
-    light: { type: 'light', label: '光源', icon: '💡', collapsed: false, tracks: [] },
-    composite: { type: 'composite', label: '组合', icon: '🧩', collapsed: false, tracks: [] }
+    camera: { type: 'camera', label: 'Camera', icon: '🎥', collapsed: false, tracks: [] },
+    character: { type: 'character', label: 'Character', icon: '👤', collapsed: false, tracks: [] },
+    prop: { type: 'prop', label: 'Prop', icon: '📦', collapsed: false, tracks: [] },
+    background: { type: 'background', label: 'Background', icon: '🖼️', collapsed: false, tracks: [] },
+    audio: { type: 'audio', label: 'Audio', icon: '🎵', collapsed: false, tracks: [] },
+    screen_effect: { type: 'screen_effect', label: 'Screen Effect', icon: '🌟', collapsed: false, tracks: [] },
+    light: { type: 'light', label: 'Light', icon: '💡', collapsed: false, tracks: [] },
+    composite: { type: 'composite', label: 'Composite', icon: '🧩', collapsed: false, tracks: [] }
   }
   
   for (const track of allTracks.value) {
@@ -709,17 +709,17 @@ const groupedTracks = computed<TrackGroup[]>(() => {
     if (group) {
       group.tracks.push(track)
     } else {
-      // 未知类型放入道具组
+      // Unknown types go into prop group
       groups['prop']!.tracks.push(track)
     }
   }
   
-  // 应用折叠状态
+  // Apply collapsed state
   for (const group of Object.values(groups)) {
     group.collapsed = customFilterPopover.value.collapsedGroups.has(group.type)
   }
   
-  // 返回有轨道的分组
+  // Return groups that have tracks
   return Object.values(groups).filter(g => g.tracks.length > 0)
 })
 
@@ -741,19 +741,19 @@ const currentSlotOrderActionCount = computed(() =>
   props.actions.filter(action => action.slotIndex === props.currentSlotIndex).length
 )
 
-// ==================== P2: 轨道折叠/展开 ====================
+// ==================== P2: Track Collapsing/Expanding ====================
 
-// 检查某个轨道是否有子轨道
+// Check whether a track has child tracks
 function hasChildTracks(targetId: string): boolean {
   return sortedFilteredTracks.value.some(t => t.parentId === targetId)
 }
 
-// P2: 已手动切换过的 composite — 跳过自动折叠/展开
+// P2: Manually toggled composites — skip automatic collapse/expand
 const manuallyToggledComposites = new Set<string>()
 
-// P2: 根据 compositeMode 自动设置默认折叠状态
-// union（联合）→ 默认展开，entity（实体）→ 默认折叠
-// v19.x: 如果 entity 的后代有动作，则自动展开
+// P2: Automatically set default collapse state according to compositeMode
+// union -> expanded by default, entity -> collapsed by default
+// v19.x: If descendant of entity has actions, automatically expand
 watch(
   () => allTracks.value
     .filter(t => t.type === 'composite' && hasChildTracks(t.targetId))
@@ -762,10 +762,10 @@ watch(
     for (const { id, mode } of composites) {
       if (manuallyToggledComposites.has(id)) continue
       if (mode === 'entity') {
-        // 检查是否有后代存在动作
+        // Check if any descendant has actions
         const hasActiveDescendant = allTracks.value.some(t => {
           if (t.actions.length === 0) return false
-          // 向上追溯 parentId，看是否属于当前 composite
+          // Trace up parentId to see if it belongs to current composite
           let currentParent = t.parentId
           while (currentParent) {
             if (currentParent === id) return true
@@ -788,7 +788,7 @@ watch(
   { immediate: true }
 )
 
-// 切换轨道折叠状态
+// Toggle track collapsed state
 function toggleTrackCollapse(targetId: string): void {
   manuallyToggledComposites.add(targetId)
   if (collapsedComposites.has(targetId)) {
@@ -798,7 +798,7 @@ function toggleTrackCollapse(targetId: string): void {
   }
 }
 
-// 折叠全部组合轨道
+// Collapse all composite tracks
 function collapseAllTracks(): void {
   for (const t of allTracks.value) {
     if (hasChildTracks(t.targetId)) {
@@ -808,7 +808,7 @@ function collapseAllTracks(): void {
   }
 }
 
-// 计算轨道嵌套深度（用于多级缩进）
+// Calculate track nesting depth (for multi-level indent)
 function getTrackDepth(track: TrackData): number {
   let depth = 0
   let pid = track.parentId
@@ -820,12 +820,12 @@ function getTrackDepth(track: TrackData): number {
   return depth
 }
 
-// 子轨道是否可见（检查祖先链是否全部展开）
+// Whether child track is visible (check if entire ancestor chain is expanded)
 function isTrackVisible(track: TrackData): boolean {
   if (!track.parentId) return true
-  // 直接父级被折叠 → 不可见
+  // Direct parent collapsed -> not visible
   if (collapsedComposites.has(track.parentId)) return false
-  // 递归检查祖先
+  // Recursively check ancestors
   const parentTrack = sortedFilteredTracks.value.find(t => t.targetId === track.parentId)
   if (parentTrack) return isTrackVisible(parentTrack)
   return true
@@ -837,7 +837,7 @@ function createTrackFromTarget(target: string): TrackData {
   if (target === 'camera') {
     return {
       targetId: 'camera',
-      targetName: '相机',
+      targetName: 'Camera',
       type: 'camera',
       icon: '🎥',
       actions: []
@@ -847,28 +847,28 @@ function createTrackFromTarget(target: string): TrackData {
   if (target === '_scene_') {
     return {
       targetId: '_scene_',
-      targetName: '当前场景',
+      targetName: 'Current Scene',
       type: 'prop',
       icon: '🎬',
       actions: []
     }
   }
   
-  // v11.1: 处理场景动画特殊 target
+  // v11.1: Handle special scene animation target
   if (target === '__scene_animation__') {
     return {
       targetId: '__scene_animation__',
-      targetName: '场景动画',
-      type: 'prop', // 使用 prop 类型图标
+      targetName: 'Scene Animation',
+      type: 'prop', // Use prop type icon
       icon: '🎬',
       actions: []
     }
   }
   
-  // v7.0: target 现在是实例ID，直接从场景对象查找
+  // v7.0: target is now instance ID, look up directly from scene objects
   const obj = sceneObjectStore.getObject(target)
   if (obj) {
-    // v7.1: 优先使用别名（确保非空字符串）
+    // v7.1: Prefer alias (ensure non-empty string)
     const alias = obj.alias
     let displayName = target
     if (alias?.trim()) {
@@ -877,10 +877,9 @@ function createTrackFromTarget(target: string): TrackData {
       displayName = obj.name
     }
     
-    
-    // 双层架构：直接从 runtimeObjects 的 obj.parentId 读取（已由 applySlotState 写入）
+    // Two-layer architecture: directly read obj.parentId from runtimeObjects (written by applySlotState)
     const effectiveParentId = obj.parentId
-    // P2: 为 composite 类型对象附加 compositeMode
+    // P2: Attach compositeMode for composite type object
     const compositeMode = obj.type === 'composite'
       ? (obj as CompositeObject).compositeMode
       : undefined
@@ -895,13 +894,13 @@ function createTrackFromTarget(target: string): TrackData {
     }
   }
   
-  // v7.1: 如果找不到对象，提供更友好的显示
+  // v7.1: If object not found, provide user-friendly display
   let fallbackName = target
   let fallbackType: SceneObject['type'] = 'prop'
   if (target.startsWith('char_')) {
-    fallbackName = '角色 ' + target.substring(5, 13) + '...'
+    fallbackName = 'Character ' + target.substring(5, 13) + '...'
   } else if (target.startsWith('bg_')) {
-    fallbackName = '背景 ' + target.substring(3, 11) + '...'
+    fallbackName = 'Background ' + target.substring(3, 11) + '...'
     fallbackType = 'background'
   }
   
@@ -914,28 +913,28 @@ function createTrackFromTarget(target: string): TrackData {
   }
 }
 
-// P1: 委托给 metadata 注册表，camera 在轨道视角使用 🎥
+// P1: Delegate to metadata registry, camera uses 🎥 in track view
 function getTrackIcon(type: string): string {
   if (type === 'camera') return '🎥'
   return getTypeIcon(type)
 }
 
 function getSlotStyle(slot: RuntimeSlot) {
-  // PRD v6.10: preroll/postroll 基于时长计算宽度，subtitle 基于字数
+  // PRD v6.10: preroll/postroll calculate width based on duration, subtitle based on character count
   let width: number
   
   if (slot.type === 'preroll' || slot.type === 'postroll') {
-    // 前置/后置槽位：基于时长计算宽度
-    // 最小宽度 80px，每 100ms 增加 10px
+    // Pre/post slot: calculate width based on duration
+    // Min width 80px, +10px per 100ms
     const minWidth = 80
-    const durationFactor = 0.1  // 每 1ms = 0.1px
+    const durationFactor = 0.1  // 1ms = 0.1px
     width = (minWidth + slot.duration * durationFactor) * zoomLevel.value
-    // 限制最大宽度
+    // Clamp max width
     width = Math.min(width, 200 * zoomLevel.value)
   } else {
-    // 字幕槽位：基于字数计算宽度
-    const basePadding = 60  // 基础内边距，保证短句也有点击区域
-    const charFactor = 12   // 每字像素
+    // Subtitle slot: calculate width based on character count
+    const basePadding = 60  // Base padding to ensure click area for short sentences
+    const charFactor = 12   // Pixels per char
     const charCount = slot.text?.length ?? 1
     width = (basePadding + charCount * charFactor) * zoomLevel.value
   }
@@ -946,16 +945,16 @@ function getSlotStyle(slot: RuntimeSlot) {
   }
 }
 
-// 计算槽位像素宽度（v6.10: preroll/postroll 基于时长，subtitle 基于字数）
+// Calculate slot pixel width (v6.10: preroll/postroll based on duration, subtitle based on character count)
 function getSlotPixelWidth(slot: RuntimeSlot): number {
   if (slot.type === 'preroll' || slot.type === 'postroll') {
-    // 前置/后置槽位：基于时长计算宽度
+    // Pre/post slot: calculate width based on duration
     const minWidth = 80
     const durationFactor = 0.1
     const width = (minWidth + slot.duration * durationFactor) * zoomLevel.value
     return Math.min(width, 200 * zoomLevel.value)
   } else {
-    // 字幕槽位：基于字数计算宽度
+    // Subtitle slot: calculate width based on character count
     const basePadding = 60
     const charFactor = 12
     const charCount = slot.text?.length ?? 1
@@ -968,7 +967,7 @@ function truncateText(text: string, maxLen: number): string {
   return text.substring(0, maxLen) + '...'
 }
 
-// 格式化槽位时长显示 (v6.10)
+// Format slot duration display (v6.10)
 function formatSlotDuration(ms: number): string {
   if (ms < 1000) {
     return `${Math.round(ms)}ms`
@@ -976,34 +975,34 @@ function formatSlotDuration(ms: number): string {
   return `${(ms / 1000).toFixed(1)}s`
 }
 
-// 获取槽位显示编号 (v6.10: 调整 preroll 后的编号)
+// Get slot display index (v6.10: adjust index after preroll)
 function getSlotIndexLabel(slot: RuntimeSlot): string {
-  if (slot.type === 'preroll') return '◀ 前'
-  if (slot.type === 'postroll') return '后 ▶'
+  if (slot.type === 'preroll') return '◀ Pre'
+  if (slot.type === 'postroll') return 'Post ▶'
   
-  // 计算偏移量：如果有 preroll，需要减去 1
+  // Calculate offset: if preroll exists, subtract 1
   const hasPreroll = slots.value.length > 0 && slots.value[0]?.type === 'preroll'
   const displayIndex = slot.index + 1 - (hasPreroll ? 1 : 0)
   
   return '#' + displayIndex
 }
 
-// 获取槽位显示文本 (v6.10: 估算时不显示时间)
+// Get slot display text (v6.10: do not show time when estimated)
 function getSlotDisplayText(slot: RuntimeSlot): string {
   if (slot.type === 'preroll') {
-    // preroll: 如果是估算值则不显示时间
-    return slot.isEstimated ? '前置' : formatSlotDuration(slot.duration)
+    // preroll: do not show time if estimated
+    return slot.isEstimated ? 'Pre-roll' : formatSlotDuration(slot.duration)
   } else if (slot.type === 'postroll') {
-    // postroll: 如果是估算值则不显示时间
-    return slot.isEstimated ? '后置' : formatSlotDuration(slot.duration)
+    // postroll: do not show time if estimated
+    return slot.isEstimated ? 'Post-roll' : formatSlotDuration(slot.duration)
   }
-  // subtitle: 显示文本
+  // subtitle: show text
   return truncateText(slot.text ?? '', 30)
 }
 
 function getActionColorClass(type: string): string {
   if (type.startsWith('camera')) return 'color-camera'
-  // screen_effect 判断必须在 startsWith('tween') 之前，否则 tween_screen_effect 会被匹配为 color-transform
+  // screen_effect check must be before startsWith('tween'), otherwise tween_screen_effect matches color-transform
   if (type === 'set_screen_effect' || type === 'tween_screen_effect') return 'color-vfx'
   if (type === 'set_light' || type === 'tween_light') return 'color-light'
   if (type === 'set_text' || type === 'tween_text' || type === 'set_text_reveal') return 'color-text'
@@ -1016,26 +1015,26 @@ function getActionLabel(action: Action): string {
   switch (action.type) {
     case 'tween_transform': {
       const p = action.params
-      if (p?.x !== undefined || p?.y !== undefined) return '移动'
-      if (p?.scaleX !== undefined) return '缩放'
-      if (p?.rotation !== undefined) return '旋转'
-      if (p?.alpha !== undefined) return '透明度'
-      return '变换'
+      if (p?.x !== undefined || p?.y !== undefined) return 'Move'
+      if (p?.scaleX !== undefined) return 'Scale'
+      if (p?.rotation !== undefined) return 'Rotate'
+      if (p?.alpha !== undefined) return 'Opacity'
+      return 'Transform'
     }
-    case 'camera_move': return '运镜'
-    case 'camera_shake': return '震动'
-    case 'camera_follow': return '跟随'
-    case 'set_screen_effect': return '🌟特效'
-    case 'tween_screen_effect': return '🌟渐变'
-    case 'set_light': return '💡灯光'
-    case 'tween_light': return '💡渐变'
-    case 'set_material': return '🎨素材'
-    case 'set_text': return '📝文本'
+    case 'camera_move': return 'Camera Move'
+    case 'camera_shake': return 'Shake'
+    case 'camera_follow': return 'Follow'
+    case 'set_screen_effect': return '🌟Effect'
+    case 'tween_screen_effect': return '🌟Fade'
+    case 'set_light': return '💡Light'
+    case 'tween_light': return '💡Fade'
+    case 'set_material': return '🎨Material'
+    case 'set_text': return '📝Text'
     case 'set_text_reveal': {
-      return action.params.action === 'stop' ? '⌨完整文本' : '⌨开始打字'
+      return action.params.action === 'stop' ? '⌨Full Text' : '⌨Typewriter'
     }
-    case 'tween_text': return '📝渐变'
-    case 'set_mask': return '✂蒙版'
+    case 'tween_text': return '📝Fade'
+    case 'set_mask': return '✂Mask'
     default: return action.type
   }
 }
@@ -1044,21 +1043,21 @@ function getPointActionIcon(action: Action): string {
   switch (action.type) {
 
     case 'set_lifecycle': {
-      // v9.3: 生命周期 Action 使用专属图标
-      if (isBirthAction(action)) return BIRTH_ACTION_ICON  // 🌱 出生
-      if (isDeathAction(action)) return DEATH_ACTION_ICON  // 🍂 消亡
+      // v9.3: Lifecycle Action uses dedicated icon
+      if (isBirthAction(action)) return BIRTH_ACTION_ICON  // 🌱 Spawn
+      if (isDeathAction(action)) return DEATH_ACTION_ICON  // 🍂 Despawn
       return '◆'
     }
     case 'set_transform': {
-      // v9.3: set_transform 仅处理几何+透明度，不再包含 spawned
+      // v9.3: set_transform only handles geometry + opacity, no longer includes spawned
       return '◆'
     }
     case 'set_visual': {
-      // v9.3: 视觉属性 Action
+      // v9.3: Visual property Action
       return '👁'
     }
     case 'camera_cut': return '🎥'
-    // v6.4: set_anim 图标
+    // v6.4: set_anim icon
     case 'set_anim': return '🎬'
     case 'set_audio': {
       const p = action.params
@@ -1069,18 +1068,18 @@ function getPointActionIcon(action: Action): string {
     case 'tween_screen_effect': return '🌟'
     case 'set_light': return '💡'
     case 'tween_light': return '💡'
-    case 'set_scene_structure': return '🧭'   // 场景结构变更
-    case 'set_composite': return '🧩'   // P2: 组合属性变更
-    case 'set_mask': return '✂'         // Clip-Mask Phase 1: 蒙版属性变更
-    case 'set_material': return '🎨'    // v16: 元件素材切换
-    case 'set_text': return '📝'         // Text PRD: 文本属性
+    case 'set_scene_structure': return '🧭'   // Scene structure change
+    case 'set_composite': return '🧩'   // P2: Composite property change
+    case 'set_mask': return '✂'         // Clip-Mask Phase 1: Mask property change
+    case 'set_material': return '🎨'    // v16: Symbol material switch
+    case 'set_text': return '📝'         // Text PRD: Text property
     case 'set_text_reveal': return '⌨'
-    case 'tween_text': return '📝'       // Text PRD: 文本渐变
+    case 'tween_text': return '📝'       // Text PRD: Text fade
     default: return '◆'
   }
 }
 
-// Note: isBirthAction 和 isDeathAction 已从 @/utils/actionHelpers 导入
+// Note: isBirthAction and isDeathAction are imported from @/utils/actionHelpers
 
 function getActionBarStyle(action: Action) {
   const startSlot = slots.value.find(s => s.index === action.slotIndex)
@@ -1089,7 +1088,7 @@ function getActionBarStyle(action: Action) {
   const span = 'slotSpan' in action ? action.slotSpan : 1
   let left = 0
   
-  // 计算 left 位置（基于字数）
+  // Calculate left position (based on character count)
   for (let i = 0; i < action.slotIndex; i++) {
     const s = slots.value[i]
     if (s) {
@@ -1097,7 +1096,7 @@ function getActionBarStyle(action: Action) {
     }
   }
   
-  // 计算宽度（基于字数）
+  // Calculate width (based on character count)
   let width = 0
   for (let i = 0; i < span; i++) {
     const s = slots.value[action.slotIndex + i]
@@ -1115,7 +1114,7 @@ function getActionBarStyle(action: Action) {
 function getActionIconStyle(action: Action) {
   let left = 0
   
-  // 计算 left 位置（基于字数）
+  // Calculate left position (based on character count)
   for (let i = 0; i < action.slotIndex; i++) {
     const s = slots.value[i]
     if (s) {
@@ -1123,11 +1122,11 @@ function getActionIconStyle(action: Action) {
     }
   }
   
-  // 居中显示
+  // Center display
   const currentSlot = slots.value[action.slotIndex]
   const slotWidth = currentSlot ? getSlotPixelWidth(currentSlot) : 80
   
-  // v6.4: 同一 slot 同一对象的多个 point action 并排显示
+  // v6.4: Multiple point actions of same object in same slot displayed side by side
   const sameSlotActions = props.actions.filter(
     a => a.target === action.target && a.slotIndex === action.slotIndex && a.category === 'point'
   )
@@ -1178,7 +1177,7 @@ function isActionOrderVisible(action: Action): boolean {
 function handleMoveSelectedActionOrder(direction: -1 | 1): void {
   const info = selectedActionOrderInfo.value
   if (!info) return
-
+  
   const slotActions = getOrderedActionsForSlot(info.action.slotIndex)
   const nextIndex = info.index + direction
   if (nextIndex < 0 || nextIndex >= slotActions.length) return
@@ -1199,13 +1198,13 @@ function handleResetCurrentSlotActionOrder(): void {
 
 // ==================== Event Handlers ====================
 
-// ==================== 自定义筛选器相关函数 ====================
+// ==================== Custom Filter Functions ====================
 
 function handleFilterChange() {
   if (filterMode.value === 'custom') {
-    // 打开自定义筛选器面板
+    // Open custom filter panel
     customFilterPopover.value.visible = true
-    // 初始化选中状态（如果之前没有选择，默认全选）
+    // Initialize selected state (select all by default if none selected)
     if (customFilterPopover.value.selectedTrackIds.length === 0) {
       customFilterPopover.value.selectedTrackIds = allTracks.value.map(t => t.targetId)
     }
@@ -1247,7 +1246,7 @@ function toggleGroupSelection(type: string) {
   
   const allSelected = isGroupAllSelected(type)
   if (allSelected) {
-    // 取消全选
+    // Deselect all
     for (const track of group.tracks) {
       const idx = customFilterPopover.value.selectedTrackIds.indexOf(track.targetId)
       if (idx !== -1) {
@@ -1255,7 +1254,7 @@ function toggleGroupSelection(type: string) {
       }
     }
   } else {
-    // 全选
+    // Select all
     for (const track of group.tracks) {
       if (!customFilterPopover.value.selectedTrackIds.includes(track.targetId)) {
         customFilterPopover.value.selectedTrackIds.push(track.targetId)
@@ -1285,7 +1284,7 @@ function applyCustomFilter() {
   customFilterPopover.value.visible = false
 }
 
-// 点击外部关闭 Popover
+// Close popover when clicking outside
 function handleClickOutside(event: MouseEvent) {
   if (
     customFilterPopover.value.visible &&
@@ -1296,7 +1295,7 @@ function handleClickOutside(event: MouseEvent) {
   }
 }
 
-// 高度调整
+// Height resize
 let isResizingPanel = false
 let resizeStartY = 0
 let resizeStartHeight = 0
@@ -1329,14 +1328,14 @@ function handleResizeEnd() {
   document.body.style.cursor = ''
 }
 
-// 折叠/展开
+// Collapse/Expand
 function toggleCollapse() {
   isCollapsed.value = !isCollapsed.value
-  // 通知父组件折叠状态变化，以便刷新画布
+  // Notify parent component of collapse state change to refresh canvas
   emit('collapse-change', isCollapsed.value)
 }
 
-// 缩放
+// Zoom
 function handleZoomIn() {
   if (zoomLevel.value < 2) {
     zoomLevel.value = Math.min(2, zoomLevel.value + 0.1)
@@ -1349,22 +1348,22 @@ function handleZoomOut() {
   }
 }
 
-// 槽位选择
+// Slot selection
 function handleSelectSlot(index: number) {
   emit('update:currentSlotIndex', index)
   emit('select-slot', index)
 }
 
-// 轨道选择
+// Track selection
 function handleSelectTrack(track: TrackData) {
-  // 查找对应的场景对象
+  // Find corresponding scene object
   let objectId: string | null = null
   
   if (track.type === 'camera') {
     const cameraObj = sceneObjectStore.objects.find(o => o.type === 'camera')
     objectId = cameraObj?.id ?? null
   } else {
-    // v7.0: targetId 现在是实例ID，直接查找
+    // v7.0: targetId is now instance ID, look up directly
     const obj = sceneObjectStore.getObject(track.targetId)
     objectId = obj?.id ?? null
   }
@@ -1372,24 +1371,24 @@ function handleSelectTrack(track: TrackData) {
   emit('select-object', objectId)
 }
 
-// 动作选择
-// v8.8: 选中动作时自动选中其所在的 slot
+// Action selection
+// v8.8: When selecting an action, automatically select its slot
 function handleSelectAction(action: Action) {
-  // 更新 slot 索引到动作的起始 slot
-  // point 动作：slotIndex 即为其所在 slot
-  // duration 动作：slotIndex 即为其开始 slot
+  // Update slot index to action's start slot
+  // Point action: slotIndex is its slot
+  // Duration action: slotIndex is its start slot
   if (action.slotIndex !== props.currentSlotIndex) {
     emit('update:currentSlotIndex', action.slotIndex)
   }
   emit('select-action', action)
 }
 
-// 容器滚动处理
+// Container scroll handling
 function handleContainerScroll(_e: Event) {
-  // 统一滚动容器，无需额外同步
+  // Unified scroll container, no need for extra synchronization
 }
 
-// 右键菜单 - 用于轨道头
+// Context menu - for track header
 function handleTrackHeaderContextMenu(e: MouseEvent, track: TrackData) {
   contextMenu.value = {
     visible: true,
@@ -1404,11 +1403,11 @@ function closeContextMenu() {
   contextMenu.value.visible = false
 }
 
-// 删除该对象的所有动作
+// Delete all actions for this object
 function handleDeleteTrackActions() {
   if (contextMenu.value.track) {
     const targetId = contextMenu.value.track.targetId
-    // 删除该目标的所有动作
+    // Delete all actions for this target
     const actionsToDelete = props.actions.filter(a => a.target === targetId)
     for (const action of actionsToDelete) {
       emit('delete-action', action)
@@ -1417,7 +1416,7 @@ function handleDeleteTrackActions() {
   closeContextMenu()
 }
 
-// 动作拖拽（移动）
+// Action drag (move)
 function handleActionDragStart(e: MouseEvent, action: Action) {
   isDragging.value = true
   dragAction.value = action
@@ -1431,7 +1430,7 @@ function handleActionDragStart(e: MouseEvent, action: Action) {
 function handleActionDragMove(e: MouseEvent) {
   if (!isDragging.value || !dragAction.value) return
   
-  // 计算新的槽位索引
+  // Calculate new slot index
   const baseWidth = 80 * zoomLevel.value
   const deltaX = e.clientX - dragStartX.value
   const deltaSlots = Math.round(deltaX / baseWidth)
@@ -1453,28 +1452,28 @@ function handleActionDragMove(e: MouseEvent) {
       return
     }
 
-    // 获取同一目标的同类型动作（排除当前拖动的动作）
+    // Get same-category actions of same target (excluding currently dragged action)
     const sameTargetActions = props.actions.filter(a =>
       a.target === action.target &&
       a.id !== action.id &&
-      a.category === action.category  // 同类型：补间与补间，瞬时与瞬时
+      a.category === action.category  // Same category: tween with tween, point with point
     )
 
-    // 检测重叠
+    // Check overlap
     let hasOverlap = false
     for (const otherAction of sameTargetActions) {
       const otherSpan = otherAction.category === 'duration' ? (otherAction as DurationAction).slotSpan : 1
       const otherStart = otherAction.slotIndex
       const otherEnd = otherStart + otherSpan - 1
 
-      // 检查范围是否重叠
+      // Check whether range overlaps
       if (!(endSlotIndex < otherStart || newSlotIndex > otherEnd)) {
         hasOverlap = true
         break
       }
     }
 
-    // 如果没有重叠，则更新位置
+    // Update position if no overlap
     if (!hasOverlap) {
       emit('update-action', dragAction.value, { slotIndex: newSlotIndex })
     }
@@ -1488,7 +1487,7 @@ function handleActionDragEnd() {
   document.removeEventListener('mouseup', handleActionDragEnd)
 }
 
-// 动作调整大小（Duration Action 的 slotSpan）
+// Action resize (slotSpan for Duration Action)
 function handleActionResizeStart(e: MouseEvent, action: Action) {
   if (action.category !== 'duration') return
   
@@ -1715,7 +1714,7 @@ onBeforeUnmount(() => {
   cursor: pointer;
 }
 
-/* 自定义筛选器对话框 */
+/* Custom filter dialog */
 .filter-wrapper {
   position: relative;
 }
@@ -2070,14 +2069,14 @@ onBeforeUnmount(() => {
   flex: 1;
 }
 
-/* Content Area - 统一滚动容器 */
+/* Content Area - Unified scroll container */
 .sequencer-content {
   flex: 1;
   overflow: auto;
   background: #fafafa;
 }
 
-/* 轨道行 - 包含左侧头和右侧内容 */
+/* Track row - Contains left header and right content */
 .track-row {
   display: flex;
   min-width: fit-content;
@@ -2094,7 +2093,7 @@ onBeforeUnmount(() => {
   background: rgba(59, 130, 246, 0.05);
 }
 
-/* 左侧对象头 - 粘性定位 */
+/* Left object header - Sticky positioning */
 .track-header {
   position: sticky;
   left: 0;
@@ -2127,7 +2126,7 @@ onBeforeUnmount(() => {
   z-index: 6;
 }
 
-/* 右侧轨道内容 */
+/* Right track content */
 .track-content {
   flex: 1;
   min-width: 0;
@@ -2174,7 +2173,7 @@ onBeforeUnmount(() => {
   border-color: #3b82f6;
 }
 
-/* Preroll slot (前置) */
+/* Preroll slot */
 .slot-card.preroll {
   background: linear-gradient(135deg, #fef3c7, #fde68a);
   border-color: #f59e0b;
@@ -2189,7 +2188,7 @@ onBeforeUnmount(() => {
   border-color: #f59e0b;
 }
 
-/* Postroll slot (后置) */
+/* Postroll slot */
 .slot-card.postroll {
   background: linear-gradient(135deg, #e0e7ff, #c7d2fe);
   border-color: #6366f1;
@@ -2418,13 +2417,13 @@ onBeforeUnmount(() => {
   margin: 4px 0;
 }
 
-/* P2: composite 子对象轨道缩进（padding-left 由 :style 动态计算） */
+/* P2: composite child object track indent (padding-left dynamically calculated by :style) */
 .track-row.child-track .track-header {
   border-left: 2px solid #93c5fd;
   font-size: 11px;
 }
 
-/* P2: 轨道折叠按钮 */
+/* P2: Track collapse button */
 .track-collapse-btn {
   background: none;
   border: none;

@@ -527,7 +527,7 @@ describe('Phase B: groupObjects / ungroupAll / addToComposite / removeFromCompos
 
             expect(() => {
                 store.groupObjects([p1.id, p2.id])
-            }).toThrow(/同一个 parentId/)
+            }).toThrow(/same parentId|同一个 parentId/)
         })
     })
 
@@ -871,7 +871,7 @@ describe('Phase B: groupObjects / ungroupAll / addToComposite / removeFromCompos
 
             expect(() => {
                 store.addToComposite(compositeB.id, [compositeA.id])
-            }).toThrow(/循环引用/)
+            }).toThrow(/Circular reference|循环引用/)
         })
 
         it('should throw error for deep cycle: A→B→C, try to add A into C', () => {
@@ -881,7 +881,7 @@ describe('Phase B: groupObjects / ungroupAll / addToComposite / removeFromCompos
 
             expect(() => {
                 store.addToComposite(compositeC.id, [compositeA.id])
-            }).toThrow(/循环引用/)
+            }).toThrow(/Circular reference|循环引用/)
         })
 
         it('should allow adding unrelated object (no cycle)', () => {

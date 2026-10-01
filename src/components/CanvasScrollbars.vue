@@ -1,6 +1,6 @@
 <template>
   <div class="canvas-scrollbars">
-    <!-- 横向滚动条 -->
+    <!-- Horizontal scrollbar -->
     <div
       v-if="showHorizontal"
       ref="hTrackRef"
@@ -13,7 +13,7 @@
       />
     </div>
 
-    <!-- 纵向滚动条 -->
+    <!-- Vertical scrollbar -->
     <div
       v-if="showVertical"
       ref="vTrackRef"
@@ -26,7 +26,7 @@
       />
     </div>
 
-    <!-- 右下角空白方块（两条滚动条都显示时占位） -->
+    <!-- Bottom right corner spacer (when both scrollbars shown) -->
     <div
       v-if="showHorizontal && showVertical"
       class="scrollbar-corner"
@@ -38,17 +38,17 @@
 import { computed, ref } from 'vue'
 
 const props = defineProps<{
-  /** 画布逻辑宽度 */
+  /** Canvas logical width */
   canvasWidth: number
-  /** 画布逻辑高度 */
+  /** Canvas logical height */
   canvasHeight: number
-  /** 视口宽度（像素） */
+  /** Viewport width (px) */
   viewportWidth: number
-  /** 视口高度（像素） */
+  /** Viewport height (px) */
   viewportHeight: number
   /** effectiveScale = fitScale * userZoom */
   effectiveScale: number
-  /** 当前平移偏移 */
+  /** Current pan offset */
   panX: number
   panY: number
 }>()
@@ -57,31 +57,31 @@ const emit = defineEmits<{
   'pan-change': [x: number, y: number]
 }>()
 
-const TRACK_SIZE = 10       // 滚动条轨道宽度
-const MIN_THUMB_SIZE = 30   // 最小滑块长度
+const TRACK_SIZE = 10       // Scrollbar track width
+const MIN_THUMB_SIZE = 30   // Min thumb size
 
 const hTrackRef = ref<HTMLElement>()
 const vTrackRef = ref<HTMLElement>()
 
-// ========== 计算属性 ==========
+// ========== Computed Properties ==========
 
-/** 画布渲染后的像素尺寸 */
+/** Rendered pixel dimensions of canvas */
 const canvasPixelWidth = computed(() => props.canvasWidth * props.effectiveScale)
 const canvasPixelHeight = computed(() => props.canvasHeight * props.effectiveScale)
 
-/** 总可滚动区域（画布超出视口的部分） */
+/** Total scrollable area (canvas overflow beyond viewport) */
 const totalWidth = computed(() => Math.max(canvasPixelWidth.value, props.viewportWidth))
 const totalHeight = computed(() => Math.max(canvasPixelHeight.value, props.viewportHeight))
 
-/** 是否需要显示滚动条 */
+/** Whether scrollbar is needed */
 const showHorizontal = computed(() => canvasPixelWidth.value > props.viewportWidth + 1)
 const showVertical = computed(() => canvasPixelHeight.value > props.viewportHeight + 1)
 
-/** 滑块占比 */
+/** Thumb ratio */
 const hThumbRatio = computed(() => Math.min(1, props.viewportWidth / totalWidth.value))
 const vThumbRatio = computed(() => Math.min(1, props.viewportHeight / totalHeight.value))
 
-/** 滑块位置（0~1） */
+/** Thumb position (0~1) */
 const hScrollRatio = computed(() => {
   const maxScroll = canvasPixelWidth.value - props.viewportWidth
   if (maxScroll <= 0) return 0
@@ -94,7 +94,7 @@ const vScrollRatio = computed(() => {
   return Math.max(0, Math.min(1, -props.panY / maxScroll))
 })
 
-/** 横向轨道可用长度 */
+/** Horizontal track usable length */
 const hTrackLength = computed(() => {
   const margin = showVertical.value ? TRACK_SIZE : 0
   return props.viewportWidth - margin
@@ -105,7 +105,7 @@ const vTrackLength = computed(() => {
   return props.viewportHeight - margin
 })
 
-/** 横向滑块样式 */
+/** Horizontal thumb style */
 const horizontalThumbStyle = computed(() => {
   const thumbLen = Math.max(MIN_THUMB_SIZE, hTrackLength.value * hThumbRatio.value)
   const maxTravel = hTrackLength.value - thumbLen
@@ -116,7 +116,7 @@ const horizontalThumbStyle = computed(() => {
   }
 })
 
-/** 纵向滑块样式 */
+/** Vertical thumb style */
 const verticalThumbStyle = computed(() => {
   const thumbLen = Math.max(MIN_THUMB_SIZE, vTrackLength.value * vThumbRatio.value)
   const maxTravel = vTrackLength.value - thumbLen
@@ -127,7 +127,7 @@ const verticalThumbStyle = computed(() => {
   }
 })
 
-// ========== 拖拽逻辑 ==========
+// ========== Drag Logic ==========
 
 let dragAxis: 'h' | 'v' | null = null
 let dragStartMouse = 0
@@ -137,7 +137,7 @@ function startHorizontalDrag(e: MouseEvent) {
   e.preventDefault()
   dragAxis = 'h'
 
-  // 计算点击位置是否在滑块上
+  // Determine whether click position is on thumb
   const track = hTrackRef.value
   if (!track) return
   const trackRect = track.getBoundingClientRect()
@@ -148,11 +148,11 @@ function startHorizontalDrag(e: MouseEvent) {
   const currentThumbLeft = maxTravel * hScrollRatio.value
 
   if (clickPos >= currentThumbLeft && clickPos <= currentThumbLeft + thumbLen) {
-    // 点击在滑块上：拖拽模式
+    // Click on thumb: drag mode
     dragStartMouse = e.clientX
     dragStartScroll = hScrollRatio.value
   } else {
-    // 点击在轨道上：跳转到点击位置
+    // Click on track: jump to click position
     const newRatio = Math.max(0, Math.min(1, (clickPos - thumbLen / 2) / maxTravel))
     const maxScroll = canvasPixelWidth.value - props.viewportWidth
     emit('pan-change', -newRatio * maxScroll, props.panY)

@@ -2,27 +2,27 @@
   <div class="property-section mask-shape-section">
     <h4 class="section-title">
       <span class="section-icon" aria-hidden="true">▭</span>
-      <span>蒙版形状</span>
+      <span>Mask Shape</span>
     </h4>
 
-    <!-- 形状 -->
+    <!-- Shape -->
     <div class="field-row">
-      <label class="field-label">形状</label>
+      <label class="field-label">Shape</label>
       <div class="field-control">
         <select
           class="field-select"
           :value="mask.shape"
           @change="onShapeChange(($event.target as HTMLSelectElement).value)"
         >
-          <option value="rectangle">矩形</option>
-          <option value="ellipse">椭圆</option>
+          <option value="rectangle">Rectangle</option>
+          <option value="ellipse">Ellipse</option>
         </select>
       </div>
     </div>
 
-    <!-- 宽度 -->
+    <!-- Width -->
     <div class="field-row">
-      <label class="field-label">宽度</label>
+      <label class="field-label">Width</label>
       <div class="field-control">
         <input
           class="field-input"
@@ -36,13 +36,13 @@
       </div>
     </div>
 
-    <!-- 长宽比锁 -->
+    <!-- Aspect ratio lock -->
     <div class="ratio-lock-row">
       <button
         type="button"
         class="ratio-lock-btn"
         :class="{ active: aspectLocked }"
-        :title="aspectLocked ? '已锁定长宽比（点击解锁）' : '点击锁定长宽比'"
+        :title="aspectLocked ? 'Aspect ratio locked (click to unlock)' : 'Click to lock aspect ratio'"
         :aria-pressed="aspectLocked"
         @click="toggleAspectLock"
       >
@@ -76,13 +76,13 @@
           <rect x="4" y="11" width="16" height="10" rx="2" />
           <path d="M8 11V7a4 4 0 0 1 7.5-1.5" />
         </svg>
-        <span class="ratio-lock-text">锁定长宽比</span>
+        <span class="ratio-lock-text">Lock Aspect Ratio</span>
       </button>
     </div>
 
-    <!-- 高度 -->
+    <!-- Height -->
     <div class="field-row">
-      <label class="field-label">高度</label>
+      <label class="field-label">Height</label>
       <div class="field-control">
         <input
           class="field-input"

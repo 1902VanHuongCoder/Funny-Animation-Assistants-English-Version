@@ -6,7 +6,7 @@
       @click.self="handleClose"
     >
       <div class="script-preview-dialog">
-        <!-- 加载遮罩 -->
+        <!-- Loading overlay -->
         <div
           v-if="isLoadingResources"
           class="loading-overlay"
@@ -17,7 +17,7 @@
                 ⚠️
               </div>
               <div class="tts-provider-error-title">
-                本地 TTS 未配置
+                Local TTS Not Configured
               </div>
               <div class="tts-provider-error-message">
                 {{ loadingDetail }}
@@ -26,14 +26,14 @@
                 class="close-btn-secondary"
                 @click="handleClose"
               >
-                关闭
+                Close
               </button>
             </template>
-            <!-- 正常加载状态 -->
+            <!-- Normal loading state -->
             <template v-else>
               <div class="loading-spinner" />
               <div class="loading-text">
-                正在准备资源...
+                Preparing assets...
               </div>
               <div class="loading-progress">
                 <div
@@ -48,7 +48,7 @@
           </div>
         </div>
 
-        <!-- 主内容区：播放器 -->
+        <!-- Main content area: Player -->
         <div
           v-show="!isLoadingResources"
           class="player-content"
@@ -67,12 +67,12 @@
                 v-if="isPlayerPlaying"
                 class="block-info"
               >
-                - 正在播放
+                - Playing
               </span>
             </div>
             <button
               class="close-btn"
-              title="关闭"
+              title="Close"
               @click="handleClose"
             >
               ✕
@@ -80,7 +80,7 @@
           </div>
 
           <div class="player-container">
-            <!-- 场景播放器组件：A/B 双层交接，避免同一 ScenePlayer 跨场景复用导致运行态残留 -->
+            <!-- Scene player component: A/B double buffer handoff -->
             <ScenePlayer
               v-if="layerAScene && !isLoadingResources"
               :key="`scene-player-a-${layerA.key}-${layerAScene.id}`"
@@ -115,21 +115,21 @@
             />
           </div>
 
-          <!-- 播放控制栏 -->
+          <!-- Playback controls -->
           <div class="player-controls">
             <button
               class="ctrl-btn play-btn"
-              :title="isPlayerPlaying ? '暂停' : '播放'"
+              :title="isPlayerPlaying ? 'Pause' : 'Play'"
               @click="togglePlay"
             >
-              {{ isPlayerPlaying ? '暂停' : '播放' }}
+              {{ isPlayerPlaying ? 'Pause' : 'Play' }}
             </button>
             <button
               class="ctrl-btn reset-btn"
-              title="重置当前场景"
+              title="Reset Current Scene"
               @click="handleReset"
             >
-              重置
+              Reset
             </button>
 
             <div class="progress-section">
@@ -185,17 +185,17 @@ const emit = defineEmits<{
 
 const projectStore = useProjectStore()
 const episodeStore = useEpisodeStore()
-// v7.58: 移除 characterStore, backgroundStore, propStore，改用 useAssetLoader 统一管理
+// v7.58: Removed characterStore, backgroundStore, propStore, unified under useAssetLoader
 const soundStore = useSoundStore()
 const { getImageUrl } = useAssetImage()
 const { loadAudioUrl, getAudioUrl, revokeBlobUrl } = useAssetAudio()
 
-// 资源管理
+// Asset management
 const generatedBlobUrls = new Set<string>()
 const loadedTextureUrls = new Set<string>()
 const loadedAudioUrls = new Set<string>()
 
-// 副本 (用于播放，包含 Blob URLs)
+// Copy (for playback, contains Blob URLs)
 const episodeCopy = ref<Episode | null>(null)
 
 onMounted(() => {
@@ -207,7 +207,7 @@ onBeforeUnmount(() => {
     stopAndCleanup()
 })
 
-// 状态
+// State
 const currentSceneIndex = ref(0)
 const autoPlayNext = ref(false)
 const isPlayerPlaying = ref(false)
@@ -245,12 +245,12 @@ const playerBRef = ref<ScenePlayerInstance | null>(null)
 let nextSceneWarmupTimer: number | null = null
 let previousLayerCleanupTimer: number | null = null
 
-// 场景时间信息缓存
+// Scene timing info cache
 const sceneDurations = ref<number[]>([])
 const sceneStartTimes = ref<number[]>([])
 const sceneBlockTimeline = ref<Record<string, { id: string, startTime: number, endTime: number }[]>>({})
 
-// BGM 状态
+// BGM state
 const activeBGMInstances = new Map<string, AudioInstance>()
 
 interface BGMTimelineItem {
@@ -261,13 +261,13 @@ interface BGMTimelineItem {
 }
 const bgmTimelines = ref<BGMTimelineItem[]>([])
 
-// 预加载状态
+// Preload state
 const isLoadingResources = ref(false)
 const loadingProgress = ref(0)
 const loadingDetail = ref('')
 const ttsProviderError = ref(false)
 
-// 计算属性
+// Computed properties
 const scenes = computed(() => (episodeCopy.value || props.episode).scenes || [])
 
 const currentScene = computed(() => {
@@ -279,10 +279,10 @@ const layerAScene = computed(() => getSceneByLayerIndex(layerA.value.sceneIndex)
 const layerBScene = computed(() => getSceneByLayerIndex(layerB.value.sceneIndex))
 
 const currentSceneTitle = computed(() => {
-  return currentScene.value?.title || `场景 ${currentSceneIndex.value + 1}`
+  return currentScene.value?.title || `Scene ${currentSceneIndex.value + 1}`
 })
 
-// 方法
+// Methods
 function getSceneByLayerIndex(index: number | null): SceneContainer | null {
   if (index === null) return null
   return scenes.value[index] ?? null
@@ -439,7 +439,7 @@ async function preloadGlobalBGM() {
   const tracks = props.episode.bgmTracks || []
   if (tracks.length === 0) return
 
-  loadingDetail.value = '正在预加载配乐...'
+  loadingDetail.value = 'Preloading background music...'
   
   for (const track of tracks) {
     if (track.assetId) {
@@ -522,7 +522,7 @@ function stopAndCleanup() {
   playerARef.value?.pause()
   playerBRef.value?.pause()
 
-  // 释放预加载的纹理资源
+  // Release preloaded texture assets
   for (const url of loadedTextureUrls) {
       if (PIXI.Assets.cache.has(url)) {
           void PIXI.Assets.unload(url)
@@ -530,20 +530,20 @@ function stopAndCleanup() {
   }
   loadedTextureUrls.clear()
 
-  // 释放预加载的音频资源
+  // Release preloaded audio assets
   for (const url of loadedAudioUrls) {
       audioKit.unload(url)
   }
   loadedAudioUrls.clear()
 
-  // 停止所有声音
+  // Stop all sounds
   // console.log('[ScriptPreview] Stopping all audio (cleanup)')
   audioKit.stopAll()
   // console.log('[activeBGMInstances] Clearing all (stopAndCleanup)')
   activeBGMInstances.clear()
 
-  // v12.9: 不要 revoke generatedBlobUrls，它们可能属于 useAssetAudio 的全局缓存
-  // 否则会导致全局缓存中的 blob URL 失效，下次打开时 fetch 失败 (ERR_FILE_NOT_FOUND)
+  // v12.9: Do not revoke generatedBlobUrls, they may belong to useAssetAudio global cache
+  // otherwise cached blob URLs invalidate, causing fetch failure (ERR_FILE_NOT_FOUND) on reopen
   generatedBlobUrls.clear()
 }
 
@@ -569,13 +569,13 @@ function handleClose() {
 function handleSceneFinished(layerId: PlayerLayerId = activeLayerId.value) {
   if (layerId !== activeLayerId.value) return
   // console.log(`[ScriptPreview] Scene ${currentSceneIndex.value} finished`)
-  // 当前场景播放结束，自动播放下一场
+  // Current scene playback ended, auto-play next scene
   if (currentSceneIndex.value < scenes.value.length - 1) {
     // console.log('[ScriptPreview] Auto-playing next scene:', currentSceneIndex.value + 1)
     const nextSceneIndex = currentSceneIndex.value + 1
     
-    // 下一场通常已在当前场景播放期间完成隐藏层预热；若还没 ready，
-    // 当前播放器保持在最后一帧，等 ready 后立即切换。
+    // Next scene usually warmed up during current scene playback; if not ready,
+    // current player holds on last frame and switches immediately once ready.
     if (pendingLayerId.value && getLayerState(pendingLayerId.value).sceneIndex === nextSceneIndex) {
       if (isPendingLayerReady.value) {
         activatePendingLayer()
@@ -589,17 +589,17 @@ function handleSceneFinished(layerId: PlayerLayerId = activeLayerId.value) {
 
     autoPlayNext.value = false
     
-    // 2. 注意：我们不应该在这里 stopAll，因为 BGM 需要跨场景播放
-    // 也不需要 clear activeBGMInstances，因为 updateGlobalBGM 会处理状态
+    // 2. Note: do not stopAll here because BGM needs cross-scene playback
+    // no need to clear activeBGMInstances, updateGlobalBGM handles state
     
   } else {
-    // 整个剧本结束
+    // Entire screenplay ended
     // console.log('[ScriptPreview] All scenes finished')
     isPlayerPlaying.value = false
     isPlaybackFinished.value = true
     //currentTime.value = totalDuration.value // Ensure UI shows full progress
     
-    // 淡出所有 BGM
+    // Fade out all BGMs
     // console.log('[ScriptPreview] All scenes finished, fading out all BGMs')
     activeBGMInstances.forEach((inst, trackId) => {
       const track = props.episode.bgmTracks?.find(t => t.id === trackId)
@@ -619,13 +619,13 @@ function togglePlay() {
     cancelNextSceneWarmup()
     activePlayer.pause()
   } else {
-    // 如果播放已结束，则从头开始
+    // If playback finished, restart from beginning
     if (isPlaybackFinished.value) {
         handleReset()
         isPlaybackFinished.value = false
         isPlayerPlaying.value = true
         
-        // 尝试播放（处理单场景或组件未卸载的情况）
+        // Attempt playback (handles single scene or unmounted component cases)
         void nextTick(() => {
             const player = getActivePlayer()
             if (player) void player.play()
@@ -641,7 +641,7 @@ function handleReset() {
   // console.log('[ScriptPreview] Resetting playback')
   const wasAtZero = currentSceneIndex.value === 0
   
-  // 重置状态
+  // Reset state
   resetPlayerState()
   currentSceneIndex.value = 0
   resetPlayerLayers(0)
@@ -696,7 +696,7 @@ function handleProgress(layerIdOrLocalCurrent: PlayerLayerId | number, maybeLoca
   updateGlobalBGM(currentTime.value)
 }
 
-// Seek 功能已移除，进度条仅用于显示当前进度
+// Seek removed, progress bar displays current progress only
 
 function recalculateGlobalTimeline() {
     let accum = 0
@@ -708,7 +708,7 @@ function recalculateGlobalTimeline() {
     sceneStartTimes.value = starts
     totalDuration.value = accum
     
-    // 持久化总时长到 Episode（转换为秒）
+    // Persist total duration to Episode (converted to seconds)
     if (accum > 0) {
         episodeStore.updateEpisode(props.episodeId, { 
             duration: Math.round(accum / 1000) 
@@ -791,7 +791,7 @@ function formatTime(ms: number): string {
 }
 
 // ----------------------------------------------------------------------
-// 资源预加载逻辑
+// Asset preload logic
 // ----------------------------------------------------------------------
 
 async function preloadAllResources() {
@@ -801,7 +801,7 @@ async function preloadAllResources() {
   isLoadingResources.value = true
   ttsProviderError.value = false
   loadingProgress.value = 0
-  loadingDetail.value = '开始分析剧本资源...'
+  loadingDetail.value = 'Analyzing screenplay assets...'
   
   // Reset timeline info
   sceneDurations.value = new Array<number>(scenes.value.length).fill(0)
@@ -810,11 +810,11 @@ async function preloadAllResources() {
   try {
     const totalScenes = scenes.value.length
     
-    // 初始化 AudioContext (必须在用户交互后调用，这里假设打开 Dialog 是用户交互)
+    // Initialize AudioContext (must be called after user gesture, opening Dialog is gesture)
     await audioKit.init()
     // console.log('[ScriptPreview] AudioKit initialized')
     
-    // 确保元数据已加载
+    // Ensure metadata is loaded
     // console.log('[ScriptPreview] Checking store data...')
 
     for (let i = 0; i < totalScenes; i++) {
@@ -825,32 +825,32 @@ async function preloadAllResources() {
       const sceneProgressStep = (1 / totalScenes) * 100
       
       // console.log(`[ScriptPreview] Processing scene ${i + 1}/${totalScenes}: ${scene.title}`)
-      loadingDetail.value = `正在处理场景 ${i + 1}/${totalScenes}: ${scene.title || '未命名'}`
+      loadingDetail.value = `Processing scene ${i + 1}/${totalScenes}: ${scene.title || 'Unnamed'}`
       
-      // 1. 处理 TTS (最耗时，先做)
+      // 1. Process TTS (most time-consuming, do first)
     // console.log(`[ScriptPreview] Preloading TTS for scene ${i}`)
-    // 获取原始场景对象，用于检查更新
+    // Get original scene object to check for updates
     const originalScene = props.episode.scenes[i]
     if (!originalScene) continue
     
             await doPreloadSceneTTS(scene, originalScene)
             loadingProgress.value = sceneProgressBase + sceneProgressStep * 0.4
       
-      // 2. 计算场景时长 (Estimating Duration)
+      // 2. Calculate scene duration (Estimating Duration)
       calculateSceneDuration(scene, i)
       
-      // 3. 处理图片资源 (生成 Texture)
+      // 3. Process image assets (generate Textures)
       // console.log(`[ScriptPreview] Preloading images for scene ${i}`)
       await preloadSceneImages(scene)
       loadingProgress.value = sceneProgressBase + sceneProgressStep * 0.7
       
-      // 4. 处理音频资源 (BGM/SFX 解码)
+      // 4. Process audio assets (BGM/SFX decode)
       // console.log(`[ScriptPreview] Preloading audio for scene ${i}`)
       await preloadSceneAudio(scene)
       loadingProgress.value = sceneProgressBase + sceneProgressStep
     }
     
-    // 5. 预加载全局 BGM (v7.5)
+    // 5. Preload global BGM (v7.5)
     await preloadGlobalBGM()
 
     // Finalize timeline
@@ -858,15 +858,15 @@ async function preloadAllResources() {
     calculateBGMTimelines()
     
     loadingProgress.value = 100
-    loadingDetail.value = '准备就绪'
+    loadingDetail.value = 'Ready'
     // console.log('[ScriptPreview] Resource preload completed')
     
-    // 稍微延迟，让用户看到 100%
+    // Slight delay to allow user to see 100%
     await new Promise(resolve => setTimeout(resolve, 500))
     
     isLoadingResources.value = false
     
-    // 如果没有指定初始场景，自动开始播放第一个
+    // If no initial scene specified, auto-start first scene
     if (!props.initialSceneId) {
       currentSceneIndex.value = 0
       resetPlayerLayers(0)
@@ -874,17 +874,17 @@ async function preloadAllResources() {
     }
     
   } catch (err) {
-    console.error('[ScriptPreview] 资源预加载失败:', err)
+    console.error('[ScriptPreview] Asset preload failed:', err)
     
     const error = err as Error & { errorCode?: string }
     if (error.errorCode === 'TTS_PROVIDER_NOT_CONFIGURED') {
       ttsProviderError.value = true
-      loadingDetail.value = '本地 TTS Provider 尚未配置。请先为台词导入本地音频，或配置本地 TTS Provider。'
+      loadingDetail.value = 'Local TTS Provider is not configured. Please import local audio for lines, or configure a local TTS Provider.'
       return
     }
     
-    // 其他错误：仍然允许进入（可能只是部分资源失败）
-    loadingDetail.value = `预加载失败: ${err instanceof Error ? err.message : '未知错误'}`
+    // Other errors: still allow entry (might be partial failure)
+    loadingDetail.value = `Preload failed: ${err instanceof Error ? err.message : 'Unknown error'}`
     setTimeout(() => {
         isLoadingResources.value = false
     }, 2000)
@@ -933,7 +933,7 @@ function syncTtsDurationFromAudioBuffer(block: ScriptBlock, audioBuffer: AudioBu
 }
 
 /**
- * 使用共享 TTS 模块确保场景 TTS，然后预加载音频 Blob URL
+ * Use shared TTS module to ensure scene TTS, then preload audio Blob URL
  */
 async function doPreloadSceneTTS(scene: SceneContainer, originalScene: SceneContainer) {
   if (!scene || !originalScene || !scene.script) return
@@ -950,13 +950,13 @@ async function doPreloadSceneTTS(scene: SceneContainer, originalScene: SceneCont
     console.error('TTS error', e)
     const error = e as Error & { errorCode?: string }
     if (error.errorCode === 'TTS_PROVIDER_NOT_CONFIGURED') {
-      loadingDetail.value = '本地 TTS Provider 尚未配置。请先为台词导入本地音频，或配置本地 TTS Provider。'
+      loadingDetail.value = 'Local TTS Provider is not configured. Please import local audio for lines, or configure a local TTS Provider.'
       throw e
     }
     throw e
   }
 
-  // 预加载音频 Blob URL（与播放器生命周期绑定，保留在组件内）
+  // Preload audio Blob URL (bound to player lifecycle, kept inside component)
   for (const block of scene.script) {
     if (block.type !== 'dialogue' && block.type !== 'narration') continue
     const finalConfig = block.ttsConfig
@@ -972,13 +972,13 @@ async function doPreloadSceneTTS(scene: SceneContainer, originalScene: SceneCont
         await loadAudioUrl(audioPath)
         let blobUrl = getAudioUrl(audioPath)
 
-        // v12.9: 验证 blob URL 是否仍然有效
+        // v12.9: Verify if blob URL is still valid
         if (blobUrl?.startsWith('blob:')) {
           try {
             const resp = await fetch(blobUrl)
             if (!resp.ok) throw new Error('Blob URL not accessible')
           } catch {
-            console.warn('[ScriptPreview] 缓存的 Blob URL 已失效，重新加载:', audioPath)
+            console.warn('[ScriptPreview] Cached Blob URL expired, reloading:', audioPath)
             revokeBlobUrl(audioPath)
             await loadAudioUrl(audioPath)
             blobUrl = getAudioUrl(audioPath)
@@ -999,8 +999,8 @@ async function doPreloadSceneTTS(scene: SceneContainer, originalScene: SceneCont
 }
 
 async function preloadSceneImages(scene: Scene | SceneContainer) {
-    // V7 FIX: 使用 useAssetLoader.collectAssets 统一收集资源
-    // 这确保 Block Actions 中 set_character 动态切换的 Pose/Expression 也被预加载
+    // V7 FIX: Use useAssetLoader.collectAssets to uniformly collect assets
+    // This ensures dynamically switched Pose/Expression in Block Actions are preloaded
     const { collectAssets, loadAssets } = useAssetLoader()
     
     // Explicitly cast to a type with known properties to avoid 'any' and unsafe member access
@@ -1009,11 +1009,11 @@ async function preloadSceneImages(scene: Scene | SceneContainer) {
 
     const allImageUrls = new Set<string>()
     
-    // Step 1: 收集 Setup 静态资源
+    // Step 1: Collect Setup static assets
     const { imageUrls: setupImageUrls } = collectAssets(sceneSetup, null)
     setupImageUrls.forEach(url => allImageUrls.add(url))
     
-    // Step 2: 收集所有 Block Actions 的动态资源
+    // Step 2: Collect dynamic assets from all Block Actions
     if (scene.script) {
         (scene.script as ScriptBlock[]).forEach((block: ScriptBlock) => {
             const { imageUrls: blockImageUrls } = collectAssets(sceneSetup, block)
@@ -1023,10 +1023,10 @@ async function preloadSceneImages(scene: Scene | SceneContainer) {
     
     // console.log(`[ScriptPreview] preloadSceneImages: collected ${allImageUrls.size} image URLs for scene: ${safeScene.title ?? safeScene.name ?? safeScene.id}`)
     
-    // Step 3: 使用 loadAssets 统一加载
+    // Step 3: Load uniformly with loadAssets
     await loadAssets(allImageUrls, new Set())
     
-    // Step 4: 追踪已加载的 Blob URL (用于 cleanup)
+    // Step 4: Track loaded Blob URLs (for cleanup)
     for (const url of allImageUrls) {
         try {
             const blobUrl = getImageUrl(url)
@@ -1034,7 +1034,7 @@ async function preloadSceneImages(scene: Scene | SceneContainer) {
                 loadedTextureUrls.add(blobUrl)
             }
         } catch {
-            // loadAssets 已处理，这里仅追踪
+            // Handled by loadAssets, tracking only here
         }
     }
 }
@@ -1074,15 +1074,15 @@ async function preloadSceneAudio(scene: Scene | SceneContainer) {
 }
 
 
-// 监听可见性
+// Watch visibility
 watch(() => props.visible, (visible) => {
   // console.log('[ScriptPreview] visible changed:', visible)
   if (visible) {
     updateTeleportTarget()
-    // 创建副本用于播放和修改
+    // Create copy for playback and modification
     episodeCopy.value = JSON.parse(JSON.stringify(props.episode)) as Episode
     
-    // 初始化场景索引
+    // Initialize scene index
     if (props.initialSceneId) {
       // console.log('[ScriptPreview] Initializing with scene ID:', props.initialSceneId)
       const idx = scenes.value.findIndex(s => s.id === props.initialSceneId)
@@ -1103,12 +1103,12 @@ watch(() => props.visible, (visible) => {
     autoPlayNext.value = false
     resetPlayerState()
     
-    // 开始预加载
+    // Start preloading
     // console.log('[ScriptPreview] Triggering preloadAllResources...')
     void preloadAllResources()
     
   } else {
-    // 关闭时重置
+    // Reset on close
     // console.log('[ScriptPreview] Dialog closed, resetting state')
     isPlayerPlaying.value = false
     stopAndCleanup()

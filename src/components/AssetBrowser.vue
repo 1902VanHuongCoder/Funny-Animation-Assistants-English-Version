@@ -15,17 +15,17 @@
       </div>
       
       <div class="dialog-content">
-        <!-- 左侧筛选栏 -->
+        <!-- Left filter sidebar -->
         <div class="filter-sidebar">
           <div class="filter-group">
-            <h3>标签</h3>
+            <h3>Tags</h3>
             <div class="tag-list">
               <button 
                 class="tag-btn" 
                 :class="{ active: currentTag === 'all' }"
                 @click="currentTag = 'all'"
               >
-                全部
+                All
               </button>
               <button 
                 v-for="tag in allTags" 
@@ -40,9 +40,9 @@
           </div>
         </div>
 
-        <!-- 右侧内容区 -->
+        <!-- Right content area -->
         <div class="main-content">
-          <!-- 顶部工具栏 -->
+          <!-- Top toolbar -->
           <div class="content-toolbar">
             <div
               v-if="typeFilterOptions.length > 0"
@@ -65,17 +65,17 @@
                 class="sort-select"
               >
                 <option value="newest">
-                  📅 最新
+                  📅 Newest
                 </option>
                 <option value="oldest">
-                  📅 最早
+                  📅 Oldest
                 </option>
                 <template v-if="showDurationSort">
                   <option value="shortest">
-                    ⏱️ 时长(短→长)
+                    ⏱️ Duration (Short → Long)
                   </option>
                   <option value="longest">
-                    ⏱️ 时长(长→短)
+                    ⏱️ Duration (Long → Short)
                   </option>
                 </template>
               </select>
@@ -86,13 +86,13 @@
               <input 
                 v-model="searchQuery" 
                 type="text" 
-                placeholder="搜索素材..."
+                placeholder="Search assets..."
                 class="search-input"
               >
             </div>
           </div>
 
-          <!-- 素材网格 (Virtual Scroll) -->
+          <!-- Asset grid (Virtual Scroll) -->
           <div
             ref="containerRef"
             class="asset-grid-container"
@@ -132,7 +132,7 @@
                   @confirm="handleConfirm"
                   @toggle-play="togglePlay"
                 />
-                <!-- 占位元素，确保最后一行左对齐 -->
+                <!-- Placeholder element ensuring last row is left-aligned -->
                 <div 
                   v-for="n in (columnCount - row.items.length)" 
                   :key="`placeholder-${n}`"
@@ -142,24 +142,24 @@
             </RecycleScroller>
           </div>
 
-          <!-- 底部工具栏 -->
+          <!-- Bottom toolbar -->
           <div class="footer-toolbar">
             <div class="selection-info">
-              <span v-if="selectedAsset">已选: <strong>{{ selectedAsset.name }}</strong></span>
+              <span v-if="selectedAsset">Selected: <strong>{{ selectedAsset.name }}</strong></span>
             </div>
             <div class="footer-actions">
               <button
                 class="btn-cancel"
                 @click="$emit('close')"
               >
-                取消
+                Cancel
               </button>
               <button 
                 class="btn-confirm" 
                 :disabled="!selectedAsset"
                 @click="selectedAsset && handleConfirm(selectedAsset)"
               >
-                确认添加
+                Confirm Add
               </button>
             </div>
           </div>
@@ -229,32 +229,25 @@ const containerWidth = ref(0)
 const MIN_ITEM_WIDTH = 160
 const GAP = 20
 
-// 计算列数
+// Calculate column count
 const columnCount = computed(() => {
   if (containerWidth.value <= 0) return 1
-  // width + gap >= col * (minWidth + gap)
-  // width + gap >= col * 180
   const count = Math.floor((containerWidth.value + GAP) / (MIN_ITEM_WIDTH + GAP))
   return Math.max(1, count)
 })
 
-// 计算实际 Item 宽度
+// Calculate actual Item width
 const itemWidth = computed(() => {
   if (columnCount.value <= 1) return containerWidth.value
-  // width = col * w + (col - 1) * gap
-  // width = col * w + col * gap - gap
-  // width + gap = col * (w + gap)
-  // w + gap = (width + gap) / col
-  // w = (width + gap) / col - gap
   return (containerWidth.value + GAP) / columnCount.value - GAP
 })
 
-// 计算行高 (保持宽高比 1:1 + 底部文字高度)
+// Calculate row height (keep 1:1 aspect ratio + bottom text height)
 const rowHeight = computed(() => {
   return itemWidth.value + 45 // 45px reserved for text and margins
 })
 
-// 过滤后的素材列表
+// Filtered asset list
 const filteredAssets = computed(() => {
   const result = props.assets.filter(asset => {
     if (currentTag.value !== 'all' && !asset.tags?.includes(currentTag.value)) return false
@@ -272,7 +265,7 @@ const filteredAssets = computed(() => {
   })
 })
 
-// 虚拟行数据
+// Virtual row data
 const virtualRows = computed(() => {
   const rows = chunk(filteredAssets.value, columnCount.value)
   return rows.map((items: Asset[], index: number) => ({
@@ -319,7 +312,7 @@ function handleConfirm(asset: Asset) {
   emit('close')
 }
 
-// 音频播放控制
+// Audio playback control
 async function togglePlay(asset: Asset) {
   if (playingId.value === asset.id) {
     audioPlayer.value?.pause()
@@ -329,15 +322,14 @@ async function togglePlay(asset: Asset) {
       audioPlayer.value.pause()
     }
 
-    // 优先使用 _runtimeUrl
+    // Prefer _runtimeUrl
     let playUrl = asset._runtimeUrl || ''
 
-    // 如果没有 _runtimeUrl，通过 loadImageUrl 异步加载磁盘文件
+    // If no _runtimeUrl, asynchronously load from disk via loadImageUrl
     if (!playUrl && asset.url && !asset.url.startsWith('blob:') && !asset.url.startsWith('data:')) {
       try {
         await loadImageUrl(asset.url)
         playUrl = getImageUrl(asset.url) || ''
-        // 过滤掉占位符
         if (playUrl.startsWith('data:')) playUrl = ''
       } catch (e) {
         console.error('Failed to load audio from disk:', e)
@@ -351,7 +343,7 @@ async function togglePlay(asset: Asset) {
         audioPlayer.value = new Audio(playUrl)
         audioPlayer.value.play().catch(e => {
             console.error('Playback failed:', e)
-            toast.error('播放失败: ' + (e as Error).message)
+            toast.error('Playback failed: ' + (e as Error).message)
         })
         playingId.value = asset.id
         audioPlayer.value.onended = () => {
@@ -362,7 +354,7 @@ async function togglePlay(asset: Asset) {
       }
     } else {
         console.error('No valid playback URL found for asset:', asset.name)
-        toast.warning('无法播放：未找到有效的音频资源')
+        toast.warning('Unable to play: No valid audio resource found')
     }
   }
 }

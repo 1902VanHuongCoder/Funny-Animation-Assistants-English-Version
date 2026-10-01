@@ -6,7 +6,7 @@
     <div class="actor-management-dialog">
       <div class="dialog-header">
         <h3 class="dialog-title">
-          演员管理
+          Actor Management
         </h3>
         <button
           class="btn-close"
@@ -16,14 +16,14 @@
         </button>
       </div>
 
-      <!-- Tab 切换栏 -->
+      <!-- Tab switch bar -->
       <div class="tab-bar">
         <button
           class="tab-btn"
           :class="{ active: activeTab === 'actors' }"
           @click="activeTab = 'actors'"
         >
-          📋 已选演员
+          📋 Selected Actors
           <span
             v-if="actors.length > 0"
             class="tab-badge"
@@ -34,7 +34,7 @@
           :class="{ active: activeTab === 'library' }"
           @click="activeTab = 'library'"
         >
-          👥 人物库
+          👥 Character Library
           <span
             v-if="characterStore.characters.length > 0"
             class="tab-badge"
@@ -42,17 +42,17 @@
         </button>
       </div>
 
-      <!-- Tab 内容区 -->
+      <!-- Tab content area -->
       <div class="dialog-body">
-        <!-- ===== 已选演员 Tab ===== -->
+        <!-- ===== Selected Actors Tab ===== -->
         <template v-if="activeTab === 'actors'">
           <div
             v-if="actors.length === 0"
             class="empty-state"
           >
-            <p>📭 暂无演员</p>
+            <p>📭 No actors yet</p>
             <p class="hint">
-              切换到「人物库」标签页，从人物库中添加演员
+              Switch to "Character Library" tab to add actors
             </p>
           </div>
 
@@ -90,26 +90,26 @@
                   <span class="meta-voice">🎤 {{ getVoiceName(actor.voice?.voiceId) }}</span>
                 </div>
               </div>
-              <!-- Hover 操作 -->
+              <!-- Hover actions -->
               <div class="card-actions">
                 <button
                   class="btn-card-action preview"
                   :disabled="isPlayingVoice"
-                  :title="isPlayingVoice && playingVoiceId === getActorVoiceId(actor) ? '播放中...' : '试听配音'"
+                  :title="isPlayingVoice && playingVoiceId === getActorVoiceId(actor) ? 'Playing...' : 'Preview Voice'"
                   @click.stop="playActorVoicePreview(actor)"
                 >
                   {{ isPlayingVoice && playingVoiceId === getActorVoiceId(actor) ? '▶️' : '🔊' }}
                 </button>
                 <button
                   class="btn-card-action edit"
-                  title="编辑"
+                  title="Edit"
                   @click.stop="handleEditActor(actor)"
                 >
                   ✏️
                 </button>
                 <button
                   class="btn-card-action delete"
-                  title="删除"
+                  title="Delete"
                   @click.stop="handleDeleteActor(actor.id)"
                 >
                   🗑️
@@ -119,20 +119,20 @@
           </div>
         </template>
 
-        <!-- ===== 人物库 Tab（侧边栏 + 内容区） ===== -->
+        <!-- ===== Character Library Tab (Sidebar + Content) ===== -->
         <template v-if="activeTab === 'library'">
           <div class="library-layout">
-            <!-- 左侧筛选栏：仅标签 -->
+            <!-- Left filter bar: tags only -->
             <div class="filter-sidebar">
               <div class="filter-group">
-                <h4>标签</h4>
+                <h4>Tags</h4>
                 <div class="filter-list">
                   <button
                     class="filter-btn"
                     :class="{ active: selectedTags.size === 0 }"
                     @click="selectedTags = new Set()"
                   >
-                    全部
+                    All
                   </button>
                   <button
                     v-for="tag in allTags"
@@ -147,9 +147,9 @@
               </div>
             </div>
 
-            <!-- 右侧内容区 -->
+            <!-- Right content area -->
             <div class="library-main">
-              <!-- 工具栏：性别 tabs + 搜索框 -->
+              <!-- Toolbar: gender tabs + search box -->
               <div class="library-toolbar">
                 <div class="gender-tabs">
                   <button
@@ -166,19 +166,19 @@
                   v-model="searchKeyword"
                   type="text"
                   class="search-input"
-                  placeholder="搜索人物..."
+                  placeholder="Search characters..."
                 >
               </div>
 
-              <!-- 卡片网格 -->
+              <!-- Card grid -->
               <div class="library-body">
                 <div
                   v-if="filteredCharacters.length === 0"
                   class="empty-state"
                 >
-                  <p>📭 暂无可用人物</p>
+                  <p>📭 No characters available</p>
                   <p class="hint">
-                    请先在「人物管理」中创建人物
+                    Please create characters in "Character Management" first
                   </p>
                 </div>
 
@@ -209,7 +209,7 @@
                       >
                         👤
                       </div>
-                      <!-- 性别角标 -->
+                      <!-- Gender badge -->
                       <div class="gender-badge">
                         {{ getGenderIcon(char.gender) }}
                       </div>
@@ -225,11 +225,11 @@
                         <span
                           v-if="addedCharacterIds.has(char.id)"
                           class="status-added"
-                        >✅ 已添加</span>
+                        >✅ Added</span>
                         <span
                           v-else
                           class="status-add"
-                        >➕ 添加为演员</span>
+                        >➕ Add as Actor</span>
                       </div>
                     </div>
                   </div>
@@ -246,12 +246,12 @@
             class="btn-confirm"
             @click="handleConfirm"
           >
-            确定
+            OK
           </button>
         </div>
       </div>
 
-      <!-- 编辑演员面板 (overlay) -->
+      <!-- Edit actor panel (overlay) -->
       <div
         v-if="editingActor"
         class="edit-actor-overlay"
@@ -259,11 +259,11 @@
       >
         <div class="edit-actor-panel">
           <div class="edit-panel-header">
-            <h4>{{ isNewActor ? '添加演员' : '编辑演员' }}</h4>
+            <h4>{{ isNewActor ? 'Add Actor' : 'Edit Actor' }}</h4>
           </div>
 
           <div class="edit-panel-body">
-            <!-- 关联人物信息（只读） -->
+            <!-- Associated character info (read-only) -->
             <div
               v-if="editingCharacterInfo"
               class="form-group readonly-info"
@@ -282,25 +282,25 @@
                   👤
                 </div>
                 <div class="linked-details">
-                  <span class="linked-label">关联人物</span>
+                  <span class="linked-label">Linked Character</span>
                   <span class="linked-name">{{ editingCharacterInfo.name }}</span>
                 </div>
               </div>
             </div>
 
-            <!-- 演员名称 -->
+            <!-- Actor name -->
             <div class="form-group">
-              <label>演员名称</label>
+              <label>Actor Name</label>
               <input
                 v-model="editForm.name"
                 type="text"
-                placeholder="输入演员名称"
+                placeholder="Enter actor name"
               >
             </div>
 
-            <!-- 语速 -->
+            <!-- Speech speed -->
             <div class="form-group compact-form-group">
-              <label>语速</label>
+              <label>Speech Rate</label>
               <div class="speed-selector">
                 <select v-model.number="editForm.speed">
                   <option
@@ -314,9 +314,9 @@
               </div>
             </div>
 
-            <!-- 音量 -->
+            <!-- Volume -->
             <div class="form-group compact-form-group">
-              <label>播放音量 {{ editForm.volume }}</label>
+              <label>Playback Volume {{ editForm.volume }}</label>
               <div class="volume-control">
                 <input
                   v-model.number="editForm.volume"
@@ -339,9 +339,9 @@
               </div>
             </div>
 
-            <!-- 配音音色 -->
+            <!-- Voice timbre -->
             <div class="form-group">
-              <label>配音音色</label>
+              <label>Voice Timbre</label>
               <VoiceSelectorPanel
                 v-model="editForm.voiceId"
                 :initial-voice-id="initialVoiceId"
@@ -357,23 +357,23 @@
               class="btn-cancel"
               @click="editingActor = null"
             >
-              取消
+              Cancel
             </button>
             <button
               class="btn-confirm"
               @click="handleSaveActor"
             >
-              保存
+              Save
             </button>
           </div>
         </div>
       </div>
 
-      <!-- 删除确认对话框 -->
+      <!-- Delete confirmation dialog -->
       <ConfirmDialog
         v-if="showDeleteConfirm"
-        title="删除演员"
-        message="确定要删除该演员吗？"
+        title="Delete Actor"
+        message="Are you sure you want to delete this actor?"
         :is-danger="true"
         @confirm="confirmDeleteActor"
         @cancel="showDeleteConfirm = false"
@@ -409,15 +409,15 @@ const emit = defineEmits<{
 
 const characterStore = useCompositeCharacterStore()
 
-// ===== Tab 状态 =====
+// ===== Tab State =====
 const activeTab = ref<'actors' | 'library'>('actors')
 
-// ===== 人物库筛选状态 =====
+// ===== Character Library Filter State =====
 const currentGender = ref<Gender | 'all'>('all')
 const searchKeyword = ref('')
 const selectedTags = ref<Set<string>>(new Set())
 
-/** 从所有人物中动态收集去重的标签列表 */
+/** Dynamically collect deduplicated tag list from all characters */
 const allTags = computed(() => {
   const tagSet = new Set<string>()
   for (const c of characterStore.characters) {
@@ -439,38 +439,38 @@ function toggleTag(tag: string): void {
 }
 
 const genderOptions: { label: string; value: Gender | 'all' }[] = [
-  { label: '全部', value: 'all' },
-  { label: '♂ 男', value: 'male' },
-  { label: '♀ 女', value: 'female' },
-  { label: '⚧ 其他', value: 'other' },
+  { label: 'All', value: 'all' },
+  { label: '♂ Male', value: 'male' },
+  { label: '♀ Female', value: 'female' },
+  { label: '⚧ Other', value: 'other' },
 ]
 
 const filteredCharacters = computed(() => {
   let list: CompositeCharacter[] = characterStore.characters
 
-  // 1. 标签筛选
+  // 1. Tag filtering
   if (selectedTags.value.size > 0) {
     list = list.filter(c =>
       c.tags && [...selectedTags.value].every(tag => c.tags?.includes(tag))
     )
   }
 
-  // 2. 性别筛选
+  // 2. Gender filtering
   if (currentGender.value !== 'all') {
     list = list.filter(c => c.gender === currentGender.value)
   }
 
-  // 3. 关键词搜索
+  // 3. Keyword search
   if (searchKeyword.value.trim()) {
     const kw = searchKeyword.value.toLowerCase()
     list = list.filter(c => c.name.toLowerCase().includes(kw))
   }
 
-  // 4. 按创建时间倒序
+  // 4. Sort by creation time descending
   return [...list].sort((a, b) => b.createdAt - a.createdAt)
 })
 
-// ===== 已添加的人物ID集合（用于去重） =====
+// ===== Set of added character IDs (for deduplication) =====
 const addedCharacterIds = computed(() => {
   const ids = new Set<string>()
   for (const actor of props.actors) {
@@ -481,7 +481,7 @@ const addedCharacterIds = computed(() => {
   return ids
 })
 
-// ===== 编辑状态 =====
+// ===== Edit State =====
 const editingActor = ref<boolean | null>(false)
 const isNewActor = ref<boolean>(false)
 const isPlayingVoice = ref(false)
@@ -500,7 +500,7 @@ const initialVoiceId = ref<number>(DEFAULT_VOICE_ID.female)
 
 const speedOptions = getSpeedOptions()
 
-// ===== 关联人物信息（编辑面板显示） =====
+// ===== Associated character info (displayed on edit panel) =====
 const editingCharacterInfo = computed(() => {
   if (!editingCharacterId.value) return null
   const char = characterStore.getCharacter(editingCharacterId.value)
@@ -511,7 +511,7 @@ const editingCharacterInfo = computed(() => {
   }
 })
 
-// ===== 工具函数 =====
+// ===== Utility Functions =====
 function getVoiceName(voiceId: string | number | undefined): string {
   return getVoiceNameFromLib(voiceId)
 }
@@ -547,7 +547,7 @@ function handleImageError(e: Event): void {
   (e.target as HTMLImageElement).style.display = 'none'
 }
 
-// ===== 从人物库添加演员 =====
+// ===== Add Actor from Character Library =====
 function handleAddFromLibrary(characterId: string): void {
   const char = characterStore.getCharacter(characterId)
   if (!char) return
@@ -566,7 +566,7 @@ function handleAddFromLibrary(characterId: string): void {
   editingActor.value = true
 }
 
-// ===== 编辑已有演员 =====
+// ===== Edit Existing Actor =====
 function handleEditActor(actor: ActorConfig): void {
   originalId.value = actor.id
   editingCharacterId.value = actor.characterId
@@ -583,14 +583,14 @@ function handleEditActor(actor: ActorConfig): void {
   editingActor.value = true
 }
 
-// ===== 保存演员 =====
+// ===== Save Actor =====
 function normalizeEditVolume(): void {
   editForm.value.volume = getValidVolumeValue(editForm.value.volume)
 }
 
 function handleSaveActor(): void {
   if (!editForm.value.name.trim()) {
-    alert('请输入演员名称')
+    alert('Please enter an actor name')
     return
   }
 
@@ -618,7 +618,7 @@ function handleSaveActor(): void {
   editingActor.value = false
 }
 
-// ===== 删除演员 =====
+// ===== Delete Actor =====
 const showDeleteConfirm = ref(false)
 const pendingDeleteId = ref('')
 
@@ -633,7 +633,7 @@ function confirmDeleteActor(): void {
   pendingDeleteId.value = ''
 }
 
-// ===== 试听 =====
+// ===== Preview =====
 const playingVoiceId = ref<number | undefined>(undefined)
 
 function playActorVoicePreview(actor: ActorConfig): void {
@@ -661,7 +661,7 @@ async function playVoicePreview(voiceId?: number, speed?: number, volume?: numbe
     }
 
     const result = await ttsClient.preview({
-      text: '你好,很高兴认识你。',
+      text: 'Hello, nice to meet you.',
       engine: getVoiceEngine(targetVoiceId),
       voiceType: targetVoiceId,
       volume: DEFAULT_VOLUME,
@@ -683,14 +683,14 @@ async function playVoicePreview(voiceId?: number, speed?: number, volume?: numbe
       currentPreviewTimer = null
     }, previewDuration + 150)
   } catch (error) {
-    console.error('[ActorManagementDialogV2] 配音试听失败:', error)
+    console.error('[ActorManagementDialog] Voice preview failed:', error)
     isPlayingVoice.value = false
     playingVoiceId.value = undefined
     if (currentPreviewTimer !== null) {
       window.clearTimeout(currentPreviewTimer)
       currentPreviewTimer = null
     }
-    alert(`配音试听失败：${error instanceof Error ? error.message : '未知错误'}`)
+    alert(`Voice preview failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
   }
 }
 
@@ -802,7 +802,7 @@ function handleConfirm(): void {
   color: #3b82f6;
 }
 
-/* ===== 人物库 Tab 双栏布局 ===== */
+/* ===== Character Library Tab Dual-Column Layout ===== */
 .library-layout {
   display: flex;
   flex: 1;
@@ -959,7 +959,7 @@ function handleConfirm(): void {
   gap: 16px;
 }
 
-/* ===== 已选演员卡片 ===== */
+/* ===== Selected Actor Card ===== */
 .actor-card {
   background: white;
   border: 1px solid #e5e7eb;
@@ -978,7 +978,7 @@ function handleConfirm(): void {
   opacity: 1;
 }
 
-/* ===== 人物库卡片 ===== */
+/* ===== Character Library Card ===== */
 .character-card {
   background: #f9fafb;
   border: 2px solid transparent;

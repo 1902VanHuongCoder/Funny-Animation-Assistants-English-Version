@@ -5,10 +5,10 @@
     @click="handleClick"
   >
     <div class="header-content">
-      <!-- 展开/折叠图标 -->
+      <!-- Expand/Collapse icon -->
       <span 
         class="toggle-icon" 
-        :title="isExpanded ? '折叠' : '展开'"
+        :title="isExpanded ? 'Collapse' : 'Expand'"
       >
         {{ isExpanded ? '▼' : '▶' }}
       </span>
@@ -17,27 +17,27 @@
       <input
         v-model="localTitle"
         class="scene-title-input"
-        placeholder="场景标题..."
+        placeholder="Scene title..."
         @blur="handleTitleBlur"
         @click.stop
       >
       
-      <!-- 显示block数量 -->
+      <!-- Display block count -->
       <span
         v-if="blockCount && blockCount > 0"
         class="block-count"
       >
-        {{ blockCount }} 个块
+        {{ blockCount }} block(s)
       </span>
       
-      <!-- 占位符,把按钮推到右侧 -->
+      <!-- Spacer to push buttons to right -->
       <div style="flex: 1;" />
       
-      <!-- 上移/下移按钮组 -->
+      <!-- Move up/down button group -->
       <div class="move-buttons" @click.stop>
         <button
           class="btn-move"
-          title="上移场景"
+          title="Move scene up"
           :disabled="!canMoveUp"
           @click="$emit('move-up')"
         >
@@ -45,7 +45,7 @@
         </button>
         <button
           class="btn-move"
-          title="下移场景"
+          title="Move scene down"
           :disabled="!canMoveDown"
           @click="$emit('move-down')"
         >
@@ -55,21 +55,21 @@
       
       <button
         class="btn-preview"
-        title="预览场景"
+        title="Preview Scene"
         @click.stop="handlePreviewScene"
       >
-        ▶️ 预览场景
+        ▶️ Preview Scene
       </button>
       <button
         class="btn-setup"
-        title="编辑场景初始状态"
+        title="Edit Scene Setup"
         @click.stop="handleEnterSetupMode"
       >
-        🏗️ 编辑场景初始状态
+        🏗️ Edit Scene Setup
       </button>
       <button
         class="btn-delete"
-        title="删除场景"
+        title="Delete Scene"
         @click.stop="$emit('delete')"
       >
         🗑️
@@ -110,9 +110,9 @@ watch(() => props.scene.title, (newTitle) => {
 })
 
 function handleClick() {
-  // 点击场景容器时，切换展开/折叠状态
+  // Toggle expand/collapse state when clicking scene container
   emit('toggle-expand')
-  // 同时选中场景
+  // Simultaneously select scene
   emit('select')
 }
 
@@ -134,29 +134,29 @@ function handlePreviewScene() {
 <style scoped>
 .scene-container-header {
   background: #ffffff;
-  /* 1. 修改默认边框为灰色 (从 #3b82f6 改为 #e5e7eb) */
+  /* 1. Change default border to gray */
   border: 2px solid #e5e7eb;
   border-radius: 8px;
   padding: 16px;
   margin-bottom: 12px;
-  /* 默认阴影可以淡一点 */
+  /* Subtle default shadow */
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .scene-container-header:hover {
-  /* 悬停时稍微加深边框，提示可交互 */
+  /* Slightly darker border on hover for interactivity hint */
   border-color: #9ca3af;
   box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
 }
 
 .scene-container-header.selected {
-  /* 2. 选中时变为蓝色边框 */
+  /* 2. Blue border when selected */
   border-color: #3b82f6;
-  /* 3. 选中时添加浅蓝色背景，这一步最关键 */
+  /* 3. Light blue background when selected */
   background-color: #eff6ff;
-  /* 加强阴影 */
+  /* Enhanced shadow */
   box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
 }
 
@@ -216,7 +216,7 @@ function handlePreviewScene() {
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
-/* 上移/下移按钮组 */
+/* Move up/down button group */
 .move-buttons {
   display: flex;
   gap: 4px;

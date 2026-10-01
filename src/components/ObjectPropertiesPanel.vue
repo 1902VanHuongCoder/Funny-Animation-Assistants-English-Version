@@ -1,12 +1,12 @@
 <template>
   <div class="properties-panel">
-    <!-- P2: 对象选择器（可折叠树形下拉） -->
+    <!-- P2: Object selector (collapsible tree dropdown) -->
     <div class="object-selector-section">
       <div
         ref="treeDropdownRef"
         class="tree-dropdown"
       >
-        <!-- 选中项显示 / 触发按钮 -->
+        <!-- Selected item display / trigger button -->
         <button
           class="tree-dropdown-trigger"
           @click="treeDropdownOpen = !treeDropdownOpen"
@@ -15,17 +15,17 @@
             <span class="trigger-icon">{{ getObjectIcon(localObject.type) }}</span>
             <span class="trigger-label">{{ getObjectDisplayName(localObject) }}</span>
           </span>
-          <span v-else class="trigger-placeholder">请选择对象</span>
+          <span v-else class="trigger-placeholder">Please select an object</span>
           <span class="trigger-arrow">{{ treeDropdownOpen ? '▲' : '▼' }}</span>
         </button>
 
-        <!-- 下拉列表 -->
+        <!-- Dropdown list -->
         <div
           v-show="treeDropdownOpen"
           class="tree-dropdown-list"
         >
           <template v-for="obj in filteredObjects" :key="obj.id">
-            <!-- 跳过已折叠的子对象（需检查所有祖先是否展开） -->
+            <!-- Skip collapsed child objects (check all ancestors expanded) -->
             <div
               v-if="isTreeItemVisible(obj)"
               class="tree-item"
@@ -60,69 +60,69 @@
       v-if="!selectedObject || !localObject"
       class="empty-hint"
     >
-      请选择场景对象以编辑属性
+      Please select a scene object to edit its properties
     </div>
     <div
       v-else
       class="properties-form"
     >
-      <!-- Action Mode 槽位提示 -->
+      <!-- Action Mode slot hint -->
       <div
         v-if="isActionMode"
         class="action-mode-hint"
       >
         <div class="slot-indicator">
           <span class="slot-badge">#{{ (currentSlotIndex ?? 0) + 1 }}</span>
-          <span class="slot-text">{{ currentSlotText ? truncateText(currentSlotText, 15) : '当前槽位' }}</span>
+          <span class="slot-text">{{ currentSlotText ? truncateText(currentSlotText, 15) : 'Current Slot' }}</span>
         </div>
         <div class="hint-text">
-          💡 修改属性将根据动作模式自动录制
+          💡 Property modifications will be recorded automatically based on action mode
         </div>
-        <!-- v9.1: 未出生对象警告 -->
+        <!-- v9.1: Unspawned object warning -->
         <div
           v-if="!isObjectBornAtCurrentSlot"
           class="unborn-warning"
         >
           <span class="warning-icon">⚠️</span>
-          <span class="warning-text">该对象尚未出生，当前属性为只读</span>
+          <span class="warning-text">This object has not spawned yet; current properties are read-only</span>
           <button
             v-if="objectBirthSlotIndex >= 0"
             class="jump-btn"
-            title="跳转到对象出生的槽位"
+            title="Jump to object's spawn slot"
             @click="jumpToBirthSlot"
           >
-            跳转到出生点
+            Jump to Spawn Point
           </button>
         </div>
       </div>
 
-      <!-- v9.1: 录制模式切换 (动画/布局) - 仅在 Action Mode 下显示 -->
+      <!-- v9.1: Record mode toggle (animation/layout) - shown in Action Mode only -->
       <div
         v-if="isActionMode && !isCamera && localObject?.type !== 'audio'"
         class="record-mode-section"
       >
-        <div class="record-mode-label">动作模式:</div>
+        <div class="record-mode-label">Action Mode:</div>
         <div class="record-mode-tabs">
           <button
             class="record-mode-btn"
             :class="{ active: recordMode === 'animation' }"
-            title="补间模式 - 拖拽产生平滑移动动画"
+            title="Tween mode - Dragging produces smooth movement animation"
             @click="recordMode = 'animation'"
           >
-            🎬 补间
+            🎬 Tween
           </button>
           <button
             class="record-mode-btn"
             :class="{ active: recordMode === 'layout' }"
-            title="瞬时模式 - 拖拽产生瞬间位移"
+            title="Instant mode - Dragging produces instant displacement"
             @click="recordMode = 'layout'"
           >
-            📍 瞬时
+            📍 Instant
           </button>
         </div>
       </div>
 
-      <!-- ===== 快捷操作工具栏 ===== -->
+      <!-- ===== Quick action toolbar ===== -->
       <div
         class="quick-toolbar"
         :class="{
@@ -131,34 +131,34 @@
         }"
       >
         <div class="quick-toolbar-header">
-          <span class="quick-toolbar-title">快捷操作</span>
+          <span class="quick-toolbar-title">Quick Actions</span>
           <span class="quick-toolbar-subtitle">
-            {{ isActionMode ? '当前对象的编辑辅助开关' : '当前对象的场景编辑辅助开关' }}
+            {{ isActionMode ? 'Editing aids for current object' : 'Scene editing aids for current object' }}
           </span>
         </div>
-        <!-- compositeLocked 切换 (仅组合对象显示) -->
+        <!-- compositeLocked toggle (shown for composite objects only) -->
         <div
           v-if="localObject?.type === 'composite'"
           class="quick-toolbar-group quick-toolbar-group--compact"
         >
-          <span class="quick-toolbar-group-label">锁定</span>
+          <span class="quick-toolbar-group-label">Lock</span>
         <label v-if="localObject?.type === 'composite'" class="qt-toggle">
           <input
             :checked="(localObject as CompositeObject).compositeLocked"
             type="checkbox"
             @change="handleCompositeLockChange"
           >
-          <span class="qt-toggle-label">🔒 锁定组合</span>
+          <span class="qt-toggle-label">🔒 Lock Group</span>
         </label>
         </div>
 
-        <!-- 穿透控制 -->
+        <!-- Pass-through control -->
         <div class="quick-toolbar-group quick-toolbar-group--fill">
-          <span class="quick-toolbar-group-label">穿透</span>
+          <span class="quick-toolbar-group-label">Pass-Through</span>
         <div v-if="isPassThrough" class="pass-through-indicator">
           <div class="pt-status-line">
             <span class="pt-icon">👻</span>
-            <span class="pt-text">此对象已设为穿透模式</span>
+            <span class="pt-text">This object is set to pass-through mode</span>
           </div>
           <div class="pt-actions">
             <button
@@ -166,13 +166,13 @@
               :class="{ active: passThroughVisible }"
               @click="emit('passThroughVisibleToggle', localObject!.id)"
             >
-              {{ passThroughVisible ? '👁️ 显示' : '🚫 隐藏' }}
+              {{ passThroughVisible ? '👁️ Show' : '🚫 Hide' }}
             </button>
             <button
               class="pt-btn remove"
               @click="emit('passThroughToggle', localObject!.id)"
             >
-              ↩ 解除穿透
+              ↩ Cancel Pass-Through
             </button>
           </div>
         </div>
@@ -181,30 +181,30 @@
           class="qt-pt-btn"
           @click="emit('passThroughToggle', localObject!.id)"
         >
-          👻 设为穿透
+          👻 Set to Pass-Through
         </button>
         </div>
       </div>
 
-      <!-- 基础属性 -->
+      <!-- Basic properties -->
       <div class="property-section">
-        <h4>基础属性</h4>
+        <h4>Basic Properties</h4>
         
-        <!-- v9.3: 名称编辑（合并原名称和别名） -->
+        <!-- v9.3: Name editing (merged original name and alias) -->
         <div
           v-if="!isCamera"
           class="property-field alias-field"
         >
-          <label>名称:</label>
+          <label>Name:</label>
           <div class="alias-edit-stack">
             <div class="alias-edit-row">
               <span class="alias-value">{{ localObjectDisplayName }}</span>
               <button
                 class="alias-edit-btn"
-                title="编辑名称"
+                title="Edit Name"
                 @click="handleEditAliasClick"
               >
-                编辑
+                Edit
               </button>
             </div>
           </div>
@@ -214,7 +214,7 @@
           v-if="showPresetNamePicker"
           class="property-field alias-field preset-name-field"
         >
-          <label>预定义名称:</label>
+          <label>Preset Name:</label>
           <div class="alias-edit-stack">
             <div
               class="preset-name-row"
@@ -222,17 +222,17 @@
               <select
                 class="preset-name-select"
                 :value="selectedPresetNameValue"
-                title="选择预定义动作使用的推荐名称"
+                title="Select recommended name for predefined actions"
                 @change="handlePresetNameSelect(($event.target as HTMLSelectElement).value)"
               >
-                <option value="">选择预定义名称...</option>
+                <option value="">Select preset name...</option>
                 <option
                   v-for="name in recommendedNameOptions"
                   :key="name"
                   :value="name"
                   :disabled="isPresetNameUsedByOtherObject(name)"
                 >
-                  {{ name }}{{ isPresetNameUsedByOtherObject(name) ? '（已使用）' : '' }}
+                  {{ name }}{{ isPresetNameUsedByOtherObject(name) ? ' (Used)' : '' }}
                 </option>
               </select>
             </div>
@@ -244,7 +244,7 @@
           class="property-row"
         >
           <div class="property-field">
-            <label>{{ isCamera ? '中心X:' : 'X:' }}</label>
+            <label>{{ isCamera ? 'Center X:' : 'X:' }}</label>
             <template v-if="isActionMode">
               <span class="readonly-value">{{ Math.round(localObject.x) }}</span>
             </template>
@@ -259,7 +259,7 @@
             </template>
           </div>
           <div class="property-field">
-            <label>{{ isCamera ? '中心Y:' : 'Y:' }}</label>
+            <label>{{ isCamera ? 'Center Y:' : 'Y:' }}</label>
             <template v-if="isActionMode">
               <span class="readonly-value">{{ Math.round(localObject.y) }}</span>
             </template>
@@ -280,7 +280,7 @@
           class="property-row"
         >
           <div class="property-field">
-            <label>宽度:</label>
+            <label>Width:</label>
             <template v-if="isActionMode">
               <span class="readonly-value">{{ displayWidth }}</span>
             </template>
@@ -294,7 +294,7 @@
             </template>
           </div>
           <div class="property-field">
-            <label>高度:</label>
+            <label>Height:</label>
             <template v-if="isActionMode">
               <span class="readonly-value">{{ displayHeight }}</span>
             </template>
@@ -309,7 +309,7 @@
           </div>
         </div>
         
-        <!-- 相机 Zoom 属性 -->
+        <!-- Camera Zoom properties -->
         <div
           v-if="isCamera"
           class="property-field"
@@ -343,14 +343,14 @@
           </template>
         </div>
         
-        <!-- 非相机对象的缩放比例 -->
+        <!-- Scale ratio for non-camera objects -->
         <div
           v-if="!isCamera && localObject.type !== 'audio' && localObject.type !== 'light'"
           style="display: flex; flex-direction: column; gap: 8px;"
         >
           <div class="property-row">
             <div class="property-field" style="flex: 1">
-              <label>缩放X:</label>
+              <label>Scale X:</label>
               <template v-if="isActionMode">
                 <span class="readonly-value">{{ scalePercentX }}%</span>
               </template>
@@ -373,13 +373,13 @@
               v-if="!isActionMode"
               class="lock-btn" 
               style="background: none; border: none; cursor: pointer; padding: 0 4px; font-size: 14px; align-self: flex-end; margin-bottom: 6px; opacity: 0.8; height: 28px;"
-              :title="scaleLocked ? '解锁比例' : '锁定比例'"
+              :title="scaleLocked ? 'Unlock Aspect Ratio' : 'Lock Aspect Ratio'"
               @click="toggleScaleLock"
             >
               {{ scaleLocked ? '🔗' : '🔓' }}
             </button>
             <div class="property-field" style="flex: 1">
-              <label>缩放Y:</label>
+              <label>Scale Y:</label>
               <template v-if="isActionMode">
                 <span class="readonly-value">{{ scalePercentY }}%</span>
               </template>
@@ -405,7 +405,7 @@
           v-if="!isCamera && localObject.type !== 'audio' && localObject.type !== 'light'"
           class="property-field"
         >
-          <label>旋转（度）:</label>
+          <label>Rotation (deg):</label>
           <template v-if="isActionMode">
             <span class="readonly-value">{{ rotationDegrees }}</span>
           </template>
@@ -419,13 +419,13 @@
           </template>
         </div>
         
-        <!-- 变换原点（像素偏移） -->
+        <!-- Transform origin (pixel offset) -->
         <div
           v-if="!isCamera && localObject.type !== 'audio' && localObject.type !== 'light'"
           class="property-row"
         >
           <div class="property-field">
-            <label>变换点X:</label>
+            <label>Pivot X:</label>
             <template v-if="isActionMode">
               <span class="readonly-value">{{ localObject.transformOriginX ?? 0 }}</span>
             </template>
@@ -439,7 +439,7 @@
             </template>
           </div>
           <div class="property-field">
-            <label>变换点Y:</label>
+            <label>Pivot Y:</label>
             <template v-if="isActionMode">
               <span class="readonly-value">{{ localObject.transformOriginY ?? 0 }}</span>
             </template>
@@ -458,7 +458,7 @@
           v-if="!isCamera && localObject.type !== 'audio' && localObject.type !== 'light'"
           class="property-field"
         >
-          <label>不透明度:</label>
+          <label>Opacity:</label>
           <input
             v-model.number="localObject.alpha"
             type="range"
@@ -474,7 +474,7 @@
           v-if="!isCamera && localObject.type !== 'audio'"
           class="property-field"
         >
-          <label>层级:</label>
+          <label>Z-Index:</label>
           <input
             v-model.number="localObject.zIndex"
             type="number"
@@ -482,7 +482,7 @@
           >
         </div>
         
-        <!-- v9.2: 恢复 visible 控件 (spawned 分离生命周期与可见性) -->
+        <!-- v9.2: Restore visible control (spawned separates lifecycle from visibility) -->
         <div
           v-if="!isCamera && localObject.type !== 'audio' && !isAmbientLight"
           class="property-field checkbox"
@@ -493,11 +493,11 @@
               type="checkbox"
               @change="handleVisibleChange"
             >
-            可见
+            Visible
           </label>
         </div>
 
-        <!-- flipX 水平翻转（所有可视对象通用） -->
+        <!-- flipX horizontal flip (generic for all visual objects) -->
         <div
           v-if="!isCamera && localObject.type !== 'audio' && localObject.type !== 'screen_effect' && localObject.type !== 'light'"
           class="property-field checkbox"
@@ -508,7 +508,7 @@
               type="checkbox"
               @change="handleFlipXChange"
             >
-            水平翻转
+            Flip Horizontal
           </label>
         </div>
 
@@ -522,7 +522,7 @@
               type="checkbox"
               @change="handleReceiveLightingChange"
             >
-            参与场景光照
+            Receive Lighting
           </label>
         </div>
 
@@ -536,60 +536,60 @@
               type="checkbox"
               @change="handleCastShadowChange"
             >
-            脚底投影
+            Cast Shadow
           </label>
         </div>
 
-        <!-- P2: 子对象归属提示（位于基础属性区段末尾） -->
+        <!-- P2: Child object affiliation hint (at end of basic properties section) -->
         <div
           v-if="parentComposite"
           class="parent-composite-hint"
         >
-          <span class="hint-label">📎 所属组合:</span>
+          <span class="hint-label">📎 Parent Composite:</span>
           <button
             class="hint-name hint-name-clickable"
-            title="点击选中父组合"
+            title="Click to select parent composite"
             @click="emit('selectObject', parentComposite!.id)"
           >
-            📦 {{ parentComposite.alias ?? parentComposite.name ?? '组合' }}
+            📦 {{ parentComposite.alias ?? parentComposite.name ?? 'Composite' }}
           </button>
           <button
             class="remove-from-group-btn"
-            :title="isActionMode ? '创建结构变更 Action' : '移出组合'"
+            :title="isActionMode ? 'Create structure change action' : 'Remove from composite'"
             @click="handleRemoveFromComposite"
           >
-            {{ isActionMode ? '🎬 移出' : '⤴ 移出' }}
+            {{ isActionMode ? '🎬 Remove' : '⤴ Remove' }}
           </button>
         </div>
       </div>
       
 
-      <!-- 背景特有属性（flipX 已上提到基础属性区段） -->
+      <!-- Background specific properties (flipX moved to basic properties section) -->
 
-      <!-- 道具特有属性（flipX 已上提到基础属性区段） -->
+      <!-- Prop specific properties (flipX moved to basic properties section) -->
 
-      <!-- P2: 组合对象特有属性 -->
+      <!-- P2: Composite object specific properties -->
       <div
         v-if="localObject.type === 'composite'"
         class="property-section"
       >
-        <h4>📦 组合属性</h4>
+        <h4>📦 Composite Properties</h4>
         
-        <!-- compositeMode 显示（始终只读） -->
+        <!-- compositeMode display (always read-only) -->
         <div class="property-field">
-          <label>组合模式:</label>
+          <label>Composite Mode:</label>
           <span class="composite-mode-readonly">
-            {{ (localObject as CompositeObject).compositeMode === 'entity' ? '📦 实体' : '📎 联合' }}
+            {{ (localObject as CompositeObject).compositeMode === 'entity' ? '📦 Entity' : '📎 Union' }}
           </span>
         </div>
         
-        <!-- 子对象存储列表（管理增删） -->
+        <!-- Child object list (manages add/delete) -->
         <div class="composite-children-list">
           <div class="children-header">
-            <span>子对象 ({{ compositeChildObjects.length }})</span>
+            <span>Child Objects ({{ compositeChildObjects.length }})</span>
             <button
               class="add-child-btn"
-              :title="isActionMode ? '创建结构变更 Action 添加成员' : '添加成员到组合'"
+              :title="isActionMode ? 'Create structure change action to add member' : 'Add member to composite'"
               @click="handleAddMemberToComposite"
             >
               ➕
@@ -599,36 +599,36 @@
             v-for="child in compositeChildObjects"
             :key="child.id"
             class="child-item child-item-clickable"
-            title="点击选中此子对象"
+            title="Click to select this child object"
             @click="emit('selectObject', child.id)"
           >
             <span class="child-icon">{{ getObjectIcon(child.type) }}</span>
-            <span class="child-name">{{ child.alias ?? child.name ?? '未命名' }}</span>
+            <span class="child-name">{{ child.alias ?? child.name ?? 'Untitled' }}</span>
             <button
               class="remove-child-btn"
-              :title="isActionMode ? '创建结构变更 Action' : '移出组合'"
+              :title="isActionMode ? 'Create structure change action' : 'Remove from composite'"
               @click="handleRemoveChildFromComposite(child.id)"
             >
               {{ '⤴' }}
             </button>
           </div>
           <div v-if="compositeChildObjects.length === 0" class="empty-children">
-            暂无子对象
+            No child objects
           </div>
         </div>
 
-        <!-- 渲染顺序列表（仅 entity，控制渲染顺序） -->
+        <!-- Render order list (entity only, controls render order) -->
         <div
           v-if="(localObject as CompositeObject).compositeMode === 'entity' && renderChainObjects.length > 0"
           class="composite-children-list render-chain-section"
           style="margin-top: 8px;"
         >
           <div class="children-header render-chain-header">
-            <span>渲染顺序 ({{ renderChainObjects.length }})</span>
+            <span>Render Order ({{ renderChainObjects.length }})</span>
             <div class="render-chain-controls">
               <button
                 class="rc-move-btn"
-                title="上移（底层方向）"
+                title="Move up (towards bottom layer)"
                 :disabled="!canMoveUp"
                 @click="handleRenderChainMoveUp(selectedRenderChainIndex)"
               >
@@ -636,7 +636,7 @@
               </button>
               <button
                 class="rc-move-btn"
-                title="下移（顶层方向）"
+                title="Move down (towards top layer)"
                 :disabled="!canMoveDown"
                 @click="handleRenderChainMoveDown(selectedRenderChainIndex)"
               >
@@ -645,14 +645,14 @@
             </div>
           </div>
           <div class="render-order-hint">
-            ↑ 底层  ·  ↓ 顶层
+            ↑ Bottom Layer · ↓ Top Layer
           </div>
           <template v-for="(entry, displayIdx) in renderChainDisplay" :key="'rcd-' + displayIdx">
-            <!-- zIndex 分组分割线 -->
+            <!-- zIndex grouping divider -->
             <div v-if="entry.type === 'divider'" class="zindex-divider">
-              <span class="zindex-label">层级 {{ entry.zIndex }}</span>
+              <span class="zindex-label">Z-Index {{ entry.zIndex }}</span>
             </div>
-            <!-- 渲染链项 -->
+            <!-- Render chain item -->
             <div
               v-else
               class="child-item rc-item"
@@ -668,44 +668,44 @@
               @drop.prevent="onRcDrop(entry.flatIndex)"
               @dragend="onRcDragEnd"
             >
-              <span class="rc-drag-handle" title="拖拽排序">⠿</span>
+              <span class="rc-drag-handle" title="Drag to reorder">⠿</span>
               <span class="child-icon">{{ getObjectIcon(entry.obj.type) }}</span>
-              <span class="child-name">{{ entry.obj.alias ?? entry.obj.name ?? '未命名' }}</span>
+              <span class="child-name">{{ entry.obj.alias ?? entry.obj.name ?? 'Untitled' }}</span>
             </div>
           </template>
         </div>
 
 
         
-        <!-- 拆分全部按钮 -->
+        <!-- Ungroup all button -->
         <div v-if="compositeChildObjects.length > 0" class="composite-actions">
           <button
             class="composite-action-btn danger"
-            :title="isActionMode ? '创建结构变更 Action' : '解散组合，所有子对象变为独立对象'"
+            :title="isActionMode ? 'Create structure change action' : 'Ungroup composite, all child objects become standalone'"
             @click="handleUngroupAll"
           >
-            🔓 拆分全部
+            🔓 Ungroup All
           </button>
         </div>
       </div>
-      <!-- v16: 元件素材区段 -->
+      <!-- v16: Symbol material section -->
       <div
         v-if="localObject.type === 'symbol'"
         class="property-section"
       >
-        <h4>🔧 元件素材</h4>
+        <h4>🔧 Symbol Material</h4>
 
-        <!-- 当前素材预览 -->
+        <!-- Current material preview -->
         <div class="symbol-preview-area">
           <div class="symbol-preview-frame">
             <img
               v-if="currentMaterialPreviewUrl"
               :src="currentMaterialPreviewUrl"
-              alt="当前素材"
+              alt="Current material"
             >
             <div v-else class="symbol-preview-empty">
               <span>🖼️</span>
-              <span>未选择素材</span>
+              <span>No material selected</span>
             </div>
           </div>
           <div class="symbol-preview-info">
@@ -713,7 +713,7 @@
               {{ symbolCurrentMaterialName }}
             </div>
             <div class="symbol-material-count">
-              共 {{ symbolMaterials.length }} 个素材
+              {{ symbolMaterials.length }} materials in total
             </div>
             <div
               v-if="symbolCurrentMaterialPath"
@@ -725,7 +725,7 @@
           </div>
         </div>
 
-        <!-- 快速切换网格 -->
+        <!-- Quick switch grid -->
         <div
           v-if="symbolMaterials.length > 1"
           class="symbol-switch-grid"
@@ -749,12 +749,12 @@
         </div>
       </div>
 
-      <!-- v18: 独立表情对象属性区段 -->
+      <!-- v18: Standalone expression object properties section -->
       <div
         v-if="localObject.type === 'expression'"
         class="property-section"
       >
-        <h4>😀 表情引用</h4>
+        <h4>😀 Expression Reference</h4>
 
         <div
           class="expression-card"
@@ -764,7 +764,7 @@
             <img
               v-if="expressionObjectInfo?.thumbnailUrl"
               :src="expressionObjectInfo.thumbnailUrl"
-              alt="当前表情"
+              alt="Current expression"
               :style="{ transform: expressionObjectInfo?.flipH ? 'scaleX(-1)' : 'none' }"
             >
             <div v-else class="symbol-preview-empty">
@@ -773,20 +773,20 @@
           </div>
           <div class="expression-card-info">
             <div class="expression-card-name">
-              {{ expressionObjectInfo?.name ?? '未知表情' }}
+              {{ expressionObjectInfo?.name ?? 'Unknown Expression' }}
               <span
                 v-if="!expressionIsModified"
                 class="expression-default-badge"
-                title="默认表情"
+                title="Default expression"
               >⭐</span>
             </div>
-            <div class="expression-card-hint">点击切换</div>
+            <div class="expression-card-hint">Click to switch</div>
           </div>
           <div class="expression-card-action">
             🔄
           </div>
         </div>
-        <!-- 恢复默认 / 设为默认 操作链接 -->
+        <!-- Reset to default / Set as default action links -->
         <div
           v-if="expressionIsModified"
           class="expression-default-actions"
@@ -794,34 +794,34 @@
           <span
             class="expression-action-link restore"
             @click.stop="handleRestoreDefaultExpression"
-          >↩️ 恢复默认</span>
+          >↩️ Reset to Default</span>
           <span
             v-if="!isActionMode"
             class="expression-action-link set-default"
             @click.stop="handleSetDefaultExpression"
-          >⭐ 设为默认</span>
+          >⭐ Set as Default</span>
         </div>
 
-        <!-- 编辑表情资源 -->
+        <!-- Edit expression asset -->
         <button
           class="btn-add-playlist"
           style="margin-top: 8px"
           @click="openExpressionEditor"
         >
-          ✏️ 编辑表情资源
+          ✏️ Edit Expression Asset
         </button>
       </div>
 
-      <!-- 特效特有属性 -->
+      <!-- Effect specific properties -->
       <div
         v-if="localObject.type === 'screen_effect'"
         class="property-section"
       >
-        <h4>🌟 特效参数</h4>
+        <h4>🌟 Effect Parameters</h4>
 
-        <!-- 基础覆盖 -->
+        <!-- Basic overlay -->
         <div class="property-field">
-          <label>遮罩颜色:</label>
+          <label>Mask Color:</label>
           <div style="display: flex; align-items: center; gap: 6px;">
             <input
               :value="(localObject as ScreenEffectObject).params.baseColor ?? '#000000'"
@@ -833,26 +833,26 @@
           </div>
         </div>
 
-        <!-- 覆盖不透明度已删除，统一由基础属性区的「不透明度」滑块 (alpha) 控制 -->
+        <!-- Overlay opacity removed, controlled uniformly by 'Opacity' slider (alpha) in basic properties -->
 
-        <!-- 挖孔形状（如果有） -->
+        <!-- Hole shape (if any) -->
         <template v-if="(localObject as ScreenEffectObject).params.holeShape">
           <div class="property-field">
-            <label>挖孔形状:</label>
+            <label>Hole Shape:</label>
             <select
               :value="(localObject as ScreenEffectObject).params.holeShape"
               @change="handleScreenEffectParamChange('holeShape', ($event.target as HTMLSelectElement).value)"
             >
-              <option value="circle">圆形</option>
-              <option value="horizontal_ellipse">水平椭圆</option>
-              <option value="vertical_ellipse">垂直椭圆</option>
-              <option value="rectangle">矩形</option>
+              <option value="circle">Circle</option>
+              <option value="horizontal_ellipse">Horizontal Ellipse</option>
+              <option value="vertical_ellipse">Vertical Ellipse</option>
+              <option value="rectangle">Rectangle</option>
             </select>
           </div>
 
           <div class="property-row">
             <div class="property-field">
-              <label>孔宽:</label>
+              <label>Hole Width:</label>
               <input
                 :value="(localObject as ScreenEffectObject).params.holeWidth ?? 600"
                 type="number"
@@ -863,7 +863,7 @@
               >
             </div>
             <div class="property-field">
-              <label>孔高:</label>
+              <label>Hole Height:</label>
               <input
                 :value="(localObject as ScreenEffectObject).params.holeHeight ?? 600"
                 type="number"
@@ -876,7 +876,7 @@
           </div>
 
           <div class="property-field">
-            <label>开孔比例:</label>
+            <label>Hole Ratio:</label>
             <input
               :value="(localObject as ScreenEffectObject).params.openRatio ?? 1.0"
               type="range"
@@ -895,14 +895,14 @@
 
       </div>
 
-      <!-- 音频特有属性 -->
+      <!-- Audio specific properties -->
       <div
         v-if="localObject.type === 'audio'"
         class="property-section"
       >
-        <h4>音频属性</h4>
+        <h4>Audio Properties</h4>
         
-        <!-- 试听按钮 -->
+        <!-- Preview button -->
         <div class="property-field">
           <button 
             class="preview-audio-btn" 
@@ -910,15 +910,15 @@
             @click="handleAudioPreview"
           >
             <span class="btn-icon">{{ isAudioPreviewing ? '⏸' : '▶' }}</span>
-            <span class="btn-label">{{ isAudioPreviewing ? '停止试听' : '试听' }}</span>
+            <span class="btn-label">{{ isAudioPreviewing ? 'Stop Preview' : 'Preview' }}</span>
           </button>
         </div>
 
-        <!-- Setup 模式 -->
+        <!-- Setup mode -->
         <template v-if="!isActionMode">
           <div class="anim-default-item">
             <div class="anim-part-header">
-              <span class="anim-part-name">默认行为</span>
+              <span class="anim-part-name">Default Behavior</span>
             </div>
             
             <div class="anim-default-options">
@@ -934,7 +934,7 @@
                   @change="updateAudioPlaybackState('play')"
                 >
                 <span class="option-icon">▶</span>
-                <span class="option-label">默认播放</span>
+                <span class="option-label">Play by Default</span>
               </label>
               <label
                 class="anim-option"
@@ -948,7 +948,7 @@
                   @change="updateAudioPlaybackState('stop')"
                 >
                 <span class="option-icon">⏹</span>
-                <span class="option-label">默认停止</span>
+                <span class="option-label">Stop by Default</span>
               </label>
             </div>
 
@@ -963,12 +963,12 @@
                     type="checkbox" 
                     @change="handleUpdate"
                   >
-                  循环播放 (Loop)
+                  Loop Playback
                 </label>
               </div>
 
               <div class="property-field">
-                <label>音量: {{ Math.round(((localObject as AudioObject).volume ?? 1.0) * 100) }}%</label>
+                <label>Volume: {{ Math.round(((localObject as AudioObject).volume ?? 1.0) * 100) }}%</label>
                 <input 
                   v-model.number="(localObject as AudioObject).volume" 
                   type="range" 
@@ -981,7 +981,7 @@
 
               <div class="property-row">
                 <div class="property-field">
-                  <label>淡入 (秒):</label>
+                  <label>Fade In (s):</label>
                   <input 
                     v-model.number="(localObject as AudioObject).fadeIn" 
                     type="number" 
@@ -991,7 +991,7 @@
                   >
                 </div>
                 <div class="property-field">
-                  <label>淡出 (秒):</label>
+                  <label>Fade Out (s):</label>
                   <input 
                     v-model.number="(localObject as AudioObject).fadeOut" 
                     type="number" 
@@ -1005,31 +1005,31 @@
           </div>
         </template>
 
-        <!-- Action Mode: 播放控制与属性 -->
+        <!-- Action Mode: Playback controls and properties -->
         <template v-else>
           <div class="anim-action-item">
             <div class="anim-action-header">
-              <span class="anim-part-name">音频动作</span>
+              <span class="anim-part-name">Audio Action</span>
             </div>
 
             <div class="anim-action-options">
               <button 
                 class="action-option-btn play"
                 :class="{ selected: getAudioActionState() === 'play' }"
-                title="创建播放动作"
+                title="Create play action"
                 @click="handleAudioAction('play')"
               >
                 <span class="btn-icon">▶</span>
-                <span class="btn-label">播放</span>
+                <span class="btn-label">Play</span>
               </button>
               <button 
                 class="action-option-btn stop"
                 :class="{ selected: getAudioActionState() === 'stop' }"
-                title="创建停止动作"
+                title="Create stop action"
                 @click="handleAudioAction('stop')"
               >
                 <span class="btn-icon">⏹</span>
-                <span class="btn-label">停止</span>
+                <span class="btn-label">Stop</span>
               </button>
             </div>
 
@@ -1044,12 +1044,12 @@
                     type="checkbox" 
                     @change="updateAudioActionParam('loop', ($event.target as HTMLInputElement).checked)"
                   >
-                  循环播放 (Loop)
+                  Loop Playback
                 </label>
               </div>
 
               <div class="property-field">
-                <label>音量: {{ Math.round(getAudioActionVolume() * 100) }}%</label>
+                <label>Volume: {{ Math.round(getAudioActionVolume() * 100) }}%</label>
                 <input 
                   :value="getAudioActionVolume()"
                   type="range" 
@@ -1062,7 +1062,7 @@
 
               <div class="property-row">
                 <div class="property-field">
-                  <label>淡入 (秒):</label>
+                  <label>Fade In (s):</label>
                   <input 
                     :value="getAudioActionParam('fadeIn')"
                     type="number" 
@@ -1072,7 +1072,7 @@
                   >
                 </div>
                 <div class="property-field">
-                  <label>淡出 (秒):</label>
+                  <label>Fade Out (s):</label>
                   <input 
                     :value="getAudioActionParam('fadeOut')"
                     type="number" 
@@ -1087,33 +1087,33 @@
         </template>
       </div>
 
-      <!-- 💡 光源属性 -->
+      <!-- 💡 Light properties -->
       <div
         v-if="localObject.type === 'light'"
         class="property-section"
       >
-        <h4>💡 光源属性</h4>
+        <h4>💡 Light Properties</h4>
 
-        <!-- 光源类型（只读） -->
+        <!-- Light type (read-only) -->
         <div class="property-field">
-          <label>光源类型:</label>
+          <label>Light Type:</label>
           <span class="composite-mode-readonly">
             {{
               (localObject as LightObject).lightType === 'ambient'
-                ? '🌍 环境光'
+                ? '🌍 Ambient Light'
                 : (localObject as LightObject).lightType === 'spot'
-                  ? '🔦 聚光灯'
-                  : '💡 点光源'
+                  ? '🔦 Spotlight'
+                  : '💡 Point Light'
             }}
           </span>
         </div>
 
-        <!-- 环境光预设 -->
+        <!-- Ambient light presets -->
         <div
           v-if="(localObject as LightObject).lightType === 'ambient'"
           class="property-field"
         >
-          <label>预设:</label>
+          <label>Preset:</label>
           <div class="ambient-preset-grid">
             <button
               v-for="preset in AMBIENT_LIGHT_PRESETS"
@@ -1131,12 +1131,12 @@
           </div>
         </div>
 
-        <!-- 点光 / 聚光预设 -->
+        <!-- Point / Spotlight presets -->
         <div
           v-if="(localObject as LightObject).lightType !== 'ambient'"
           class="property-field"
         >
-          <label>预设:</label>
+          <label>Preset:</label>
           <div class="ambient-preset-grid">
             <button
               v-for="preset in currentLightPresets"
@@ -1155,7 +1155,7 @@
         </div>
 
         <div class="property-field">
-          <label>颜色:</label>
+          <label>Color:</label>
           <div style="display: flex; align-items: center; gap: 6px;">
             <input
               :value="(localObject as LightObject).lightColor ?? '#ffffff'"
@@ -1168,7 +1168,7 @@
         </div>
 
         <div class="property-field">
-          <label>强度: {{ ((localObject as LightObject).lightIntensity ?? 1.0).toFixed(2) }}</label>
+          <label>Intensity: {{ ((localObject as LightObject).lightIntensity ?? 1.0).toFixed(2) }}</label>
           <input
             :value="(localObject as LightObject).lightIntensity ?? 1.0"
             type="range"
@@ -1183,7 +1183,7 @@
           v-if="(localObject as LightObject).lightType !== 'ambient'"
           class="property-field"
         >
-          <label>半径: {{ Math.round((localObject as LightObject).lightRadius ?? 500) }}</label>
+          <label>Radius: {{ Math.round((localObject as LightObject).lightRadius ?? 500) }}</label>
           <input
             :value="(localObject as LightObject).lightRadius ?? 500"
             type="range"
@@ -1194,10 +1194,10 @@
           >
         </div>
 
-        <!-- 闪烁参数（非环境光） -->
+        <!-- Flicker parameters (non-ambient) -->
         <template v-if="(localObject as LightObject).lightType !== 'ambient'">
           <div class="property-field">
-            <label>闪烁强度: {{ ((localObject as LightObject).flicker ?? 0).toFixed(2) }}</label>
+            <label>Flicker Intensity: {{ ((localObject as LightObject).flicker ?? 0).toFixed(2) }}</label>
             <input
               :value="(localObject as LightObject).flicker ?? 0"
               type="range"
@@ -1208,7 +1208,7 @@
             >
           </div>
           <div class="property-field">
-            <label>闪烁速度: {{ ((localObject as LightObject).flickerSpeed ?? 0.35).toFixed(2) }}</label>
+            <label>Flicker Speed: {{ ((localObject as LightObject).flickerSpeed ?? 0.35).toFixed(2) }}</label>
             <input
               :value="(localObject as LightObject).flickerSpeed ?? 0.35"
               type="range"
@@ -1220,10 +1220,10 @@
           </div>
         </template>
 
-        <!-- 聚光灯方向参数 -->
+        <!-- Spotlight direction parameters -->
         <template v-if="(localObject as LightObject).lightType === 'spot'">
           <div class="property-field">
-            <label>方向角: {{ Math.round(((localObject as LightObject).directionAngle ?? 0) * 180 / Math.PI) }}°</label>
+            <label>Direction Angle: {{ Math.round(((localObject as LightObject).directionAngle ?? 0) * 180 / Math.PI) }}°</label>
             <input
               :value="(localObject as LightObject).directionAngle ?? 0"
               type="range"
@@ -1234,7 +1234,7 @@
             >
           </div>
           <div class="property-field">
-            <label>开角: {{ Math.round((localObject as LightObject).coneAngle ?? 100) }}°</label>
+            <label>Cone Angle: {{ Math.round((localObject as LightObject).coneAngle ?? 100) }}°</label>
             <input
               :value="(localObject as LightObject).coneAngle ?? 100"
               type="range"
@@ -1247,102 +1247,102 @@
         </template>
       </div>
 
-      <!-- 相机控制台（仅 Action Mode） -->
+      <!-- Camera console (Action Mode only) -->
       <div
         v-if="isCamera && isActionMode"
         class="property-section"
       >
-        <h4>🎥 相机控制台</h4>
+        <h4>🎥 Camera Console</h4>
         
-        <!-- 槽位指示器 -->
+        <!-- Slot indicator -->
         <div class="slot-indicator-row">
           <span class="slot-badge">#{{ (currentSlotIndex ?? 0) + 1 }}</span>
-          <span class="slot-text">{{ currentSlotText ? truncateText(currentSlotText, 20) : '当前槽位' }}</span>
+          <span class="slot-text">{{ currentSlotText ? truncateText(currentSlotText, 20) : 'Current Slot' }}</span>
         </div>
         
-        <!-- Segmented Control: 动作类型切换 -->
+        <!-- Segmented Control: Action type toggle -->
         <div class="camera-console">
           <div class="console-label">
-            动作类型:
+            Action Type:
           </div>
           <div class="camera-mode-tabs">
             <button 
               class="camera-mode-btn" 
               :class="{ active: currentCameraActionType === 'camera_cut', disabled: isExclusiveButtonDisabled('camera_cut') }"
               :disabled="isExclusiveButtonDisabled('camera_cut')"
-              :title="isExclusiveButtonDisabled('camera_cut') ? '当前槽位已有其他相机动作' : '镜头切 - 瞬间切换机位'"
+              :title="isExclusiveButtonDisabled('camera_cut') ? 'Another camera action already exists in this slot' : 'Camera Cut - Instant camera switch'"
               @click="handleCameraTypeSelect('camera_cut')"
             >
-              ✂️ 镜头切
+              ✂️ Cut
             </button>
             <button 
               class="camera-mode-btn" 
               :class="{ active: currentCameraActionType === 'camera_move', disabled: isExclusiveButtonDisabled('camera_move') }"
               :disabled="isExclusiveButtonDisabled('camera_move')"
-              :title="isExclusiveButtonDisabled('camera_move') ? '当前槽位已有其他相机动作' : '运镜 - 平滑移动到目标位置'"
+              :title="isExclusiveButtonDisabled('camera_move') ? 'Another camera action already exists in this slot' : 'Camera Move - Smooth move to target'"
               @click="handleCameraTypeSelect('camera_move')"
             >
-              🎬 运镜
+              🎬 Move
             </button>
             <button 
               class="camera-mode-btn" 
               :class="{ active: currentCameraActionType === 'camera_follow', disabled: isExclusiveButtonDisabled('camera_follow') }"
               :disabled="isExclusiveButtonDisabled('camera_follow')"
-              :title="isExclusiveButtonDisabled('camera_follow') ? '当前槽位已有其他相机动作' : '跟随 - 跟随目标对象'"
+              :title="isExclusiveButtonDisabled('camera_follow') ? 'Another camera action already exists in this slot' : 'Follow - Follow target object'"
               @click="handleCameraTypeSelect('camera_follow')"
             >
-              🎯 跟随
+              🎯 Follow
             </button>
             <button 
               class="camera-mode-btn" 
               :class="{ active: isShakeActive }"
-              title="震动 - 镜头抖动效果（可与其他动作共存）"
+              title="Shake - Camera shake effect (can coexist with other actions)"
               @click="handleCameraTypeSelect('camera_shake')"
             >
-              💥 震动
+              💥 Shake
             </button>
           </div>
         </div>
 
-        <!-- 提示信息：点击动作类型按钮后在右侧显示动作属性 -->
+        <!-- Hint: Click action type button to display action properties on the right -->
         <div class="camera-mode-hint">
           <span class="hint-icon">💡</span>
-          <span>点击动作类型按钮进入添加动作模式</span>
+          <span>Click action type button to enter action adding mode</span>
         </div>
       </div>
 
 
-      <!-- v16 H1: 动画默认状态设置（分组显示） -->
+      <!-- v16 H1: Animation default state settings (grouped display) -->
       <div
         v-if="!isActionMode && resourceAnimations.length > 0"
         class="property-section"
       >
-        <h4>动画默认状态</h4>
+        <h4>Animation Default State</h4>
 
-        <!-- 资源动画分组 -->
+        <!-- Resource animation group -->
         <div v-if="resourceOriginAnimations.length > 0" class="anim-group">
           <div class="anim-group-header">
-            <span class="anim-group-label">📦 资源动画</span>
+            <span class="anim-group-label">📦 Resource Animations</span>
             <button
               class="btn-reapply"
-              title="从资源重新应用动画定义"
+              title="Reapply animation definitions from resource"
               @click="handleReapplyResourceAnimations"
             >
-              🔄 重新应用
+              🔄 Reapply
             </button>
           </div>
         </div>
 
-        <!-- 实例动画分组标题 -->
+        <!-- Instance animation group title -->
         <div v-if="instanceAnimations.length > 0 && resourceOriginAnimations.length > 0" class="anim-group">
           <div class="anim-group-header">
-            <span class="anim-group-label">✏️ 实例动画</span>
+            <span class="anim-group-label">✏️ Instance Animations</span>
           </div>
         </div>
 
         <div class="anim-default-hint">
           <span class="hint-icon">ℹ️</span>
-          <span class="hint-text">设置动画在场景开始时的默认状态，这些设置会保存到场景数据中</span>
+          <span class="hint-text">Set animation default state at scene start; these settings will be saved to scene data</span>
         </div>
         <div
           v-for="anim in resourceAnimations"
@@ -1352,7 +1352,7 @@
           <div class="anim-part-header">
             <span class="anim-part-name">{{ anim.name }}</span>
           </div>
-          <!-- 播放/停止状态 -->
+          <!-- Play/Stop state -->
           <div class="anim-default-options">
             <label
               class="anim-option"
@@ -1366,7 +1366,7 @@
                 @change="setAnimDefaultState(anim.name, 'play')"
               >
               <span class="option-icon">▶</span>
-              <span class="option-label">默认播放</span>
+              <span class="option-label">Play by Default</span>
             </label>
             <label
               class="anim-option"
@@ -1380,10 +1380,10 @@
                 @change="setAnimDefaultState(anim.name, 'stop')"
               >
               <span class="option-icon">⏹</span>
-              <span class="option-label">默认停止</span>
+              <span class="option-label">Stop by Default</span>
             </label>
           </div>
-          <!-- 循环设置（v11.3: 移除 speed，只保留 loop） -->
+          <!-- Loop settings (v11.3: speed removed, loop only) -->
           <div class="anim-extra-settings">
             <label class="anim-loop-option">
               <input 
@@ -1391,7 +1391,7 @@
                 :checked="getAnimLoop(anim.name)"
                 @change="setAnimLoop(anim.name, ($event.target as HTMLInputElement).checked)"
               >
-              <span>循环播放</span>
+              <span>Loop Playback</span>
             </label>
           </div>
         </div>
@@ -1399,19 +1399,19 @@
 
 
 
-      <!-- v11.2: 旧的道具动画控制区域已删除，统一使用 resourceAnimations -->
+      <!-- v11.2: Old prop animation control area deleted, using resourceAnimations uniformly -->
 
-      <!-- 特效动画默认状态设置（仅Setup模式） -->
+      <!-- Effect animation default state settings (Setup mode only) -->
 
-      <!-- Action Mode 下的动画动作录制 (v11.1: 使用资源级 Animation) -->
+      <!-- Animation action recording in Action Mode (v11.1: using resource-level Animation) -->
       <div
         v-if="isActionMode && resourceAnimations.length > 0"
         class="property-section"
       >
-        <h4>🎬 动画动作</h4>
+        <h4>🎬 Animation Actions</h4>
         <div class="action-record-hint">
           <span class="hint-icon">📢</span>
-          <span class="hint-text">在当前槽位 <strong>#{{ (currentSlotIndex ?? 0) + 1 }}</strong> 创建动画动作</span>
+          <span class="hint-text">Create animation action at current slot <strong>#{{ (currentSlotIndex ?? 0) + 1 }}</strong></span>
         </div>
         <div
           v-for="anim in resourceAnimations"
@@ -1421,28 +1421,28 @@
           <div class="anim-action-header">
             <span class="anim-part-name">{{ anim.name }}</span>
           </div>
-          <!-- 播放/停止动作 -->
+          <!-- Play/Stop action -->
           <div class="anim-action-options">
             <button 
               class="action-option-btn play"
               :class="{ selected: getResourceAnimState(anim.name) === 'play' }"
-              title="创建播放动作"
+              title="Create play action"
               @click="handleResourceAnimAction(anim.name, 'play')"
             >
               <span class="btn-icon">▶</span>
-              <span class="btn-label">播放</span>
+              <span class="btn-label">Play</span>
             </button>
             <button 
               class="action-option-btn stop"
               :class="{ selected: getResourceAnimState(anim.name) === 'stop' }"
-              title="创建停止动作"
+              title="Create stop action"
               @click="handleResourceAnimAction(anim.name, 'stop')"
             >
               <span class="btn-icon">⏹</span>
-              <span class="btn-label">停止</span>
+              <span class="btn-label">Stop</span>
             </button>
           </div>
-          <!-- 循环设置 -->
+          <!-- Loop setting -->
           <div class="anim-action-extras">
             <label class="action-loop-option">
               <input 
@@ -1450,22 +1450,22 @@
                 :checked="getResourceAnimLoop(anim.name)"
                 @change="handleResourceAnimLoopChange(anim.name, ($event.target as HTMLInputElement).checked)"
               >
-              <span>循环</span>
+              <span>Loop</span>
             </label>
           </div>
         </div>
       </div>
 
-      <!-- 📝 文本属性 -->
+      <!-- 📝 Text properties -->
       <div
         v-if="localObject.type === 'text'"
         class="property-section"
       >
-        <h4>📝 文本属性</h4>
+        <h4>📝 Text Properties</h4>
 
-        <!-- 文本内容 -->
+        <!-- Text content -->
         <div class="property-field">
-          <label>内容:</label>
+          <label>Content:</label>
           <textarea
             :value="(localObject as any).content ?? ''"
             rows="3"
@@ -1474,38 +1474,38 @@
           />
         </div>
 
-        <!-- 字体选择（在线预设 + 系统字体枚举） -->
+        <!-- Font selection (online presets + system font enumeration) -->
         <div class="property-field">
-          <label>字体:</label>
+          <label>Font:</label>
           <select
             :value="(localObject as any).fontFamily ?? 'Noto Sans SC'"
             class="font-select"
             @change="handleTextPropertyChange('fontFamily', ($event.target as HTMLSelectElement).value)"
           >
-            <optgroup label="☁️ 在线字体">
-              <option value="Noto Sans SC">思源黑体</option>
-              <option value="Noto Serif SC">思源宋体</option>
-              <option value="LXGW WenKai">霞鹜文楷</option>
-              <option value="ZCOOL QingKe HuangYou">站酷庆科黄油体</option>
-              <option value="Ma Shan Zheng">马善政楷书</option>
+            <optgroup label="☁️ Online Fonts">
+              <option value="Noto Sans SC">Noto Sans SC (Source Han Sans)</option>
+              <option value="Noto Serif SC">Noto Serif SC (Source Han Serif)</option>
+              <option value="LXGW WenKai">LXGW WenKai</option>
+              <option value="ZCOOL QingKe HuangYou">ZCOOL QingKe HuangYou</option>
+              <option value="Ma Shan Zheng">Ma Shan Zheng</option>
             </optgroup>
-            <optgroup v-if="localFonts.length > 0" label="💻 本地字体">
+            <optgroup v-if="localFonts.length > 0" label="💻 Local Fonts">
               <option v-for="font in localFonts" :key="font" :value="font">{{ font }}</option>
             </optgroup>
           </select>
           <button
             v-if="!localFontsLoaded"
             class="load-fonts-btn"
-            title="加载本地字体列表（需浏览器授权）"
+            title="Load local font list (requires browser permission)"
             @click="loadLocalFonts"
           >
-            🔍 加载本地字体
+            🔍 Load Local Fonts
           </button>
         </div>
 
-        <!-- 字号 -->
+        <!-- Font size -->
         <div class="property-field">
-          <label>字号:</label>
+          <label>Font Size:</label>
           <select
             :value="fontSizePresetMatch"
             @change="handleFontSizeSelectChange(($event.target as HTMLSelectElement).value)"
@@ -1515,14 +1515,14 @@
               v-if="!FONT_SIZE_PRESETS.includes(currentFontSize)"
               :value="currentFontSize"
             >
-              {{ currentFontSize }} (自定义)
+              {{ currentFontSize }} (Custom)
             </option>
           </select>
         </div>
 
-        <!-- 颜色 -->
+        <!-- Color -->
         <div class="property-field">
-          <label>颜色:</label>
+          <label>Color:</label>
           <div style="display: flex; align-items: center; gap: 6px;">
             <input
               :value="(localObject as any).color ?? '#ffffff'"
@@ -1534,19 +1534,19 @@
           </div>
         </div>
         <div class="property-field">
-          <label>渐变:</label>
+          <label>Gradient:</label>
           <select
             :value="(localObject as any).fillType ?? ''"
             class="font-select"
             @change="handleTextPropertyChange('fillType', ($event.target as HTMLSelectElement).value)"
           >
-            <option value="">关闭</option>
-            <option value="linear_gradient">线性渐变</option>
+            <option value="">Disabled</option>
+            <option value="linear_gradient">Linear Gradient</option>
           </select>
         </div>
         <template v-if="(localObject as any).fillType === 'linear_gradient'">
           <div class="property-field">
-            <label>起始色:</label>
+            <label>Start Color:</label>
             <input
               :value="(localObject as any).gradientStops?.[0]?.color ?? '#ffffff'"
               type="color"
@@ -1555,7 +1555,7 @@
             >
           </div>
           <div class="property-field">
-            <label>结束色:</label>
+            <label>End Color:</label>
             <input
               :value="(localObject as any).gradientStops?.[1]?.color ?? '#000000'"
               type="color"
@@ -1564,7 +1564,7 @@
             >
           </div>
           <div class="property-field">
-            <label>角度°:</label>
+            <label>Angle°:</label>
             <input
               :value="(localObject as any).gradientAngle ?? 0"
               type="number"
@@ -1576,14 +1576,14 @@
           </div>
         </template>
 
-        <!-- 对齐 -->
+        <!-- Alignment -->
         <div class="property-field">
-          <label>对齐:</label>
+          <label>Align:</label>
           <div class="text-align-group">
             <button
               class="text-align-btn"
               :class="{ active: (localObject as any).align === 'left' }"
-              title="左对齐"
+              title="Align Left"
               @click="handleTextPropertyChange('align', 'left')"
             >
               ◧
@@ -1591,7 +1591,7 @@
             <button
               class="text-align-btn"
               :class="{ active: (localObject as any).align === 'center' || !(localObject as any).align }"
-              title="居中"
+              title="Center"
               @click="handleTextPropertyChange('align', 'center')"
             >
               ☰
@@ -1599,7 +1599,7 @@
             <button
               class="text-align-btn"
               :class="{ active: (localObject as any).align === 'right' }"
-              title="右对齐"
+              title="Align Right"
               @click="handleTextPropertyChange('align', 'right')"
             >
               ◨
@@ -1607,7 +1607,7 @@
           </div>
         </div>
 
-        <!-- 字重和样式 -->
+        <!-- Font weight and style -->
         <div class="property-row">
           <div class="property-field checkbox">
             <label>
@@ -1616,7 +1616,7 @@
                 type="checkbox"
                 @change="handleTextPropertyChange('fontWeight', ($event.target as HTMLInputElement).checked ? 'bold' : 'normal')"
               >
-              <b>粗体</b>
+              <b>Bold</b>
             </label>
           </div>
           <div class="property-field checkbox">
@@ -1626,12 +1626,12 @@
                 type="checkbox"
                 @change="handleTextPropertyChange('fontStyle', ($event.target as HTMLInputElement).checked ? 'italic' : 'normal')"
               >
-              <i>斜体</i>
+              <i>Italic</i>
             </label>
           </div>
         </div>
 
-        <!-- 自动换行开关 -->
+        <!-- Auto-wrap toggle -->
         <div
           v-if="(localObject as any).textBoxMode !== 'auto-width' && (localObject as any).textBoxMode !== 'auto-size'"
           class="property-field checkbox"
@@ -1642,16 +1642,16 @@
               type="checkbox"
               @change="handleTextPropertyChange('wordWrap', ($event.target as HTMLInputElement).checked)"
             >
-            自动换行
+            Auto Wrap
           </label>
         </div>
 
-        <!-- 自动换行宽度 -->
+        <!-- Auto-wrap width -->
         <div
           v-if="(localObject as any).textBoxMode !== 'auto-width' && (localObject as any).textBoxMode !== 'auto-size' && (localObject as any).wordWrap !== false"
           class="property-field"
         >
-          <label>换行宽度:</label>
+          <label>Wrap Width:</label>
           <input
             :value="(localObject as any).wordWrapWidth ?? 400"
             type="number"
@@ -1662,10 +1662,10 @@
           >
         </div>
 
-        <!-- ═══════ Phase 1: 描边 ═══════ -->
-        <div class="sub-section-heading">字体边框</div>
+        <!-- ═══════ Phase 1: Stroke ═══════ -->
+        <div class="sub-section-heading">Text Stroke</div>
         <div class="property-field">
-          <label>颜色:</label>
+          <label>Color:</label>
           <div style="display: flex; align-items: center; gap: 6px;">
             <input
               :value="(localObject as any).stroke ?? '#000000'"
@@ -1673,11 +1673,11 @@
               style="width: 28px; height: 28px; padding: 0; border: 1px solid #d1d5db; border-radius: 4px;"
               @input="handleTextPropertyChange('stroke', ($event.target as HTMLInputElement).value)"
             >
-            <span class="value-label">{{ (localObject as any).stroke ?? '无' }}</span>
+            <span class="value-label">{{ (localObject as any).stroke ?? 'None' }}</span>
           </div>
         </div>
         <div class="property-field">
-          <label>粗细:</label>
+          <label>Thickness:</label>
           <input
             :value="(localObject as any).strokeThickness ?? 0"
             type="range"
@@ -1690,8 +1690,8 @@
           <span class="value-label" style="min-width: 28px; text-align: right;">{{ (localObject as any).strokeThickness ?? 0 }}</span>
         </div>
 
-        <!-- ═══════ Phase 1: 投影 ═══════ -->
-        <div class="sub-section-heading">投影</div>
+        <!-- ═══════ Phase 1: Shadow ═══════ -->
+        <div class="sub-section-heading">Drop Shadow</div>
         <div class="property-field checkbox">
           <label>
             <input
@@ -1699,12 +1699,12 @@
               type="checkbox"
               @change="handleTextPropertyChange('dropShadow', ($event.target as HTMLInputElement).checked ? true : false)"
             >
-            启用投影
+            Enable Shadow
           </label>
         </div>
         <template v-if="(localObject as any).dropShadow">
           <div class="property-field">
-            <label>颜色:</label>
+            <label>Color:</label>
             <input
               :value="(localObject as any).dropShadowColor ?? '#000000'"
               type="color"
@@ -1713,7 +1713,7 @@
             >
           </div>
           <div class="property-field">
-            <label>模糊:</label>
+            <label>Blur:</label>
             <input
               :value="(localObject as any).dropShadowBlur ?? 4"
               type="range"
@@ -1726,7 +1726,7 @@
             <span class="value-label" style="min-width: 28px; text-align: right;">{{ (localObject as any).dropShadowBlur ?? 4 }}</span>
           </div>
           <div class="property-field">
-            <label>距离:</label>
+            <label>Distance:</label>
             <input
               :value="(localObject as any).dropShadowDistance ?? 4"
               type="range"
@@ -1739,7 +1739,7 @@
             <span class="value-label" style="min-width: 28px; text-align: right;">{{ (localObject as any).dropShadowDistance ?? 4 }}</span>
           </div>
           <div class="property-field">
-            <label>角度°:</label>
+            <label>Angle°:</label>
             <input
               :value="Math.round(((localObject as any).dropShadowAngle ?? 0.785) * 180 / Math.PI)"
               type="number"
@@ -1751,10 +1751,10 @@
           </div>
         </template>
 
-        <!-- ═══════ Phase 1: 间距 ═══════ -->
-        <div class="sub-section-heading">排版</div>
+        <!-- ═══════ Phase 1: Spacing ═══════ -->
+        <div class="sub-section-heading">Typography</div>
         <div class="property-field">
-          <label>字距:</label>
+          <label>Letter Spacing:</label>
           <select
             :value="letterSpacingPresetMatch"
             @change="handleLetterSpacingSelectChange(($event.target as HTMLSelectElement).value)"
@@ -1764,66 +1764,66 @@
               v-if="!LETTER_SPACING_PRESETS.includes(currentLetterSpacing)"
               :value="currentLetterSpacing"
             >
-              {{ currentLetterSpacing }} (自定义)
+              {{ currentLetterSpacing }} (Custom)
             </option>
           </select>
         </div>
         <div class="property-field">
-          <label>行高:</label>
+          <label>Line Height:</label>
           <select
             :value="lineHeightPresetMatch"
             @change="handleLineHeightSelectChange(($event.target as HTMLSelectElement).value)"
           >
-            <option value="">自动</option>
+            <option value="">Auto</option>
             <option v-for="lh in LINE_HEIGHT_PRESETS" :key="lh" :value="lh">{{ lh }}</option>
             <option
               v-if="currentLineHeight !== '' && !LINE_HEIGHT_PRESETS.includes(Number(currentLineHeight))"
               :value="currentLineHeight"
             >
-              {{ currentLineHeight }} (自定义)
+              {{ currentLineHeight }} (Custom)
             </option>
           </select>
         </div>
 
-        <!-- 文本框模式 -->
+        <!-- Text box mode -->
         <div class="property-field">
-          <label>文本框:</label>
+          <label>Text Box:</label>
           <select
             :value="(localObject as any).textBoxMode ?? 'auto-size'"
             class="font-select"
             @change="handleTextPropertyChange('textBoxMode', ($event.target as HTMLSelectElement).value)"
           >
-            <option value="auto-width">自动宽度</option>
-            <option value="auto-height">自动高度</option>
-            <option value="auto-size">自动尺寸</option>
-            <option value="fixed">固定尺寸</option>
+            <option value="auto-width">Auto Width</option>
+            <option value="auto-height">Auto Height</option>
+            <option value="auto-size">Auto Size</option>
+            <option value="fixed">Fixed Size</option>
           </select>
         </div>
 
-        <!-- 书写方向 -->
+        <!-- Writing direction -->
         <div class="property-field">
-          <label>方向:</label>
+          <label>Direction:</label>
           <div class="text-align-group">
             <button
               class="text-align-btn"
               :class="{ active: (localObject as any).writingMode !== 'vertical' }"
-              title="横排"
+              title="Horizontal"
               @click="handleTextPropertyChange('writingMode', 'horizontal')"
             >
-              横
+              Horiz
             </button>
             <button
               class="text-align-btn"
               :class="{ active: (localObject as any).writingMode === 'vertical' }"
-              title="竖排"
+              title="Vertical"
               @click="handleTextPropertyChange('writingMode', 'vertical')"
             >
-              竖
+              Vert
             </button>
           </div>
         </div>
 
-        <div class="sub-section-heading">文本框背景</div>
+        <div class="sub-section-heading">Text Box Background</div>
         <div class="property-field checkbox">
           <label>
             <input
@@ -1831,12 +1831,12 @@
               type="checkbox"
               @change="handleTextPropertyChange('textBackgroundEnabled', ($event.target as HTMLInputElement).checked)"
             >
-            启用背景填充
+            Enable Background Fill
           </label>
         </div>
         <template v-if="(localObject as any).textBackgroundEnabled === true">
           <div class="property-field">
-            <label>颜色:</label>
+            <label>Color:</label>
             <input
               :value="(localObject as any).textBackgroundColor ?? '#000000'"
               type="color"
@@ -1845,7 +1845,7 @@
             >
           </div>
           <div class="property-field">
-            <label>透明度:</label>
+            <label>Opacity:</label>
             <input
               :value="Math.round((((localObject as any).textBackgroundAlpha ?? 0.35) * 100))"
               type="range"
@@ -1858,7 +1858,7 @@
             <span class="value-label" style="min-width: 36px; text-align: right;">{{ Math.round((((localObject as any).textBackgroundAlpha ?? 0.35) * 100)) }}%</span>
           </div>
           <div class="property-field">
-            <label>内边距X:</label>
+            <label>Padding X:</label>
             <input
               :value="(localObject as any).textBackgroundPaddingX ?? 16"
               type="number"
@@ -1869,7 +1869,7 @@
             >
           </div>
           <div class="property-field">
-            <label>内边距Y:</label>
+            <label>Padding Y:</label>
             <input
               :value="(localObject as any).textBackgroundPaddingY ?? 10"
               type="number"
@@ -1880,7 +1880,7 @@
             >
           </div>
           <div class="property-field">
-            <label>圆角:</label>
+            <label>Corner Radius:</label>
             <input
               :value="(localObject as any).textBackgroundRadius ?? 8"
               type="number"
@@ -1892,10 +1892,10 @@
           </div>
         </template>
 
-        <!-- ═══════ 文本动画 ═══════ -->
-        <div class="sub-section-heading">文本动画</div>
+        <!-- ═══════ Text Animation ═══════ -->
+        <div class="sub-section-heading">Text Animation</div>
         <div class="property-field">
-          <label>打字速度:</label>
+          <label>Typing Speed:</label>
           <input
             :value="(localObject as any).revealSpeed ?? 8"
             type="number"
@@ -1904,14 +1904,14 @@
             step="0.5"
             @change="handleTextPropertyChange('revealSpeed', Number(($event.target as HTMLInputElement).value))"
           >
-          <span class="value-label">字/秒</span>
+          <span class="value-label">chars/s</span>
         </div>
         <div
           v-if="!isActionMode"
           class="anim-default-item text-reveal-default-card"
         >
           <div class="anim-part-header">
-            <span class="anim-part-name">默认显示方式</span>
+            <span class="anim-part-name">Default Display Mode</span>
           </div>
           <div class="anim-default-options">
             <label
@@ -1926,7 +1926,7 @@
                 @change="updateTextRevealInitialState('typewriter')"
               >
               <span class="option-icon">⌨</span>
-              <span class="option-label">开场打字</span>
+              <span class="option-label">Typewriter on Start</span>
             </label>
             <label
               class="anim-option text-reveal-complete-option"
@@ -1940,7 +1940,7 @@
                 @change="updateTextRevealInitialState('complete')"
               >
               <span class="option-icon">▣</span>
-              <span class="option-label">完整文本</span>
+              <span class="option-label">Full Text</span>
             </label>
           </div>
         </div>
@@ -1949,33 +1949,33 @@
           class="anim-action-item text-reveal-action-card"
         >
           <div class="anim-action-header">
-            <span class="anim-part-name">打字机动作</span>
+            <span class="anim-part-name">Typewriter Action</span>
           </div>
           <div class="anim-action-options">
             <button
               class="action-option-btn text-reveal-start"
               :class="{ selected: getTextRevealActionState() === 'play' }"
-              title="在当前槽位创建开始打字动作"
+              title="Create start typing action at current slot"
               @click="handleTextRevealAction('play')"
             >
               <span class="btn-icon">⌨</span>
-              <span class="btn-label">开始打字</span>
+              <span class="btn-label">Start Typing</span>
             </button>
             <button
               class="action-option-btn text-reveal-complete"
               :class="{ selected: getTextRevealActionState() === 'stop' }"
-              title="在当前槽位创建显示完整文本动作"
+              title="Create show full text action at current slot"
               @click="handleTextRevealAction('stop')"
             >
               <span class="btn-icon">▣</span>
-              <span class="btn-label">显示完整文本</span>
+              <span class="btn-label">Show Full Text</span>
             </button>
           </div>
         </div>
 
       </div>
 
-      <!-- ▭ 蒙版属性 -->
+      <!-- ▭ Mask properties -->
       <template v-if="localObject && localObject.type === 'mask'">
         <MaskShapeSection
           :mask="(localObject as MaskObject)"
@@ -1987,50 +1987,50 @@
         />
       </template>
 
-      <!-- 操作按钮区域（Setup + Action 通用） -->
+      <!-- Action buttons area (common for Setup + Action) -->
       <div
         v-if="localObject && (localObject.type === 'prop' || localObject.type === 'background' || localObject.type === 'audio' || localObject.type === 'symbol' || localObject.type === 'composite' || localObject.type === 'expression')"
         class="property-section anim-actions-section"
       >
-        <!-- 动画管理（prop/background/symbol/composite） -->
+        <!-- Animation management (prop/background/symbol/composite) -->
         <button
           v-if="localObject.type === 'prop' || localObject.type === 'background' || localObject.type === 'symbol' || localObject.type === 'composite'"
           class="btn-add-playlist"
           @click="showAnimationManager = true"
         >
-          🎬 动画管理
+          🎬 Manage Animations
         </button>
 
-        <!-- 道具/背景：[编辑] -->
+        <!-- Prop/Background: [Edit] -->
         <button
           v-if="localObject.type === 'prop' || localObject.type === 'background'"
           class="btn-add-playlist"
           @click="showPropEditor = true"
         >
-          ✏️ 编辑
+          ✏️ Edit
         </button>
 
-        <!-- 音频：[编辑] -->
+        <!-- Audio: [Edit] -->
         <button
           v-if="localObject.type === 'audio'"
           class="btn-add-playlist"
           @click="showSoundEditor = true"
         >
-          ✏️ 编辑
+          ✏️ Edit
         </button>
 
-        <!-- 元件：[编辑] -->
+        <!-- Symbol: [Edit] -->
         <button
           v-if="localObject.type === 'symbol'"
           class="btn-add-playlist"
           @click="showSymbolMaterialManager = true"
         >
-          ✏️ 编辑
+          ✏️ Edit
         </button>
 
       </div>
 
-      <!-- v11.1: 道具动画已迁移到 resourceAnimations 区域，此处旧代码已删除 -->
+      <!-- v11.1: Prop animation migrated to resourceAnimations area, old code deleted here -->
     </div>
 
 
@@ -2041,7 +2041,7 @@
       @close="showExpressionDialog = false"
     />
 
-    <!-- v18: 独立表情对象切换对话框 -->
+    <!-- v18: Standalone expression object switch dialog -->
     <ExpressionSelectorDialog
       v-if="showExpressionObjectDialog"
       :current-expression="localObject?.refId ?? ''"
@@ -2054,17 +2054,17 @@
 
 
 
-    <!-- v16: 元件素材管理对话框 -->
+    <!-- v16: Symbol material management dialog -->
     <SymbolMaterialManagerDialog
       v-if="showSymbolMaterialManager && localObject?.type === 'symbol'"
-      :object-name="localObject.alias ?? localObject.name ?? '元件'"
+      :object-name="localObject.alias ?? localObject.name ?? 'Symbol'"
       :materials="(localObject as SymbolObject).materials ?? []"
       :current-material-id="(localObject as SymbolObject).currentMaterialId"
       @close="showSymbolMaterialManager = false"
       @save="handleSymbolMaterialSave"
     />
 
-    <!-- v20: 动画工作台（列表模式，替代旧 AnimationManagerDialog） -->
+    <!-- v20: Animation workbench (list mode, replaces old AnimationManagerDialog) -->
     <AnimationWorkbench
       v-if="showAnimationManager && localObject"
       :visible="showAnimationManager"
@@ -2087,7 +2087,7 @@
       @update:animations="handleWorkbenchAnimationsUpdate"
     />
 
-    <!-- v17: 道具/背景编辑对话框 -->
+    <!-- v17: Prop/Background edit dialog -->
     <PropEditorModal
       v-if="showPropEditor && editPropId"
       :visible="showPropEditor"
@@ -2105,7 +2105,7 @@
       @save="showSoundEditor = false"
     />
 
-    <!-- v18: 表情资源编辑对话框 -->
+    <!-- v18: Expression asset edit dialog -->
     <ExpressionEditorModal
       v-if="showExpressionEditor"
       :visible="showExpressionEditor"
@@ -2127,7 +2127,7 @@ import { useAssetImage } from '@/composables/useAssetImage'
 import { CAMERA_BASE_HEIGHT,CAMERA_BASE_WIDTH, CANVAS_CENTER_X, CANVAS_CENTER_Y } from '@/constants/canvas'
 import { RECOMMENDED_NAMES, RECOMMENDED_NAMES_SET } from '@/constants/recommendedNames'
 import { getTypeIcon } from '@/core/sceneObjectProviders/metadata'
-import { useAnimationStore } from '@/stores/animationStore' // v11.1: 资源级动画
+import { useAnimationStore } from '@/stores/animationStore' // v11.1: Resource-level animations
 import { useExpressionStore } from '@/stores/expressionStore'
 import { useProjectStore } from '@/stores/projectStore'
 import { useSceneObjectStore } from '@/stores/sceneObjectStore'
@@ -2150,31 +2150,31 @@ import PropEditorModal from './PropEditorModal.vue'
 import SoundEditorModal from './SoundEditorModal.vue'
 import SymbolMaterialManagerDialog from './SymbolMaterialManagerDialog.vue'
 
-// 相机动作类型
+// Camera action types
 type CameraActionType = 'camera_cut' | 'camera_move' | 'camera_follow' | 'camera_shake'
 
 const props = defineProps<{
   selectedObject: SceneObject | undefined
   canvasWidth?: number
   canvasHeight?: number
-  isActionMode?: boolean      // 是否处于 Action Mode
-  currentSlotIndex?: number   // 当前槽位索引
-  currentSlotText?: string    // 当前槽位文本
-  runtimeState?: SceneObject | null  // Action Mode 下当前 slot 的运行时状态
-  cameraRecordMode?: 'camera_cut' | 'camera_move'  // v6.5: 相机录制模式
-  // v6.5: 相机控制台扩展 props
-  currentCameraAction?: Action | null  // 当前槽位的相机动作（优先返回互斥类）
-  currentSlotHasShake?: boolean  // v6.7: 当前槽位是否有震动动作
-  // v9.3: 当前 slot 有生命的对象 ID 列表（用于 Action Mode 过滤）
+  isActionMode?: boolean      // Whether in Action Mode
+  currentSlotIndex?: number   // Current slot index
+  currentSlotText?: string    // Current slot text
+  runtimeState?: SceneObject | null  // Runtime state of current slot under Action Mode
+  cameraRecordMode?: 'camera_cut' | 'camera_move'  // v6.5: Camera recording mode
+  // v6.5: Camera console extended props
+  currentCameraAction?: Action | null  // Camera action at current slot (prioritizes exclusive)
+  currentSlotHasShake?: boolean  // v6.7: Whether current slot has shake action
+  // v9.3: List of alive object IDs in current slot (for Action Mode filtering)
   aliveObjectIds?: string[]
-  // v14.1: 父组件的对象录制模式（从 ActionEditor 传入，解决 v-else 重建后状态丢失）
+  // v14.1: Object recording mode from parent component (passed from ActionEditor)
   objectRecordMode?: 'animation' | 'layout'
-  // 穿透列表状态
+  // Pass-through list state
   isPassThrough?: boolean
   passThroughVisible?: boolean
-  // v20: 动作库透传
+  // v20: Action library pass-through
   rootCompositeId?: string
-  /** 上层编辑器的持久化流程 */
+  /** Upper editor persistence flow */
   persistChanges?: (() => Promise<void>) | undefined
 }>()
 
@@ -2183,36 +2183,36 @@ const emit = defineEmits<{
   moveUp: []
   moveDown: []
   initialStateUpdate: [pose?: string, expression?: string]
-  // v11.1: 动画触发动作（使用资源级 Animation）
+  // v11.1: Animation trigger action (using resource-level Animation)
   triggerAnim: [payload: { animName: string, action: 'play'|'stop', loop?: boolean, speed?: number, timingMode?: AnimationTimingMode }]
-  // v6.5: 相机录制模式切换
+  // v6.5: Camera recording mode switch
   cameraRecordModeChange: [mode: 'camera_cut' | 'camera_move']
-  // v6.5: 相机动作创建/更新
+  // v6.5: Camera action create/update
   cameraActionUpdate: [actionType: CameraActionType, params: Record<string, unknown>]
-  // v7.5: 音频触发动作
+  // v7.5: Audio trigger action
   triggerAudio: [payload: { action: 'play'|'stop', volume?: number, loop?: boolean, fadeIn?: number, fadeOut?: number }]
-  // TextObject: 文本显现/打字机触发动作
+  // TextObject: Text reveal/typewriter trigger action
   triggerTextReveal: [payload: { action: 'play'|'stop', mode?: 'typewriter' }]
-  // v8.6: 对象选择和别名编辑
+  // v8.6: Object selection and alias editing
   selectObject: [objectId: string]
   editAlias: [objectId: string]
-  // v9.1: 录制模式切换 (动画/布局)
+  // v9.1: Recording mode toggle (animation/layout)
   recordModeChange: [mode: 'animation' | 'layout']
-  // v9.1: 跳转到指定槽位
+  // v9.1: Jump to specified slot
   selectSlot: [slotIndex: number]
-  // v9.3: 视觉属性更新（flipX/visible/zIndex/receiveLighting/castShadow）
+  // v9.3: Visual property update (flipX/visible/zIndex/receiveLighting/castShadow)
   visualActionUpdate: [params: { flipX?: boolean, visible?: boolean, zIndex?: number, receiveLighting?: boolean, castShadow?: boolean }]
-  // v16: 元件素材切换（Action Mode 下创建 set_material Action）
+  // v16: Symbol material switch (creates set_material Action in Action Mode)
   materialActionUpdate: [materialId: string]
-  // v16: 元件素材列表保存（Action Mode 下同步到 Setup 持久层）
+  // v16: Symbol material list save (syncs to Setup persistence in Action Mode)
   materialSave: [materials: SymbolMaterial[], currentMaterialId: string | undefined]
-  // P2: composite 操作（Action Mode 下创建 Action 而非直接修改 Store）
+  // P2: composite operation (creates Action in Action Mode rather than directly modifying Store)
   compositeAction: [payload: { action: 'removeChild'; childId: string } | { action: 'ungroupAll'; compositeId: string } | { action: 'addMember'; compositeId: string } | { action: 'setCompositeLocked'; compositeId: string; locked: boolean } | { action: 'reorderRenderChain'; compositeId: string; renderChain: string[] }]
-  // v16: 编辑资源（打开道具/背景资源编辑对话框）
+  // v16: Edit asset (opens prop/background asset edit dialog)
   editResource: [objectId: string]
-  // v17: 动画更新同步到 scene.setup.objects
+  // v17: Animation update synced to scene.setup.objects
   animationsUpdated: [objectId: string, animations: Record<string, import('@/types/animation').AnimationDefinition>]
-  // 穿透列表操作
+  // Pass-through list operations
   passThroughToggle: [objectId: string]
   passThroughVisibleToggle: [objectId: string]
 }>()
@@ -2221,14 +2221,14 @@ const localObject = ref<SceneObject | null>(null) as Ref<SceneObject | null>
 const textFontLoadRequestId = ref(0)
 const expressionStore = useExpressionStore()
 const sceneObjectStore = useSceneObjectStore()
-// v11.2: propStore 已不再使用（旧道具动画控制逻辑已删除）
-const animationStore = useAnimationStore() // v11.1: 资源级动画
+// v11.2: propStore no longer used (old prop animation control logic deleted)
+const animationStore = useAnimationStore() // v11.1: Resource-level animations
 const soundStore = useSoundStore()
 const projectStore = useProjectStore()
 const { getAudioUrl } = useAssetAudio()
 const { getImageUrl } = useAssetImage()
 
-// v8.6: 获取所有场景对象（按 zIndex 排序）
+// v8.6: Get all scene objects (sorted by zIndex)
 const sortedAllObjects = computed(() => {
   return [...sceneObjectStore.objects].sort((a, b) => b.zIndex - a.zIndex)
 })
@@ -2236,13 +2236,13 @@ const sortedAllObjects = computed(() => {
 
 
 
-// v16: 元件素材
+// v16: Symbol materials
 const showSymbolMaterialManager = ref(false)
 
-// v17: 动画管理 → v20: 直接打开 AnimationWorkbench
+// v17: Animation management -> v20: Open AnimationWorkbench directly
 const showAnimationManager = ref(false)
 
-// v20: Workbench 列表模式所需的计算属性
+// v20: Computed properties required for Workbench list mode
 const workbenchAnimationsList = computed((): AnimationDefinition[] => {
   if (!localObject.value?.animations) return []
   return Object.values(localObject.value.animations)
@@ -2314,8 +2314,8 @@ function handleWorkbenchAnimationsUpdate(animations: Record<string, AnimationDef
   _writeAnimationsToStore(animations)
 }
 
-// Phase 2b: 场景编辑器中从对象实例读取根 composite。
-// （动作名称解析仅需根 composite id 作用域）
+// Phase 2b: Read root composite from object instance in scene editor.
+// (Action name resolution only needs root composite id scope)
 const effectiveRootCompositeId = computed(() => {
   if (props.rootCompositeId) return props.rootCompositeId
   if (localObject.value?.type === 'composite') {
@@ -2324,7 +2324,7 @@ const effectiveRootCompositeId = computed(() => {
   return undefined
 })
 
-// v17: 道具/背景编辑对话框
+// v17: Prop/Background edit dialog
 const showPropEditor = ref(false)
 const editPropId = computed(() => {
   if (!localObject.value) return undefined
@@ -2343,7 +2343,7 @@ const editSoundId = computed(() => {
   return undefined
 })
 
-// v18: 表情资源编辑对话框
+// v18: Expression asset edit dialog
 const showExpressionEditor = ref(false)
 const editExpression = computed(() => {
   if (localObject.value?.type !== 'expression') return null
@@ -2384,19 +2384,19 @@ const symbolCurrentMaterialId = computed(() => {
 
 const symbolCurrentMaterialName = computed(() => {
   const id = symbolCurrentMaterialId.value
-  if (!id) return '未选择'
+  if (!id) return 'Not Selected'
   const mat = symbolMaterials.value.find(m => m.id === id)
-  return mat?.name ?? '未知'
+  return mat?.name ?? 'Unknown'
 })
 
-/** 当前素材的相对路径（从 SymbolMaterial.url 获取） */
+/** Relative path of current material (obtained from SymbolMaterial.url) */
 const symbolCurrentMaterialPath = computed((): string => {
   const id = symbolCurrentMaterialId.value
   if (!id) return ''
   const symbolObj = localObject.value as unknown as SymbolObject | null
   const mat = symbolObj?.materials?.find(m => m.id === id)
   if (!mat) return ''
-  // 静态素材取 url，动画素材取第一帧 url
+  // Static material gets url, animated material gets first frame url
   if (mat.type === 'static' && mat.url) return mat.url
   if (mat.frames && mat.frames.length > 0 && mat.frames[0]!.url) return mat.frames[0]!.url
   return mat.url ?? ''
@@ -2405,7 +2405,7 @@ const symbolCurrentMaterialPath = computed((): string => {
 const { getImageUrl: resolveProjectUrl } = useAssetImage()
 
 /**
- * 解析 symbol 素材 URL：通过 getImageUrl 解析项目路径
+ * Resolve symbol material URL: resolve project path via getImageUrl
  */
 function resolveSymbolUrl(url: string | undefined): string {
   if (!url) return ''
@@ -2459,17 +2459,17 @@ async function syncSelectedObjectMeasuredSize(options?: { persistSetup?: boolean
 async function handleSwitchMaterial(materialId: string) {
   if (!localObject.value) return
   if (props.isActionMode) {
-    // Action Mode: emit 事件由 ActionEditor 创建/更新 set_material Action
+    // Action Mode: emit event to let ActionEditor create/update set_material Action
     emit('materialActionUpdate', materialId)
     return
   }
-  // Setup Mode: 直接通过 Store 更新并标记未保存
+  // Setup Mode: update directly via Store and mark unsaved
   if (!localObject.value) return
-  // 先同步 localObject，避免 emit 时旧值覆盖 Store
+  // Sync localObject first to prevent stale value overwriting Store upon emit
   ;(localObject.value as unknown as { currentMaterialId: string }).currentMaterialId = materialId
   sceneObjectStore.updateObject(localObject.value.id, { currentMaterialId: materialId } as Partial<SceneObject>)
   await syncSelectedObjectMeasuredSize()
-  // 通知父组件（人物编辑器等）标记未保存状态
+  // Notify parent component (character editor etc) to mark unsaved state
   emit('update', localObject.value)
   useProjectStore().markAsUnsaved()
 }
@@ -2478,35 +2478,35 @@ async function handleSymbolMaterialSave(materials: SymbolMaterial[], currentMate
   if (localObject.value?.type !== 'symbol') return
   
   if (props.isActionMode) {
-    // Action Mode: 素材列表变更通过 emit 同步到 Setup 持久层
+    // Action Mode: material list change synced to Setup persistence via emit
     emit('materialSave', materials, currentMaterialId)
-    // 同时更新运行时 store 以立即反映 UI
+    // Update runtime store simultaneously to reflect in UI immediately
     sceneObjectStore.updateObject(localObject.value.id, {
       materials,
     } as Partial<SceneObject>)
     await syncSelectedObjectMeasuredSize({ persistSetup: true })
-    // currentMaterialId 变更通过 set_material Action
+    // currentMaterialId change via set_material Action
     const currentObj = localObject.value as unknown as { currentMaterialId?: string }
     if (currentMaterialId !== undefined && currentMaterialId !== currentObj.currentMaterialId) {
       emit('materialActionUpdate', currentMaterialId)
     }
   } else {
-    // Setup Mode: 直接修改 Store
+    // Setup Mode: modify Store directly
     sceneObjectStore.updateObject(localObject.value.id, {
       materials,
       currentMaterialId,
     } as Partial<SceneObject>)
     await syncSelectedObjectMeasuredSize()
-    // 标记未保存状态（Store 已直接更新，无需 emit('update') 二次写入）
+    // Mark unsaved state (Store updated directly, no need for second emit('update'))
     useProjectStore().markAsUnsaved()
   }
-  // 素材变更后重新注入帧动画定义
+  // Re-inject frame animation definitions after material change
   const updatedObj = sceneObjectStore.getObject(localObject.value.id)
   if (updatedObj) {
     animationStore.hydrateObjectAnimations(updatedObj)
-    // 将注入结果持久化到 Store（触发 Vue 响应式更新）
+    // Persist injection results to Store (triggers Vue reactive update)
     sceneObjectStore.updateObject(updatedObj.id, { animations: { ...updatedObj.animations } } as Partial<SceneObject>)
-    // 从 Store 获取最新快照同步到 localObject（包含新 materials + hydrated animations）
+    // Get latest snapshot from Store to sync to localObject (including new materials + hydrated animations)
     const latestObj = sceneObjectStore.getObject(localObject.value.id)
     if (latestObj) {
       localObject.value = { ...latestObj } as SceneObject
@@ -2514,36 +2514,36 @@ async function handleSymbolMaterialSave(materials: SymbolMaterial[], currentMate
   }
 }
 
-// v9.3: 过滤后的对象列表（排除 spawned=false 的动态对象）
+// v9.3: Filtered object list (excluding spawned=false dynamic objects)
 const filteredObjects = computed(() => {
   const flat = sortedAllObjects.value.filter(obj => {
-    // 相机始终显示
+    // Camera always displayed
     if (obj.type === 'camera') return true
-    // v9.3: 检查 spawned 状态
+    // v9.3: Check spawned state
     const spawned = (obj as unknown as { spawned?: boolean }).spawned
     
-    // Setup 模式：排除 spawned=false 的对象
+    // Setup mode: exclude spawned=false objects
     if (!props.isActionMode) {
       return spawned !== false
     }
     
-    // Action Mode：根据 aliveObjectIds 过滤
-    // 只显示有生命的对象（相机不在 aliveObjectIds 中，已在上面放行）
+    // Action Mode: filter according to aliveObjectIds
+    // Only show alive objects (camera not in aliveObjectIds, whitelisted above)
     if (props.aliveObjectIds) {
       return props.aliveObjectIds.includes(obj.id)
     }
     
-    // 如果没有 aliveObjectIds，显示所有对象（回退逻辑）
+    // If no aliveObjectIds, show all objects (fallback logic)
     return true
   })
 
-  // 双层架构：parentId 已由 applySlotState() 写入 runtimeObjects，不再需要 accumulatedParentIds 覆盖
+  // Dual-layer architecture: parentId written to runtimeObjects by applySlotState(), no need for accumulatedParentIds override
 
-  // P2: 树形排列 — 将子对象递归插入到其 parent 之后（支持嵌套运行时父对象）
+  // P2: Tree arrangement — recursively insert child objects after parent (supports nested runtime parents)
   const result: typeof flat = []
   const childrenByParent = new Map<string, typeof flat>()
 
-  // 第一遍：按 parentId 分组
+  // First pass: group by parentId
   for (const obj of flat) {
     if (obj.parentId) {
       const siblings = childrenByParent.get(obj.parentId) ?? []
@@ -2552,7 +2552,7 @@ const filteredObjects = computed(() => {
     }
   }
 
-  // 递归插入：深度优先（任何有子对象的父对象都展开树形，不仅限 composite）
+  // Recursive insert: depth-first (any parent with children expands tree, not limited to composite)
   function insertWithChildren(obj: SceneObject): void {
     result.push(obj)
     const children = childrenByParent.get(obj.id)
@@ -2564,14 +2564,14 @@ const filteredObjects = computed(() => {
     }
   }
 
-  // 第二遍：从根对象开始递归
+  // Second pass: recurse starting from root objects
   for (const obj of flat) {
     if (!obj.parentId) {
       insertWithChildren(obj)
     }
   }
 
-  // 兆底：parent 不在列表中的孤立子对象追加到尾部
+  // Fallback: orphaned child objects whose parent is not in list appended to end
   for (const orphans of childrenByParent.values()) {
     result.push(...orphans)
   }
@@ -2579,7 +2579,7 @@ const filteredObjects = computed(() => {
   return result
 })
 
-// P2: 检查树形项是否可见 — 沿祖先链检查所有 parent 是否展开
+// P2: Check if tree item visible — check all parents expanded along ancestor chain
 function isTreeItemVisible(obj: SceneObject): boolean {
   let currentParentId = getEffectiveParentId(obj)
   while (currentParentId) {
@@ -2590,7 +2590,7 @@ function isTreeItemVisible(obj: SceneObject): boolean {
   return true
 }
 
-// P2: 获取对象在树形中的嵌套深度（用于缩进计算）
+// P2: Get object nesting depth in tree (used for indentation calculation)
 function getTreeDepth(obj: SceneObject): number {
   let depth = 0
   let currentParentId = getEffectiveParentId(obj)
@@ -2602,12 +2602,12 @@ function getTreeDepth(obj: SceneObject): number {
   return depth
 }
 
-// 双层架构：直接从 runtimeObjects 的 obj.parentId 读取（已由 applySlotState 写入）
+// Dual-layer architecture: read directly from runtimeObjects obj.parentId (written by applySlotState)
 function getEffectiveParentId(obj: SceneObject): string | undefined {
   return obj.parentId
 }
 
-// P2: 检查某个对象是否在运行时有子对象
+// P2: Check if an object has children at runtime
 function hasRuntimeChildren(objId: string): boolean {
   return filteredObjects.value.some(o => getEffectiveParentId(o) === objId)
 }
@@ -2615,43 +2615,43 @@ function hasRuntimeChildren(objId: string): boolean {
 
 
 
-// v9.3: 判断对象在当前 Slot 是否活跃（基于 spawned 状态）
+// v9.3: Determine if object active in current Slot (based on spawned state)
 function isObjectVisibleAtCurrentSlot(objectId: string): boolean {
   const obj = sceneObjectStore.objects.find(o => o.id === objectId)
   if (!obj) return false
   if (obj.type === 'camera') return true
   
-  // 检查 spawned 状态
+  // Check spawned state
   const spawned = (obj as unknown as { spawned?: boolean }).spawned
   return spawned !== false
 }
 
-// v9.1: 获取对象状态后缀
+// v9.1: Get object status suffix
 function getObjectStatusSuffix(objectId: string): string {
   if (!props.isActionMode) return ''
   const obj = sceneObjectStore.objects.find(o => o.id === objectId)
   if (!obj || obj.type === 'camera') return ''
-  if (obj.visible === false) return ' (隐藏)'
+  if (obj.visible === false) return ' (Hidden)'
   return ''
 }
 
-// v9.1: 判断当前选中对象是否在当前槽位已出生
+// v9.1: Determine whether selected object spawned in current slot
 const isObjectBornAtCurrentSlot = computed(() => {
   if (!props.isActionMode || !localObject.value) return true
   if (localObject.value.type === 'camera') return true
   
-  // 检查对象的 visible 属性（简化实现）
-  // 动态对象在创建时 visible = false，出生后设为 true
+  // Check object's visible property (simplified implementation)
+  // Dynamic objects have visible = false on creation, set to true after spawn
   return localObject.value.visible !== false
 })
 
-// v9.4: 当前对象的显示名称（alias 优先，否则使用 name）
+// v9.4: Display name of current object (alias preferred, otherwise name)
 const localObjectDisplayName = computed(() => {
-  if (!localObject.value) return '未设置'
+  if (!localObject.value) return 'Not Set'
   const obj = localObject.value
-  // 使用 unknown 中转避免类型断言错误
+  // Use unknown cast to avoid type assertion error
   const alias = obj.alias
-  return alias ?? obj.name ?? '未设置'
+  return alias ?? obj.name ?? 'Not Set'
 })
 
 const recommendedNameOptions = RECOMMENDED_NAMES
@@ -2674,13 +2674,13 @@ function isPresetNameUsedByOtherObject(name: string): boolean {
   return sceneObjectStore.isAliasExists(name, current.id, namespaceRoot)
 }
 
-// v16: 获取当前对象的动画列表（创建时已深克隆资源动画到 obj.animations）
+// v16: Get animation list of current object (resource animations deep cloned to obj.animations upon creation)
 const resourceAnimations = computed(() => {
   if (!localObject.value) return []
   return animationStore.getObjectAnimations(localObject.value)
 })
 
-// v16 H1: 分组 — 区分资源动画和实例动画
+// v16 H1: Grouping — distinguish resource animations and instance animations
 const resourceOriginAnimNames = computed<Set<string>>(() => {
   if (!localObject.value) return new Set()
   const obj = localObject.value
@@ -2697,7 +2697,7 @@ const instanceAnimations = computed(() =>
   resourceAnimations.value.filter(a => !resourceOriginAnimNames.value.has(a.name))
 )
 
-// v16 H1: 重新应用资源动画（从资源重新深克隆覆盖）
+// v16 H1: Reapply resource animations (deep clone from resource to overwrite)
 function handleReapplyResourceAnimations() {
   if (!localObject.value) return
   const obj = localObject.value
@@ -2707,31 +2707,31 @@ function handleReapplyResourceAnimations() {
 }
 
 
-// v9.1: 获取对象的出生槽位索引
+// v9.1: Get object spawn slot index
 const objectBirthSlotIndex = computed(() => {
   if (!props.isActionMode || !localObject.value) return -1
   if (localObject.value.type === 'camera') return 0
   
-  // 简化实现：如果对象 visible = false 则返回 -1 表示未出生
-  // 完整实现需要遍历 Block 的 Actions 找到第一个 visible: true 的 Action
+  // Simplified implementation: return -1 if visible = false indicating not spawned
+  // Full implementation needs to iterate Block Actions to find first visible: true Action
   return localObject.value.visible === false ? -1 : 0
 })
 
-// v9.1: 跳转到出生槽位
+// v9.1: Jump to spawn slot
 function jumpToBirthSlot() {
   if (objectBirthSlotIndex.value >= 0) {
     emit('selectSlot', objectBirthSlotIndex.value)
   }
 }
 
-// v11.1: 获取资源动画当前状态（基于当前槽位的 Action）
+// v11.1: Get resource animation current state (based on Action in current slot)
 function getResourceAnimState(_animName: string): 'play' | 'stop' | null {
-  // 简化实现：返回 null 表示无状态
-  // 完整实现需要从当前 Block 的 Actions 中查找 set_anim 动作
+  // Simplified implementation: return null for no state
+  // Full implementation needs to search set_anim action from current Block Actions
   return null
 }
 
-// v11.1: 处理资源动画播放/停止动作
+// v11.1: Handle resource animation play/stop action
 function handleResourceAnimAction(animName: string, action: 'play' | 'stop') {
   const timingMode = getResourceAnimTimingMode(animName)
   emit('triggerAnim', {
@@ -2748,13 +2748,13 @@ function getResourceAnimTimingMode(animName: string): AnimationTimingMode {
   return animation?.timingMode ?? 'continuous'
 }
 
-// v11.1: 获取资源动画循环状态
+// v11.1: Get resource animation loop state
 function getResourceAnimLoop(_animName: string): boolean {
-  // 简化实现：默认循环
+  // Simplified implementation: default loop
   return true
 }
 
-// v11.1: 处理资源动画循环变更
+// v11.1: Handle resource animation loop change
 function handleResourceAnimLoopChange(animName: string, loop: boolean) {
   const timingMode = getResourceAnimTimingMode(animName)
   emit('triggerAnim', {
@@ -2766,28 +2766,28 @@ function handleResourceAnimLoopChange(animName: string, loop: boolean) {
   })
 }
 
-// v8.6: 获取对象类型图标 — P1: 委托给 metadata 注册表
+// v8.6: Get object type icon — P1: delegate to metadata registry
 function getObjectIcon(type: string): string {
   return getTypeIcon(type)
 }
 
-// v8.6: 获取对象显示名称
+// v8.6: Get object display name
 function getObjectDisplayName(obj: SceneObject): string {
   if (obj.type === 'camera') {
-    return obj.name ? obj.name : '相机'
+    return obj.name ? obj.name : 'Camera'
   }
   if (obj.type === 'light' && (obj as LightObject).lightType === 'ambient') {
-    return '环境光'
+    return 'Ambient Light'
   }
   if (obj.type === 'light' && (obj as LightObject).lightType === 'spot') {
-    return obj.alias ?? obj.name ?? '聚光灯'
+    return obj.alias ?? obj.name ?? 'Spotlight'
   }
-  return obj.alias ?? obj.name ?? '未命名'
+  return obj.alias ?? obj.name ?? 'Untitled'
 }
 
-// ==================== P2: Composite 相关逻辑 ====================
+// ==================== P2: Composite Related Logic ====================
 
-// 当前选中对象的父组合对象（支持运行时层级关系）
+// Parent composite of currently selected object (supports runtime hierarchy)
 const parentComposite = computed((): CompositeObject | null => {
   if (!localObject.value) return null
   const effectiveId = getEffectiveParentId(localObject.value)
@@ -2799,14 +2799,14 @@ const parentComposite = computed((): CompositeObject | null => {
   return null
 })
 
-// 当前 composite 对象的子对象列表
-// 双层架构：runtimeObjects 的 parentId 已包含结构动作效果
+// Child objects list of current composite object
+// Dual-layer architecture: runtimeObjects parentId already includes structure action effect
 const compositeChildObjects = computed((): SceneObject[] => {
   if (localObject.value?.type !== 'composite') return []
   const comp = localObject.value as CompositeObject
 
-  // 按 childIds 顺序排列，确保 UI 列表与渲染顺序一致
-  // childIds[0] = 底层（先渲染，被遮挡），childIds[last] = 顶层（后渲染，在前面）
+  // Arranged in childIds order, ensuring UI list matches render order
+  // childIds[0] = bottom layer (rendered first, obscured), childIds[last] = top layer (rendered last, in front)
   const result: SceneObject[] = []
   for (const childId of comp.childIds ?? []) {
     const child = sceneObjectStore.getObject(childId)
@@ -2815,7 +2815,7 @@ const compositeChildObjects = computed((): SceneObject[] => {
   return result
 })
 
-/** 从 store 刷新 localObject（子对象增删后 childIds/renderChain 同步） */
+/** Refresh localObject from store (sync childIds/renderChain after adding/deleting child objects) */
 function refreshLocalObject() {
   if (!localObject.value) return
   const fresh = sceneObjectStore.getObject(localObject.value.id)
@@ -2838,13 +2838,13 @@ const renderChainObjects = computed((): SceneObject[] => {
   return result
 })
 
-// === 渲染链排序：zIndex 分组 + 选中状态 + 拖拽 ===
+// === Render chain ordering: zIndex grouping + selection state + dragging ===
 
-/** 渲染链分组信息：按 zIndex 分组，在组边界插入分割线 */
+/** Render chain group info: group by zIndex, insert divider at group boundary */
 interface RcGroupEntry {
   type: 'item'
   obj: SceneObject
-  flatIndex: number    // 在 renderChainObjects 中的索引
+  flatIndex: number    // Index in renderChainObjects
   isFirstInGroup: boolean
   isLastInGroup: boolean
   zIndex: number
@@ -2852,7 +2852,7 @@ interface RcGroupEntry {
 
 interface RcGroupDivider {
   type: 'divider'
-  zIndex: number       // 分割线下方组的 zIndex
+  zIndex: number       // zIndex of group below divider
 }
 
 type RcDisplayEntry = RcGroupEntry | RcGroupDivider
@@ -2868,10 +2868,10 @@ const renderChainDisplay = computed((): RcDisplayEntry[] => {
     const obj = items[i]!
     const z = obj.zIndex
 
-    // 组切换时插入分割线
+    // Insert divider on group transition
     if (z !== prevZIndex) {
       if (prevZIndex !== null) {
-        // 标记上一个 item 为组末尾
+        // Mark previous item as group end
         for (let j = entries.length - 1; j >= 0; j--) {
           const e = entries[j]!
           if (e.type === 'item') { e.isLastInGroup = true; break }
@@ -2886,13 +2886,13 @@ const renderChainDisplay = computed((): RcDisplayEntry[] => {
       obj,
       flatIndex: i,
       isFirstInGroup: isFirst,
-      isLastInGroup: false, // 后续补标
+      isLastInGroup: false, // Updated later
       zIndex: z,
     })
     prevZIndex = z
   }
 
-  // 标记最后一个 item 为组末尾
+  // Mark last item as group end
   for (let j = entries.length - 1; j >= 0; j--) {
     const e = entries[j]!
     if (e.type === 'item') { e.isLastInGroup = true; break }
@@ -2910,7 +2910,7 @@ const selectedRenderChainIndex = computed(() => {
   return renderChainObjects.value.findIndex(o => o.id === selectedRenderChainId.value)
 })
 
-/** 获取指定 flatIndex 所在 zIndex 分组的边界 [groupStart, groupEnd]（闭区间） */
+/** Get boundary [groupStart, groupEnd] (inclusive) of zIndex group containing specified flatIndex */
 function getZIndexGroupBounds(flatIdx: number): [number, number] {
   const items = renderChainObjects.value
   if (flatIdx < 0 || flatIdx >= items.length) return [-1, -1]
@@ -2946,7 +2946,7 @@ function onRcDragStart(idx: number, e: DragEvent) {
 }
 
 function onRcDragOver(idx: number) {
-  // 仅允许拖到同 zIndex 组内
+  // Only allow dragging within same zIndex group
   if (rcDragStartIndex >= 0) {
     const items = renderChainObjects.value
     const srcZ = items[rcDragStartIndex]?.zIndex
@@ -2968,7 +2968,7 @@ function onRcDrop(dropIdx: number) {
   if (rcDragStartIndex < 0 || rcDragStartIndex === dropIdx) return
   if (localObject.value?.type !== 'composite') return
 
-  // zIndex 跨组校验
+  // zIndex cross-group validation
   const items = renderChainObjects.value
   const srcZ = items[rcDragStartIndex]?.zIndex
   const tgtZ = items[dropIdx]?.zIndex
@@ -3000,7 +3000,7 @@ function onRcDragEnd() {
 
 function handleRenderChainMoveUp(idx: number) {
   if (idx <= 0) return
-  // zIndex 边界检查
+  // zIndex boundary check
   const [groupStart] = getZIndexGroupBounds(idx)
   if (idx <= groupStart) return
 
@@ -3026,7 +3026,7 @@ function handleRenderChainMoveDown(idx: number) {
   const chain = comp.renderChain
   if (!chain || idx >= chain.length - 1) return
 
-  // zIndex 边界检查
+  // zIndex boundary check
   const [, groupEnd] = getZIndexGroupBounds(idx)
   if (idx >= groupEnd) return
 
@@ -3044,19 +3044,19 @@ function handleRenderChainMoveDown(idx: number) {
 
 
 
-// 切换 compositeLocked
+// Toggle compositeLocked
 function handleCompositeLockChange(event: Event) {
   if (localObject.value?.type !== 'composite') return
   const target = event.target as HTMLInputElement
   if (props.isActionMode) {
-    // Action Mode: 通过 compositeAction 事件让 ActionEditor 直接写入 scene.setup.objects
+    // Action Mode: let ActionEditor write directly to scene.setup.objects via compositeAction event
     emit('compositeAction', {
       action: 'setCompositeLocked',
       compositeId: localObject.value.id,
       locked: target.checked
     })
   } else {
-    // Setup Mode: 直接更新 Store
+    // Setup Mode: update Store directly
     sceneObjectStore.updateObject(localObject.value.id, { compositeLocked: target.checked } as Partial<SceneObject>)
   }
   if (localObject.value) {
@@ -3064,22 +3064,22 @@ function handleCompositeLockChange(event: Event) {
   }
 }
 
-// 从父组合中移出当前对象
+// Remove current object from parent composite
 function handleRemoveFromComposite() {
   if (!localObject.value?.parentId) return
   const childId = localObject.value.id
 
   if (props.isActionMode) {
-    // Action Mode: emit 事件让 ActionEditor 创建结构变更 Action
+    // Action Mode: emit event to let ActionEditor create structure change Action
     emit('compositeAction', { action: 'removeChild', childId })
   } else {
-    // Setup Mode: 直接使用 Store 方法
+    // Setup Mode: use Store method directly
     sceneObjectStore.removeFromComposite([childId])
     refreshLocalObject()
   }
 }
 
-// 从 composite 中移出指定子对象
+// Remove specified child object from composite
 function handleRemoveChildFromComposite(childId: string) {
   if (localObject.value?.type !== 'composite') return
 
@@ -3087,50 +3087,50 @@ function handleRemoveChildFromComposite(childId: string) {
     emit('compositeAction', { action: 'removeChild', childId })
   } else {
     sceneObjectStore.removeFromComposite([childId])
-    // 从 store 刷新 localObject，同步 childIds/renderChain 变更
+    // Refresh localObject from store, syncing childIds/renderChain changes
     refreshLocalObject()
   }
 }
 
-// 拆分全部子对象
+// Ungroup all child objects
 function handleUngroupAll() {
   if (localObject.value?.type !== 'composite') return
   const compositeId = localObject.value.id
 
   if (props.isActionMode) {
-    // Action Mode: emit 事件让 ActionEditor 创建结构变更 Action
+    // Action Mode: emit event to let ActionEditor create structure change Action
     emit('compositeAction', { action: 'ungroupAll', compositeId })
   } else {
-    // Setup Mode: 直接使用 Store 方法
+    // Setup Mode: use Store method directly
     sceneObjectStore.ungroupAll(compositeId)
     refreshLocalObject()
   }
 }
 
-// 添加成员到当前组合
+// Add member to current composite
 function handleAddMemberToComposite() {
   if (localObject.value?.type !== 'composite') return
   emit('compositeAction', { action: 'addMember', compositeId: localObject.value.id })
 }
 
-// P2: handleObjectSelect 已被 handleTreeItemSelect 替代
+// P2: handleObjectSelect replaced by handleTreeItemSelect
 
-// P2: 树形下拉 — 状态
+// P2: Tree dropdown — state
 const treeDropdownRef = ref<HTMLElement>()
 const treeDropdownOpen = ref(false)
 const expandedComposites = reactive(new Set<string>())
 
-// P2: 初始化时所有 composite 默认折叠
-// 用户可手动点击展开感兴趣的组合
-// （此前 union 模式默认展开，但场景模板导入后子对象过多影响操作）
+// P2: All composites collapsed by default on initialization
+// User can manually click to expand composites of interest
+// (Previously union mode expanded by default, but too many children affected operations)
 
-// P2: 树形下拉 — 选中项目
+// P2: Tree dropdown — select item
 function handleTreeItemSelect(objectId: string) {
   emit('selectObject', objectId)
   treeDropdownOpen.value = false
 }
 
-// P2: 树形下拉 — 展开/折叠
+// P2: Tree dropdown — expand/collapse
 function toggleCompositeExpand(compositeId: string) {
   if (expandedComposites.has(compositeId)) {
     expandedComposites.delete(compositeId)
@@ -3139,7 +3139,7 @@ function toggleCompositeExpand(compositeId: string) {
   }
 }
 
-// P2: 树形下拉 — 点击外部关闭
+// P2: Tree dropdown — close on outside click
 function handleTreeDropdownOutsideClick(event: MouseEvent) {
   if (treeDropdownRef.value && !treeDropdownRef.value.contains(event.target as Node)) {
     treeDropdownOpen.value = false
@@ -3154,7 +3154,7 @@ onBeforeUnmount(() => {
   document.removeEventListener('click', handleTreeDropdownOutsideClick)
 })
 
-// v8.6: 处理别名编辑点击
+// v8.6: Handle alias edit click
 function handleEditAliasClick() {
   if (localObject.value && localObject.value.type !== 'camera') {
     emit('editAlias', localObject.value.id)
@@ -3168,16 +3168,16 @@ function handlePresetNameSelect(name: string) {
   emit('update', localObject.value)
 }
 
-// v9.3: 处理水平翻转变更
+// v9.3: Handle horizontal flip change
 function handleFlipXChange(event: Event) {
   const target = event.target as HTMLInputElement
   const newFlipX = target.checked
   
   if (props.isActionMode) {
-    // Action Mode: 发射 visualActionUpdate 创建 set_visual Action
+    // Action Mode: emit visualActionUpdate to create set_visual Action
     emit('visualActionUpdate', { flipX: newFlipX })
   } else {
-    // Setup Mode: 更新本地对象并发射 update
+    // Setup Mode: update local object and emit update
     if (localObject.value) {
       (localObject.value as { flipX?: boolean }).flipX = newFlipX
       emit('update', localObject.value)
@@ -3185,16 +3185,16 @@ function handleFlipXChange(event: Event) {
   }
 }
 
-// v9.3: 处理可见性变更
+// v9.3: Handle visibility change
 function handleVisibleChange(event: Event) {
   const target = event.target as HTMLInputElement
   const newVisible = target.checked
   
   if (props.isActionMode) {
-    // Action Mode: 发射 visualActionUpdate 创建 set_visual Action
+    // Action Mode: emit visualActionUpdate to create set_visual Action
     emit('visualActionUpdate', { visible: newVisible })
   } else {
-    // Setup Mode: 更新本地对象并发射 update
+    // Setup Mode: update local object and emit update
     if (localObject.value) {
       localObject.value.visible = newVisible
       emit('update', localObject.value)
@@ -3226,32 +3226,32 @@ function handleCastShadowChange(event: Event) {
   }
 }
 
-// v9.3: 处理结构变更
+// v9.3: Handle structure change
 function handleZIndexChange() {
   if (!localObject.value) return
   
   const newZIndex = localObject.value.zIndex
   
   if (props.isActionMode) {
-    // Action Mode: 发射 visualActionUpdate 创建 set_visual Action
+    // Action Mode: emit visualActionUpdate to create set_visual Action
     emit('visualActionUpdate', { zIndex: newZIndex })
   } else {
-    // Setup Mode: 更新对象后稳定排序 renderChain
-    // 稳定排序仅按 zIndex 重新分组，同 zIndex 内保留用户自定义的相对顺序
+    // Setup Mode: stably sort renderChain after updating object
+    // Stable sort only regroups by zIndex, preserving user relative order within same zIndex
     emit('update', localObject.value)
     sceneObjectStore.sortOwningRenderChain(localObject.value.id)
     refreshLocalObject()
   }
 }
 
-// 处理变换原点X变更（Setup Mode only）
+// Handle transform origin X change (Setup Mode only)
 function handleTransformOriginXChange(event: Event) {
   if (!localObject.value) return
   const newValue = parseFloat((event.target as HTMLInputElement).value) || 0
   applyTransformOriginWithCompensation(newValue, localObject.value.transformOriginY ?? 0)
 }
 
-// 处理变换原点Y变更（Setup Mode only）
+// Handle transform origin Y change (Setup Mode only)
 function handleTransformOriginYChange(event: Event) {
   if (!localObject.value) return
   const newValue = parseFloat((event.target as HTMLInputElement).value) || 0
@@ -3259,9 +3259,9 @@ function handleTransformOriginYChange(event: Event) {
 }
 
 /**
- * 统一变换原点修改 + 位置补偿（像素偏移方案）
- * 与 useSceneRenderer.ts 画布拖拽路径的补偿逻辑一致：
- * 当对象已旋转/缩放时，移动变换点需同步补偿 x/y 以保持视觉不变。
+ * Unified transform origin modification + position compensation (pixel offset approach)
+ * Consistent with useSceneRenderer.ts canvas drag compensation logic:
+ * When object is rotated/scaled, moving pivot requires synchronous x/y compensation to keep visuals invariant.
  */
 function applyTransformOriginWithCompensation(newOriginX: number, newOriginY: number) {
   const obj = localObject.value
@@ -3273,7 +3273,7 @@ function applyTransformOriginWithCompensation(newOriginX: number, newOriginY: nu
   const sx = Math.abs(obj.scaleX ?? 1)
   const sy = obj.scaleY ?? 1
 
-  // 像素偏移方案：offset 就是 originX/Y 本身，无需 bounds 计算
+  // Pixel offset approach: offset is originX/Y itself, no bounds calculation needed
   const deltaOffsetX = newOriginX - oldOriginX
   const deltaOffsetY = newOriginY - oldOriginY
 
@@ -3286,7 +3286,7 @@ function applyTransformOriginWithCompensation(newOriginX: number, newOriginY: nu
   obj.transformOriginX = newOriginX
   obj.transformOriginY = newOriginY
 
-  // 仅当对象已旋转/缩放时才补偿
+  // Only compensate when object is rotated/scaled
   if (Math.abs(adjustX) > 0.01 || Math.abs(adjustY) > 0.01) {
     obj.x = (obj.x ?? 0) + adjustX
     obj.y = (obj.y ?? 0) + adjustY
@@ -3295,33 +3295,33 @@ function applyTransformOriginWithCompensation(newOriginX: number, newOriginY: nu
   emit('update', obj)
 }
 
-// 音频试听状态
+// Audio preview state
 const isAudioPreviewing = ref(false)
 const previewAudioInstance = ref<HTMLAudioElement | null>(null)
 
-// v9.1: 录制模式切换 (动画/布局)
+// v9.1: Recording mode toggle (animation/layout)
 type RecordMode = 'animation' | 'layout'
-// v14.1: 从父组件 prop 获取初始值，解决 v-else 重建后重置为默认值的问题
+// v14.1: Get initial value from parent prop, solving reset to default on v-else rebuild
 const recordMode = ref<RecordMode>(props.objectRecordMode ?? 'layout')
 
-// v14.1: 当父组件的 objectRecordMode 变化时，同步到本地 ref
+// v14.1: Sync to local ref when parent objectRecordMode changes
 watch(() => props.objectRecordMode, (newMode) => {
   if (newMode !== undefined) {
     recordMode.value = newMode
   }
 })
 
-// v9.2: 监听 recordMode 变更，通知父组件
+// v9.2: Watch recordMode change and notify parent component
 watch(recordMode, (newMode) => {
   emit('recordModeChange', newMode)
 })
 
-// 表情选择对话框状态
+// Expression picker dialog state
 const showExpressionDialog = ref(false)
-// v18: 独立表情对象切换对话框状态
+// v18: Standalone expression object switch dialog state
 const showExpressionObjectDialog = ref(false)
 
-// v18: 独立表情对象信息
+// v18: Standalone expression object info
 const expressionObjectInfo = computed(() => {
   if (localObject.value?.type !== 'expression') return null
   const expr = expressionStore.getExpression(localObject.value.refId)
@@ -3333,17 +3333,17 @@ const expressionObjectInfo = computed(() => {
   }
 })
 
-// v18: 独立表情对象切换处理
+// v18: Standalone expression object switch handling
 async function handleExpressionObjectSwitch(expressionId: string) {
   showExpressionObjectDialog.value = false
   if (localObject.value?.type !== 'expression') return
 
   if (props.isActionMode) {
-    // Action Mode: emit materialActionUpdate → ActionEditor 创建/更新 set_material Action
+    // Action Mode: emit materialActionUpdate -> ActionEditor creates/updates set_material Action
     emit('materialActionUpdate', expressionId)
   } else {
-    // Setup Mode: 直接更新 refId
-    // 自动补充缺失的 defaultRefId（旧数据兼容：首次切换时记录原始值）
+    // Setup Mode: update refId directly
+    // Automatically fill missing defaultRefId (legacy compatibility: records original value on first switch)
     const expr = localObject.value as ExpressionObject
     if (!expr.defaultRefId) {
       expr.defaultRefId = expr.refId
@@ -3358,32 +3358,32 @@ async function handleExpressionObjectSwitch(expressionId: string) {
   }
 }
 
-// 表情是否已修改（refId ≠ defaultRefId）
+// Whether expression modified (refId ≠ defaultRefId)
 const expressionIsModified = computed(() => {
   if (localObject.value?.type !== 'expression') return false
   const expr = localObject.value as ExpressionObject
-  // 无 defaultRefId 的旧数据视为未修改
+  // Legacy data without defaultRefId treated as unmodified
   if (!expr.defaultRefId) return false
   return expr.refId !== expr.defaultRefId
 })
 
-// 恢复默认表情
+// Reset to default expression
 function handleRestoreDefaultExpression() {
   if (localObject.value?.type !== 'expression') return
   const expr = localObject.value as ExpressionObject
   if (!expr.defaultRefId) return
 
   if (props.isActionMode) {
-    // Action Mode: emit materialActionUpdate → ActionEditor 创建/更新 set_material Action
+    // Action Mode: emit materialActionUpdate -> ActionEditor creates/updates set_material Action
     emit('materialActionUpdate', expr.defaultRefId)
   } else {
-    // Setup Mode: 直接更新 refId
+    // Setup Mode: update refId directly
     localObject.value.refId = expr.defaultRefId
     emit('update', localObject.value)
   }
 }
 
-// 设为默认表情
+// Set as default expression
 function handleSetDefaultExpression() {
   if (localObject.value?.type !== 'expression') return
   const expr = localObject.value as ExpressionObject
@@ -3391,13 +3391,13 @@ function handleSetDefaultExpression() {
   emit('update', localObject.value)
 }
 
-// 初始表情
+// Initial expression
 const initialExpression = ref<string>('')
 
 
-// 判断是否是相机对象
+// Determine whether it is a camera object
 const isCamera = computed(() => {
-  return localObject.value?.type === 'camera' || localObject.value?.name === '相机'
+  return localObject.value?.type === 'camera' || localObject.value?.name === 'Camera'
 })
 
 const isAmbientLight = computed(() => {
@@ -3425,21 +3425,21 @@ const showCastShadow = computed(() => {
   return false
 })
 
-// v25.6: 移除基础/高级分组，所有灯光参数直接平铺显示
+// v25.6: Removed basic/advanced grouping, all light parameters flattened directly
 
-// 当前录制模式（从 props 获取或默认 camera_move）
+// Current recording mode (obtained from props or default camera_move)
 const cameraRecordMode = computed(() => props.cameraRecordMode ?? 'camera_move')
 
-// ==================== 相机控制台相关变量和函数 ====================
+// ==================== Camera Console Variables and Functions ====================
 
 // const projectStore... (removed)
 
-// 当前相机动作类型（从 currentCameraAction 或默认 camera_move）
-// v6.7: 只返回互斥类动作类型，震动单独处理
+// Current camera action type (from currentCameraAction or default camera_move)
+// v6.7: Returns mutually exclusive action types only, shake handled separately
 const currentCameraActionType = computed<CameraActionType>(() => {
   if (props.currentCameraAction) {
     const type = props.currentCameraAction.type as string
-    // 互斥类动作
+    // Mutually exclusive actions
     if (['camera_cut', 'camera_move', 'camera_follow'].includes(type)) {
       return type as CameraActionType
     }
@@ -3447,30 +3447,30 @@ const currentCameraActionType = computed<CameraActionType>(() => {
   return cameraRecordMode.value
 })
 
-// v6.7: 震动按钮是否激活
+// v6.7: Whether shake button is active
 const isShakeActive = computed(() => {
   return props.currentSlotHasShake ?? false
 })
 
 
-// v21: 判断某个按钮是否应该禁用
-// 新互斥规则：camera_cut + camera_move 可共存，camera_follow 与两者互斥
+// v21: Determine whether a button should be disabled
+// New mutual exclusion rules: camera_cut + camera_move can coexist, camera_follow mutually exclusive with both
 function isExclusiveButtonDisabled(buttonType: CameraActionType): boolean {
-  // 震动不参与互斥
+  // Shake does not participate in mutual exclusion
   if (buttonType === 'camera_shake') return false
   
-  // 如果没有任何相机动作，所有按钮可用
+  // If no camera actions exist, all buttons enabled
   if (!props.currentCameraAction) return false
   
   const currentType = props.currentCameraAction.type as string
   
-  // camera_follow 独占：有 follow 时禁用 cut/move，有 cut/move 时禁用 follow
+  // camera_follow exclusive: disable cut/move when follow exists, disable follow when cut/move exists
   if (currentType === 'camera_follow') {
-    // follow 存在 → cut/move 被禁用，follow 本身可用（选中状态）
+    // follow exists -> cut/move disabled, follow itself enabled (selected state)
     return buttonType !== 'camera_follow'
   }
   
-  // 有 cut 或 move 时 → follow 被禁用，cut/move 都可用
+  // When cut or move exists -> follow disabled, cut/move both enabled
   if (currentType === 'camera_cut' || currentType === 'camera_move') {
     return buttonType === 'camera_follow'
   }
@@ -3478,10 +3478,10 @@ function isExclusiveButtonDisabled(buttonType: CameraActionType): boolean {
   return false
 }
 
-// v7.0: 可用的角色实例列表（用于跟随目标选择）
+// v7.0: List of available character instances (for follow target selection)
 // const availableInstances... (removed)
 
-// 相机参数 computed
+// Camera parameters computed
 const cameraX = computed(() => {
   const action = props.currentCameraAction as { params?: { x?: number } } | null
   if (action?.params?.x !== undefined) return Math.round(action.params.x)
@@ -3495,14 +3495,14 @@ const cameraY = computed(() => {
 })
 
 const cameraZoom = computed(() => {
-  // v7.19: 修复：在 Action Mode 下，属性面板应始终显示对象的 Setup 值 (zoom)，而不是当前 Action 的值
-  // 用户反馈：场景编辑页面，action mode下，属性面板上显示的是场景对象setup的值，不会在action mode下发生变化
+  // v7.19: Fix: In Action Mode, properties panel should always display object Setup value (zoom)
+  // User feedback: properties panel displays scene object setup values in action mode, does not change with action
   // removed legacy code
   
-  // // Action 模式下，优先从动作参数读取
+  // // In Action mode, prioritize reading from action parameters
   // if (action?.params?.zoom !== undefined) return action.params.zoom
   
-  // 如果没有动作或动作没有 zoom 参数，从相机对象读取
+  // If no action or action lacks zoom parameter, read from camera object
   if (localObject.value?.type === 'camera') {
     return (localObject.value as { zoom?: number }).zoom ?? 1.0
   }
@@ -3510,33 +3510,33 @@ const cameraZoom = computed(() => {
   return 1.0
 })
 
-// 相机 zoom 显示值（Setup 模式下从相机对象读取，Action 模式下从动作参数读取）
+// Camera zoom display value (read from camera in Setup mode, from action params in Action mode)
 const cameraZoomDisplay = computed(() => {
   if (props.isActionMode) {
     return cameraZoom.value
   }
-  // Setup 模式：从相机对象读取 zoom
+  // Setup mode: read zoom from camera object
   if (localObject.value?.type === 'camera') {
     return (localObject.value as { zoom?: number }).zoom ?? 1.0
   }
   return 1.0
 })
 
-// 相机 zoom 百分数显示值（zoom * 100）
+// Camera zoom percentage display value (zoom * 100)
 const cameraZoomPercent = computed(() => {
   return Math.round(cameraZoomDisplay.value * 100)
 })
 
 // camera params... (removed)
 
-// 相机动作类型选择处理
+// Camera action type selection handling
 function handleCameraTypeSelect(actionType: CameraActionType) {
-  // 同时更新 recordMode（对于 cut/move）
+  // Simultaneously update recordMode (for cut/move)
   if (actionType === 'camera_cut' || actionType === 'camera_move') {
     emit('cameraRecordModeChange', actionType)
   }
   
-  // 发出动作创建/更新事件
+  // Emit action create/update event
   let defaultParams: Record<string, unknown> = {}
   switch (actionType) {
     case 'camera_cut':
@@ -3550,11 +3550,11 @@ function handleCameraTypeSelect(actionType: CameraActionType) {
     case 'camera_follow':
       defaultParams = {
         followTarget: '',
-        damping: 0,  // 固定值，死跟，不让用户调整
+        damping: 0,  // Fixed value, tight follow
         offsetX: 0,
-        offsetY: -50,  // 默认 -50，让人物稍微偏下
-        zoom: 1,  // v6.10: 默认 100%
-        constrainBounds: true  // v6.10: 默认约束边界，限制相机在画布范围内
+        offsetY: -50,  // Default -50, place character slightly lower
+        zoom: 1,  // v6.10: Default 100%
+        constrainBounds: true  // v6.10: Default constrain bounds, restrict camera within canvas
       }
       break
     case 'camera_shake':
@@ -3569,19 +3569,19 @@ function handleCameraTypeSelect(actionType: CameraActionType) {
   emit('cameraActionUpdate', actionType, defaultParams)
 }
 
-// 相机位置参数处理函数
+// Camera position parameter handling functions
 // camera handlers... (removed)
 
 function handleCameraZoomChange(event: Event) {
   const target = event.target as HTMLInputElement
   const percent = parseFloat(target.value)
   if (!isNaN(percent) && percent > 0) {
-    const zoom = percent / 100  // 百分数转换为 zoom 值
+    const zoom = percent / 100  // Convert percentage to zoom value
     if (props.isActionMode) {
-      // Action 模式：发出动作更新事件
+      // Action mode: emit action update event
       emit('cameraActionUpdate', currentCameraActionType.value, { zoom })
     } else {
-      // Setup 模式：更新相机对象的 zoom 属性，并同步更新 width/height
+      // Setup mode: update camera zoom property and sync width/height
       if (localObject.value?.type === 'camera') {
         const baseWidth = CAMERA_BASE_WIDTH
         const baseHeight = CAMERA_BASE_HEIGHT
@@ -3597,12 +3597,12 @@ function handleCameraZoomChange(event: Event) {
   }
 }
 
-// Setup 模式下的 zoom 滑块变化处理
+// Zoom slider change handling in Setup mode
 function handleCameraZoomSliderChange(event: Event) {
   const target = event.target as HTMLInputElement
   const percent = parseFloat(target.value)
   if (!isNaN(percent) && percent > 0) {
-    const zoom = percent / 100  // 百分数转换为 zoom 值
+    const zoom = percent / 100  // Convert percentage to zoom value
     if (localObject.value?.type === 'camera') {
       const baseWidth = CAMERA_BASE_WIDTH
       const baseHeight = CAMERA_BASE_HEIGHT
@@ -3619,36 +3619,36 @@ function handleCameraZoomSliderChange(event: Event) {
 
 // more camera handlers... (removed)
 
-// v11.2: isAnimatedProp 已删除，统一使用 resourceAnimations
+// v11.2: isAnimatedProp deleted, using resourceAnimations uniformly
 
 // function emitTriggerAnim... (removed)
 
-// v11.1: 本地动画默认状态缓存（用于 Setup 模式 UI）
-// v11.3: 移除 speed 属性，使用 AnimationDefinition 中的值
+// v11.1: Local animation default state cache (for Setup mode UI)
+// v11.3: speed property removed, using values in AnimationDefinition
 const animDefaultStates = ref<Map<string, { action: 'play' | 'stop', loop: boolean }>>(new Map())
 
-// v11.1: 获取动画默认状态（Setup 模式）
+// v11.1: Get animation default state (Setup mode)
 function getAnimDefaultState(animName: string): 'play' | 'stop' {
   return animDefaultStates.value.get(animName)?.action ?? 'stop'
 }
 
-// v11.1: 设置动画默认状态（Setup 模式）- 即时触发动画播放并保存到场景数据
+// v11.1: Set animation default state (Setup mode) - triggers playback and saves to scene data
 function setAnimDefaultState(animName: string, action: 'play' | 'stop') {
   console.log('[ObjectPropertiesPanel] setAnimDefaultState:', animName, action)
   
-  // 更新本地状态
+  // Update local state
   const current = animDefaultStates.value.get(animName) ?? { action: 'stop', loop: true, speed: 1 }
   current.action = action
   animDefaultStates.value.set(animName, current)
   
-  // v16: 直接访问 SceneObjectBase.initialAnimations（无需断言）
+  // v16: Access SceneObjectBase.initialAnimations directly (no assertion needed)
   if (localObject.value) {
     if (!localObject.value.initialAnimations) {
       localObject.value.initialAnimations = []
     }
     
     if (action === 'play') {
-      // 添加到列表（如果不存在）
+      // Add to list (if not exists)
       const existing = localObject.value.initialAnimations.find(a => a.name === animName)
       if (!existing) {
         localObject.value.initialAnimations.push({ name: animName, loop: current.loop })
@@ -3656,28 +3656,28 @@ function setAnimDefaultState(animName: string, action: 'play' | 'stop') {
         existing.loop = current.loop
       }
     } else {
-      // 从列表中移除
+      // Remove from list
       const index = localObject.value.initialAnimations.findIndex(a => a.name === animName)
       if (index > -1) {
         localObject.value.initialAnimations.splice(index, 1)
       }
     }
     
-    // 触发更新保存到场景数据
+    // Trigger update and save to scene data
     emit('update', localObject.value)
   }
   
-  // v11.52: 移除即时触发动画播放/停止
-  // Setup 模式下仅标记默认播放状态，不实际播放
-  // 动画在 Preview/Export 时根据 initialAnimations 生效
+  // v11.52: Removed instant animation play/stop trigger
+  // Only marks default play state in Setup mode, does not play actively
+  // Animations take effect during Preview/Export according to initialAnimations
 }
 
-// v11.1: 获取动画循环设置（Setup 模式）
+// v11.1: Get animation loop setting (Setup mode)
 function getAnimLoop(animName: string): boolean {
   return animDefaultStates.value.get(animName)?.loop ?? true
 }
 
-// v11.1: 设置动画循环（Setup 模式）
+// v11.1: Set animation loop (Setup mode)
 function setAnimLoop(animName: string, loop: boolean) {
   console.log('[ObjectPropertiesPanel] setAnimLoop:', animName, loop)
   
@@ -3685,7 +3685,7 @@ function setAnimLoop(animName: string, loop: boolean) {
   current.loop = loop
   animDefaultStates.value.set(animName, current)
   
-  // v11.3: 同步保存到 initialAnimations
+  // v11.3: Synchronously save to initialAnimations
   if (localObject.value && current.action === 'play') {
     const obj = localObject.value
     if (obj.initialAnimations) {
@@ -3697,7 +3697,7 @@ function setAnimLoop(animName: string, loop: boolean) {
     emit('update', localObject.value)
   }
   
-  // 如果正在播放，更新循环设置
+  // If playing, update loop setting
   if (current.action === 'play') {
     emit('triggerAnim', {
       animName,
@@ -3708,19 +3708,19 @@ function setAnimLoop(animName: string, loop: boolean) {
   }
 }
 
-// v11.3: getAnimSpeed 和 setAnimSpeed 已移除，speed 使用 AnimationDefinition 中定义的值
+// v11.3: getAnimSpeed and setAnimSpeed removed; speed uses value defined in AnimationDefinition
 
 
-// ==================== 音频控制函数 (v7.5) ====================
+// ==================== Audio Control Functions (v7.5) ====================
 
-// 更新音频默认播放状态 (Setup Mode)
+// Update audio default play state (Setup Mode)
 function updateAudioPlaybackState(state: 'play' | 'stop') {
   if (localObject.value?.type !== 'audio') return
   ;(localObject.value as AudioObject).playbackState = state
   emit('update', localObject.value)
 }
 
-// Action Mode 下的音频状态缓存
+// Audio state cache under Action Mode
 const actionAudioState = ref<{
   action: 'play' | 'stop' | null,
   volume: number,
@@ -3741,7 +3741,7 @@ const actionTextRevealState = ref<{
   action: null,
 })
 
-// 获取音频动作状态 (Action Mode)
+// Get audio action state (Action Mode)
 function getAudioActionState(): 'play' | 'stop' | null {
   return actionAudioState.value.action
 }
@@ -3756,12 +3756,12 @@ function updateTextRevealInitialState(state: 'complete' | 'typewriter') {
   handleUpdate()
 }
 
-// 获取音频动作参数
+// Get audio action parameters
 function getAudioActionParam(key: 'volume' | 'loop' | 'fadeIn' | 'fadeOut'): number | boolean {
   return actionAudioState.value[key]
 }
 
-// v9.4: 类型安全的音频参数获取函数
+// v9.4: Type-safe audio parameter getter
 function getAudioActionLoop(): boolean {
   return actionAudioState.value.loop
 }
@@ -3770,7 +3770,7 @@ function getAudioActionVolume(): number {
   return actionAudioState.value.volume
 }
 
-// 更新音频动作参数
+// Update audio action parameters
 function updateAudioActionParam(key: 'volume' | 'loop' | 'fadeIn' | 'fadeOut', value: number | boolean) {
   if (key === 'loop') {
     actionAudioState.value.loop = value as boolean
@@ -3782,10 +3782,10 @@ function updateAudioActionParam(key: 'volume' | 'loop' | 'fadeIn' | 'fadeOut', v
     actionAudioState.value.fadeOut = value as number
   }
   
-  // 如果当前没有选择动作，默认选择播放
+  // If no action selected currently, default to play
   actionAudioState.value.action ??= 'play'
   
-  // 立即触发更新事件
+  // Trigger update event immediately
   emitTriggerAudio()
 }
 
@@ -3800,7 +3800,7 @@ function emitTriggerAudio() {
   })
 }
 
-// 处理音频动作 (Action Mode)
+// Handle audio action (Action Mode)
 function handleAudioAction(action: 'play' | 'stop') {
   actionAudioState.value.action = action
   emitTriggerAudio()
@@ -3812,7 +3812,7 @@ function handleTextRevealAction(action: 'play' | 'stop') {
   emit('triggerTextReveal', { action, mode: 'typewriter' })
 }
 
-// 音频试听
+// Audio preview
 async function handleAudioPreview() {
   if (isAudioPreviewing.value) {
     // Stop
@@ -3835,7 +3835,7 @@ async function handleAudioPreview() {
 
   const audio = new Audio(audioUrl)
   // Use current settings from panel
-  // v7.22: 无论 Setup 还是 Action Mode，试听时始终使用 100% 音量和不循环
+  // v7.22: Always use 100% volume and non-looping for preview in both Setup and Action modes
   const volume = 1.0
   const loop = false
   
@@ -3861,17 +3861,17 @@ async function handleAudioPreview() {
   }
 }
 
-// ==================== Action Mode 动画控制函数 ====================
+// ==================== Action Mode Animation Control Functions ====================
 
-// v11.1: 旧版 partId 动画状态已删除，使用 resourceAnimations 代替
+// v11.1: Legacy partId animation state deleted, using resourceAnimations instead
 
-// 截断文本
+// Truncate text
 function truncateText(text: string, maxLen: number): string {
   if (!text) return ''
   return text.length > maxLen ? text.substring(0, maxLen) + '...' : text
 }
 
-// 缩放比例锁定状态
+// Scale aspect ratio lock state
 const scaleLocked = ref(true)
 
 function toggleScaleLock() {
@@ -3882,7 +3882,7 @@ function toggleScaleLock() {
   }
 }
 
-// 缩放比例 X（百分比）
+// Scale ratio X (percentage)
 const scalePercentX = computed({
   get: () => {
     if (!localObject.value) return 100
@@ -3898,7 +3898,7 @@ const scalePercentX = computed({
   }
 })
 
-// 缩放比例 Y（百分比）
+// Scale ratio Y (percentage)
 const scalePercentY = computed({
   get: () => {
     if (!localObject.value) return 100
@@ -3914,7 +3914,7 @@ const scalePercentY = computed({
   }
 })
 
-// 旋转角度（度）
+// Rotation angle (degrees)
 const rotationDegrees = computed({
   get: () => {
     if (!localObject.value) return 0
@@ -3926,7 +3926,7 @@ const rotationDegrees = computed({
   }
 })
 
-// 显示宽度（考虑缩放）
+// Display width (taking scale into account)
 const displayWidth = computed({
   get: () => {
     if (!localObject.value) return 0
@@ -3954,7 +3954,7 @@ const displayWidth = computed({
   }
 })
 
-// 显示高度（考虑缩放）
+// Display height (taking scale into account)
 const displayHeight = computed({
   get: () => {
     if (!localObject.value) return 0
@@ -3985,15 +3985,15 @@ const displayHeight = computed({
 function handleScaleXInputChange() { handleUpdate() }
 function handleScaleYInputChange() { handleUpdate() }
 
-// 使用 deep watch 监听选中对象的所有属性变化
-// 这确保了拖拽、外部更新等任何修改都会同步到属性面板
+// Use deep watch to observe all property changes of selected object
+// This ensures modifications like drags and external updates sync to properties panel
 watch(
   () => ({ obj: props.selectedObject, runtime: props.runtimeState, slot: props.currentSlotIndex }),
   ({ obj }: { obj: SceneObject | undefined }) => {
     if (obj) {
-      // 深度拷贝对象，确保数据同步
+      // Deep copy object to ensure data synchronization
       const cloned = { ...obj } as SceneObject
-      // screen_effect 的 params 是嵌套对象，需要深拷贝以避免与 store 共享引用
+      // screen_effect params is nested object, deep copy needed to avoid sharing reference with store
       if (cloned.type === 'screen_effect' && 'params' in cloned) {
         (cloned as unknown as { params: Record<string, unknown> }).params = { ...((cloned as unknown as { params: Record<string, unknown> }).params) }
       }
@@ -4003,11 +4003,11 @@ watch(
 
       
       
-      // 初始化音频 Action Mode 状态
+      // Initialize audio Action Mode state
       if (obj.type === 'audio') {
         const audioObj = obj
         actionAudioState.value = {
-          action: null, // 初始不选中任何动作
+          action: null, // No action selected initially
           volume: (audioObj as AudioObject).volume ?? 1.0,
           loop: (audioObj as AudioObject).loop ?? false,
           fadeIn: (audioObj as AudioObject).fadeIn ?? 0,
@@ -4015,7 +4015,7 @@ watch(
         }
       }
       
-      // v16: 从 initialAnimations 初始化 animDefaultStates
+      // v16: Initialize animDefaultStates from initialAnimations
       animDefaultStates.value.clear()
       if (obj.initialAnimations && obj.initialAnimations.length > 0) {
         for (const anim of obj.initialAnimations) {
@@ -4052,28 +4052,28 @@ function handleUpdate() {
 }
 
 /**
- * 画面特效参数变更处理
- * 修改 params 中的指定 key，触发 store 更新 + PIXI 重绘
+ * Screen effect parameter change handling
+ * Modify specified key in params, trigger store update + PIXI redraw
  */
 function handleScreenEffectParamChange(key: string, value: string | number) {
   if (localObject.value?.type !== 'screen_effect') return
   const params = (localObject.value as ScreenEffectObject).params as Record<string, unknown>
   params[key] = value
 
-  // 切换 holeShape 时，自动调整 holeWidth/holeHeight 以匹配形状语义
+  // When switching holeShape, auto adjust holeWidth/holeHeight to match shape semantics
   if (key === 'holeShape') {
     const w = (params['holeWidth'] as number) ?? 600
     const h = (params['holeHeight'] as number) ?? 600
     if (value === 'horizontal_ellipse' && w < h) {
-      // 水平椭圆：宽应大于高，交换
+      // Horizontal ellipse: width should be larger than height, swap
       params['holeWidth'] = h
       params['holeHeight'] = w
     } else if (value === 'vertical_ellipse' && h < w) {
-      // 垂直椭圆：高应大于宽，交换
+      // Vertical ellipse: height should be larger than width, swap
       params['holeWidth'] = h
       params['holeHeight'] = w
     } else if (value === 'circle') {
-      // 圆形：宽高统一为较小值
+      // Circle: unify width and height to smaller value
       const minDim = Math.min(w, h)
       params['holeWidth'] = minDim
       params['holeHeight'] = minDim
@@ -4084,7 +4084,7 @@ function handleScreenEffectParamChange(key: string, value: string | number) {
 }
 
 /**
- * v25: 光源参数变更处理
+ * v25: Light parameter change handling
  */
 function handleLightParamChange(
   key: 'lightColor' | 'lightIntensity' | 'lightRadius' | 'flicker' | 'flickerSpeed' | 'directionMode' | 'directionAngle' | 'coneAngle',
@@ -4113,7 +4113,7 @@ function handleLightParamChange(
 }
 
 /**
- * Clip-Mask Phase 1：蒙版属性变更处理（来自 MaskShapeSection / MaskTargetsSection）
+ * Clip-Mask Phase 1: Mask property change handling (from MaskShapeSection / MaskTargetsSection)
  */
 function handleMaskChange(patch: Partial<MaskObject>) {
   if (localObject.value?.type !== 'mask') return
@@ -4126,7 +4126,7 @@ function handleMaskChange(patch: Partial<MaskObject>) {
 }
 
 /**
- * Text PRD Phase 0 + Phase 1: 文本属性变更处理
+ * Text PRD Phase 0 + Phase 1: Text property change handling
  */
 function handleTextPropertyChange(key: string, value: string | number | boolean | undefined) {
   if (localObject.value?.type !== 'text') return
@@ -4142,7 +4142,7 @@ function handleTextPropertyChange(key: string, value: string | number | boolean 
     }
   }
 
-  // 历史兼容：若 lineHeight 命中旧自动值(fontSize*1.3)，自动归一为“自动行高”
+  // Legacy compatibility: if lineHeight matches old auto value (fontSize*1.3), normalize to auto line height
   const normalizedLineHeight = resolveTextLineHeight(
     target['fontFamily'] as string | undefined,
     Number(target['fontSize'] ?? 72),
@@ -4154,7 +4154,7 @@ function handleTextPropertyChange(key: string, value: string | number | boolean 
     target['lineHeight'] = normalizedLineHeight.lineHeight
   }
 
-  // 切换到线性渐变时，自动补默认色标，避免“类型切换后看起来无变化”
+  // When switching to linear gradient, auto supply default color stops to avoid visual stagnation
   if (key === 'fillType' && value === 'linear_gradient') {
     const currentStops = target['gradientStops'] as { offset: number; color: string }[] | undefined
     if (!currentStops || currentStops.length === 0) {
@@ -4201,8 +4201,8 @@ function handleTextPropertyChange(key: string, value: string | number | boolean 
   }
 
   emit('update', localObject.value)
-  // 切换字体时：先 emit 更新数据（PIXI 立即用 fallback 渲染），
-  // 字体加载完成后用请求序号防止旧请求回流，并 emit 克隆对象触发 PIXI.Text 重建。
+  // When switching font: emit updated data first (PIXI renders with fallback immediately),
+  // after font loads, use request sequence to prevent stale rewrites, and emit clone to trigger PIXI.Text rebuild.
   if (key === 'fontFamily' && typeof value === 'string' && value) {
     const textObj = localObject.value as TextObject | null
     const objectId = textObj?.id
@@ -4222,59 +4222,59 @@ function handleTextPropertyChange(key: string, value: string | number | boolean 
   }
 }
 
-/** 预置字体列表 */
+/** Preset font list */
 const PRESET_FONT_FAMILIES = [
   'Noto Sans SC', 'Noto Serif SC', 'LXGW WenKai',
   'ZCOOL QingKe HuangYou', 'Ma Shan Zheng',
 ]
 
-/** 系统本地字体列表（通过 queryLocalFonts API 枚举） */
+/** System local font list (enumerated via queryLocalFonts API) */
 const localFonts = ref<string[]>([])
 const localFontsLoaded = ref(false)
 
-/** 加载系统本地字体 */
+/** Load system local fonts */
 async function loadLocalFonts() {
-  // @ts-expect-error queryLocalFonts 是 Chrome 103+ 实验性 API，类型定义不在标准 lib 中
+  // @ts-expect-error queryLocalFonts is experimental Chrome 103+ API, types not in standard lib
   if (typeof window.queryLocalFonts !== 'function') {
-    alert('当前浏览器不支持枚举本地字体（需要 Chrome/Edge 103+）')
+    alert('Current browser does not support local font enumeration (requires Chrome/Edge 103+)')
     return
   }
   try {
-    // @ts-expect-error queryLocalFonts 返回 FontData[]，类型定义不在标准 lib 中
+    // @ts-expect-error queryLocalFonts returns FontData[], types not in standard lib
     const fonts: { family: string }[] = await (window.queryLocalFonts as () => Promise<{ family: string }[]>)()
-    // 去重并按字母排序
+    // Deduplicate and sort alphabetically
     const uniqueFamilies = [...new Set(fonts.map(f => f.family))]
       .filter(name => !PRESET_FONT_FAMILIES.includes(name))
       .sort((a, b) => a.localeCompare(b, 'zh-CN'))
     localFonts.value = uniqueFamilies
     localFontsLoaded.value = true
   } catch (e) {
-    console.warn('[ObjectPropertiesPanel] 加载本地字体失败:', e)
-    alert('加载本地字体失败，可能是权限被拒绝')
+    console.warn('[ObjectPropertiesPanel] Failed to load local fonts:', e)
+    alert('Failed to load local fonts; permission may have been denied')
   }
 }
 
-/** 当前字号 */
+/** Current font size */
 const currentFontSize = computed(() => {
   if (localObject.value?.type !== 'text') return 32
   return ((localObject.value as unknown as Record<string, unknown>)['fontSize'] as number | undefined) ?? 72
 })
 
-/** 当前字号在预设中的匹配值（用于 select 显示） */
+/** Match value of current font size in presets (for select display) */
 const fontSizePresetMatch = computed(() => {
   const size = currentFontSize.value
   return FONT_SIZE_PRESETS.includes(size) ? size : size
 })
 
-/** 字号 select 变更 */
+/** Font size select change */
 function handleFontSizeSelectChange(value: string) {
   handleTextPropertyChange('fontSize', Number(value))
 }
 
-/** 字距预设 */
+/** Letter spacing presets */
 const LETTER_SPACING_PRESETS = [-5, -2, 0, 1, 2, 4, 6, 8, 12, 16, 20]
 
-/** 行高预设 */
+/** Line height presets */
 const LINE_HEIGHT_PRESETS = [40, 48, 56, 64, 72, 80, 88, 96, 112, 128, 144]
 
 const currentLetterSpacing = computed(() => {
@@ -4307,8 +4307,8 @@ function handleLineHeightSelectChange(value: string) {
 }
 
 /**
- * Phase 2: 渐变色标修改处理
- * 维护 2 色标的 gradientStops 数组
+ * Phase 2: Gradient color stop modification handling
+ * Maintain 2-stop gradientStops array
  */
 function handleGradientStopChange(index: number, color: string) {
   if (localObject.value?.type !== 'text') return
@@ -4317,7 +4317,7 @@ function handleGradientStopChange(index: number, color: string) {
     { offset: 0, color: '#ffffff' },
     { offset: 1, color: '#000000' },
   ]
-  // 确保至少有 2 个色标
+  // Ensure at least 2 color stops
   while (stops.length < 2) {
     stops.push({ offset: stops.length === 0 ? 0 : 1, color: '#000000' })
   }
@@ -4326,7 +4326,7 @@ function handleGradientStopChange(index: number, color: string) {
   emit('update', localObject.value)
 }
 
-/** 环境光预设列表（从统一模块导入，映射为旧 UI 格式） */
+/** Ambient light preset list (imported from unified module, mapped to legacy UI format) */
 const AMBIENT_LIGHT_PRESETS = AMBIENT_PRESETS.map(p => ({
   id: p.id,
   label: p.label,
@@ -4334,13 +4334,13 @@ const AMBIENT_LIGHT_PRESETS = AMBIENT_PRESETS.map(p => ({
   intensity: p.params.lightIntensity,
 }))
 
-/** 当前灯型对应的预设列表（点光/聚光） */
+/** Preset list for current light type (point/spot) */
 const currentLightPresets = computed<LightPresetEntry[]>(() => {
   if (localObject.value?.type !== 'light') return []
   return getPresetsForLightType((localObject.value as LightObject).lightType)
 })
 
-/** 应用环境光预设 */
+/** Apply ambient light preset */
 function handleAmbientPreset(preset: { color: string; intensity: number }) {
   if (localObject.value?.type !== 'light') return
   const lightObj = localObject.value as LightObject
@@ -4349,7 +4349,7 @@ function handleAmbientPreset(preset: { color: string; intensity: number }) {
   emit('update', localObject.value)
 }
 
-/** 应用点光 / 聚光预设（一键覆写全部运行时参数） */
+/** Apply point / spot light preset (one-click overwrite of all runtime parameters) */
 function handleLightPresetApply(preset: LightPresetEntry) {
   if (localObject.value?.type !== 'light') return
   const lightObj = localObject.value as LightObject
@@ -4364,24 +4364,24 @@ function handleLightPresetApply(preset: LightPresetEntry) {
   emit('update', localObject.value)
 }
 
-// 旋转角度变化
+// Rotation angle change
 function handleRotationChange() {
   if (localObject.value) {
     emit('update', localObject.value)
   }
 }
 
-// 缩放变化时，同时更新 scaleX 和 scaleY 保持等比例
+// When scale changes, update both scaleX and scaleY to preserve aspect ratio
 // function handleScaleChange... (removed)
 
-// 尺寸变化时的处理
+// Size change handling
 function handleSizeChange() {
   if (localObject.value) {
     emit('update', localObject.value)
   }
 }
 
-// X坐标变化
+// X coordinate change
 function handleXChange(event: Event) {
   if (localObject.value) {
     const target = event.target as HTMLInputElement
@@ -4391,7 +4391,7 @@ function handleXChange(event: Event) {
   }
 }
 
-// Y坐标变化
+// Y coordinate change
 function handleYChange(event: Event) {
   if (localObject.value) {
     const target = event.target as HTMLInputElement
@@ -4402,7 +4402,7 @@ function handleYChange(event: Event) {
 }
 
 
-// 处理表情选择
+// Handle expression selection
 function handleExpressionSelect(expressionId: string) {
   initialExpression.value = expressionId
   showExpressionDialog.value = false
@@ -4617,7 +4617,7 @@ function handleExpressionSelect(expressionId: string) {
   cursor: not-allowed;
 }
 
-/* Action Mode 槽位提示样式 */
+/* Action Mode slot hint styles */
 .action-mode-hint {
   margin-bottom: 16px;
   padding: 12px;
@@ -4724,7 +4724,7 @@ function handleExpressionSelect(expressionId: string) {
   text-align: center;
 }
 
-/* v16 H1: 动画分组样式 */
+/* v16 H1: Animation group styles */
 .anim-group {
   margin-bottom: 4px;
 }
@@ -4772,7 +4772,7 @@ function handleExpressionSelect(expressionId: string) {
   border-color: #94a3b8;
 }
 
-/* 动画默认状态设置样式 */
+/* Animation default state setting styles */
 .anim-default-hint {
   display: flex;
   align-items: flex-start;
@@ -4865,7 +4865,7 @@ function handleExpressionSelect(expressionId: string) {
   color: #1d4ed8;
 }
 
-/* 动画额外设置样式 */
+/* Animation extra settings styles */
 .anim-extra-settings {
   display: flex;
   align-items: center;
@@ -4907,7 +4907,7 @@ function handleExpressionSelect(expressionId: string) {
   text-align: center;
 }
 
-/* Action Mode 动画动作样式 */
+/* Action Mode animation action styles */
 .action-record-hint {
   display: flex;
   align-items: flex-start;
@@ -5124,8 +5124,8 @@ function handleExpressionSelect(expressionId: string) {
   color: #6b7280;
 }
 
-/* 相机动作按钮样式 */
-/* v6.5: 相机控制台样式 */
+/* Camera action button styles */
+/* v6.5: Camera console styles */
 .camera-console {
   padding: 12px;
   background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
@@ -5231,7 +5231,7 @@ function handleExpressionSelect(expressionId: string) {
   white-space: nowrap;
 }
 
-/* 相机参数面板样式 */
+/* Camera parameters panel styles */
 .slot-indicator-row {
   display: flex;
   align-items: center;
@@ -5393,7 +5393,7 @@ function handleExpressionSelect(expressionId: string) {
   cursor: pointer;
 }
 
-/* 部位素材选择器样式 */
+/* Part material selector styles */
 .part-asset-selector-row {
   display: flex;
   align-items: center;
@@ -5426,7 +5426,7 @@ function handleExpressionSelect(expressionId: string) {
   border-color: #9ca3af;
 }
 
-/* 部位素材缩略图预览 */
+/* Part material thumbnail preview */
 .part-asset-preview {
   width: 56px;
   height: 56px;
@@ -5460,7 +5460,7 @@ function handleExpressionSelect(expressionId: string) {
   opacity: 0.5;
 }
 
-/* P2: 树形对象选择器 */
+/* P2: Tree object selector */
 .object-selector-section {
   padding: 8px 12px;
   border-bottom: 1px solid #e5e7eb;
@@ -5636,7 +5636,7 @@ function handleExpressionSelect(expressionId: string) {
   white-space: nowrap;
 }
 
-/* v8.6: 别名编辑 */
+/* v8.6: Alias editing */
 .alias-field {
   margin-top: 4px;
 }
@@ -5694,7 +5694,7 @@ function handleExpressionSelect(expressionId: string) {
   color: #374151;
 }
 
-/* v9.1: 录制模式切换 */
+/* v9.1: Record mode toggle */
 .record-mode-section {
   padding: 8px 16px;
   border-bottom: 1px solid #e5e7eb;
@@ -5899,14 +5899,14 @@ function handleExpressionSelect(expressionId: string) {
   color: white;
 }
 
-/* compositeMode 只读显示 */
+/* compositeMode read-only display */
 .composite-mode-readonly {
   font-size: 12px;
   color: #374151;
   font-weight: 500;
 }
 
-/* 环境光预设网格 */
+/* Ambient light preset grid */
 .ambient-preset-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -6130,7 +6130,7 @@ function handleExpressionSelect(expressionId: string) {
   cursor: not-allowed;
 }
 
-/* === 渲染链排序 UI === */
+/* === Render chain order UI === */
 .render-chain-header {
   display: flex;
   align-items: center;
@@ -6314,7 +6314,7 @@ function handleExpressionSelect(expressionId: string) {
   cursor: default;
 }
 
-/* v18: 表情引用卡片 */
+/* v18: Expression reference card */
 .expression-card {
   display: flex;
   align-items: center;
@@ -6486,7 +6486,7 @@ function handleExpressionSelect(expressionId: string) {
   text-align: center;
 }
 
-/* ===== 快捷操作工具栏 ===== */
+/* ===== Quick action toolbar ===== */
 .quick-toolbar {
   display: flex;
   flex-wrap: wrap;
@@ -6582,7 +6582,7 @@ function handleExpressionSelect(expressionId: string) {
   font-size: 12px;
 }
 
-/* ===== 穿透状态指示器 ===== */
+/* ===== Through-status indicator ===== */
 .pass-through-indicator {
   width: 100%;
   margin: 0;
@@ -6750,7 +6750,7 @@ function handleExpressionSelect(expressionId: string) {
   border-bottom: 1px solid #e5e7eb;
 }
 
-/* FR-0.11: 自定义字体免责提示 */
+/* FR-0.11: Custom font disclaimer */
 .font-warning-tip {
   font-size: 11px;
   color: #d97706;
@@ -6758,7 +6758,7 @@ function handleExpressionSelect(expressionId: string) {
   line-height: 1.3;
 }
 
-/* 加载本地字体按钮 */
+/* Load local font button */
 .load-fonts-btn {
   margin-top: 4px;
   width: 100%;
@@ -6778,7 +6778,7 @@ function handleExpressionSelect(expressionId: string) {
 }
 
 
-/* Phase 2: 动画参数单位后缀 */
+/* Phase 2: Animation parameter unit suffix */
 .value-label {
   font-size: 11px;
   color: #9ca3af;

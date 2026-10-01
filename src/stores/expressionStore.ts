@@ -23,8 +23,8 @@ function stripLegacyPixelSizes(expressions: Record<string, Expression>): Record<
 }
 
 /**
- * 表情管理 Store
- * 管理所有表情资源，支持多图表情动画系统
+ * Expression Management Store
+ * Manages all expression assets, supporting multi-frame expression animation system
  */
 export const useExpressionStore = defineStore('expression', {
   state: (): ExpressionState => ({
@@ -33,28 +33,28 @@ export const useExpressionStore = defineStore('expression', {
 
   getters: {
     /**
-     * 获取所有表情列表（按创建时间倒序排列）
+     * Get all expression list (sorted in descending order by creation time)
      */
     expressionList(): Expression[] {
       return Object.values(this.expressions).sort((a, b) => {
         const timeA = a.createdAt || 0
         const timeB = b.createdAt || 0
-        return timeB - timeA // 降序排列
+        return timeB - timeA // Descending order
       })
     },
 
     /**
-     * 获取单个表情
+     * Get single expression
      */
     getExpression: (state) => (id: string): Expression | undefined => {
       return state.expressions[id]
     },
 
     /**
-     * 根据标签筛选表情
+     * Filter expressions by tag
      */
     getExpressionsByTag: (state) => (tag: string): Expression[] => {
-      if (!tag || tag === '全部') {
+      if (!tag || tag === 'All' || tag === 'All') {
         return Object.values(state.expressions).sort((a, b) => {
           const timeA = a.createdAt ?? 0
           const timeB = b.createdAt ?? 0
@@ -71,7 +71,7 @@ export const useExpressionStore = defineStore('expression', {
     },
 
     /**
-     * 根据名称搜索表情
+     * Search expressions by name
      */
     searchExpressions: (state) => (keyword: string): Expression[] => {
       if (!keyword) {
@@ -94,14 +94,14 @@ export const useExpressionStore = defineStore('expression', {
 
   actions: {
     /**
-     * 生成UUID
+     * Generate UUID
      */
     generateId(): string {
       return `expr_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
     },
 
     /**
-     * 创建表情
+     * Create expression
      */
     createExpression(
       name: string,
@@ -115,7 +115,7 @@ export const useExpressionStore = defineStore('expression', {
         flipHorizontal?: boolean
         lockEdit?: boolean
         defaultScale?: number
-        // v6.5: 静止帧来源标识
+        // v6.5: Still frame origin identifier
         stillFrameSource?: 'frame' | 'custom'
         stillFrameIndex?: number
         gender?: 'male' | 'female' | 'other'
@@ -124,12 +124,12 @@ export const useExpressionStore = defineStore('expression', {
     ): string {
       const id = this.generateId()
 
-      // 确保 defaultFrame 有 id
+      // Ensure defaultFrame has id
       if (!defaultFrame.id) {
         defaultFrame.id = `frame_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
       }
 
-      // 确保 speakingFrames 中的每一帧都有 id
+      // Ensure each frame in speakingFrames has id
       const speakingFrames = (options?.speakingFrames ?? []).map(frame => {
         if (!frame.id) {
           frame.id = `frame_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
@@ -159,7 +159,7 @@ export const useExpressionStore = defineStore('expression', {
 
       this.expressions[id] = expression
 
-      // 标记项目有未保存的更改
+      // Mark project as having unsaved changes
       const projectStore = useProjectStore()
       projectStore.markAsUnsaved()
 
@@ -167,7 +167,7 @@ export const useExpressionStore = defineStore('expression', {
     },
 
     /**
-     * 更新表情
+     * Update expression
      */
     updateExpression(id: string, updates: Partial<Expression>): boolean {
       if (this.expressions[id]) {
@@ -176,7 +176,7 @@ export const useExpressionStore = defineStore('expression', {
           ...updates
         })
 
-        // 标记项目有未保存的更改
+        // Mark project as having unsaved changes
         const projectStore = useProjectStore()
         projectStore.markAsUnsaved()
 
@@ -187,7 +187,7 @@ export const useExpressionStore = defineStore('expression', {
     },
 
     /**
-     * 更新默认帧（从路径）
+     * Update default frame (from path)
      */
     updateDefaultFrameFromPath(id: string, relativePath: string): boolean {
       if (!this.expressions[id]) {
@@ -195,13 +195,13 @@ export const useExpressionStore = defineStore('expression', {
         return false
       }
 
-      // 更新帧（存储路径）
+      // Update frame (store path)
       this.expressions[id].defaultFrame = {
         id: this.expressions[id].defaultFrame.id || this.generateId(),
         url: relativePath
       }
 
-      // 标记项目有未保存的更改
+      // Mark project as having unsaved changes
       const projectStore = useProjectStore()
       projectStore.markAsUnsaved()
 
@@ -209,11 +209,11 @@ export const useExpressionStore = defineStore('expression', {
     },
 
     /**
-     * 更新默认帧
+     * Update default frame
      */
     updateDefaultFrame(id: string, frame: ExpressionFrame): boolean {
       if (this.expressions[id]) {
-        // 释放旧的 Blob URL
+        // Release old Blob URL
         const oldFrame = this.expressions[id].defaultFrame
         if (oldFrame.url.startsWith('blob:')) {
           URL.revokeObjectURL(oldFrame.url)
@@ -224,7 +224,7 @@ export const useExpressionStore = defineStore('expression', {
         }
         this.expressions[id].defaultFrame = frame
 
-        // 标记项目有未保存的更改
+        // Mark project as having unsaved changes
         const projectStore = useProjectStore()
         projectStore.markAsUnsaved()
 
@@ -235,7 +235,7 @@ export const useExpressionStore = defineStore('expression', {
     },
 
     /**
-     * 添加说话帧（从路径）
+     * Add speaking frame (from path)
      */
     addSpeakingFrameFromPath(id: string, relativePath: string, index?: number): boolean {
       if (!this.expressions[id]) {
@@ -243,7 +243,7 @@ export const useExpressionStore = defineStore('expression', {
         return false
       }
 
-      // 添加帧（存储路径）
+      // Add frame (store path)
       const frame: ExpressionFrame = {
         id: this.generateId(),
         url: relativePath
@@ -254,7 +254,7 @@ export const useExpressionStore = defineStore('expression', {
         this.expressions[id].speakingFrames.push(frame)
       }
 
-      // 标记项目有未保存的更改
+      // Mark project as having unsaved changes
       const projectStore = useProjectStore()
       projectStore.markAsUnsaved()
 
@@ -262,7 +262,7 @@ export const useExpressionStore = defineStore('expression', {
     },
 
     /**
-     * 添加说话帧
+     * Add speaking frame
      */
     addSpeakingFrame(id: string, frame: ExpressionFrame, index?: number): boolean {
       if (this.expressions[id]) {
@@ -283,14 +283,14 @@ export const useExpressionStore = defineStore('expression', {
     },
 
     /**
-     * 删除说话帧
+     * Delete speaking frame
      */
     removeSpeakingFrame(id: string, frameIndex: number): boolean {
       if (this.expressions[id]) {
         if (frameIndex >= 0 && frameIndex < this.expressions[id].speakingFrames.length) {
           const frame = this.expressions[id].speakingFrames[frameIndex]
           if (frame) {
-            // 释放 Blob URL
+            // Release Blob URL
             if (frame.url.startsWith('blob:')) {
               URL.revokeObjectURL(frame.url)
             }
@@ -298,7 +298,7 @@ export const useExpressionStore = defineStore('expression', {
 
           this.expressions[id].speakingFrames.splice(frameIndex, 1)
 
-          // 标记项目有未保存的更改
+          // Mark project as having unsaved changes
           const projectStore = useProjectStore()
           projectStore.markAsUnsaved()
 
@@ -310,14 +310,14 @@ export const useExpressionStore = defineStore('expression', {
     },
 
     /**
-     * 更新说话帧
+     * Update speaking frame
      */
     updateSpeakingFrame(id: string, frameIndex: number, frame: Partial<ExpressionFrame>): boolean {
       if (this.expressions[id] && frameIndex >= 0 && frameIndex < this.expressions[id].speakingFrames.length) {
         const oldFrame = this.expressions[id].speakingFrames[frameIndex]
         if (!oldFrame) return false
 
-        // 如果更新了 URL，释放旧的 Blob URL
+        // If URL was updated, release old Blob URL
         if (frame.url && frame.url !== oldFrame.url && oldFrame.url.startsWith('blob:')) {
           URL.revokeObjectURL(oldFrame.url)
         }
@@ -334,7 +334,7 @@ export const useExpressionStore = defineStore('expression', {
     },
 
     /**
-     * 调整说话帧顺序
+     * Reorder speaking frames
      */
     reorderSpeakingFrames(id: string, fromIndex: number, toIndex: number): boolean {
       if (this.expressions[id]) {
@@ -354,7 +354,7 @@ export const useExpressionStore = defineStore('expression', {
     },
 
     /**
-     * 更新锚点
+     * Update anchor point
      */
     updateAnchor(id: string, anchor: AnchorPoint): boolean {
       if (this.expressions[id]) {
@@ -366,7 +366,7 @@ export const useExpressionStore = defineStore('expression', {
     },
 
     /**
-     * 更新标签
+     * Update tags
      */
     updateTags(id: string, tags: string[]): boolean {
       if (this.expressions[id]) {
@@ -378,38 +378,38 @@ export const useExpressionStore = defineStore('expression', {
     },
 
     /**
-     * 删除表情
+     * Delete expression
      */
     async deleteExpression(id: string): Promise<boolean> {
       if (this.expressions[id]) {
         const expr = this.expressions[id]
 
-        // 如果项目已打开，删除磁盘文件
+        // If project is open, delete disk files
         const projectStore = useProjectStore()
         if (projectStore.assetsHandle) {
           try {
-            // 删除默认帧
+            // Delete default frame
             if (!expr.defaultFrame.url.startsWith('blob:') && !expr.defaultFrame.url.startsWith('data:')) {
               await deleteAssetFromDisk(projectStore.assetsHandle, expr.defaultFrame.url)
             }
 
-            // 删除所有说话帧
+            // Delete all speaking frames
             for (const frame of expr.speakingFrames) {
               if (!frame.url.startsWith('blob:') && !frame.url.startsWith('data:')) {
                 await deleteAssetFromDisk(projectStore.assetsHandle, frame.url)
               }
             }
           } catch (error) {
-            console.warn('[ExpressionStore] 删除表情文件失败:', error)
+            console.warn('[ExpressionStore] Failed to delete expression file:', error)
           }
         }
 
-        // 释放默认帧的 Blob URL
+        // Release default frame Blob URL
         if (expr.defaultFrame.url.startsWith('blob:')) {
           URL.revokeObjectURL(expr.defaultFrame.url)
         }
 
-        // 释放所有说话帧的 Blob URLs
+        // Release all speaking frames Blob URLs
         expr.speakingFrames.forEach(frame => {
           if (frame.url.startsWith('blob:')) {
             URL.revokeObjectURL(frame.url)
@@ -424,7 +424,7 @@ export const useExpressionStore = defineStore('expression', {
     },
 
     /**
-     * 批量删除表情
+     * Batch delete expressions
      */
     async deleteExpressions(ids: string[]): Promise<number> {
       let count = 0
@@ -437,10 +437,10 @@ export const useExpressionStore = defineStore('expression', {
     },
 
     /**
-     * 清空所有表情
+     * Clear all expressions
      */
     clearAll() {
-      // 释放所有 Blob URLs
+      // Release all Blob URLs
       Object.values(this.expressions).forEach(expr => {
         if (expr.defaultFrame.url.startsWith('blob:')) {
           URL.revokeObjectURL(expr.defaultFrame.url)
@@ -456,15 +456,15 @@ export const useExpressionStore = defineStore('expression', {
     },
 
     /**
-     * 设置所有表情（用于加载项目数据）
-     * @param expressionsData 表情数据对象
+     * Set all expressions (used for loading project data)
+     * @param expressionsData Expression data object
      */
     setExpressions(expressionsData: Record<string, Expression>): void {
       this.expressions = stripLegacyPixelSizes(expressionsData)
     },
 
     /**
-     * 导出表情配置为 JSON
+     * Export expression config as JSON
      */
     exportToJSON(): string {
       const data = {
@@ -476,7 +476,7 @@ export const useExpressionStore = defineStore('expression', {
     },
 
     /**
-     * 从 JSON 导入表情配置
+     * Import expression config from JSON
      */
     importFromJSON(jsonString: string): boolean {
       try {
@@ -493,13 +493,13 @@ export const useExpressionStore = defineStore('expression', {
     },
 
     // ==========================================
-    // 显示变换封装 (Display Transform Encapsulation)
+    // Display Transform Encapsulation
     // ==========================================
 
     /**
-     * 获取表情的有效缩放比例
-     * 始终返回 defaultScale（默认为 1）
-     * @param expressionId 表情ID
+     * Get effective scale ratio of expression
+     * Always returns defaultScale (default is 1)
+     * @param expressionId Expression ID
      */
     getEffectiveScale(expressionId: string): number {
       const expr = this.expressions[expressionId]
@@ -508,10 +508,10 @@ export const useExpressionStore = defineStore('expression', {
     },
 
     /**
-     * 获取表情的显示变换参数（统一封装）
-     * 外部只需调用此方法，无需了解内部属性细节
-     * @param expressionId 表情ID
-     * @param externalFlipX 外部翻转需求（如部位实例的 flipX），与表情翻转进行 XOR 运算
+     * Get expression display transform parameters (unified encapsulation)
+     * External callers only need to invoke this method without knowing internal property details
+     * @param expressionId Expression ID
+     * @param externalFlipX External flip requirement (e.g. part instance flipX), XORed with expression flip
      * @returns { scale: number, flipX: boolean }
      */
     getDisplayTransform(expressionId: string, externalFlipX = false): ExpressionDisplayTransform {
@@ -523,7 +523,7 @@ export const useExpressionStore = defineStore('expression', {
       const effectiveScale = this.getEffectiveScale(expressionId)
       const exprFlipX = expr.flipHorizontal ?? false
 
-      // XOR: 两个翻转状态不同时才需要翻转
+      // XOR: Flip is only required when the two flip states differ
       const shouldFlipX = externalFlipX !== exprFlipX
 
       return {
@@ -533,23 +533,23 @@ export const useExpressionStore = defineStore('expression', {
     },
 
     /**
-     * 获取表情的 CSS Transform 样式（用于普通 HTML 控件）
-     * 封装了 flipHorizontal 和 defaultScale 的处理细节
-     * @param expressionId 表情ID
-     * @param externalFlipX 外部翻转需求（可选）
-     * @returns CSS transform 字符串
+     * Get CSS Transform style of expression (for normal HTML elements)
+     * Encapsulates processing details of flipHorizontal and defaultScale
+     * @param expressionId Expression ID
+     * @param externalFlipX External flip requirement (optional)
+     * @returns CSS transform string
      */
     getCssDisplayStyle(expressionId: string, externalFlipX = false): { transform: string } {
       const { scale, flipX } = this.getDisplayTransform(expressionId, externalFlipX)
 
       const transforms: string[] = []
 
-      // 翻转处理
+      // Flip handling
       if (flipX) {
         transforms.push('scaleX(-1)')
       }
 
-      // 缩放处理（当 scale !== 1 时才添加）
+      // Scale handling (only added when scale !== 1)
       if (scale !== 1) {
         transforms.push(`scale(${scale})`)
       }
@@ -560,11 +560,11 @@ export const useExpressionStore = defineStore('expression', {
     },
 
     /**
-     * 获取表情锚点的显示坐标（考虑翻转）
-     * 用于在普通控件（如 ExpressionPreview）中正确显示锚点位置
-     * @param expressionId 表情ID
-     * @param externalFlipX 外部翻转
-     * @returns 显示用的锚点坐标（已处理镜像）
+     * Get display coordinates of expression anchor (considering flip)
+     * Used to correctly display anchor position in standard controls (such as ExpressionPreview)
+     * @param expressionId Expression ID
+     * @param externalFlipX External flip
+     * @returns Anchor coordinates for display (mirror handled)
      */
     getDisplayAnchor(expressionId: string, externalFlipX = false): AnchorPoint {
       const expr = this.expressions[expressionId]
@@ -575,7 +575,7 @@ export const useExpressionStore = defineStore('expression', {
       const anchor = expr.anchor
       const { flipX } = this.getDisplayTransform(expressionId, externalFlipX)
 
-      // 如果需要翻转，X 坐标镜像
+      // If flip needed, mirror X coordinate
       return {
         x: flipX ? (1 - anchor.x) : anchor.x,
         y: anchor.y
@@ -583,12 +583,12 @@ export const useExpressionStore = defineStore('expression', {
     },
 
     /**
-     * 计算应用到 PixiJS Sprite 的缩放值
-     * 封装了 flipHorizontal 和 defaultScale 的处理细节
-     * @param expressionId 表情ID
-     * @param baseScale 外部传入的基础缩放（如部位实例的 scale）
-     * @param externalFlipX 外部翻转（如部位实例的 flipX），与表情翻转进行 XOR 运算
-     * @returns 最终的 scale { x, y }
+     * Calculate scale value applied to PixiJS Sprite
+     * Encapsulates processing details of flipHorizontal and defaultScale
+     * @param expressionId Expression ID
+     * @param baseScale Base scale passed externally (such as part instance scale)
+     * @param externalFlipX External flip requirement (e.g. part instance flipX), XORed with expression flip
+     * @returns Final scale { x, y }
      */
     calculatePixiScale(
       expressionId: string,
@@ -597,7 +597,7 @@ export const useExpressionStore = defineStore('expression', {
     ): { x: number; y: number } {
       const { scale: effectiveScale, flipX } = this.getDisplayTransform(expressionId, externalFlipX)
 
-      // 计算最终缩放
+      // Calculate final scale
       const finalScaleX = Math.abs(baseScale.x) * effectiveScale * (flipX ? -1 : 1)
       const finalScaleY = Math.abs(baseScale.y) * effectiveScale
 

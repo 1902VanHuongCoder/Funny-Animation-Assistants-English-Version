@@ -4,7 +4,7 @@
     <div class="toolbar">
       <div class="toolbar-left">
         <h2 class="page-title">
-          场景模板
+          Scene Templates
         </h2>
         <div class="filter-controls">
           <button
@@ -12,7 +12,7 @@
             :class="{ active: selectedTags.length > 0 }"
             @click="showFilterModal = true"
           >
-            筛选 <span v-if="selectedTags.length > 0">({{ selectedTags.length }})</span>
+            Filter <span v-if="selectedTags.length > 0">({{ selectedTags.length }})</span>
             <span class="icon">▼</span>
           </button>
         </div>
@@ -25,10 +25,10 @@
             class="sort-select"
           >
             <option value="newest">
-              📅 最新创建
+              📅 Newest First
             </option>
             <option value="oldest">
-              📅 最早创建
+              📅 Oldest First
             </option>
           </select>
         </div>
@@ -37,7 +37,7 @@
           <input
             v-model="searchKeyword"
             type="text"
-            placeholder="搜索模板..."
+            placeholder="Search templates..."
             class="search-input"
           >
         </div>
@@ -46,7 +46,7 @@
           class="btn-batch"
           @click="toggleBatchMode"
         >
-          {{ isBatchMode ? '退出批量' : '⚙️ 批量管理' }}
+          {{ isBatchMode ? 'Exit Batch' : '⚙️ Batch Manage' }}
         </button>
 
         <template v-if="isBatchMode">
@@ -54,20 +54,20 @@
             class="btn-secondary"
             @click="selectAll"
           >
-            全选
+            Select All
           </button>
           <button
             class="btn-secondary"
             @click="deselectAll"
           >
-            全不选
+            Deselect All
           </button>
           <button
             class="btn-delete-batch"
             :disabled="selectedIds.size === 0"
             @click="batchDelete"
           >
-            删除 ({{ selectedIds.size }})
+            Delete ({{ selectedIds.size }})
           </button>
         </template>
 
@@ -76,7 +76,7 @@
           class="btn-create"
           @click="handleCreateTemplate"
         >
-          ➕ 新建模板
+          ➕ New Template
         </button>
       </div>
     </div>
@@ -89,9 +89,9 @@
           v-if="filteredTemplates.length === 0"
           class="empty-state"
         >
-          <p>📭 暂无场景模板</p>
+          <p>📭 No scene templates</p>
           <p class="hint">
-            点击"新建模板"创建，或在场景编辑器中保存组合对象为模板
+            Click "New Template" to create, or save combined objects as template in the scene editor
           </p>
         </div>
 
@@ -132,7 +132,7 @@
                 🧩
               </div>
               <div class="object-count-badge">
-                {{ tpl.objects.length }} 个对象
+                {{ tpl.objects.length }} objects
               </div>
             </div>
 
@@ -169,14 +169,14 @@
             >
               <button
                 class="btn-icon edit"
-                title="编辑"
+                title="Edit"
                 @click.stop="editingTemplateId = tpl.id"
               >
                 ✏️
               </button>
               <button
                 class="btn-icon delete"
-                title="删除"
+                title="Delete"
                 @click.stop="deleteTemplate(tpl.id)"
               >
                 🗑️
@@ -187,7 +187,7 @@
       </div>
     </div>
 
-    <!-- 标签筛选对话框 -->
+    <!-- Tag Select Dialog -->
     <TagSelectDialog
       v-model:visible="showFilterModal"
       :available-tags="allTags"
@@ -205,7 +205,7 @@
       @cancel="showDeleteConfirm = false"
     />
 
-    <!-- 编辑器 (overlay 对话框模式) -->
+    <!-- Editor (overlay dialog mode) -->
     <SceneTemplateEditor
       v-if="editingTemplateId"
       v-bind="editingTemplateId !== '__new__' ? { 'template-id': editingTemplateId } : {}"
@@ -236,7 +236,7 @@ const isBatchMode = ref(false)
 const selectedIds = ref<Set<string>>(new Set())
 const showFilterModal = ref(false)
 
-// 编辑器状态 (overlay 模式，不替换列表)
+// Editor state (overlay mode, does not replace list)
 const editingTemplateId = ref<string | null>(null)
 
 const allTags = computed(() => templateStore.allTags)
@@ -274,16 +274,16 @@ function handleImageError(e: Event) {
 function formatTimeAgo(timestamp: number): string {
   const diff = Date.now() - timestamp
   const hours = Math.floor(diff / (1000 * 60 * 60))
-  if (hours < 1) return '刚刚'
-  if (hours < 24) return `${hours}小时前`
-  return `${Math.floor(hours / 24)}天前`
+  if (hours < 1) return 'Just now'
+  if (hours < 24) return `${hours}h ago`
+  return `${Math.floor(hours / 24)}d ago`
 }
 
 function handleCardClick(tpl: SceneTemplate) {
   if (isBatchMode.value) {
     toggleSelect(tpl.id)
   } else {
-    // 单击进入编辑
+    // Click to edit
     editingTemplateId.value = tpl.id
   }
 }
@@ -293,21 +293,21 @@ function handleEditorSaved() {
 }
 
 /**
- * 新建模板：打开空白的场景模板编辑器
+ * Create new template: open empty scene template editor
  */
 function handleCreateTemplate() {
   editingTemplateId.value = '__new__'
 }
 
 function handleEditorCreated(newTemplateId: string) {
-  // 新模板首次保存后，更新 editingTemplateId 为实际 ID
+  // Update editingTemplateId after first save
   editingTemplateId.value = newTemplateId
 }
 
 function deleteTemplate(id: string) {
   pendingDeleteIds.value = [id]
-  deleteConfirmTitle.value = '删除模板'
-  deleteConfirmMessage.value = '确定要删除这个场景模板吗？此操作不可恢复。'
+  deleteConfirmTitle.value = 'Delete Template'
+  deleteConfirmMessage.value = 'Are you sure you want to delete this scene template? This action cannot be undone.'
   showDeleteConfirm.value = true
 }
 
@@ -340,8 +340,8 @@ function toggleSelect(id: string) {
 
 function batchDelete() {
   pendingDeleteIds.value = Array.from(selectedIds.value)
-  deleteConfirmTitle.value = '批量删除模板'
-  deleteConfirmMessage.value = `确定要删除选中的 ${selectedIds.value.size} 个场景模板吗？此操作不可恢复。`
+  deleteConfirmTitle.value = 'Batch Delete Templates'
+  deleteConfirmMessage.value = `Are you sure you want to delete ${selectedIds.value.size} scene templates? This action cannot be undone.`
   showDeleteConfirm.value = true
 }
 

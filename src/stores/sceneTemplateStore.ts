@@ -1,6 +1,6 @@
 /**
- * 场景模板 Store
- * v16: 管理场景模板的 CRUD 和搜索
+ * Scene template Store
+ * v16: Manage scene template CRUD and search
  */
 
 import { defineStore } from 'pinia'
@@ -14,14 +14,14 @@ export const useSceneTemplateStore = defineStore('sceneTemplate', () => {
     const templates = ref<SceneTemplate[]>([])
 
     /**
-     * 生成唯一 ID
+     * Generate unique ID
      */
     function generateId(): string {
         return `stpl_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
     }
 
     /**
-     * 获取所有已使用的标签
+     * Get all used tags
      */
     const allTags = computed(() => {
         const tags = new Set<string>()
@@ -30,7 +30,7 @@ export const useSceneTemplateStore = defineStore('sceneTemplate', () => {
     })
 
     /**
-     * 添加模板
+     * Add template
      */
     function addTemplate(template: SceneTemplate): void {
         templates.value.push(template)
@@ -39,14 +39,14 @@ export const useSceneTemplateStore = defineStore('sceneTemplate', () => {
     }
 
     /**
-     * 获取模板
+     * Get template
      */
     function getTemplate(id: string): SceneTemplate | undefined {
         return templates.value.find(t => t.id === id)
     }
 
     /**
-     * 更新模板
+     * Update template
      */
     function updateTemplate(id: string, updates: Partial<SceneTemplate>): boolean {
         const template = getTemplate(id)
@@ -60,13 +60,13 @@ export const useSceneTemplateStore = defineStore('sceneTemplate', () => {
     }
 
     /**
-     * 删除模板
+     * Delete template
      */
     function deleteTemplate(id: string): boolean {
         const index = templates.value.findIndex(t => t.id === id)
         if (index !== -1) {
             const template = templates.value[index]
-            // 释放运行时缩略图 Blob URL
+            // Release runtime thumbnail Blob URL
             if (template?._runtimeThumbnailUrl?.startsWith('blob:')) {
                 URL.revokeObjectURL(template._runtimeThumbnailUrl)
             }
@@ -79,14 +79,14 @@ export const useSceneTemplateStore = defineStore('sceneTemplate', () => {
     }
 
     /**
-     * 按标签筛选
+     * Filter by tag
      */
     function getTemplatesByTag(tag: string): SceneTemplate[] {
         return templates.value.filter(t => t.tags?.includes(tag))
     }
 
     /**
-     * 搜索模板（按名称模糊匹配）
+     * Search templates (fuzzy matching by name)
      */
     function searchTemplates(query: string): SceneTemplate[] {
         const q = query.toLowerCase()
@@ -94,14 +94,14 @@ export const useSceneTemplateStore = defineStore('sceneTemplate', () => {
     }
 
     /**
-     * 设置模板列表（用于加载项目）
+     * Set template list (used for loading project)
      */
     function setTemplates(list: SceneTemplate[]): void {
         templates.value = list
     }
 
     /**
-     * 清空所有模板
+     * Clear all templates
      */
     function clearAll(): void {
         templates.value.forEach(t => {

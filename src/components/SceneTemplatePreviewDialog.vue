@@ -7,7 +7,7 @@
       <!-- Header -->
       <div class="dialog-header">
         <h3 class="dialog-title">
-          预览: {{ templateName }}
+          Preview: {{ templateName }}
         </h3>
         <div class="header-actions">
           <button
@@ -35,10 +35,10 @@
               :class="{ active: isAnimating }"
               @click="toggleAnimations"
             >
-              {{ isAnimating ? '⏹ 停止动画' : '▶ 播放动画' }}
+              {{ isAnimating ? '⏹ Stop Animation' : '▶ Play Animation' }}
             </button>
             <span class="anim-hint">
-              {{ animatableCount > 0 ? `${animatableCount} 个对象有初始动画` : '无初始动画' }}
+              {{ animatableCount > 0 ? `${animatableCount} objects have initial animations` : 'No initial animations' }}
             </span>
           </div>
         </div>
@@ -46,17 +46,17 @@
         <!-- Info Sidebar -->
         <div class="info-sidebar">
           <div class="info-section">
-            <h4>模板信息</h4>
+            <h4>Template Info</h4>
             <div class="info-row">
-              <span class="info-label">名称</span>
+              <span class="info-label">Name</span>
               <span class="info-value">{{ templateName }}</span>
             </div>
             <div class="info-row">
-              <span class="info-label">包含对象</span>
-              <span class="info-value">{{ objectCount }} 个</span>
+              <span class="info-label">Included Objects</span>
+              <span class="info-value">{{ objectCount }}</span>
             </div>
             <div class="info-row">
-              <span class="info-label">创建时间</span>
+              <span class="info-label">Created At</span>
               <span class="info-value">{{ createdAtFormatted }}</span>
             </div>
           </div>
@@ -66,7 +66,7 @@
             v-if="templateTags.length > 0"
             class="info-section"
           >
-            <h4>标签</h4>
+            <h4>Tags</h4>
             <div class="tags-list">
               <span
                 v-for="tag in templateTags"
@@ -80,7 +80,7 @@
 
           <!-- Object List -->
           <div class="info-section">
-            <h4>对象列表</h4>
+            <h4>Objects</h4>
             <div class="object-list">
               <div
                 v-for="obj in objectInfos"
@@ -127,16 +127,16 @@ const sceneObjectStore = useSceneObjectStore()
 const canvasContainerRef = ref<HTMLElement | null>(null)
 const isAnimating = ref(false)
 
-// 渲染器和临时对象 ID
+// Renderer and temporary object IDs
 const renderer = ref<ReturnType<typeof useSceneRenderer> | null>(null)
 const templateObjectIds = ref<string[]>([])
 
-// 模板数据
+// Template data
 const template = computed<SceneTemplate | undefined>(
   () => templateStore.getTemplate(props.templateId)
 )
 
-const templateName = computed(() => template.value?.name ?? '未知模板')
+const templateName = computed(() => template.value?.name ?? 'Unknown Template')
 const objectCount = computed(() => template.value?.objects.length ?? 0)
 const templateTags = computed(() => template.value?.tags ?? [])
 
@@ -155,7 +155,7 @@ const createdAtFormatted = computed(() => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
 })
 
-// 计算有初始动画的对象数量
+// Calculate count of objects with initial animations
 const animatableCount = computed(() => {
   if (!template.value) return 0
   let count = 0
@@ -181,17 +181,17 @@ function getTypeIcon(type: SceneObjectType): string {
 onMounted(async () => {
   const tpl = template.value
   if (!tpl) {
-    throw new Error(`[SceneTemplatePreviewDialog] 模板 ${props.templateId} 不存在`)
+    throw new Error(`[SceneTemplatePreviewDialog] Template ${props.templateId} does not exist`)
   }
 
-  // 实例化模板对象到场景 Store
+  // Instantiate template objects into Scene Store
   const result = instantiateTemplate(tpl, CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2, { autoWrapComposite: false })
   for (const obj of result.objects) {
     sceneObjectStore.addObject(obj)
   }
   templateObjectIds.value = result.objects.map(o => o.id)
 
-  // 初始化 PIXI 渲染器（只读 Setup 模式）
+  // Initialize PIXI renderer (read-only Setup mode)
   if (canvasContainerRef.value) {
     const rendererInstance = useSceneRenderer({
       canvasContainer: canvasContainerRef.value,
@@ -203,12 +203,12 @@ onMounted(async () => {
     await rendererInstance.initRenderer()
     await rendererInstance.renderObjects()
 
-    // 居中滚动
+    // Center scroll
     setTimeout(() => {
       rendererInstance.scrollToCanvasCenter()
     }, 100)
 
-    // 自动播放初始动画（如果有）
+    // Autoplay initial animations if present
     if (animatableCount.value > 0) {
       setTimeout(() => {
         startAnimations()
@@ -218,15 +218,15 @@ onMounted(async () => {
 })
 
 onBeforeUnmount(() => {
-  // 停止所有动画
+  // Stop all animations
   stopAnimations()
 
-  // 清理 PIXI 渲染器
+  // Clean up PIXI renderer
   if (renderer.value) {
     renderer.value.destroyRenderer()
   }
 
-  // 清理临时对象
+  // Clean up temporary objects
   for (const id of templateObjectIds.value) {
     sceneObjectStore.removeObject(id)
   }
@@ -241,7 +241,7 @@ function toggleAnimations() {
 }
 
 /**
- * 启动所有对象的 initialAnimations
+ * Start all objects' initialAnimations
  */
 function startAnimations() {
   if (!renderer.value) return
@@ -280,7 +280,7 @@ function startAnimations() {
 }
 
 /**
- * 停止所有对象的动画
+ * Stop all objects' animations
  */
 function stopAnimations() {
   if (!renderer.value) return
@@ -303,7 +303,7 @@ function stopAnimations() {
 }
 
 /**
- * 从对象的 animations 字典中按名称查找动画定义
+ * Find animation definition by name from object animations dictionary
  */
 function findAnimationByName(
   animations: Record<string, AnimationDefinition> | undefined,

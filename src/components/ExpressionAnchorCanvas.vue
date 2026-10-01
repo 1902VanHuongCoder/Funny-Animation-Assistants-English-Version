@@ -35,22 +35,22 @@ const imageScale = ref(1)
 const imageOffsetX = ref(0)
 const imageOffsetY = ref(0)
 
-// 计算锚点在画布上的实际坐标
+// Calculate anchor actual coordinates on canvas
 const anchorX = ref(0)
 const anchorY = ref(0)
 
-// 监听外部锚点变化
+// Watch external anchor changes
 watch(() => props.anchor, (newAnchor) => {
   updateAnchorPosition(newAnchor)
 }, { deep: true })
 
-// 监听水平翻转变化
+// Watch horizontal flip changes
 watch(() => props.flipHorizontal, () => {
   updateAnchorPosition(props.anchor)
   draw()
 })
 
-// 监听图片变化
+// Watch image changes
 watch(() => props.imageUrl, async (newUrl) => {
   if (newUrl) {
     await loadImage(newUrl)
@@ -86,12 +86,12 @@ function calculateImageLayout() {
   const canvas = canvasRef.value
   const img = image.value
   
-  // 计算缩放比例，使图片适应画布
+  // Calculate scale ratio to fit image into canvas
   const scaleX = canvas.width / img.width
   const scaleY = canvas.height / img.height
   imageScale.value = Math.min(scaleX, scaleY)
   
-  // 计算居中偏移
+  // Calculate centering offset
   const scaledWidth = img.width * imageScale.value
   const scaledHeight = img.height * imageScale.value
   imageOffsetX.value = (canvas.width - scaledWidth) / 2
@@ -106,8 +106,8 @@ function updateAnchorPosition(anchor: AnchorPoint) {
   const scaledWidth = img.width * imageScale.value
   const scaledHeight = img.height * imageScale.value
   
-  // 计算锚点在画布上的实际坐标
-  // 如果水平翻转，x坐标需要镜像
+  // Calculate anchor actual coordinates on canvas
+  // If horizontally flipped, mirror x coordinate
   if (props.flipHorizontal) {
     anchorX.value = imageOffsetX.value + scaledWidth * (1 - anchor.x)
   } else {
@@ -123,26 +123,26 @@ function draw() {
   const ctx = canvas.getContext('2d')
   if (!ctx) return
 
-  // 清空画布
+  // Clear canvas
   ctx.clearRect(0, 0, canvas.width, canvas.height)
   
-  // 绘制白色背景
+  // Draw white background
   ctx.fillStyle = '#FFFFFF'
   ctx.fillRect(0, 0, canvas.width, canvas.height)
   
-  // 绘制图片
+  // Draw image
   const img = image.value
   const scaledWidth = img.width * imageScale.value
   const scaledHeight = img.height * imageScale.value
   
-  // 如果启用水平翻转，需要先保存上下文状态
+  // If horizontal flip enabled, save context state first
   if (props.flipHorizontal) {
     ctx.save()
-    // 移动到图片中心位置
+    // Move to image center position
     ctx.translate(imageOffsetX.value + scaledWidth, imageOffsetY.value)
-    // 水平翻转
+    // Flip horizontally
     ctx.scale(-1, 1)
-    // 绘制图片（注意x坐标需要为负）
+    // Draw image(note: x coordinate must be negative)
     ctx.drawImage(img, 0, 0, -scaledWidth, scaledHeight)
     ctx.restore()
   } else {
@@ -155,7 +155,7 @@ function draw() {
     )
   }
   
-  // 绘制边框
+  // Draw border
   ctx.strokeStyle = '#ddd'
   ctx.lineWidth = 1
   ctx.strokeRect(
@@ -165,7 +165,7 @@ function draw() {
     scaledHeight
   )
   
-  // 绘制红色十字准星
+  // Draw red crosshair
   const crossSize = 20
   const lineWidth = 2
   
@@ -173,17 +173,17 @@ function draw() {
   ctx.lineWidth = lineWidth
   ctx.beginPath()
   
-  // 水平线
+  // Horizontal line
   ctx.moveTo(anchorX.value - crossSize, anchorY.value)
   ctx.lineTo(anchorX.value + crossSize, anchorY.value)
   
-  // 垂直线
+  // Vertical line
   ctx.moveTo(anchorX.value, anchorY.value - crossSize)
   ctx.lineTo(anchorX.value, anchorY.value + crossSize)
   
   ctx.stroke()
   
-  // 绘制中心圆点
+  // Draw center dot
   ctx.fillStyle = '#ff0000'
   ctx.beginPath()
   ctx.arc(anchorX.value, anchorY.value, 4, 0, Math.PI * 2)
@@ -198,7 +198,7 @@ function handleMouseDown(event: MouseEvent) {
   const x = event.clientX - rect.left
   const y = event.clientY - rect.top
   
-  // 检查是否点击在锚点附近
+  // Check if click is near anchor
   const distance = Math.sqrt(
     Math.pow(x - anchorX.value, 2) + Math.pow(y - anchorY.value, 2)
   )
@@ -231,22 +231,22 @@ function updateAnchorFromCanvas(canvasX: number, canvasY: number) {
   const scaledWidth = img.width * imageScale.value
   const scaledHeight = img.height * imageScale.value
   
-  // 计算相对于图片的坐标
+  // Calculate coordinates relative to image
   let relativeX = (canvasX - imageOffsetX.value) / scaledWidth
   const relativeY = (canvasY - imageOffsetY.value) / scaledHeight
   
-  // 如果水平翻转，x坐标需要镜像
+  // If horizontally flipped, mirror x coordinate
   if (props.flipHorizontal) {
     relativeX = 1 - relativeX
   }
   
-  // 限制在 0-1 范围内
+  // Clamp within 0-1 range
   const newAnchor: AnchorPoint = {
     x: Math.max(0, Math.min(1, relativeX)),
     y: Math.max(0, Math.min(1, relativeY))
   }
   
-  // 更新显示的锚点位置（考虑翻转）
+  // Update displayed anchor position (accounting for flip)
   if (props.flipHorizontal) {
     anchorX.value = imageOffsetX.value + scaledWidth * (1 - newAnchor.x)
   } else {
@@ -258,7 +258,7 @@ function updateAnchorFromCanvas(canvasX: number, canvasY: number) {
   draw()
 }
 
-// 当画布尺寸变化时重新计算
+// Recalculate when canvas dimensions change
 function resizeCanvas() {
   if (!canvasRef.value) return
   

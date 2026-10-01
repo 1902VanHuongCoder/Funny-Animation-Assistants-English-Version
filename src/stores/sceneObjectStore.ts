@@ -1,4 +1,4 @@
-// P1: 触发所有序列化器注册
+// P1: Trigger all serializer registrations
 import '@/core/sceneObjectProviders/serialization/registerAll'
 
 import { defineStore } from 'pinia'
@@ -10,7 +10,7 @@ import { getLifecycleHooks } from '@/core/sceneObjectProviders/index'
 import type { DeserializeContext } from '@/core/sceneObjectProviders/serialization/index'
 import { getTypeSerializer } from '@/core/sceneObjectProviders/serialization/index'
 import { useAnimationStore } from '@/stores/animationStore'
-// 场景对象类型
+// Scene object types
 import type {
   AudioObject,
   BackgroundObject,
@@ -57,50 +57,50 @@ export type {
 
 
 export const useSceneObjectStore = defineStore('sceneObject', () => {
-  // ==================== 聚合数据架构 ====================
-  // setupState: 持久层 — SceneSetup 的响应式包装
-  //   - Setup Mode: 用户编辑直接修改
-  //   - Action Mode: 仅通过 addSetupObject/removeSetupObject/updateSetupObject 修改
-  //   - 序列化: toSetupObject 始终从此处读取
+  // ==================== Aggregate Data Architecture ====================
+  // setupState: Persistence layer - Reactive wrapper for SceneSetup
+  //   - Setup Mode: Direct user editing modifications
+  //   - Action Mode: Modified only via addSetupObject/removeSetupObject/updateSetupObject
+  //   - Serialization: toSetupObject always reads from here
   const setupState = ref<SceneSetup>({
     camera: { x: CANVAS_CENTER_X, y: CANVAS_CENTER_Y, width: CAMERA_BASE_WIDTH, height: CAMERA_BASE_HEIGHT, zoom: 1 },
     objects: [],
     renderChain: [],
   })
 
-  // runtimeState: 运行时层 — Action Mode 下的 RuntimeSceneSnapshot
-  //   - Setup Mode: null（不使用）
-  //   - Action Mode: 进入时由 createRuntimeSnapshot 创建，由 applySlotState 覆写
-  //   - 退出时丢弃
+  // runtimeState: Runtime layer - RuntimeSceneSnapshot under Action Mode
+  //   - Setup Mode: null (unused)
+  //   - Action Mode: Created by createRuntimeSnapshot upon entry, overwritten by applySlotState
+  //   - Discarded upon exit
   const runtimeState = ref<RuntimeSceneSnapshot | null>(null)
 
-  // v16: 延迟获取 animationStore
+  // v16: Lazily retrieve animationStore
   function getAnimationStore() {
     return useAnimationStore()
   }
 
   /**
-   * 当前活跃层的场景对象数组（只读代理）
+   * Scene object array of current active layer (read-only proxy)
    * ⚠️ Setup Mode → setupState.objects | Action Mode → runtimeState.objects
    */
   const objects = computed(() => isActionMode.value ? runtimeState.value!.objects : setupState.value.objects)
 
   /**
-   * 当前活跃层的场景渲染链（只读代理）
+   * Scene render chain of current active layer (read-only proxy)
    */
   const sceneRenderChain = computed(() => isActionMode.value ? runtimeState.value!.renderChain : setupState.value.renderChain)
 
   const selectedObjectId = ref<string | null>(null)
 
-  // 模式标记
+  // Mode flag
   const isActionMode = ref(false)
 
-  // ==================== v17: 命名空间别名管理 ====================
+  // ==================== v17: Namespace Alias Management ====================
 
   /**
-   * 查找对象所在的命名空间根 ID
-   * - 向上遍历 parentId 链，遇到 compositeMode === 'entity' 的祖先 → 返回该 entity ID
-   * - 到达根（无 parent 或仅穿过 union）→ 返回 null（场景命名空间）
+   * Find namespace root ID for object
+   * - Walk up parentId chain, returning entity ID when encountering ancestor with compositeMode === 'entity'
+   * - Reaching root (no parent or through union only) -> returns null (scene namespace)
    */
   function resolveNamespaceRoot(objectId: string): string | null {
     let currentId: string | undefined = objects.value.find(o => o.id === objectId)?.parentId
@@ -119,22 +119,22 @@ export const useSceneObjectStore = defineStore('sceneObject', () => {
   }
 
   /**
-   * 收集指定命名空间内所有对象的 alias
-   * - namespaceRootId === null → 场景命名空间（根对象 + union 穿透）
-   * - namespaceRootId === entityId → 该 entity 的子对象 + union 穿透
-   * - union composite 是透明的，其子对象 alias 归入上层命名空间
-   * - entity composite 自身的 alias 归入上层命名空间，其内部子对象不归入
+   * Collect aliases of all objects within specified namespace
+   * - namespaceRootId === null -> Scene namespace (root objects + union penetration)
+   * - namespaceRootId === entityId -> Entity child objects + union penetration
+   * - union composite is transparent; its child object aliases belong to parent namespace
+   * - entity composite's own alias belongs to parent namespace; internal children do not
    */
   function getNamespaceAliases(namespaceRootId: string | null, excludeObjectId?: string): string[] {
     const aliases: string[] = []
 
-    // 确定种子对象列表
+    // Determine seed object list
     let seedObjects: SceneObject[]
     if (namespaceRootId === null) {
-      // 场景命名空间：所有根对象
+      // Scene namespace: all root objects
       seedObjects = objects.value.filter(o => !o.parentId)
     } else {
-      // entity 命名空间：该 entity 的直接子对象
+      // entity namespace: direct child objects of this entity
       const entity = objects.value.find(o => o.id === namespaceRootId) as CompositeObject | undefined
       if (!entity) return aliases
       seedObjects = entity.childIds
@@ -142,14 +142,14 @@ export const useSceneObjectStore = defineStore('sceneObject', () => {
         .filter((o): o is SceneObject => o !== undefined)
     }
 
-    // 递归收集：union 穿透，entity 停止
+    // Recursive collection: penetrate union, stop at entity
     function collectAliases(objs: SceneObject[]) {
       for (const obj of objs) {
         if (obj.type === 'camera') continue
         if (obj.id === excludeObjectId) continue
         if (obj.alias) aliases.push(obj.alias)
 
-        // union composite：穿透，递归收集子对象
+        // union composite: penetrate and recursively collect children
         if (obj.type === 'composite') {
           const comp = obj as CompositeObject
           if (comp.compositeMode === 'union') {
@@ -158,7 +158,7 @@ export const useSceneObjectStore = defineStore('sceneObject', () => {
               .filter((o): o is SceneObject => o !== undefined)
             collectAliases(children)
           }
-          // entity composite：自身 alias 已收集，内部子对象不收集（隔离边界）
+          // entity composite: own alias already collected, internal children not collected (isolation boundary)
         }
       }
     }
@@ -168,15 +168,15 @@ export const useSceneObjectStore = defineStore('sceneObject', () => {
   }
 
   /**
-   * 获取指定命名空间中所有对象的别名列表（排除相机）
-   * @param namespaceRootId 命名空间根 ID，null = 场景命名空间（默认）
+   * Get alias list of all objects in specified namespace (excluding camera)
+   * @param namespaceRootId Namespace root ID, null = scene namespace (default)
    */
   function getExistingAliases(namespaceRootId?: string | null): string[] {
     return getNamespaceAliases(namespaceRootId ?? null)
   }
 
   /**
-   * 检查别名在指定命名空间内是否已存在
+   * Check whether alias already exists in specified namespace
    */
   function isAliasExists(alias: string, excludeObjectId?: string, namespaceRootId?: string | null): boolean {
     const aliases = getNamespaceAliases(namespaceRootId ?? null, excludeObjectId)
@@ -184,9 +184,9 @@ export const useSceneObjectStore = defineStore('sceneObject', () => {
   }
 
   /**
-   * 在指定命名空间内生成唯一别名
-   * 规则：第一个没有编号，第二个是 "xxx1"，第三个是 "xxx2"...
-   * @param namespaceRootId 命名空间根 ID，null = 场景命名空间（默认）
+   * Generate unique alias in specified namespace
+   * Rule: first without number, second is "xxx1", third is "xxx2"...
+   * @param namespaceRootId Namespace root ID, null = scene namespace (default)
    */
   function generateUniqueAlias(baseName: string, namespaceRootId?: string | null, excludeObjectId?: string): string {
     const existingAliases = getNamespaceAliases(namespaceRootId ?? null, excludeObjectId)
@@ -203,32 +203,32 @@ export const useSceneObjectStore = defineStore('sceneObject', () => {
   }
 
   function addObject(object: SceneObject) {
-    // Setup Mode: 写持久层；Action Mode: 写显示层
+    // Setup Mode: write to persistence layer; Action Mode: write to display layer
     if (isActionMode.value) {
       runtimeState.value!.objects.push(object)
     } else {
       setupState.value.objects.push(object)
     }
 
-    // v19 重构: 统一 renderChain 管理（Setup 和 Action 共享同一路径）
+    // v19 Refactor: Unified renderChain management (Setup and Action share same path)
     rcOnObjectAdded(object, rcStoreAccessor)
   }
 
-  // 获取默认层级
+  // Get default layer
   function getDefaultZIndex(): number {
     return Z_INDEX_DEFAULT
   }
 
   /**
-   * v21: 自动将 origin='auto' 的帧动画加入 initialAnimations
+   * v21: Automatically add frame animations with origin='auto' to initialAnimations
    *
-   * 仅在对象创建时调用，确保帧动画默认播放。
-   * 对已有 initialAnimations 的对象不做修改（尊重用户设置）。
+   * Called only on object creation to ensure frame animation plays by default.
+   * Objects with existing initialAnimations are unmodified (respecting user settings).
    */
   function autoPopulateInitialAnimations(obj: SceneObject): void {
-    // 仅处理 prop 和 background
+    // Only handle prop and background
     if (obj.type !== 'prop' && obj.type !== 'background') return
-    // 如果已有 initialAnimations，不覆盖
+    // If initialAnimations already exist, do not overwrite
     if (obj.initialAnimations && obj.initialAnimations.length > 0) return
 
     const animations = obj.animations
@@ -243,7 +243,7 @@ export const useSceneObjectStore = defineStore('sceneObject', () => {
         name: a.name,
         loop: a.loop ?? true,
       }))
-      // v24: 通过 updateSetupObject 写回，确保同步到 episode（ScenePlayer 预览从 episode 读取）
+      // v24: Write back via updateSetupObject to ensure episode sync (ScenePlayer preview reads from episode)
       const storeObj = getObject(obj.id)
       if (storeObj) {
         updateSetupObject(obj.id, { initialAnimations: [...obj.initialAnimations] } as Partial<SceneObject>)
@@ -251,34 +251,34 @@ export const useSceneObjectStore = defineStore('sceneObject', () => {
     }
   }
 
-  // createCharacterObject 已移除
+  // createCharacterObject has been removed
 
-  // 创建背景对象
-  // v7.1: 添加 alias 和 customId 参数
+  // Create background object
+  // v7.1: Added alias and customId parameters
   function createBackgroundObject(
     backgroundId: string,
     name: string,
     customId?: string,
     customAlias?: string
   ): BackgroundObject {
-    // 背景默认居中显示，实际坐标会在渲染时根据图片尺寸更新
+    // Background defaults to center; actual coordinates update during render based on image dimensions
     const defaultWidth = 0
     const defaultHeight = 0
 
-    // v7.1: 生成唯一别名
+    // v7.1: Generate unique alias
     const alias = customAlias ?? generateUniqueAlias(name)
 
     const obj: BackgroundObject = {
-      id: customId ?? generateId('sceneobject'), // v7.36: 统一使用 sceneobject 前缀
+      id: customId ?? generateId('sceneobject'), // v7.36: Uniformly use sceneobject prefix
       type: 'background',
       name,
-      alias,  // v7.1: 添加别名
-      // PT Phase 6: backgroundId 已删除，统一使用 refId
+      alias,  // v7.1: Added alias
+      // PT Phase 6: backgroundId removed, uniformly use refId
       refId: backgroundId,
-      x: CANVAS_CENTER_X,  // v2.0.0: 统一中心坐标（渲染时会根据纹理尺寸更新）
+      x: CANVAS_CENTER_X,  // v2.0.0: Unified center coordinates (updated on render based on texture size)
       y: CANVAS_CENTER_Y,
-      width: defaultWidth,  // 默认宽度，会在渲染时根据实际图片更新
-      height: defaultHeight, // 默认高度，会在渲染时根据实际图片更新
+      width: defaultWidth,  // Default width, updated during render based on actual image
+      height: defaultHeight, // Default height, updated during render based on actual image
       scaleX: 1,
       scaleY: 1,
       rotation: 0,
@@ -288,12 +288,12 @@ export const useSceneObjectStore = defineStore('sceneObject', () => {
       visible: true
     }
     addObject(obj)
-    // v16: 对象创建时自动生成帧动画 Animation
+    // v16: Automatically generate frame animation Animation upon object creation
     getAnimationStore().hydrateObjectAnimations(obj)
     return obj
   }
 
-  // 创建音频对象
+  // Create audio object
   function createAudioObject(
     soundId: string,
     name: string,
@@ -307,11 +307,11 @@ export const useSceneObjectStore = defineStore('sceneObject', () => {
     customId?: string,
     customAlias?: string
   ): AudioObject {
-    // 生成唯一别名
+    // Generate unique alias
     const alias = customAlias ?? generateUniqueAlias(name)
 
     const obj: AudioObject = {
-      id: customId ?? generateId('sceneobject'), // v7.36: 统一使用 sceneobject 前缀
+      id: customId ?? generateId('sceneobject'), // v7.36: Uniformly use sceneobject prefix
       type: 'audio',
       name,
       alias,
@@ -320,8 +320,8 @@ export const useSceneObjectStore = defineStore('sceneObject', () => {
       loop: options.loop ?? false,
       fadeIn: options.fadeIn ?? 0,
       fadeOut: options.fadeOut ?? 0,
-      playbackState: options.playbackState ?? 'stop', // 默认为停止，需手动开启
-      x: 0,   // 音频对象不显示在画布上
+      playbackState: options.playbackState ?? 'stop', // Defaults to stopped, manual start required
+      x: 0,   // Audio object is not displayed on canvas
       y: 0,
       width: 0,
       height: 0,
@@ -338,8 +338,8 @@ export const useSceneObjectStore = defineStore('sceneObject', () => {
     return obj
   }
 
-  // 创建道具对象
-  // v7.1: 添加 alias 和 customId 参数
+  // Create prop object
+  // v7.1: Added alias and customId parameters
   // v7.1.1: Fix HMR issue
   function createPropObject(
     propId: string,
@@ -347,24 +347,24 @@ export const useSceneObjectStore = defineStore('sceneObject', () => {
     customId?: string,
     customAlias?: string
   ): PropObject {
-    const width = 200 // 默认尺寸，渲染时会更新
+    const width = 200 // Default dimension, updated during render
     const height = 200
 
-    // 默认在画布中心
+    // Defaults to canvas center
     const centerX = CANVAS_CENTER_X
     const centerY = CANVAS_CENTER_Y
 
-    // v7.1: 生成唯一别名
+    // v7.1: Generate unique alias
     const alias = customAlias ?? generateUniqueAlias(name)
 
     const obj: PropObject = {
-      id: customId ?? generateId('sceneobject'), // v7.36: 统一使用 sceneobject 前缀
+      id: customId ?? generateId('sceneobject'), // v7.36: Uniformly use sceneobject prefix
       type: 'prop',
       name,
       alias,
-      // PT Phase 6: propId 已删除，统一使用 refId
+      // PT Phase 6: propId removed, uniformly use refId
       refId: propId,
-      x: centerX,  // v2.0.0: 统一中心坐标
+      x: centerX,  // v2.0.0: Unified center coordinates
       y: centerY,
       width,
       height,
@@ -377,19 +377,19 @@ export const useSceneObjectStore = defineStore('sceneObject', () => {
       visible: true
     }
     addObject(obj)
-    // v16: 对象创建时自动生成帧动画 Animation
+    // v16: Automatically generate frame animation Animation upon object creation
     getAnimationStore().hydrateObjectAnimations(obj)
-    // 将 hydrate 结果通过 Store API 写回，确保 Vue 响应式追踪
+    // Write back hydrate result via Store API to ensure Vue reactivity tracking
     if (obj.animations && Object.keys(obj.animations).length > 0) {
       updateObject(obj.id, { animations: { ...obj.animations } })
     }
     return getObject(obj.id) as PropObject
   }
 
-  // v7.3: createEffectObject 已移除，特效已合并到道具
-  // 如需添加特效，请使用 createPropObject 函数
+  // v7.3: createEffectObject removed, effects merged into props
+  // To add effects, use createPropObject function
 
-  // Phase 1: 创建画面特效对象
+  // Phase 1: Create screen effect object
   function createScreenEffectObject(
     effectClass: string,
     name: string,
@@ -399,7 +399,7 @@ export const useSceneObjectStore = defineStore('sceneObject', () => {
   ): ScreenEffectObject {
     const alias = customAlias ?? generateUniqueAlias(name)
 
-    // 默认大小为相机视口的 110%，确保覆盖默认视口并有余量
+    // Default size is 110% of camera viewport to ensure full coverage with margin
     const defaultWidth = Math.round(CAMERA_BASE_WIDTH * 1.1)
     const defaultHeight = Math.round(CAMERA_BASE_HEIGHT * 1.1)
 
@@ -412,7 +412,7 @@ export const useSceneObjectStore = defineStore('sceneObject', () => {
       effectClass,
       params: {
         baseColor: params.baseColor ?? '#000000',
-        // coverOpacity 已删除，覆盖不透明度由 alpha 控制
+        // coverOpacity removed, coverage opacity controlled by alpha
         openRatio: params.openRatio ?? 1.0,
         feather: params.feather ?? 0,
         ...params
@@ -433,7 +433,7 @@ export const useSceneObjectStore = defineStore('sceneObject', () => {
     return obj
   }
 
-  // v16: 创建元件对象
+  // v16: Create symbol object
   function createSymbolObject(
     name: string,
     customId?: string,
@@ -461,16 +461,16 @@ export const useSceneObjectStore = defineStore('sceneObject', () => {
       visible: true
     }
     addObject(obj)
-    // v16: 对象创建时自动生成帧动画 Animation
+    // v16: Automatically generate frame animation Animation upon object creation
     getAnimationStore().hydrateObjectAnimations(obj)
-    // 将 hydrate 结果通过 Store API 写回，确保 Vue 响应式追踪
+    // Write back hydrate result via Store API to ensure Vue reactivity tracking
     if (obj.animations && Object.keys(obj.animations).length > 0) {
       updateObject(obj.id, { animations: { ...obj.animations } })
     }
     return getObject(obj.id) as SymbolObject
   }
 
-  // v18: 创建独立表情对象
+  // v18: Create standalone expression object
   function createExpressionObject(
     expressionId: string,
     name: string,
@@ -499,7 +499,7 @@ export const useSceneObjectStore = defineStore('sceneObject', () => {
       visible: true
     }
     addObject(obj)
-    // 对象创建时自动生成帧动画 Animation
+    // Automatically generate frame animation Animation upon object creation
     getAnimationStore().hydrateObjectAnimations(obj)
     if (obj.animations && Object.keys(obj.animations).length > 0) {
       updateObject(obj.id, { animations: { ...obj.animations } })
@@ -507,10 +507,10 @@ export const useSceneObjectStore = defineStore('sceneObject', () => {
     return getObject(obj.id) as ExpressionObject
   }
 
-  // Clip-Mask Phase 1：创建蒙版对象。
-  // 详见 docs/features/clip-mask.md（v2.1）。
-  // targetIds 故意不暴露在 options 中：UI 路径默认空数组，反序列化路径由 maskSerializer 通过 finalize 步骤回填，
-  // 避免在创建时绕过独占校验。
+  // Clip-Mask Phase 1: Create mask object.
+  // See docs/features/clip-mask.md (v2.1).
+  // targetIds intentionally omitted from options: UI path defaults to empty array; deserialization path backfilled via finalize step in maskSerializer,
+  // avoiding bypassing exclusive validation on creation.
   function createMaskObject(
     name: string,
     shape: import('@/types/sceneObject').MaskShape,
@@ -548,32 +548,32 @@ export const useSceneObjectStore = defineStore('sceneObject', () => {
     return getObject(obj.id) as import('@/types/sceneObject').MaskObject
   }
 
-  // Clip-Mask Phase 1：反序列化阶段暂存的 targetIds（key = mask id）。
-  // maskSerializer.deserialize 写入；finalizeMaskTargets() 在所有对象就绪后回填并裁决独占冲突，随后清空。
+  // Clip-Mask Phase 1: Staged targetIds during deserialization (key = mask id).
+  // Written by maskSerializer.deserialize; backfilled by finalizeMaskTargets() after all objects are ready, arbitrating exclusive conflicts, then cleared.
   const _pendingMaskTargets = new Map<string, string[]>()
 
   /**
-   * Clip-Mask Phase 1：反序列化结束后回填 mask.targetIds 并清理脏数据。
+   * Clip-Mask Phase 1: Backfill mask.targetIds after deserialization and clean stale data.
    *
-   * 调用时机：sceneLoader.ts 在 `for (objData) fromSetupObject(...)` 循环结束后、
-   * `rebuildEntityRenderChains()` 之前调用一次。
+   * Invocation timing: in sceneLoader.ts after `for (objData) fromSetupObject(...)` loop,
+   * called once before `rebuildEntityRenderChains()`.
    *
-   * 清理规则（按 mask 在 setupState.objects 中的稳定升序顺序处理，使索引较小者优先获得 target）：
-   * - 死引用：targetIds 中的 id 在场景里不存在 → 静默剔除
-   * - 非法目标类型：!isAllowedMaskTargetType(target.type) → 静默剔除
-   * - 嵌套：target 自身是 'mask' → 静默剔除
-   * - 同 target 多 mask 冲突：先到先得（按对象数组索引升序），后来者剔除 + 1 条聚合 warn
-   * - mode !== 'inside_visible'：保持读到的对象字段不动（已由 createMaskObject 默认 inside_visible，
-   *   旧脏数据通过 maskSerializer 在 deserialize 阶段降级为 inside_visible 并 warn）
+   * Clean rules (processed in stable ascending order of mask in setupState.objects, giving priority to smaller indices):
+   * - Dead reference: id in targetIds does not exist in scene -> silently remove
+   * - Invalid target type: !isAllowedMaskTargetType(target.type) -> silently remove
+   * - Nesting: target itself is 'mask' -> silently remove
+   * - Same target multi-mask conflict: first come first served (ascending array index), latter removed + 1 aggregated warning
+   * - mode !== 'inside_visible': keep read object field intact (default inside_visible from createMaskObject,
+   *   legacy dirty data downgraded to inside_visible and warned via maskSerializer in deserialize phase)
    */
   function finalizeMaskTargets(): void {
     if (_pendingMaskTargets.size === 0) return
 
-    const claimedTargets = new Set<string>() // 已被占用的 target id
+    const claimedTargets = new Set<string>() // Already claimed target IDs
     let droppedCount = 0
     const droppedReasons: string[] = []
 
-    // 按 setupState.objects 中的索引升序处理 mask，保证“起始索引较小者胜”
+    // Process masks in ascending index order in setupState.objects, ensuring lower initial index wins
     const masksInOrder = setupState.value.objects
       .map((o, idx) => ({ obj: o, idx }))
       .filter(({ obj }) => obj.type === 'mask' && _pendingMaskTargets.has(obj.id))
@@ -595,7 +595,7 @@ export const useSceneObjectStore = defineStore('sceneObject', () => {
           droppedReasons.push(`${mask.id}→${id}: mask→mask nesting (Phase 1.5)`)
           continue
         }
-        // 这里直接用模块导入更安全；为避免循环依赖，inline 判断常见类型
+        // Safer to import module directly; inline common types check to avoid circular dependencies
         const allowed = tgt.type === 'prop' || tgt.type === 'text' || tgt.type === 'symbol'
           || tgt.type === 'expression' || tgt.type === 'composite' || tgt.type === 'background'
         if (!allowed) {
@@ -621,24 +621,24 @@ export const useSceneObjectStore = defineStore('sceneObject', () => {
     }
   }
 
-  // 创建相机对象
+  // Create camera object
   function createCameraObject(name: string, canvasCenter?: { x: number, y: number }, zoom?: number, customId?: string): CameraObject {
     const width = CAMERA_BASE_WIDTH
     const height = CAMERA_BASE_HEIGHT
 
-    // 相机使用中心坐标
+    // Camera uses center coordinates
     const centerX = canvasCenter?.x ?? CANVAS_CENTER_X
     const centerY = canvasCenter?.y ?? CANVAS_CENTER_Y
 
     const obj: CameraObject = {
-      id: customId ?? generateId('sceneobject'), // v7.36: 统一使用 sceneobject 前缀
+      id: customId ?? generateId('sceneobject'), // v7.36: Uniformly use sceneobject prefix
       type: 'camera',
       name,
       refId: '',
-      x: centerX,  // 相机存储中心坐标
-      y: centerY,  // 相机存储中心坐标
-      width,   // PRD文档规定：默认相机宽度
-      height,   // PRD文档规定：默认相机高度
+      x: centerX,  // Camera stores center coordinates
+      y: centerY,  // Camera stores center coordinates
+      width,   // PRD spec: default camera width
+      height,   // PRD spec: default camera height
       scaleX: 1,
       scaleY: 1,
       rotation: 0,
@@ -646,13 +646,13 @@ export const useSceneObjectStore = defineStore('sceneObject', () => {
       flipX: false,
       zIndex: Z_INDEX_CAMERA,
       visible: true,
-      zoom: zoom ?? 1.0  // 默认 zoom = 1.0
+      zoom: zoom ?? 1.0  // Default zoom = 1.0
     }
     addObject(obj)
     return obj
   }
 
-  // 创建光源对象（ambient 或 point）
+  // Create light object (ambient or point)
   function createLightObject(
     lightType: 'ambient' | 'point' | 'spot',
     name: string,
@@ -704,8 +704,8 @@ export const useSceneObjectStore = defineStore('sceneObject', () => {
     return obj
   }
 
-  // 创建文本对象
-  // v7.1: 添加 alias 和 customId 参数
+  // Create text object
+  // v7.1: Added alias and customId parameters
   function createTextObject(
     content: string,
     canvasCenter?: { x: number, y: number },
@@ -715,19 +715,19 @@ export const useSceneObjectStore = defineStore('sceneObject', () => {
     const width = 400
     const height = 100
 
-    // v2.0.0: 统一使用中心坐标
+    // v2.0.0: Uniformly use center coordinates
     const centerX = canvasCenter?.x ?? CANVAS_CENTER_X
     const centerY = canvasCenter?.y ?? CANVAS_CENTER_Y
 
-    // v7.1: 生成唯一别名
-    const alias = customAlias ?? generateUniqueAlias('文本')
+    // v7.1: Generate unique alias
+    const alias = customAlias ?? generateUniqueAlias('Text')
 
     const obj: TextObject = {
-      id: customId ?? generateId('sceneobject'), // v7.36: 统一使用 sceneobject 前缀
+      id: customId ?? generateId('sceneobject'), // v7.36: Uniformly use sceneobject prefix
       type: 'text',
-      name: '文本',
+      name: 'Text',
       refId: '',
-      alias,  // v7.1: 添加别名
+      alias,  // v7.1: Added alias
       content,
       fontSize: 72,
       fontFamily: 'Noto Sans SC',
@@ -739,10 +739,10 @@ export const useSceneObjectStore = defineStore('sceneObject', () => {
       wordWrapWidth: 400,
       textBoxMode: 'auto-size',
       revealInitialState: 'complete',
-      x: centerX,  // v2.0.0: 统一中心坐标
+      x: centerX,  // v2.0.0: Unified center coordinates
       y: centerY,
-      width,   // 默认宽度
-      height,  // 默认高度
+      width,   // Default width
+      height,  // Default height
       scaleX: 1,
       scaleY: 1,
       rotation: 0,
@@ -755,7 +755,7 @@ export const useSceneObjectStore = defineStore('sceneObject', () => {
     return obj
   }
 
-  // P2: 创建组合对象
+  // P2: Create composite object
   function createCompositeObject(
     name: string,
     childIds: string[] = [],
@@ -790,28 +790,28 @@ export const useSceneObjectStore = defineStore('sceneObject', () => {
 
     addObject(obj)
 
-    // 设置子对象的 parentId
+    // Set child object parentId
     for (const childId of childIds) {
       updateObject(childId, { parentId: obj.id })
     }
 
-    // addObject 后 Vue 会将 obj 包装为 reactive proxy，返回 getObject 获取数组中的实际引用
+    // After addObject Vue wraps obj as reactive proxy; return getObject to get actual reference in array
     return getObject(obj.id) as CompositeObject
   }
 
   /**
-   * 从当前活跃层获取对象
-   * ⚠️ Setup Mode → 读 setupObjects | Action Mode → 读 runtimeObjects
+   * Get object from current active layer
+   * Setup Mode -> reads setupObjects | Action Mode -> reads runtimeObjects
    */
   function getObject(id: string): SceneObject | undefined {
     return objects.value.find(obj => obj.id === id)
   }
 
   /**
-   * 更新当前活跃层的对象属性
-   * ⚠️ Setup Mode → 写 setupObjects（持久层） | Action Mode → 写 runtimeObjects（显示层，不影响持久层）
+   * Update object properties in current active layer
+   * Setup Mode -> writes setupObjects (persistence layer) | Action Mode -> writes runtimeObjects (display layer, does not affect persistence)
    *
-   * updates 中值为 undefined 的属性将被从对象中删除（语义：清除可选属性）
+   * Properties with undefined value in updates will be removed from object (clearing optional properties)
    */
   function updateObject<T extends SceneObject = SceneObject>(id: string, updates: SceneObjectUpdateFor<T>) {
     const targetArray = isActionMode.value ? runtimeState.value!.objects : setupState.value.objects
@@ -843,7 +843,7 @@ export const useSceneObjectStore = defineStore('sceneObject', () => {
     applyUpdatesToArray(targetArray, id, updates)
   }
 
-  /** 内部辅助：将 updates 应用到目标数组中指定 id 的对象 */
+  /** Internal helper: Apply updates to object with specified id in target array */
   function applyUpdatesToArray<T extends SceneObject = SceneObject>(
     arr: SceneObject[], id: string, updates: SceneObjectUpdateFor<T>
   ) {
@@ -861,7 +861,7 @@ export const useSceneObjectStore = defineStore('sceneObject', () => {
     }
   }
 
-  /** 将子对象从 composite 中脱离：局部→全局（保持视觉不变） */
+  /** Detach child object from composite: local -> global (preserving visual appearance) */
   function resolveWorldTransform(obj: SceneObject): {
     x: number
     y: number
@@ -901,8 +901,8 @@ export const useSceneObjectStore = defineStore('sceneObject', () => {
     const child = getObject(childId)
     if (!child) return
 
-    // v2.0.0 方案 A: 完整变换补偿（position + scale + rotation）
-    // v19.2: localToGlobal 返回 flipX，用于恢复全局翻转状态
+    // v2.0.0 Solution A: Complete transform compensation (position + scale + rotation)
+    // v19.2: localToGlobal returns flipX to restore global flip state
     const compWorld = resolveWorldTransform(comp)
     const global = localToGlobal(child, compWorld)
     const newParentId = comp.parentId ?? undefined
@@ -921,17 +921,17 @@ export const useSceneObjectStore = defineStore('sceneObject', () => {
       scaleY: nextTransform.scaleY,
       rotation: nextTransform.rotation,
       flipX: nextTransform.flipX ?? child.flipX,
-      parentId: newParentId,  // 冒泡到上级，无上级 = 独立
+      parentId: newParentId,  // Bubble up to parent; no parent = standalone
     })
   }
 
-  /** 将子对象附加到 composite：全局→局部（保持视觉不变） */
+  /** Attach child object to composite: global -> local (preserving visual appearance) */
   function attachChild(childId: string, comp: CompositeObject): void {
     const child = getObject(childId)
     if (!child) return
 
-    // v2.0.0 方案 A: 完整变换补偿（position + scale + rotation）
-    // v19.2: globalToLocal 返回 flipX，当 parent.flipX=true 时子对象需翻转以抵消
+    // v2.0.0 Solution A: Complete transform compensation (position + scale + rotation)
+    // v19.2: globalToLocal returns flipX; child flips to counteract when parent.flipX=true
     const childWorld = resolveWorldTransform(child)
     const compWorld = resolveWorldTransform(comp)
     const local = globalToLocal(childWorld, compWorld)
@@ -946,7 +946,7 @@ export const useSceneObjectStore = defineStore('sceneObject', () => {
     })
   }
 
-  // 生命周期钩子的 Store 操作适配器
+  // Store operation adapter for lifecycle hooks
   const storeAccessor: import('@/core/sceneObjectProviders/index').LifecycleStoreAccessor = {
     getObject,
     removeObject: (id: string) => removeObject(id),
@@ -954,8 +954,8 @@ export const useSceneObjectStore = defineStore('sceneObject', () => {
     duplicateObject: (id: string) => duplicateObject(id),
   }
 
-  // Action Mode 下专用于持久层（setupState）的 lifecycle accessor。
-  // 避免 removeSetupObject 调用 onBeforeDelete 时错误地把父子关系清理到 runtimeState。
+  // Lifecycle accessor dedicated to persistence layer (setupState) in Action Mode.
+  // Prevents removeSetupObject onBeforeDelete from erroneously cleaning parent-child relations in runtimeState.
   const setupStoreAccessor: import('@/core/sceneObjectProviders/index').LifecycleStoreAccessor = {
     getObject: (id: string) => setupState.value.objects.find(o => o.id === id),
     removeObject: (id: string) => {
@@ -989,32 +989,32 @@ export const useSceneObjectStore = defineStore('sceneObject', () => {
     },
   }
 
-  // v19: RenderChainManager 的 Store 适配器
+  // v19: Store adapter for RenderChainManager
   const rcStoreAccessor: RenderChainStoreAccessor = {
     getObject,
     getSceneRenderChain: () => sceneRenderChain.value,
   }
 
-  // v19: 专用于 Action Mode 下直接操作持久层 (setupState) 的 RenderChain 适配器
-  // 绕过 sceneRenderChain computed（在 isActionMode 下指向 runtimeState），
-  // 确保 addSetupObject / removeSetupObject 能正确写入 setupState.renderChain
+  // v19: RenderChain adapter dedicated to directly manipulating persistence layer (setupState) in Action Mode
+  // Bypasses sceneRenderChain computed (which points to runtimeState under isActionMode),
+  // ensuring addSetupObject / removeSetupObject correctly writes to setupState.renderChain
   const rcSetupAccessor: RenderChainStoreAccessor = {
     getObject: (id) => setupState.value.objects.find(o => o.id === id),
     getSceneRenderChain: () => setupState.value.renderChain,
   }
 
-  // 删除对象（通过生命周期钩子实现类型特有行为）
-  // Setup Mode: 从 setupObjects 删除
-  // Action Mode: 从 runtimeObjects 删除（持久层需通过 removeSetupObject 单独处理）
+  // Delete object (type-specific behavior via lifecycle hooks)
+  // Setup Mode: Delete from setupObjects
+  // Action Mode: Delete from runtimeObjects (persistence layer handled separately via removeSetupObject)
   function removeObject(id: string) {
     const obj = getObject(id)
     if (!obj) return
 
-    // 生命周期钩子：类型特有的删除前处理（如 composite 级联删除子对象）
+    // Lifecycle hook: type-specific pre-deletion handling (e.g. composite cascading child deletion)
     const hooks = getLifecycleHooks(obj.type)
     hooks?.onBeforeDelete?.(obj, storeAccessor)
 
-    // 从父对象的 childIds 中移除自己
+    // Remove self from parent object's childIds
     if (obj.parentId) {
       const parent = getObject(obj.parentId)
       if (parent?.type === 'composite') {
@@ -1024,9 +1024,9 @@ export const useSceneObjectStore = defineStore('sceneObject', () => {
       }
     }
 
-    // Clip-Mask Phase 1：从所有 mask 对象的 targetIds 中清除 id 引用
-    // - 删除的若是 target：所有引用它的 mask.targetIds 必须剔除该 id
-    // - 删除的若是 mask 自身：不影响其它 mask（无需操作）
+    // Clip-Mask Phase 1: Clear id reference from targetIds of all mask objects
+    // - If deleted object is a target: all referencing mask.targetIds must purge this id
+    // - If deleted object is mask itself: does not affect other masks (no-op)
     if (obj.type !== 'mask') {
       const targetArrayForCleanup = isActionMode.value ? runtimeState.value!.objects : setupState.value.objects
       for (const o of targetArrayForCleanup) {
@@ -1037,7 +1037,7 @@ export const useSceneObjectStore = defineStore('sceneObject', () => {
       }
     }
 
-    // v19 重构: 统一 renderChain 管理
+    // v19 Refactor: Unified renderChain management
     rcOnObjectRemoved(id, obj, rcStoreAccessor)
 
     const targetArray = isActionMode.value ? runtimeState.value!.objects : setupState.value.objects
@@ -1050,7 +1050,7 @@ export const useSceneObjectStore = defineStore('sceneObject', () => {
     }
   }
 
-  /** 递归收集 composite 对象的所有后代 ID（深度优先） */
+  /** Recursively collect all descendant IDs of composite object (depth-first) */
   function collectAllDescendantIds(compositeId: string): string[] {
     const result: string[] = []
     const obj = getObject(compositeId)
@@ -1063,7 +1063,7 @@ export const useSceneObjectStore = defineStore('sceneObject', () => {
     return result
   }
 
-  /** 检查 objectId 是否是 ancestorId 的后代（通过 parentId 链向上查找） */
+  /** Check whether objectId is descendant of ancestorId (walking up parentId chain) */
   function isDescendantOf(objectId: string, ancestorId: string): boolean {
     let current = getObject(objectId)
     while (current?.parentId) {
@@ -1073,7 +1073,7 @@ export const useSceneObjectStore = defineStore('sceneObject', () => {
     return false
   }
 
-  /** 强制级联删除 composite 及其所有后代（不论 compositeMode） */
+  /** Force cascade deletion of composite and all its descendants (regardless of compositeMode) */
   function removeObjectWithDescendants(id: string): void {
     const obj = getObject(id)
     if (!obj) return
@@ -1081,7 +1081,7 @@ export const useSceneObjectStore = defineStore('sceneObject', () => {
     if (obj.type === 'composite') {
       const comp = obj as CompositeObject
       const allDescendantIds = collectAllDescendantIds(id)
-      // 清空所有 composite 的 childIds，防止 onBeforeDelete 触发冒泡
+      // Clear childIds of all composites to prevent onBeforeDelete from bubbling
       comp.childIds = []
       for (const descId of allDescendantIds) {
         const descObj = getObject(descId)
@@ -1089,19 +1089,19 @@ export const useSceneObjectStore = defineStore('sceneObject', () => {
           (descObj as CompositeObject).childIds = []
         }
       }
-      // 逐个删除后代（childIds 已清空，不会触发级联或冒泡）
+      // Delete descendants one by one (childIds cleared, will not trigger cascade or bubble)
       for (const descId of allDescendantIds) {
         removeObject(descId)
       }
     }
-    // 最后删除自身
+    // Finally delete self
     removeObject(id)
   }
 
   /**
-   * 解散 composite：子对象冒泡到上级，坐标补偿，清空 childIds。
-   * 不删除 composite 本身（调用方需后续调 removeObject）。
-   * 用于"仅删除组合"三选项删除 — entity 和 union 共用。
+   * Dissolve composite: child objects bubble up to parent, coordinate compensation, clear childIds.
+   * Does not delete composite itself (caller needs to invoke removeObject subsequently).
+   * Used for "delete group only" three-option deletion - shared by entity and union.
    */
   function dissolveComposite(compositeId: string): void {
     const obj = getObject(compositeId)
@@ -1110,14 +1110,14 @@ export const useSceneObjectStore = defineStore('sceneObject', () => {
     const childIds = [...comp.childIds]
     const bubbleTargetId = comp.parentId
 
-    // v19: 解散前，保存 entity 的渲染顺序（展开 union 子对象后的有序 ID 列表）
-    // 这个顺序将在稍后转移到目标 renderChain，替换 entity 在链中的位置
+    // v19: Save entity render order before dissolving (ordered ID list after unrolling union children)
+    // This order will be transferred to target renderChain later, replacing entity's position in chain
     let preservedRenderOrder: string[] = []
     if (comp.compositeMode === 'entity') {
       if (comp.renderChain && comp.renderChain.length > 0) {
         preservedRenderOrder = [...comp.renderChain]
       } else {
-        // fallback: 从 childIds 展开 union 子对象（通过 Manager）
+        // fallback: Unroll union children from childIds (via Manager)
         preservedRenderOrder = rcExpandChildIds(comp.childIds, rcStoreAccessor)
       }
     }
@@ -1125,8 +1125,8 @@ export const useSceneObjectStore = defineStore('sceneObject', () => {
     for (const childId of childIds) {
       const child = getObject(childId)
       if (!child) continue
-      // 坐标补偿：局部坐标 → 全局坐标
-      // v19.2: localToGlobal 返回 flipX，解散时恢复全局翻转状态
+      // Coordinate compensation: local coordinates -> global coordinates
+      // v19.2: localToGlobal returns flipX, restoring global flip state upon dissolution
       const global = localToGlobal(child, comp)
       updateObject(childId, {
         x: global.x,
@@ -1137,7 +1137,7 @@ export const useSceneObjectStore = defineStore('sceneObject', () => {
         flipX: global.flipX ?? child.flipX,
         parentId: bubbleTargetId ?? undefined,
       })
-      // 加入上级 composite 的 childIds
+      // Add to parent composite's childIds
       if (bubbleTargetId) {
         const parent = getObject(bubbleTargetId)
         if (parent?.type === 'composite') {
@@ -1149,26 +1149,26 @@ export const useSceneObjectStore = defineStore('sceneObject', () => {
       }
     }
 
-    // v19 重构: 通过 Manager 转移渲染顺序
+    // v19 Refactor: Transfer render order via Manager
     if (preservedRenderOrder.length > 0) {
       rcOnCompositeDissolve(compositeId, preservedRenderOrder, bubbleTargetId, rcStoreAccessor)
     }
 
-    // 清空 childIds — 后续 removeObject 的 onBeforeDelete 不再处理子对象
+    // Clear childIds - subsequent removeObject onBeforeDelete will not process children
     comp.childIds = []
   }
 
-  // 选中对象
+  // Select object
   function selectObject(id: string | null) {
-    // Auto-relock: 选中非后代对象时，恢复所有已解锁 composite 的锁定状态
+    // Auto-relock: Restore locked state of all unlocked composites when non-descendant object is selected
     for (const obj of objects.value) {
       if (obj.type !== 'composite') continue
       const comp = obj as CompositeObject
-      if (comp.compositeLocked) continue // 已锁定
-      // 新选中对象是 composite 自身或其后代 → 保持解锁
+      if (comp.compositeLocked) continue // Already locked
+      // Newly selected object is composite itself or its descendant -> keep unlocked
       if (id === comp.id) continue
       if (id && isDescendantOf(id, comp.id)) continue
-      // 恢复锁定
+      // Restore locked state
       if (isActionMode.value) {
         updateSetupObject(comp.id, { compositeLocked: true } as Partial<SceneObject>)
       } else {
@@ -1178,16 +1178,16 @@ export const useSceneObjectStore = defineStore('sceneObject', () => {
     selectedObjectId.value = id
   }
 
-  // 获取选中对象
+  // Get selected object
   function getSelectedObject(): SceneObject | undefined {
     return selectedObjectId.value ? getObject(selectedObjectId.value) : undefined
   }
 
   /**
-   * 复制 composite 后修复渲染链引用：
-   * - 复制过程会先将子对象 addObject 到根级，再回填 parentId，可能导致根级链残留子对象 ID
-   * - entity composite 的 renderChain 需按 oldId → newId 映射到新子树，保留自定义顺序
-   * - union 不拥有自有 renderChain，依赖所属 entity 或场景根链的协调结果
+   * Fix render chain references after copying composite:
+   * - Copying adds children to root level before backfilling parentId, which may leave orphan child IDs in root chain
+   * - entity composite's renderChain must map oldId -> newId to new subtree, preserving custom order
+   * - union has no own renderChain, relying on reconciliation with parent entity or scene root chain
    */
   function reconcileRenderChainsAfterCompositeDuplicate(originalRoot: SceneObject, rootDuplicate: SceneObject): void {
     const visited = new Set<string>()
@@ -1230,7 +1230,7 @@ export const useSceneObjectStore = defineStore('sceneObject', () => {
 
     mapDuplicateTree(originalRoot, rootDuplicate)
 
-    // 先映射新复制子树中的 entity 内部 renderChain，保留用户自定义顺序。
+    // First map internal renderChain of entities in newly copied subtree, preserving user custom order.
     for (const pair of duplicatedEntityPairs) {
       const originalObj = getObject(pair.originalId)
       const duplicateObj = getObject(pair.duplicateId)
@@ -1247,7 +1247,7 @@ export const useSceneObjectStore = defineStore('sceneObject', () => {
         : buildRenderChain(objects.value, duplicateComp.id)
     }
 
-    // 再协调当前层级根链，清理被挂回 parent 后残留的根级 child ID
+    // Then reconcile root chain of current layer, cleaning residual root child IDs reparented to parent
     const reconciled = reconcileRenderChain(sceneRenderChain.value ?? [], objects.value)
     if (isActionMode.value) {
       runtimeState.value!.renderChain = reconciled
@@ -1256,13 +1256,13 @@ export const useSceneObjectStore = defineStore('sceneObject', () => {
     }
   }
 
-  // 复制对象
-  // v7.1: 复制时生成新别名（原别名 + 编号）
+  // Copy object
+  // v7.1: Generate new alias when copying (original alias + number)
   function duplicateObject(id: string): SceneObject | undefined {
     const original = getObject(id)
     if (!original) return undefined
 
-    // 相机和 ambient 光源不可复制
+    // Camera and ambient light cannot be copied
     if (original.type === 'camera') {
       return undefined
     }
@@ -1270,16 +1270,16 @@ export const useSceneObjectStore = defineStore('sceneObject', () => {
       return undefined
     }
 
-    // v7.1: 生成新的别名（原别名 + 编号）
+    // v7.1: Generate new alias (original alias + number)
     const originalAlias = original.alias ?? original.name
     const newAlias = generateUniqueAlias(originalAlias)
 
-    // 复制品默认为顶层对象 — 移除 parentId
+    // Clones default to top-level objects - remove parentId
     const { parentId: _parentId, ...rest } = original
     const duplicate: SceneObject = {
       ...rest,
       id: generateId('sceneobject'),
-      name: `${original.name} 副本`,
+      name: `${original.name} Copy`,
       alias: newAlias,
       x: original.x + 50,
       y: original.y + 50,
@@ -1287,7 +1287,7 @@ export const useSceneObjectStore = defineStore('sceneObject', () => {
 
     addObject(duplicate)
 
-    // 生命周期钩子：类型特有的复制后处理（如 composite 递归复制子对象）
+    // Lifecycle hook: type-specific post-copy handling (e.g. composite recursively copying children)
     const hooks = getLifecycleHooks(original.type)
     hooks?.onAfterDuplicate?.(original, duplicate, storeAccessor)
 
@@ -1298,20 +1298,20 @@ export const useSceneObjectStore = defineStore('sceneObject', () => {
     return duplicate
   }
 
-  // v19: 按渲染链顺序排序的对象列表（根级）
+  // v19: Object list sorted by renderChain order (root level)
   function getSortedObjects(): SceneObject[] {
-    // v19: 如果有渲染链，按渲染链顺序排列根级对象
-    // 注意：必须返回所有对象（包括子对象），渲染循环需要遍历它们
+    // v19: If renderChain exists, order root-level objects by renderChain order
+    // Note: Must return all objects (including children) as render loop traverses them
     if (sceneRenderChain.value.length > 0) {
       const chainIds = sceneRenderChain.value
       const inChain = new Set(chainIds)
       const result: SceneObject[] = []
-      // 先按 renderChain 顺序排列链上对象
+      // First order on-chain objects by renderChain order
       for (const id of chainIds) {
         const obj = objects.value.find(o => o.id === id)
         if (obj) result.push(obj)
       }
-      // 追加不在链上的对象（子对象、camera、text 等）
+      // Append off-chain objects (children, camera, text, etc.)
       for (const obj of objects.value) {
         if (!inChain.has(obj.id)) {
           result.push(obj)
@@ -1319,41 +1319,41 @@ export const useSceneObjectStore = defineStore('sceneObject', () => {
       }
       return result
     }
-    // fallback: 按 zIndex 排序
+    // fallback: sort by zIndex
     return [...objects.value].sort((a, b) => a.zIndex - b.zIndex)
   }
 
-  // P2: 查询组合对象的子对象
-  // v19: entity 按 renderChain 顺序返回（如果有），否则 fallback 到 childIds
+  // P2: Query child objects of composite
+  // v19: entity returns in renderChain order (if present), otherwise falls back to childIds
   function getChildObjects(compositeId: string): SceneObject[] {
     const composite = getObject(compositeId)
     if (composite?.type !== 'composite') return []
     const comp = composite as CompositeObject
-    // entity 模式且有 renderChain：按 renderChain 顺序
+    // entity mode with renderChain: order by renderChain
     if (comp.compositeMode === 'entity' && comp.renderChain && comp.renderChain.length > 0) {
       return comp.renderChain
         .map(id => objects.value.find(o => o.id === id))
         .filter((o): o is SceneObject => o !== undefined)
     }
-    // fallback: childIds 顺序
+    // fallback: childIds order
     return comp.childIds
       .map(id => objects.value.find(o => o.id === id))
       .filter((o): o is SceneObject => o !== undefined)
   }
 
-  // P2: 调整渲染链中子对象的顺序（仅同 zIndex 内允许）
-  // v19: 操作 entity 的 renderChain 或场景的 sceneRenderChain
+  // P2: Reorder child objects in renderChain (allowed within same zIndex only)
+  // v19: Manipulate entity's renderChain or scene's sceneRenderChain
   function reorderChild(compositeId: string, fromIndex: number, toIndex: number): void {
     const composite = getObject(compositeId)
     if (composite?.type !== 'composite') return
     const comp = composite as CompositeObject
-    // v19: 操作 renderChain
+    // v19: Manipulate renderChain
     const chain = comp.compositeMode === 'entity' ? comp.renderChain : undefined
     if (!chain) return
     if (fromIndex < 0 || fromIndex >= chain.length) return
     if (toIndex < 0 || toIndex >= chain.length) return
     if (fromIndex === toIndex) return
-    // zIndex 校验：禁止跨 zIndex 拖拽
+    // zIndex check: prohibit dragging across zIndex
     const fromObj = getObject(chain[fromIndex]!)
     const toObj = getObject(chain[toIndex]!)
     if (fromObj && toObj && fromObj.zIndex !== toObj.zIndex) return
@@ -1361,13 +1361,13 @@ export const useSceneObjectStore = defineStore('sceneObject', () => {
     if (moved !== undefined) chain.splice(toIndex, 0, moved)
   }
 
-  // v19: 调整场景根级渲染链的顺序
+  // v19: Adjust order of scene root-level renderChain
   function reorderSceneRenderChain(fromIndex: number, toIndex: number): void {
     const chain = sceneRenderChain.value
     if (fromIndex < 0 || fromIndex >= chain.length) return
     if (toIndex < 0 || toIndex >= chain.length) return
     if (fromIndex === toIndex) return
-    // zIndex 校验
+    // zIndex validation
     const fromObj = getObject(chain[fromIndex]!)
     const toObj = getObject(chain[toIndex]!)
     if (fromObj && toObj && fromObj.zIndex !== toObj.zIndex) return
@@ -1376,8 +1376,8 @@ export const useSceneObjectStore = defineStore('sceneObject', () => {
   }
 
   /**
-   * v19: 收集一组对象 ID 中的可渲染 ID（递归展开 union 子对象）
-   * 用于 groupObjects 时确定需要从上级渲染链移除哪些 ID
+   * v19: Collect renderable IDs from a set of object IDs (recursively unrolling union children)
+   * Used during groupObjects to determine which IDs to remove from parent render chain
    */
   function collectRenderableChildIds(objectIds: string[]): string[] {
     const result: string[] = []
@@ -1385,7 +1385,7 @@ export const useSceneObjectStore = defineStore('sceneObject', () => {
       const obj = getObject(id)
       if (!obj) continue
       if (obj.type === 'composite' && (obj as CompositeObject).compositeMode === 'union') {
-        // union：不出现在渲染链，递归展开子对象
+        // union: not present in render chain, recursively unroll children
         result.push(...collectRenderableChildIds((obj as CompositeObject).childIds))
       } else if (obj.type !== 'camera' && obj.type !== 'audio' && obj.type !== 'light') {
         result.push(id)
@@ -1394,31 +1394,31 @@ export const useSceneObjectStore = defineStore('sceneObject', () => {
     return result
   }
 
-  // P2: 查询顶层对象（过滤掉有 parentId 的子对象）
+  // P2: Query top-level objects (filtering out children with parentId)
   function getRootObjects(): SceneObject[] {
     return objects.value.filter(obj => !obj.parentId)
   }
 
-  // P2: 将多个对象成组为一个 composite
-  // 支持同级兄弟成组：所有对象必须共享同一个 parentId（含 undefined 即根级）
+  // P2: Group multiple objects into a composite
+  // Supports sibling grouping: all objects must share same parentId (including undefined for root)
   function groupObjects(
     objectIds: string[],
     mode: 'entity' | 'union' = 'union'
   ): CompositeObject {
-    // 计算所有待成组对象的包围盒中心作为 composite 位置
+    // Calculate bounding box center of all objects to group as composite position
     const targetObjs = objectIds
       .map(id => getObject(id))
       .filter((o): o is SceneObject => o !== undefined)
 
     if (targetObjs.length === 0) {
-      throw new Error('[groupObjects] 未找到任何待成组对象')
+      throw new Error('[groupObjects] No objects found to group')
     }
 
-    // 校验所有对象共享同一个 parentId
+    // Validate that all objects share the same parentId
     const sharedParentId = targetObjs[0]!.parentId
     for (const obj of targetObjs) {
       if (obj.parentId !== sharedParentId) {
-        throw new Error('[groupObjects] 所有待成组对象必须共享同一个 parentId（同级兄弟）')
+        throw new Error('[groupObjects] All objects to be grouped must share the same parentId (siblings)')
       }
     }
 
@@ -1430,7 +1430,7 @@ export const useSceneObjectStore = defineStore('sceneObject', () => {
     const centerX = sumX / targetObjs.length
     const centerY = sumY / targetObjs.length
 
-    // 同级兄弟成组：先从旧 parent 的 childIds 中移除这些子对象
+    // Sibling grouping: first remove these children from old parent's childIds
     if (sharedParentId) {
       const oldParent = getObject(sharedParentId)
       if (oldParent?.type === 'composite') {
@@ -1442,48 +1442,48 @@ export const useSceneObjectStore = defineStore('sceneObject', () => {
       }
     }
 
-    // 解析命名空间：确保 alias 在正确的 entity 命名空间内唯一
+    // Resolve namespace: ensure alias is unique in correct entity namespace
     const namespaceRoot = resolveNamespaceRoot(objectIds[0]!)
-    // 创建 composite（不传 childIds，稍后手动设置以便坐标补偿）
-    const composite = createCompositeObject('组合', [], undefined, undefined, mode, namespaceRoot)
+    // Create composite (omit childIds, set manually later for coordinate compensation)
+    const composite = createCompositeObject('Group', [], undefined, undefined, mode, namespaceRoot)
 
-    // 设置 composite 位置为成员中心
+    // Set composite position to members center
     updateObject(composite.id, {
       x: centerX,
       y: centerY,
     } as Partial<SceneObject>)
 
-    // 同级兄弟成组：新 composite 继承共同 parentId
+    // Sibling grouping: new composite inherits shared parentId
     if (sharedParentId) {
       updateObject(composite.id, { parentId: sharedParentId } as Partial<SceneObject>)
-      // 将新 composite 加入旧 parent 的 childIds
+      // Add new composite to old parent's childIds
       const oldParent = getObject(sharedParentId)
       if (oldParent?.type === 'composite') {
         (oldParent as CompositeObject).childIds.push(composite.id)
       }
     }
 
-    // 注意：updateObject 使用 spread 创建新对象，composite 变成 stale reference。
-    // 先 re-fetch 设置 childIds，再 attachChild（需要 comp 坐标）。
+    // Note: updateObject uses spread to create new object; composite becomes stale reference.
+    // Re-fetch to set childIds before attachChild (needs comp coordinates).
     const updatedComposite = getObject(composite.id) as CompositeObject
     updatedComposite.childIds = objectIds.slice()
 
-    // 将对象加入 composite：坐标转为局部 + 设置 parentId
+    // Add objects to composite: convert coordinates to local + set parentId
     for (const obj of targetObjs) {
       attachChild(obj.id, updatedComposite)
     }
 
-    // v19: 渲染链同步
+    // v19: Render chain synchronization
     if (!isActionMode.value) {
       if (mode === 'union') {
-        // union：渲染链完全不变（子对象保持原位）
-        // union composite 自身不应在渲染链中（addObject 已排除）
-        // entity 的 renderChain 已在 addObject 时初始化，此处无需额外操作
+        // union: renderChain completely unchanged (children maintain position)
+        // union composite itself should not be in renderChain (excluded in addObject)
+        // entity's renderChain was initialized in addObject; no extra operation needed
       } else {
         // entity：
-        // 1. 收集子对象在当前渲染链中的可渲染 ID（展开嵌套 union）
+        // 1. Collect renderable IDs of children in current renderChain (unrolling nested unions)
         const childRenderableIds = collectRenderableChildIds(objectIds)
-        // 2. 找到最后一个子对象在渲染链中的位置
+        // 2. Find position of last child object in renderChain
         const targetChain = sharedParentId
           ? (getObject(sharedParentId) as CompositeObject | undefined)?.renderChain
           : sceneRenderChain.value
@@ -1493,25 +1493,25 @@ export const useSceneObjectStore = defineStore('sceneObject', () => {
             const pos = targetChain.indexOf(cid)
             if (pos > lastPos) lastPos = pos
           }
-          // 3. 从上级渲染链移除子对象
+          // 3. Remove children from parent renderChain
           removeMultipleFromRenderChain(targetChain, childRenderableIds)
-          // Fix: 新 entity composite 在创建时（无 parentId），rcOnObjectAdded Rule 4 已将其
-          // 追加到 sceneRenderChain 末尾。此处必须先从 sceneRenderChain 中移除，再插入正确位置，
-          // 否则会出现双条目：
-          //   - 嵌套场景（sharedParentId 非空）：composite 同时存在于 sceneRenderChain 和
-          //     父 entity renderChain，contentRoot 在渲染完整个人物后还会把 container 单独
-          //     渲染一遍，永远覆盖在最上层。
-          //   - 根级分组（sharedParentId 为空）：targetChain === sceneRenderChain.value，
-          //     下方 splice 会插入第二条，导致 container 同一帧被渲染两次。
+          // Fix: When new entity composite created (no parentId), rcOnObjectAdded Rule 4
+          // appended it to end of sceneRenderChain. Must remove from sceneRenderChain before inserting at correct position,
+          // otherwise duplicate entries occur:
+          //   - Nested scenario (sharedParentId non-empty): composite exists in both sceneRenderChain and
+          //     parent entity renderChain; contentRoot renders container separately again after character,
+          //     always overlaying on the topmost layer.
+          //   - Root grouping (sharedParentId empty): targetChain === sceneRenderChain.value,
+          //     splice below inserts a second copy, causing container to be rendered twice in same frame.
           removeMultipleFromRenderChain(sceneRenderChain.value, [composite.id])
-          // 4. entity 节点插入到最后一个子对象的原始位置
+          // 4. Insert entity node into original position of last child object
           const insertPos = lastPos !== -1 ? Math.min(lastPos, targetChain.length) : targetChain.length
           targetChain.splice(insertPos, 0, composite.id)
         }
-        // 5. entity zIndex 取子对象最大值
+        // 5. entity zIndex takes maximum value among children
         const maxZ = targetObjs.reduce((max, o) => Math.max(max, o.zIndex), targetObjs[0]!.zIndex)
         updateObject(composite.id, { zIndex: maxZ } as Partial<SceneObject>)
-        // 6. 初始化 entity 的内部 renderChain
+        // 6. Initialize entity's internal renderChain
         const entityComp = getObject(composite.id) as CompositeObject
         entityComp.renderChain = buildRenderChain(objects.value, composite.id)
       }
@@ -1520,17 +1520,17 @@ export const useSceneObjectStore = defineStore('sceneObject', () => {
     return updatedComposite
   }
 
-  // P2: 拆分 composite 的所有子对象
+  // P2: Ungroup all child objects of composite
   function ungroupAll(compositeId: string): void {
     const composite = getObject(compositeId)
     if (composite?.type !== 'composite') {
-      throw new Error(`[ungroupAll] 对象 ${compositeId} 不是 composite`)
+      throw new Error(`[ungroupAll] Object ${compositeId} is not a composite`)
     }
 
     const comp = composite as CompositeObject
     const isEntity = comp.compositeMode === 'entity'
 
-    // v19: entity 拆组前保存 renderChain，用于原地展开
+    // v19: Save renderChain before ungrouping entity for in-place expansion
     const entityRenderChain = isEntity ? [...(comp.renderChain ?? comp.childIds)] : undefined
 
     const childIdsCopy = [...comp.childIds]
@@ -1539,25 +1539,25 @@ export const useSceneObjectStore = defineStore('sceneObject', () => {
       detachChild(childId, comp)
     }
 
-    // v19: 渲染链同步（entity 拆组时展开）
+    // v19: Render chain synchronization (unroll upon ungrouping entity)
     if (!isActionMode.value && isEntity && entityRenderChain) {
-      // 穿透 union 祖先，找到实际持有渲染链的 entity 或场景根级
+      // Penetrate union ancestors to find entity or scene root holding renderChain
       const targetChain = findOwningRenderChain(comp)
       const entityPos = targetChain.indexOf(compositeId)
       if (entityPos !== -1) {
-        // 用 entity 的 renderChain 内容替换 entity 节点（原地展开）
+        // Replace entity node with entity's renderChain content (in-place unroll)
         targetChain.splice(entityPos, 1, ...entityRenderChain)
       }
     }
-    // union 拆组：渲染链不变
+    // union ungroup: renderChain unchanged
 
-    // 清空 childIds 后删除空 composite
+    // Clear childIds and delete empty composite
     comp.childIds = []
     comp.renderChain = []
     removeObject(compositeId)
   }
 
-  /** 检测是否存在循环引用：childId 是否是 compositeId 的祖先 */
+  /** Detect circular reference: whether childId is ancestor of compositeId */
   function wouldCreateCycle(compositeId: string, childId: string): boolean {
     let current: string | undefined = compositeId
     while (current) {
@@ -1568,16 +1568,16 @@ export const useSceneObjectStore = defineStore('sceneObject', () => {
     return false
   }
 
-  // P2: 添加对象到已有 composite
+  // P2: Add object to existing composite
   function addToComposite(compositeId: string, objectIds: string[]): void {
     const composite = getObject(compositeId)
     if (composite?.type !== 'composite') {
-      throw new Error(`[addToComposite] 对象 ${compositeId} 不是 composite`)
+      throw new Error(`[addToComposite] Object ${compositeId} is not a composite`)
     }
 
     const comp = composite as CompositeObject
 
-    // === Phase 1: 记录原状态（attachChild 前） ===
+    // === Phase 1: Record original state (before attachChild) ===
     interface PendingEntry {
       objectId: string
       renderableIds: string[]
@@ -1587,7 +1587,7 @@ export const useSceneObjectStore = defineStore('sceneObject', () => {
 
     for (const objectId of objectIds) {
       if (wouldCreateCycle(compositeId, objectId)) {
-        throw new Error(`[addToComposite] 循环引用：${objectId} 是 ${compositeId} 的祖先`)
+        throw new Error(`[addToComposite] Circular reference: ${objectId} is an ancestor of ${compositeId}`)
       }
       const obj = getObject(objectId)
       pending.push({
@@ -1597,9 +1597,9 @@ export const useSceneObjectStore = defineStore('sceneObject', () => {
       })
     }
 
-    // === Phase 2: attachChild + childIds（会修改 parentId） ===
+    // === Phase 2: attachChild + childIds (modifies parentId) ===
     for (const { objectId, originalParentId } of pending) {
-      // 从旧 parent 的 childIds 中移除
+      // Remove from old parent's childIds
       if (originalParentId) {
         const oldParent = getObject(originalParentId)
         if (oldParent?.type === 'composite') {
@@ -1614,25 +1614,25 @@ export const useSceneObjectStore = defineStore('sceneObject', () => {
       }
     }
 
-    // === Phase 3: renderChain 更新（Setup Mode only） ===
+    // === Phase 3: renderChain update (Setup Mode only) ===
     if (!isActionMode.value) {
       for (const { renderableIds, originalParentId } of pending) {
         const sourceChain = resolveRenderChainByParentId(originalParentId)
 
-        // 确定目标 renderChain
+        // Determine target renderChain
         let targetChain: string[]
         if (comp.compositeMode === 'entity') {
           comp.renderChain ??= []
           targetChain = comp.renderChain
         } else {
-          // union → 穿透到最近 entity 祖先
+          // union -> penetrate to nearest entity ancestor
           targetChain = findOwningRenderChain(comp)
         }
 
-        // 同链迁移检测：对象在同一 entity 的展开范围内移动，renderChain 不变
+        // Same chain migration check: object moves within same entity unrolled scope; renderChain unchanged
         if (sourceChain && sourceChain === targetChain) continue
 
-        // 不同链：从原链移除 → 插入目标链
+        // Different chains: remove from source chain -> insert into target chain
         if (sourceChain) {
           removeMultipleFromRenderChain(sourceChain, renderableIds)
         }
@@ -1660,11 +1660,11 @@ export const useSceneObjectStore = defineStore('sceneObject', () => {
 
       detachChild(childId, comp)
 
-      // 从当前 parent 的 childIds 中移除
+      // Remove from current parent's childIds
       const childIdx = comp.childIds.indexOf(childId)
       if (childIdx !== -1) comp.childIds.splice(childIdx, 1)
 
-      // detachChild 会冒泡 parentId 到上级，需同步上级的 childIds
+      // detachChild bubbles parentId up; sync parent's childIds
       const updatedChild = getObject(childId)
       const bubbleTargetId = updatedChild?.parentId
       if (bubbleTargetId) {
@@ -1677,20 +1677,20 @@ export const useSceneObjectStore = defineStore('sceneObject', () => {
         }
       }
 
-      // === renderChain 级联更新（Setup Mode only） ===
-      // Action Mode 下由 sceneStateCalculator 的 buildRenderChain 全量重建
-      // union 拆分：union 本身在渲染链中是展开的，子对象冒泡后仍在同级，无需变更
-      // entity 拆分：子对象从被 entity 封装 → 变为直接可见，需更新渲染链
+      // === renderChain cascade update (Setup Mode only) ===
+      // Under Action Mode, completely rebuilt by buildRenderChain in sceneStateCalculator
+      // union split: union is unrolled in renderChain; bubbled children remain at same level, no change
+      // entity split: children become directly visible from being encapsulated in entity; update renderChain
       if (!isActionMode.value && wasEntity) {
         const targetChain = findOwningRenderChain(comp)
 
-        // 同链迁移检测：拆出后仍落在同一 entity 的展开范围，renderChain 不变
+        // Same chain check: still falls within unrolled scope of same entity; renderChain unchanged
         if (comp.renderChain && comp.renderChain !== targetChain) {
-          // 1. 从源 entity 的 renderChain 移除（union 需展开后批量移除）
+          // 1. Remove from source entity's renderChain (union unrolled for batch removal)
           const removableIds = collectRenderableChildIds([childId])
           removeMultipleFromRenderChain(comp.renderChain, removableIds)
 
-          // 2. 将可渲染 ID 插入目标 renderChain（按 zIndex 有序位置）
+          // 2. Insert renderable IDs into target renderChain (ordered by zIndex position)
           const insertableIds = collectRenderableChildIds([childId])
           for (const insertId of insertableIds) {
             const obj = getObject(insertId)
@@ -1705,9 +1705,9 @@ export const useSceneObjectStore = defineStore('sceneObject', () => {
   }
 
   /**
-   * 从指定 composite 向上查找其所属的 renderChain。
-   * 穿透所有 union 祖先，找到最近的 entity 祖先的 renderChain；
-   * 若无 entity 祖先，返回场景根级 sceneRenderChain。
+   * Walk up from specified composite to find its owning renderChain.
+   * Penetrate all union ancestors to find nearest entity ancestor's renderChain;
+   * if no entity ancestor, return scene root-level sceneRenderChain.
    */
   function findOwningRenderChain(comp: CompositeObject): string[] {
     let currentParentId = comp.parentId
@@ -1717,22 +1717,22 @@ export const useSceneObjectStore = defineStore('sceneObject', () => {
 
       const ancestorComp = ancestor as CompositeObject
       if (ancestorComp.compositeMode === 'entity') {
-        // 找到 entity 祖先
+        // Found entity ancestor
         ancestorComp.renderChain ??= []
         return ancestorComp.renderChain
       }
-      // union：透明容器，继续向上
+      // union: transparent container, continue upward
       currentParentId = ancestorComp.parentId
     }
-    // 无 entity 祖先 → 场景根级
+    // No entity ancestor -> scene root level
     return sceneRenderChain.value
   }
 
   /**
-   * 根据对象的 parentId 定位其所属的 renderChain。
-   * - 无 parent → sceneRenderChain
-   * - parent 是 entity → entity.renderChain
-   * - parent 是 union → 穿透到最近 entity 祖先
+   * Locate owning renderChain based on object's parentId.
+   * - No parent -> sceneRenderChain
+   * - parent is entity -> entity.renderChain
+   * - parent is union -> penetrate to nearest entity ancestor
    */
   function resolveRenderChainByParentId(parentId: string | undefined): string[] | null {
     if (!parentId) return sceneRenderChain.value
@@ -1757,39 +1757,39 @@ export const useSceneObjectStore = defineStore('sceneObject', () => {
 
   // ==================== Action Mode API ====================
 
-  /** 从 Setup 数据初始化持久层（加载场景时） */
+  /** Initialize persistence layer from Setup data (on scene load) */
   function initFromSetup(sourceObjects: SceneObject[]): void {
 
     setupState.value.objects = JSON.parse(JSON.stringify(sourceObjects)) as SceneObject[]
   }
 
-  /** 设置 Action Mode 标记 */
+  /** Set Action Mode flag */
   function setActionMode(enabled: boolean): void {
 
     isActionMode.value = enabled
     if (enabled) {
-      // 进入 Action Mode：从 setupState 创建 RuntimeSceneSnapshot
+      // Enter Action Mode: create RuntimeSceneSnapshot from setupState
       runtimeState.value = createRuntimeSnapshot(setupState.value)
     } else {
-      // 退出 Action Mode：丢弃 runtimeState，objects computed 自动切回 setupState
+      // Exit Action Mode: discard runtimeState; objects computed automatically switches back to setupState
       runtimeState.value = null
     }
   }
 
-  /** 获取当前是否 Action Mode */
+  /** Get whether currently in Action Mode */
   function getIsActionMode(): boolean {
     return isActionMode.value
   }
 
-  // ==================== v24: Episode 自动同步 ====================
+  // ==================== v24: Episode Auto Sync ====================
   let _episodeSetupRef: SceneSetup | null = null
 
-  /** 注册 Action Mode 下的 episode 同步目标。传 null 解注册。 */
+  /** Register episode sync target in Action Mode. Pass null to unregister. */
   function registerEpisodeSync(setup: SceneSetup | null): void {
     _episodeSetupRef = setup
   }
 
-  /** v24: 同步持久层 renderChain 到已注册的 episode 数据 */
+  /** v24: Sync persistence layer renderChain to registered episode data */
   function syncRegisteredEpisodeRenderChain(): void {
     if (!_episodeSetupRef) return
     _episodeSetupRef.renderChain = reconcileRenderChain(
@@ -1800,8 +1800,8 @@ export const useSceneObjectStore = defineStore('sceneObject', () => {
       if (obj.type !== 'composite') continue
       const composite = obj as CompositeObject
       if (composite.compositeMode !== 'entity') continue
-      // v24.1: 从 setupState（Store 权威源）读取 entity 的 renderChain 基线，
-      // 而非 episode 副本。episode 副本可能因深拷贝时序而持有旧的 renderChain。
+      // v24.1: Read entity renderChain baseline from setupState (authoritative Store source),
+      // rather than episode copy, which might hold stale renderChain due to deep-copy timing.
       const storeComposite = setupState.value.objects.find(o => o.id === composite.id) as CompositeObject | undefined
       composite.renderChain = reconcileRenderChain(
         storeComposite?.renderChain ?? [],
@@ -1811,43 +1811,43 @@ export const useSceneObjectStore = defineStore('sceneObject', () => {
     }
   }
 
-  // ==================== Action Mode 持久操作 API ====================
-  // 以下 API 用于 Action Mode 下对持久层的合法修改（动态对象管理 + UI-only 属性）
+  // ==================== Action Mode Persistence Operation API ====================
+  // The following APIs are for valid persistence modifications in Action Mode (dynamic object management + UI-only properties)
 
-  /** Action Mode 下向持久层添加动态对象（同步写入 setupState + runtimeState + episode） */
+  /** Add dynamic object to persistence layer in Action Mode (sync write to setupState + runtimeState + episode) */
   function addSetupObject(obj: SceneObject): void {
     setupState.value.objects.push(obj)
     
-    // 1. 同步持久层 (Setup) 的 renderChain（使用 rcSetupAccessor 绕过 isActionMode 劫持）
+    // 1. Sync persistence layer (Setup) renderChain (use rcSetupAccessor to bypass isActionMode hijacking)
     rcOnObjectAdded(obj, rcSetupAccessor)
 
-    // 2. 同步写入 runtimeState 以便 Action Mode 渲染立即可见
+    // 2. Sync write to runtimeState for immediate Action Mode render visibility
     if (runtimeState.value) {
       const runtimeObj = JSON.parse(JSON.stringify(obj)) as SceneObject
       runtimeState.value.objects.push(runtimeObj)
       rcOnObjectAdded(runtimeObj, rcStoreAccessor)
     }
 
-    // 3. v24: 自动同步到 episode 持久数据（深拷贝确保独立性）
+    // 3. v24: Auto-sync to episode persistent data (deep copy ensures independence)
     if (_episodeSetupRef) {
       _episodeSetupRef.objects.push(JSON.parse(JSON.stringify(obj)) as SceneObject)
       syncRegisteredEpisodeRenderChain()
     }
   }
   /**
-   * Action Mode 下从持久层删除动态对象（同步从 setupState + runtimeState 移除）
+   * Delete dynamic object from persistence layer in Action Mode (sync remove from setupState + runtimeState)
    */
   function removeSetupObject(id: string): void {
     const setupIdx = setupState.value.objects.findIndex(o => o.id === id)
     if (setupIdx !== -1) {
       const obj = setupState.value.objects[setupIdx]!
-      // 触发删除钩子，并确保父子关系的清理作用在 setupState 持久层
+      // Trigger deletion hooks and ensure parent-child cleanup acts on setupState persistence layer
       const hooks = getLifecycleHooks(obj.type)
       hooks?.onBeforeDelete?.(obj, setupStoreAccessor)
 
       setupState.value.objects.splice(setupIdx, 1)
 
-      // 同步清理持久层 (Setup) 的 renderChain（使用 rcSetupAccessor 绕过 isActionMode 劫持）
+      // Sync clean persistence layer (Setup) renderChain (use rcSetupAccessor to bypass isActionMode hijacking)
       rcOnObjectRemoved(id, obj, rcSetupAccessor)
     }
 
@@ -1857,44 +1857,44 @@ export const useSceneObjectStore = defineStore('sceneObject', () => {
         const runtimeObj = runtimeState.value.objects[runtimeIdx]!
         runtimeState.value.objects.splice(runtimeIdx, 1)
 
-        // 同步清理 runtimeState 的 renderChain
+        // Sync clean runtimeState renderChain
         rcOnObjectRemoved(id, runtimeObj, rcStoreAccessor)
       }
     }
 
-    // v24: 整体覆盖到 episode（onBeforeDelete 可能级联修改了多个对象的 parentId/childIds）
+    // v24: Overwrite entire state to episode (onBeforeDelete may have cascaded parentId/childIds changes)
     if (_episodeSetupRef) {
       _episodeSetupRef.objects = JSON.parse(JSON.stringify(setupState.value.objects)) as SceneObject[]
       syncRegisteredEpisodeRenderChain()
     }
   }
 
-  /** Action Mode 下修改持久层属性（alias、compositeLocked 等 UI-only 持久属性） */
+  /** Modify persistence layer properties in Action Mode (alias, compositeLocked, etc. UI-only persistent properties) */
   function updateSetupObject<T extends SceneObject = SceneObject>(id: string, updates: SceneObjectUpdateFor<T>): void {
-    // 同时写入持久层和显示层
+    // Write to both persistence and display layers
     applyUpdatesToArray(setupState.value.objects, id, updates)
     if (runtimeState.value) {
       applyUpdatesToArray(runtimeState.value.objects, id, updates)
     }
-    // v24: 自动同步到 episode 持久数据（按 ID 精确同步）
+    // v24: Auto-sync to episode persistent data (exact sync by ID)
     if (_episodeSetupRef) {
       applyUpdatesToArray(_episodeSetupRef.objects, id, updates)
     }
   }
 
-  /** 从持久层获取对象（用于 Action Mode 下需要读取 Setup 原始值的场景） */
+  /** Get object from persistence layer (for Action Mode scenarios reading Setup raw values) */
   function getSetupObject(id: string): SceneObject | undefined {
     return setupState.value.objects.find(obj => obj.id === id)
   }
 
   /**
-   * 应用 Slot 计算结果到运行时层
+   * Apply Slot calculation results to runtime layer
    *
-   * 以 calculateSlotStates 的 realState 为唯一真相源，逐属性同步到 runtimeObjects。
-   * Dirty-check 确保值相同时不触发 Vue setter，避免 watcher 无限触发。
+   * Uses realState from calculateSlotStates as single source of truth, syncing property-by-property to runtimeObjects.
+   * Dirty-check ensures identical values do not trigger Vue setter, preventing watcher infinite loops.
    *
-   * @param excludeIds 需要跳过的对象 ID 集合（用于排除正在交互中的对象，
-   *        防止 applySlotState 覆盖 handleDragMove/handleResizeMove 写入的中间值）
+   * @param excludeIds Object IDs to skip (excludes objects currently in interaction,
+   *        preventing applySlotState from overwriting intermediate values from handleDragMove/handleResizeMove)
    */
   function applySlotState(
     slotStates: import('@/utils/sceneStateCalculator').SlotStatesResult,
@@ -1902,12 +1902,12 @@ export const useSceneObjectStore = defineStore('sceneObject', () => {
   ): void {
 
     if (!runtimeState.value) return
-    // 只写入显示层（runtimeState），永不触碰持久层（setupState）
-    // v17: animations / initialAnimations 由 Store 管理（updateSetupObject），
-    // 不受 scene.setup → calculateSlotStates → applySlotState 链路覆盖
-    // v19: compositeLocked 是 UI-only 属性（不序列化），必须保留以免被 slot 状态覆盖
-    // v23: alias / name 是元数据字段，通过 updateSetupObject 修改，不受任何 Action 影响。
-    //      sceneGraph 缓存的 slotStates 可能包含旧值，若不保护会导致修改名称后被覆盖回旧值。
+    // Only write to display layer (runtimeState), never touch persistence layer (setupState)
+    // v17: animations / initialAnimations managed by Store (updateSetupObject),
+    // not overwritten by scene.setup -> calculateSlotStates -> applySlotState pipeline
+    // v19: compositeLocked is UI-only property (not serialized), preserved to avoid slot override
+    // v23: alias / name are metadata fields modified via updateSetupObject, unaffected by any Action.
+    //      sceneGraph cached slotStates might hold stale values; unprotected names would revert.
     const preserveKeys = new Set(['animations', 'initialAnimations', 'compositeLocked', 'alias', 'name'])
     const nearlyEqual = (a: number | undefined, b: number | undefined, epsilon = 0.0001): boolean => {
       if (a === b) return true
@@ -1920,15 +1920,15 @@ export const useSceneObjectStore = defineStore('sceneObject', () => {
       // Do not also flow it through the generic objects map, otherwise camera
       // fields such as zoom/width/height can be written twice by two sources.
       if (runtimeObj.type === 'camera') continue
-      // v21: 跳过正在交互的对象，防止覆盖拖拽/缩放/旋转期间直接写入的中间值
+      // v21: Skip interacting objects to prevent overwriting drag/scale/rotate intermediate values
       if (excludeIds?.has(runtimeObj.id)) continue
       const stateResult = slotStates.objects.get(runtimeObj.id)
       if (!stateResult) continue
 
       const target = stateResult.real as unknown as Record<string, unknown>
       const runtimeRec = runtimeObj as unknown as Record<string, unknown>
-      // 同步：以 target (realState) 为唯一真相源
-      // v17: 跳过 preserveKeys — 这些字段由 Store 直接管理，不应被 scene.setup 快照覆盖
+      // Sync: target (realState) is single source of truth
+      // v17: Skip preserveKeys - these fields managed directly by Store, not overridden by scene.setup snapshot
       for (const [key, newValue] of Object.entries(target)) {
         if (preserveKeys.has(key)) continue
         const oldValue = runtimeRec[key]
@@ -1943,8 +1943,8 @@ export const useSceneObjectStore = defineStore('sceneObject', () => {
         }
       }
 
-      // 删除 runtimeObj 上 target 中不存在的多余属性
-      // v16: 保留 preserveKeys 中的字段
+      // Remove extraneous properties on runtimeObj not in target
+      // v16: Retain fields in preserveKeys
       for (const key of Object.keys(runtimeRec)) {
         if (!(key in target) && !preserveKeys.has(key)) {
           delete runtimeRec[key]
@@ -1954,20 +1954,20 @@ export const useSceneObjectStore = defineStore('sceneObject', () => {
     }
 
 
-    // 同步 runtime 渲染链
+    // Sync runtime renderChain
     if (slotStates.renderChain.length > 0) {
       runtimeState.value.renderChain = slotStates.renderChain
     }
 
-    // 同步相机状态到 store 的相机对象
-    // applySlotState 之前只同步 objects map，不同步 camera，
-    // 导致删除 camera action 后 store 相机残留旧值（x/y/zoom），
-    // 后续交互（syncContainerFromStore → applyCameraState）会从 store 读到幽灵数据
+    // Sync camera state to camera object in store
+    // applySlotState previously only synced objects map without camera,
+    // causing stale camera values in store (x/y/zoom) after deleting camera action,
+    // resulting in subsequent interactions reading ghost data from store
     // Camera uses zoom as its primary scale state, while width/height are
     // derived values. Keep camera sync isolated here so there is a single
     // authoritative write path for runtime camera state.
     const cameraObj = runtimeState.value.objects.find(o => o.type === 'camera')
-    // v21: 相机被交互锁定时跳过同步，防止覆盖拖拽/缩放期间的中间值
+    // v21: Skip sync when camera is interaction-locked to avoid overwriting drag/zoom intermediates
     if (cameraObj && !excludeIds?.has(cameraObj.id)) {
       const camReal = slotStates.camera.real
       if (!nearlyEqual(cameraObj.x, camReal.x)) cameraObj.x = camReal.x
@@ -1986,23 +1986,23 @@ export const useSceneObjectStore = defineStore('sceneObject', () => {
     }
   }
 
-  // ==================== PT Phase 8.2: 持久化序列化 ====================
+  // ==================== PT Phase 8.2: Persistent Serialization ====================
 
   /**
-   * 将 SceneObject 转换为持久化 DTO
-   * 谁创建数据，谁负责序列化 —— Store 最清楚每种类型的字段
-   * P1: 特化字段由 TypeSerializer registry 分发，无需 switch
+   * Convert SceneObject to persistent DTO
+   * Whoever creates data is responsible for serialization - Store knows each type's fields best
+   * P1: Specialized fields dispatched via TypeSerializer registry without switch
    *
-   * 双层架构：始终从 setupObjects（持久层）读取，确保 Action Mode 运行时状态不会被序列化
+   * Dual-layer architecture: always reads from setupObjects (persistence layer), ensuring Action Mode runtime state is never serialized
    */
   function toSetupObject(obj: SceneObject): SceneObject {
-    // 双层架构：如果在 Action Mode 下，从 setupObjects 中查找原始数据
-    // 这样即使 obj 来自 runtimeObjects（被 applySlotState 覆写），序列化出的数据也是 Setup 原始值
+    // Dual-layer architecture: under Action Mode, look up original data from setupObjects
+    // Thus even if obj comes from runtimeObjects (overwritten by applySlotState), serialized data retains Setup raw values
     const sourceObj = isActionMode.value
       ? (setupState.value.objects.find(s => s.id === obj.id) ?? obj)
       : obj
 
-    // 公共几何属性（所有类型共享）
+    // Common geometry properties (shared across all types)
     const base: Partial<SceneObject> & Record<string, unknown> = {
       id: sourceObj.id,
       refId: sourceObj.refId,
@@ -2027,38 +2027,38 @@ export const useSceneObjectStore = defineStore('sceneObject', () => {
         : {}),
       spawned: (sourceObj as unknown as { spawned?: boolean }).spawned ?? true,
       ...(sourceObj.parentId ? { parentId: sourceObj.parentId } : {}),
-      // 变换原点（可选，默认 0 不序列化）
+      // Transform origin (optional, default 0 not serialized)
       ...(sourceObj.transformOriginX !== undefined && sourceObj.transformOriginX !== 0
         ? { transformOriginX: sourceObj.transformOriginX } : {}),
       ...(sourceObj.transformOriginY !== undefined && sourceObj.transformOriginY !== 0
         ? { transformOriginY: sourceObj.transformOriginY } : {}),
-      // v16: 统一序列化动画数据
+      // v16: Uniformly serialize animation data
       ...(sourceObj.animations && Object.keys(sourceObj.animations).length > 0
         ? { animations: sourceObj.animations } : {}),
       ...(sourceObj.initialAnimations !== undefined
         ? { initialAnimations: sourceObj.initialAnimations } : {}),
     }
 
-    // 所有非相机对象保存 alias
+    // Save alias for all non-camera objects
     if (sourceObj.alias) base.alias = sourceObj.alias
 
-    // v20: 序列化 extraInfo（来源身份标识）
+    // v20: Serialize extraInfo (source identity marker)
     if (sourceObj.extraInfo) base.extraInfo = sourceObj.extraInfo
 
-    // P1: 按 type 填充特化字段 — 委托给 TypeSerializer
+    // P1: Populate specialized fields by type - delegated to TypeSerializer
     const serializer = getTypeSerializer(sourceObj.type)
     if (serializer) {
       serializer.serializeFields(sourceObj, base)
     }
-    // text/camera 无 serializer 注册，公共字段已足够
+    // text/camera have no registered serializer; common fields suffice
 
     return base as SceneObject
   }
 
   /**
-   * Phase 2: 从 SceneObject 反序列化为运行时 SceneObject
-   * 角色名称解析通过回调注入，避免 Store 耦合 projectStore/actorUtils
-   * P1: 各类型反序列化逻辑委托给 TypeSerializer registry
+   * Phase 2: Deserialize from SceneObject to runtime SceneObject
+   * Character name resolution injected via callback, decoupling Store from projectStore/actorUtils
+   * P1: Deserialization logic for each type delegated to TypeSerializer registry
    */
   function fromSetupObject(
     objData: SceneObject,
@@ -2066,11 +2066,11 @@ export const useSceneObjectStore = defineStore('sceneObject', () => {
   ): void {
     const serializer = getTypeSerializer(objData.type)
     if (!serializer) {
-      // camera/text 不由 setup.objects 加载，无需 serializer
+      // camera/text not loaded via setup.objects, no serializer needed
       return
     }
 
-    // 构建反序列化上下文，将 Store 内部函数注入给 serializer
+    // Construct deserialization context, injecting Store internal functions to serializer
     const ctx: DeserializeContext = {
       createBackgroundObject,
       createAudioObject,
@@ -2089,7 +2089,7 @@ export const useSceneObjectStore = defineStore('sceneObject', () => {
 
     serializer.deserialize(objData, ctx)
 
-    // v16: 统一恢复动画数据（所有类型共用）
+    // v16: Uniformly restore animation data (shared by all types)
     const createdObj = setupState.value.objects.find(o => o.id === objData.id)
     if (createdObj) {
       if (objData.receiveLighting !== undefined) {
@@ -2098,29 +2098,29 @@ export const useSceneObjectStore = defineStore('sceneObject', () => {
       if (objData.castShadow !== undefined) {
         createdObj.castShadow = objData.castShadow
       }
-      // v20: 恢复 extraInfo（来源身份标识）
+      // v20: Restore extraInfo (source identity marker)
       if (objData.extraInfo) {
         createdObj.extraInfo = objData.extraInfo
       }
       if (objData.animations && Object.keys(objData.animations).length > 0) {
-        // 新文件：从持久化数据恢复
+        // New file: restore from persisted data
         createdObj.animations = objData.animations
       }
-      // 迁移：旧文件没有 animations，通过 hydrate 补充
+      // Migration: legacy files lack animations, hydrated as fallback
       if (!createdObj.animations || Object.keys(createdObj.animations).length === 0) {
         getAnimationStore().hydrateObjectAnimations(createdObj)
       }
       if (objData.initialAnimations !== undefined) {
         createdObj.initialAnimations = objData.initialAnimations
       }
-      // v21: 旧文件迁移 — 仅当文件中完全没有 initialAnimations 字段时才补默认播放
+      // v21: Legacy file migration - only supply default playback when initialAnimations completely absent in file
       if (objData.initialAnimations === undefined) {
         autoPopulateInitialAnimations(createdObj)
       }
     }
   }
 
-  // v19: 渲染链管理 API
+  // v19: RenderChain management API
   function getSceneRenderChain(): string[] {
     return sceneRenderChain.value
   }
@@ -2129,18 +2129,18 @@ export const useSceneObjectStore = defineStore('sceneObject', () => {
     setupState.value.renderChain = chain
   }
 
-  /** 从当前 objects 自动构建场景渲染链（初始化/迁移用） */
+  /** Automatically build scene renderChain from current objects (for init/migration) */
   function rebuildSceneRenderChain(): void {
     setupState.value.renderChain = buildRenderChain(objects.value)
   }
 
-  /** 为所有 entity composite 协调 renderChain（反序列化/迁移后调用） */
+  /** Reconcile renderChain for all entity composites (called after deserialization/migration) */
   function rebuildEntityRenderChains(): void {
     for (const obj of setupState.value.objects) {
       if (obj.type !== 'composite') continue
       const comp = obj as CompositeObject
       if (comp.compositeMode !== 'entity') continue
-      // 旧数据缺失时重建；已有持久化数据则增量协调，保留用户顺序并补齐新入链类型。
+      // Rebuild when legacy data missing; incrementally reconcile persisted data to preserve user order and admit new types.
       if (!comp.renderChain || comp.renderChain.length === 0) {
         comp.renderChain = buildRenderChain(setupState.value.objects, comp.id)
       } else {
@@ -2150,26 +2150,26 @@ export const useSceneObjectStore = defineStore('sceneObject', () => {
   }
 
   /**
-   * v19: 对指定对象所属的 renderChain 做稳定排序（Setup Mode only）。
-   * 用于 zIndex 变更后维护 zIndex 有序不变量。
+   * v19: Stable sort renderChain of specified object (Setup Mode only).
+   * Used to maintain zIndex ordered invariant after zIndex changes.
    *
-   * 稳定排序 vs 全量重建：
-   * - 稳定排序：仅按 zIndex 重新分组，同 zIndex 内保留用户自定义的相对顺序
-   * - 全量重建 (buildRenderChain)：会丢失用户自定义顺序，退化为 objects 数组位置排序
+   * Stable sort vs full rebuild:
+   * - Stable sort: regroup by zIndex only, preserving user custom relative order within same zIndex
+   * - Full rebuild (buildRenderChain): loses user custom order, regressing to objects array index ordering
    *
-   * 定位逻辑：
-   * - 对象在 entity 内 → 排序该 entity 的 renderChain
-   * - 对象在 union 内 → 穿透到最近 entity 祖先排序
-   * - 根级对象 → 排序 sceneRenderChain
+   * Locating logic:
+   * - Object in entity -> sort that entity's renderChain
+   * - Object in union -> penetrate to nearest entity ancestor to sort
+   * - Root-level object -> sort sceneRenderChain
    */
   function sortOwningRenderChain(objectId: string): void {
-    if (isActionMode.value) return // Action Mode 由 sceneStateCalculator 处理
+    if (isActionMode.value) return // Action Mode handled by sceneStateCalculator
     const obj = getObject(objectId)
     if (!obj) return
 
     const zIndexGetter = (id: string): number => getObject(id)?.zIndex ?? 0
 
-    // 沿 parentId 链向上查找最近的 entity 祖先
+    // Walk up parentId chain to find nearest entity ancestor
     let currentParentId = obj.parentId
     while (currentParentId) {
       const parent = getObject(currentParentId)
@@ -2181,39 +2181,39 @@ export const useSceneObjectStore = defineStore('sceneObject', () => {
           }
           return
         }
-        // union：继续向上
+        // union: continue upward
         currentParentId = parentComp.parentId
       } else {
         break
       }
     }
-    // 根级对象：稳定排序 sceneRenderChain
+    // Root-level object: stable sort sceneRenderChain
     setupState.value.renderChain = sortRenderChainByZIndex(sceneRenderChain.value, zIndexGetter)
   }
 
   return {
-    objects,             // computed 代理：Setup Mode → setupState.objects, Action Mode → runtimeState.objects
-    setupState,          // 持久层 SceneSetup（供序列化、迁移用）
-    runtimeState,        // Runtime 层 RuntimeSceneSnapshot | null
+    objects,             // computed proxy: Setup Mode -> setupState.objects, Action Mode -> runtimeState.objects
+    setupState,          // Persistence layer SceneSetup (for serialization, migration)
+    runtimeState,        // Runtime layer RuntimeSceneSnapshot | null
     selectedObjectId,
-    // v17: 命名空间别名管理
+    // v17: Namespace alias management
     resolveNamespaceRoot,
     getNamespaceAliases,
     getExistingAliases,
     isAliasExists,
     generateUniqueAlias,
-    // 对象操作函数
+    // Object operation functions
     addObject,
     createBackgroundObject,
     createAudioObject,
     createPropObject,
-    autoPopulateInitialAnimations,  // v21: 仅供 UI 创建路径调用
+    autoPopulateInitialAnimations,  // v21: Only invoked by UI creation path
     createScreenEffectObject,
      createSymbolObject,        // v16
     createExpressionObject,    // v18
     createCompositeObject,   // P2
     createMaskObject,         // Clip-Mask Phase 1
-    finalizeMaskTargets,      // Clip-Mask Phase 1：反序列化后回填 + 独占校验
+    finalizeMaskTargets,      // Clip-Mask Phase 1: Backfill after deserialization + exclusive validation
     createCameraObject,
     createLightObject,
     createTextObject,
@@ -2226,19 +2226,19 @@ export const useSceneObjectStore = defineStore('sceneObject', () => {
     getSortedObjects,
     getChildObjects,         // P2
     getRootObjects,          // P2
-    groupObjects,            // P2: 多选成组
-    ungroupAll,              // P2: 拆分组合
-    addToComposite,          // P2: 追加成员
-    removeFromComposite,     // P2: 移出成员
-    reorderChild,            // P2: 调整子对象渲染顺序
-    reorderSceneRenderChain, // v19: 场景根级渲染链排序
-    collectAllDescendantIds, // P2: 递归收集后代 ID
-    removeObjectWithDescendants, // P2: 强制级联删除
-    dissolveComposite,           // P2: 解散组合（子对象冒泡）
+    groupObjects,            // P2: Multi-selection grouping
+    ungroupAll,              // P2: Ungroup all
+    addToComposite,          // P2: Add member
+    removeFromComposite,     // P2: Remove member
+    reorderChild,            // P2: Reorder child rendering order
+    reorderSceneRenderChain, // v19: Scene root renderChain ordering
+    collectAllDescendantIds, // P2: Recursively collect descendant IDs
+    removeObjectWithDescendants, // P2: Force cascade deletion
+    dissolveComposite,           // P2: Dissolve composite (children bubble up)
     clearObjects,
     toSetupObject,
     fromSetupObject,
-    // v19: 渲染链管理
+    // v19: RenderChain management
     getSceneRenderChain,
     setSceneRenderChain,
     rebuildSceneRenderChain,
@@ -2249,7 +2249,7 @@ export const useSceneObjectStore = defineStore('sceneObject', () => {
     applySlotState,
     setActionMode,
     getIsActionMode,
-    // Action Mode 持久操作 API
+    // Action Mode persistence operation API
     addSetupObject,
     removeSetupObject,
     updateSetupObject,

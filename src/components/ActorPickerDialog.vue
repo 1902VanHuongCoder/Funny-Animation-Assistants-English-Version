@@ -6,7 +6,7 @@
     >
       <div class="picker-dialog">
         <div class="dialog-header">
-          <h3>选择演员</h3>
+          <h3>Select Actor</h3>
           <button
             class="close-btn"
             @click="emit('close')"
@@ -16,25 +16,25 @@
         </div>
 
         <div class="dialog-content">
-          <!-- 顶部工具栏：搜索框 -->
+          <!-- Top toolbar: Search input -->
           <div class="content-toolbar">
             <input
               v-model="searchKeyword"
               type="text"
               class="search-input"
-              placeholder="搜索演员..."
+              placeholder="Search actors..."
             >
           </div>
 
-          <!-- 卡片网格 -->
+          <!-- Card grid -->
           <div class="dialog-body">
             <div
               v-if="filteredActors.length === 0"
               class="empty-state"
             >
-              <p>📭 暂无可用演员</p>
+              <p>📭 No actors available</p>
               <p class="hint">
-                请先在「演员管理」中添加演员
+                Please add actors in Actor Management first
               </p>
             </div>
 
@@ -87,20 +87,20 @@
             </div>
           </div>
 
-          <!-- 底部按钮 -->
+          <!-- Bottom buttons -->
           <div class="dialog-footer">
             <button
               class="btn-cancel"
               @click="emit('close')"
             >
-              取消
+              Cancel
             </button>
             <button
               class="btn-confirm"
               :disabled="!selectedActorId"
               @click="handleConfirm"
             >
-              确定
+              Confirm
             </button>
           </div>
         </div>
@@ -128,7 +128,7 @@ const characterStore = useCompositeCharacterStore()
 const selectedActorId = ref<string | null>(null)
 const searchKeyword = ref('')
 
-/** 按搜索关键词过滤演员列表 */
+/** Filter actor list by search keyword */
 const filteredActors = computed(() => {
   const actors = projectStore.actors
   if (!searchKeyword.value.trim()) return actors
@@ -137,21 +137,21 @@ const filteredActors = computed(() => {
   return actors.filter(a => a.name.toLowerCase().includes(kw))
 })
 
-/** 获取关联人物的缩略图 */
+/** Get associated character's thumbnail */
 function getCharacterThumbnail(characterId: string): string | undefined {
   if (!characterId) return undefined
   const char = characterStore.getCharacter(characterId)
   return char?._runtimeThumbnailUrl
 }
 
-/** 获取关联人物的名称 */
+/** Get associated character's name */
 function getCharacterName(characterId: string): string | undefined {
   if (!characterId) return undefined
   const char = characterStore.getCharacter(characterId)
   return char?.name
 }
 
-/** 获取音色名称 */
+/** Get voice name */
 function getVoiceLabel(voiceId: string | number | undefined): string {
   return getVoiceName(voiceId)
 }
@@ -160,7 +160,7 @@ function handleImageError(e: Event): void {
   (e.target as HTMLImageElement).style.display = 'none'
 }
 
-/** 确认选择：反查 CompositeCharacter 并 emit */
+/** Confirm selection: Look up CompositeCharacter and emit */
 function handleConfirm(): void {
   if (!selectedActorId.value) return
   const actor = projectStore.actors.find(a => a.id === selectedActorId.value)

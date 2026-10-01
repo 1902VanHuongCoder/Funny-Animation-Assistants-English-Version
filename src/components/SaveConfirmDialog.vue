@@ -44,11 +44,11 @@ withDefaults(defineProps<{
   discardText?: string
   cancelText?: string
 }>(), {
-  title: '保存更改',
-  message: '当前有未保存的修改，您想要如何处理？',
-  saveAndExitText: '保存并返回',
-  discardText: '放弃修改',
-  cancelText: '取消'
+  title: 'Save Changes',
+  message: 'There are unsaved changes. How would you like to proceed?',
+  saveAndExitText: 'Save and Exit',
+  discardText: 'Discard Changes',
+  cancelText: 'Cancel'
 })
 
 const emit = defineEmits<{

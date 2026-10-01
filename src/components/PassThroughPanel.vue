@@ -1,20 +1,20 @@
 <!--
-  PassThroughPanel.vue - 穿透管理弹出面板
+  PassThroughPanel.vue - Pass-through management popup panel
   
-  显示当前穿透列表中的所有对象，支持：
-  - 切换对象 visible（穿透+显示 / 穿透+隐藏）
-  - 从穿透列表移除（恢复可拾取）
-  - 点击对象可选中
+  Displays all objects in the current pass-through list, supports:
+  - Toggle object visible (pass-through + visible / pass-through + hidden)
+  - Remove from pass-through list (restore pickable)
+  - Click object to select
 -->
 <template>
   <div ref="panelRef" class="pass-through-panel" @click.stop>
     <div class="panel-header">
-      <span class="panel-title">👻 穿透管理</span>
+      <span class="panel-title">👻 Pass-through Management</span>
     </div>
     <div class="panel-content">
       <div v-if="entries.length === 0" class="empty-hint">
         <span class="hint-icon">💡</span>
-        <span class="hint-text">无穿透对象<br>在属性面板中选择对象后，点击「设为穿透」可将其加入</span>
+        <span class="hint-text">No pass-through objects<br>Select an object in Properties panel, then click "Set Pass-through" to add</span>
       </div>
       <div
         v-for="entry in entries"
@@ -24,19 +24,19 @@
       >
         <span class="item-icon">{{ entry.icon }}</span>
         <span class="item-name">{{ entry.name }}</span>
-        <span v-if="entry.isDefault" class="item-default-badge">默认</span>
+        <span v-if="entry.isDefault" class="item-default-badge">Default</span>
         <div class="item-actions">
           <button
             class="item-btn"
             :class="{ 'is-hidden': !entry.visible }"
-            :title="entry.visible ? '点击隐藏' : '点击显示'"
+            :title="entry.visible ? 'Click to hide' : 'Click to show'"
             @click.stop="emit('toggleVisible', entry.objectId)"
           >
             {{ entry.visible ? '👁️' : '🚫' }}
           </button>
           <button
             class="item-btn remove"
-            title="移除穿透"
+            title="Remove pass-through"
             @click.stop="emit('remove', entry.objectId)"
           >
             ✕

@@ -6,12 +6,12 @@
     <div class="render-chain-dialog">
       <div class="dialog-header">
         <div class="header-titles">
-          <h3>场景 Render Chain</h3>
-          <p class="dialog-subtitle">当前模式: <span class="highlight">{{ modeDescription }}</span></p>
+          <h3>Scene Render Chain</h3>
+          <p class="dialog-subtitle">Current Mode: <span class="highlight">{{ modeDescription }}</span></p>
         </div>
         <button
           class="close-btn"
-          title="关闭"
+          title="Close"
           @click="emit('close')"
         >
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -21,7 +21,7 @@
       </div>
 
       <div class="dialog-hint">
-        <span class="hint-icon">💡</span> 按 zIndex 分组，组内按 render chain 的真实渲染顺序显示。
+        <span class="hint-icon">💡</span> Grouped by zIndex, ordered by actual render chain sequence.
       </div>
 
       <div
@@ -37,7 +37,7 @@
             class="zindex-divider"
           >
             <div class="divider-line"></div>
-            <span class="divider-text">层级 {{ entry.zIndex }}</span>
+            <span class="divider-text">Layer {{ entry.zIndex }}</span>
             <div class="divider-line"></div>
           </div>
 
@@ -74,7 +74,7 @@
             <line x1="12" y1="22.08" x2="12" y2="12"></line>
           </svg>
         </div>
-        <p>暂无场景渲染对象</p>
+        <p>No scene render objects</p>
       </div>
     </div>
   </div>
@@ -136,7 +136,7 @@ const displayEntries = computed((): DisplayEntry[] => {
 
 function getDisplayName(obj: SceneObject): string {
   if ('alias' in obj && obj.alias) return obj.alias
-  return obj.name || '未命名'
+  return obj.name || 'Untitled'
 }
 
 function handleSelect(objectId: string) {
