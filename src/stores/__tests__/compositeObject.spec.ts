@@ -1,11 +1,11 @@
 /**
- * P2: 组合对象 (Composite Object) 单元测试
+ * P2: Composite Object Unit Tests
  *
- * 覆盖：
- * - createCompositeObject 工厂函数
- * - removeObject 级联删除
- * - getChildObjects / getRootObjects 查询
- * - toSetupObject / fromSetupObject 序列化循环
+ * Covers:
+ * - createCompositeObject factory function
+ * - removeObject cascade deletion
+ * - getChildObjects / getRootObjects queries
+ * - toSetupObject / fromSetupObject serialization cycle
  */
 
 import { createPinia, setActivePinia } from 'pinia'
@@ -57,27 +57,27 @@ describe('Composite Object - sceneObjectStore', () => {
 
     describe('createCompositeObject', () => {
         it('should create a composite object with correct fields', () => {
-            const composite = store.createCompositeObject('测试组合', [])
+            const composite = store.createCompositeObject('test_group', [])
 
             expect(composite.type).toBe('composite')
-            expect(composite.name).toBe('测试组合')
+            expect(composite.name).toBe('test_group')
             expect(composite.childIds).toEqual([])
             expect(composite.id).toContain('sceneobject')
             expect(composite.refId).toBe('')
         })
 
         it('should set parentId on child objects', () => {
-            // 先创建子对象
-            const prop = store.createPropObject('prop1', '道具1')
-            const bg = store.createBackgroundObject('bg1', '背景1')
+            // Create child objects first
+            const prop = store.createPropObject('prop1', 'prop1')
+            const bg = store.createBackgroundObject('bg1', 'bg1')
 
-            // 创建组合，指定子对象
-            const composite = store.createCompositeObject('组合1', [prop.id, bg.id])
+            // Create composite, specify children
+            const composite = store.createCompositeObject('group1', [prop.id, bg.id])
 
             expect(composite.childIds).toContain(prop.id)
             expect(composite.childIds).toContain(bg.id)
 
-            // 验证子对象的 parentId 被设置
+            // Verify child parentId is set
             const updatedProp = store.getObject(prop.id)
             const updatedBg = store.getObject(bg.id)
             expect(updatedProp?.parentId).toBe(composite.id)
@@ -85,27 +85,27 @@ describe('Composite Object - sceneObjectStore', () => {
         })
 
         it('should generate unique alias', () => {
-            const c1 = store.createCompositeObject('组合')
-            const c2 = store.createCompositeObject('组合')
+            const c1 = store.createCompositeObject('group')
+            const c2 = store.createCompositeObject('group')
 
-            expect(c1.alias).toBe('组合')
-            expect(c2.alias).toBe('组合1')
+            expect(c1.alias).toBe('group')
+            expect(c2.alias).toBe('group1')
         })
 
         it('should generate unique alias inside an entity namespace', () => {
-            const entity = store.createCompositeObject('顾砚舟', [], undefined, undefined, 'entity')
-            const existingGroup = store.createCompositeObject('组合', [], undefined, undefined, 'union')
+            const entity = store.createCompositeObject('Gu Yanzhou', [], undefined, undefined, 'entity')
+            const existingGroup = store.createCompositeObject('group', [], undefined, undefined, 'union')
             existingGroup.parentId = entity.id
             entity.childIds = [existingGroup.id]
 
-            const nextGroup = store.createCompositeObject('组合', [], undefined, undefined, 'union', entity.id)
+            const nextGroup = store.createCompositeObject('group', [], undefined, undefined, 'union', entity.id)
 
-            expect(existingGroup.alias).toBe('组合')
-            expect(nextGroup.alias).toBe('组合1')
+            expect(existingGroup.alias).toBe('group')
+            expect(nextGroup.alias).toBe('group1')
         })
 
         it('should use custom id and alias when provided', () => {
-            const composite = store.createCompositeObject('测试', [], 'custom-id', 'custom-alias')
+            const composite = store.createCompositeObject('test', [], 'custom-id', 'custom-alias')
 
             expect(composite.id).toBe('custom-id')
             expect(composite.alias).toBe('custom-alias')
@@ -116,16 +116,16 @@ describe('Composite Object - sceneObjectStore', () => {
 
     describe('removeObject (cascade delete)', () => {
         it('should cascade delete child objects when composite is removed', () => {
-            const prop1 = store.createPropObject('p1', '道具1')
-            const prop2 = store.createPropObject('p2', '道具2')
-            const composite = store.createCompositeObject('组合', [prop1.id, prop2.id], undefined, undefined, 'entity')
+            const prop1 = store.createPropObject('p1', 'prop1')
+            const prop2 = store.createPropObject('p2', 'prop2')
+            const composite = store.createCompositeObject('group', [prop1.id, prop2.id], undefined, undefined, 'entity')
 
             expect(store.objects.length).toBe(3)
 
-            // 删除组合对象
+            // Delete composite object
             store.removeObject(composite.id)
 
-            // 所有对象都被删除
+            // All objects are deleted
             expect(store.objects.length).toBe(0)
             expect(store.getObject(prop1.id)).toBeUndefined()
             expect(store.getObject(prop2.id)).toBeUndefined()
@@ -133,31 +133,31 @@ describe('Composite Object - sceneObjectStore', () => {
         })
 
         it('should remove child from parent childIds when deleting a child directly', () => {
-            const prop = store.createPropObject('p1', '道具1')
-            const composite = store.createCompositeObject('组合', [prop.id])
+            const prop = store.createPropObject('p1', 'prop1')
+            const composite = store.createCompositeObject('group', [prop.id])
 
-            // 直接删除子对象
+            // Delete child object directly
             store.removeObject(prop.id)
 
-            // 子对象被删除
+            // Child object is deleted
             expect(store.getObject(prop.id)).toBeUndefined()
 
-            // 父对象的 childIds 已更新
+            // Parent childIds is updated
             const parent = store.getObject(composite.id) as CompositeObject
             expect(parent.childIds).toEqual([])
         })
 
         it('should handle nested composite cascade', () => {
-            const innerProp = store.createPropObject('p1', '内层道具')
-            const innerComposite = store.createCompositeObject('内层组合', [innerProp.id], undefined, undefined, 'entity')
-            const outerComposite = store.createCompositeObject('外层组合', [innerComposite.id], undefined, undefined, 'entity')
+            const innerProp = store.createPropObject('p1', 'inner_prop')
+            const innerComposite = store.createCompositeObject('inner_group', [innerProp.id], undefined, undefined, 'entity')
+            const outerComposite = store.createCompositeObject('outer_group', [innerComposite.id], undefined, undefined, 'entity')
 
             expect(store.objects.length).toBe(3)
 
-            // 删除外层组合
+            // Delete outer composite
             store.removeObject(outerComposite.id)
 
-            // 所有嵌套对象都被删除
+            // All nested objects are deleted
             expect(store.objects.length).toBe(0)
         })
 
@@ -196,8 +196,8 @@ describe('Composite Object - sceneObjectStore', () => {
 
     describe('selectObject auto-relock', () => {
         it('should relock an unlocked composite when clearing selection in setup mode', () => {
-            const prop = store.createPropObject('p1', '道具1')
-            const composite = store.createCompositeObject('组合', [prop.id]) as CompositeObject
+            const prop = store.createPropObject('p1', 'prop1')
+            const composite = store.createCompositeObject('group', [prop.id]) as CompositeObject
 
             store.updateObject(composite.id, { compositeLocked: false } as Partial<CompositeObject>)
             expect((store.getObject(composite.id) as CompositeObject).compositeLocked).toBe(false)
@@ -208,8 +208,8 @@ describe('Composite Object - sceneObjectStore', () => {
         })
 
         it('should relock an unlocked composite when clearing selection in action mode', () => {
-            const prop = store.createPropObject('p1', '道具1')
-            const composite = store.createCompositeObject('组合', [prop.id]) as CompositeObject
+            const prop = store.createPropObject('p1', 'prop1')
+            const composite = store.createCompositeObject('group', [prop.id]) as CompositeObject
 
             store.setActionMode(true)
             store.updateSetupObject(composite.id, { compositeLocked: false } as Partial<CompositeObject>)
@@ -225,10 +225,10 @@ describe('Composite Object - sceneObjectStore', () => {
 
     describe('getChildObjects', () => {
         it('should return children of a composite object', () => {
-            const prop1 = store.createPropObject('p1', '道具1')
-            const prop2 = store.createPropObject('p2', '道具2')
-            const standalone = store.createPropObject('p3', '独立道具')
-            const composite = store.createCompositeObject('组合', [prop1.id, prop2.id])
+            const prop1 = store.createPropObject('p1', 'prop1')
+            const prop2 = store.createPropObject('p2', 'prop2')
+            const standalone = store.createPropObject('p3', 'standalone_prop')
+            const composite = store.createCompositeObject('group', [prop1.id, prop2.id])
 
             const children = store.getChildObjects(composite.id)
             expect(children.length).toBe(2)
@@ -238,17 +238,17 @@ describe('Composite Object - sceneObjectStore', () => {
         })
 
         it('should return children in childIds order', () => {
-            const prop1 = store.createPropObject('p1', '道具1')
-            const prop2 = store.createPropObject('p2', '道具2')
-            const prop3 = store.createPropObject('p3', '道具3')
-            const composite = store.createCompositeObject('组合', [prop2.id, prop3.id, prop1.id])
+            const prop1 = store.createPropObject('p1', 'prop1')
+            const prop2 = store.createPropObject('p2', 'prop2')
+            const prop3 = store.createPropObject('p3', 'prop3')
+            const composite = store.createCompositeObject('group', [prop2.id, prop3.id, prop1.id])
 
             const children = store.getChildObjects(composite.id)
             expect(children.map(c => c.id)).toEqual([prop2.id, prop3.id, prop1.id])
         })
 
         it('should return empty array for objects without children', () => {
-            const prop = store.createPropObject('p1', '道具')
+            const prop = store.createPropObject('p1', 'prop')
             expect(store.getChildObjects(prop.id)).toEqual([])
         })
     })
@@ -257,12 +257,12 @@ describe('Composite Object - sceneObjectStore', () => {
 
     describe('reorderChild', () => {
         it('should move child from one position to another', () => {
-            const p1 = store.createPropObject('p1', '道具1')
-            const p2 = store.createPropObject('p2', '道具2')
-            const p3 = store.createPropObject('p3', '道具3')
-            // v19: 必须为 entity 才拥有独立的 renderChain
-            const composite = store.createCompositeObject('组合', [p1.id, p2.id, p3.id], undefined, undefined, 'entity')
-            // 手动填充 renderChain（createCompositeObject 仅做基础构造）
+            const p1 = store.createPropObject('p1', 'prop1')
+            const p2 = store.createPropObject('p2', 'prop2')
+            const p3 = store.createPropObject('p3', 'prop3')
+            // v19: Must be entity to have independent renderChain
+            const composite = store.createCompositeObject('group', [p1.id, p2.id, p3.id], undefined, undefined, 'entity')
+            // Manually populate renderChain (createCompositeObject only does base construct)
             const comp = store.getObject(composite.id) as CompositeObject
             comp.renderChain = [p1.id, p2.id, p3.id]
 
@@ -273,10 +273,10 @@ describe('Composite Object - sceneObjectStore', () => {
         })
 
         it('should move child backward', () => {
-            const p1 = store.createPropObject('p1', '道具1')
-            const p2 = store.createPropObject('p2', '道具2')
-            const p3 = store.createPropObject('p3', '道具3')
-            const composite = store.createCompositeObject('组合', [p1.id, p2.id, p3.id], undefined, undefined, 'entity')
+            const p1 = store.createPropObject('p1', 'prop1')
+            const p2 = store.createPropObject('p2', 'prop2')
+            const p3 = store.createPropObject('p3', 'prop3')
+            const composite = store.createCompositeObject('group', [p1.id, p2.id, p3.id], undefined, undefined, 'entity')
             const comp = store.getObject(composite.id) as CompositeObject
             comp.renderChain = [p1.id, p2.id, p3.id]
 
@@ -287,9 +287,9 @@ describe('Composite Object - sceneObjectStore', () => {
         })
 
         it('should be no-op for same index', () => {
-            const p1 = store.createPropObject('p1', '道具1')
-            const p2 = store.createPropObject('p2', '道具2')
-            const composite = store.createCompositeObject('组合', [p1.id, p2.id], undefined, undefined, 'entity')
+            const p1 = store.createPropObject('p1', 'prop1')
+            const p2 = store.createPropObject('p2', 'prop2')
+            const composite = store.createCompositeObject('group', [p1.id, p2.id], undefined, undefined, 'entity')
             const comp = store.getObject(composite.id) as CompositeObject
             comp.renderChain = [p1.id, p2.id]
 
@@ -299,8 +299,8 @@ describe('Composite Object - sceneObjectStore', () => {
         })
 
         it('should be no-op for invalid indices', () => {
-            const p1 = store.createPropObject('p1', '道具1')
-            const composite = store.createCompositeObject('组合', [p1.id], undefined, undefined, 'entity')
+            const p1 = store.createPropObject('p1', 'prop1')
+            const composite = store.createCompositeObject('group', [p1.id], undefined, undefined, 'entity')
             const comp = store.getObject(composite.id) as CompositeObject
             comp.renderChain = [p1.id]
 
@@ -312,7 +312,7 @@ describe('Composite Object - sceneObjectStore', () => {
         })
 
         it('should be no-op for non-composite object', () => {
-            const p1 = store.createPropObject('p1', '道具1')
+            const p1 = store.createPropObject('p1', 'prop1')
             // Should not throw
             store.reorderChild(p1.id, 0, 1)
         })
@@ -320,9 +320,9 @@ describe('Composite Object - sceneObjectStore', () => {
 
     describe('getRootObjects', () => {
         it('should return only objects without parentId', () => {
-            const prop = store.createPropObject('p1', '道具')
-            const composite = store.createCompositeObject('组合', [prop.id])
-            const standalone = store.createPropObject('p2', '独立道具')
+            const prop = store.createPropObject('p1', 'prop')
+            const composite = store.createCompositeObject('group', [prop.id])
+            const standalone = store.createPropObject('p2', 'standalone_prop')
 
             const roots = store.getRootObjects()
             expect(roots.length).toBe(2) // composite + standalone
@@ -336,21 +336,21 @@ describe('Composite Object - sceneObjectStore', () => {
 
     describe('toSetupObject (parentId)', () => {
         it('should serialize parentId when present', () => {
-            const prop = store.createPropObject('p1', '道具')
-            const composite = store.createCompositeObject('组合', [prop.id])
+            const prop = store.createPropObject('p1', 'prop')
+            const composite = store.createCompositeObject('group', [prop.id])
 
             const propData = store.toSetupObject(store.getObject(prop.id)!)
             const compositeData = store.toSetupObject(store.getObject(composite.id)!)
 
-            // prop 有 parentId
+            // prop has parentId
             expect(propData.parentId).toBe(composite.id)
-            // composite 无 parentId
+            // composite has no parentId
             expect(compositeData.parentId).toBeUndefined()
         })
 
         it('should serialize childIds for composite', () => {
-            const prop = store.createPropObject('p1', '道具')
-            const composite = store.createCompositeObject('组合', [prop.id])
+            const prop = store.createPropObject('p1', 'prop')
+            const composite = store.createCompositeObject('group', [prop.id])
 
             const data = store.toSetupObject(store.getObject(composite.id)!)
             const compositeData = data as unknown as { childIds: string[] }
@@ -362,40 +362,40 @@ describe('Composite Object - sceneObjectStore', () => {
 
     describe('duplicateObject (recursive)', () => {
         it('should recursively duplicate composite with children', () => {
-            const prop = store.createPropObject('p1', '道具')
-            const composite = store.createCompositeObject('组合', [prop.id])
+            const prop = store.createPropObject('p1', 'prop')
+            const composite = store.createCompositeObject('group', [prop.id])
 
             const dup = store.duplicateObject(composite.id)
             expect(dup).toBeDefined()
             expect(dup!.type).toBe('composite')
             expect(dup!.id).not.toBe(composite.id)
 
-            // 新组合对象有新的子对象
+            // New composite object has new children
             const dupComposite = dup as CompositeObject
             expect(dupComposite.childIds.length).toBe(1)
             expect(dupComposite.childIds[0]).not.toBe(prop.id)
 
-            // 子对象的 parentId 指向新组合
+            // Children parentId points to new composite
             const dupChild = store.getObject(dupComposite.childIds[0]!)
             expect(dupChild).toBeDefined()
             expect(dupChild!.parentId).toBe(dup!.id)
 
-            // 原始对象不受影响
+            // Original objects unaffected
             expect(store.getObject(prop.id)?.parentId).toBe(composite.id)
         })
 
         it('should not have parentId on duplicated top-level object', () => {
-            const prop = store.createPropObject('p1', '道具')
-            store.createCompositeObject('组合', [prop.id])
+            const prop = store.createPropObject('p1', 'prop')
+            store.createCompositeObject('group', [prop.id])
 
             const dup = store.duplicateObject(prop.id)
-            // 复制的子对象应是顶层对象（无 parentId）
+            // Cloned child should be top-level object (no parentId)
             expect(dup!.parentId).toBeUndefined()
         })
 
         it('should preserve entity renderChain order with duplicated child ids only', () => {
-            const p1 = store.createPropObject('p1', '道具1')
-            const p2 = store.createPropObject('p2', '道具2')
+            const p1 = store.createPropObject('p1', 'prop1')
+            const p2 = store.createPropObject('p2', 'prop2')
             const entity = store.groupObjects([p1.id, p2.id], 'entity') as CompositeObject
             const entityInStore = store.getObject(entity.id) as CompositeObject
             entityInStore.renderChain = [p2.id, p1.id]
@@ -414,7 +414,7 @@ describe('Composite Object - sceneObjectStore', () => {
             const duplicatedP1Id = dup.childIds[0]!
             const duplicatedP2Id = dup.childIds[1]!
 
-            // 新 entity 的 renderChain 必须只引用新子对象 ID，并保留原链自定义顺序
+            // New entity renderChain must only reference new child IDs and preserve custom order
             expect(dup.renderChain).toBeDefined()
             expect(new Set(dup.renderChain ?? [])).toEqual(dupChildIds)
             expect(dup.renderChain).toEqual([duplicatedP2Id, duplicatedP1Id])
@@ -422,7 +422,7 @@ describe('Composite Object - sceneObjectStore', () => {
             expect((dup.renderChain ?? []).includes(p1.id)).toBe(false)
             expect((dup.renderChain ?? []).includes(p2.id)).toBe(false)
 
-            // 根级 renderChain 不应残留 entity 子对象
+            // Root renderChain should not retain entity children
             const sceneChain = store.getSceneRenderChain()
             for (const childId of dup.childIds) {
                 expect(sceneChain.includes(childId)).toBe(false)
@@ -442,17 +442,17 @@ describe('Phase A: CompositeObject new fields', () => {
     })
 
     it('should have compositeLocked=true by default', () => {
-        const composite = store.createCompositeObject('组合') as CompositeObject
+        const composite = store.createCompositeObject('group') as CompositeObject
         expect(composite.compositeLocked).toBe(true)
     })
 
     it('should have compositeMode=union by default', () => {
-        const composite = store.createCompositeObject('组合') as CompositeObject
+        const composite = store.createCompositeObject('group') as CompositeObject
         expect(composite.compositeMode).toBe('union')
     })
 
     it('should allow toggling compositeLocked', () => {
-        const composite = store.createCompositeObject('组合') as CompositeObject
+        const composite = store.createCompositeObject('group') as CompositeObject
         store.updateObject(composite.id, { compositeLocked: false } as Partial<CompositeObject>)
         const updated = store.getObject(composite.id) as CompositeObject
         expect(updated.compositeLocked).toBe(false)
@@ -471,8 +471,8 @@ describe('Phase B: groupObjects / ungroupAll / addToComposite / removeFromCompos
 
     describe('groupObjects', () => {
         it('should create a composite and set parentId on children', () => {
-            const p1 = store.createPropObject('p1', '道具1')
-            const p2 = store.createPropObject('p2', '道具2')
+            const p1 = store.createPropObject('p1', 'prop1')
+            const p2 = store.createPropObject('p2', 'prop2')
 
             const composite = store.groupObjects([p1.id, p2.id])
 
@@ -484,34 +484,34 @@ describe('Phase B: groupObjects / ungroupAll / addToComposite / removeFromCompos
         })
 
         it('should accept compositeMode parameter', () => {
-            const p1 = store.createPropObject('p1', '道具1')
+            const p1 = store.createPropObject('p1', 'prop1')
             const composite = store.groupObjects([p1.id], 'union') as CompositeObject
 
             expect(composite.compositeMode).toBe('union')
         })
 
         it('should group siblings under the same parent composite', () => {
-            // 创建父组合 A，含 p1, p2, p3 三个子对象
-            const p1 = store.createPropObject('p1', '道具1')
-            const p2 = store.createPropObject('p2', '道具2')
-            const p3 = store.createPropObject('p3', '道具3')
-            const parentA = store.createCompositeObject('父组合', [p1.id, p2.id, p3.id])
+            // Create parent composite A with p1, p2, p3
+            const p1 = store.createPropObject('p1', 'prop1')
+            const p2 = store.createPropObject('p2', 'prop2')
+            const p3 = store.createPropObject('p3', 'prop3')
+            const parentA = store.createCompositeObject('parentGroup', [p1.id, p2.id, p3.id])
 
-            // 将 p1 和 p2（同级兄弟）成组为子组合 B
+            // Group p1 and p2 as sub-composite B
             const subComposite = store.groupObjects([p1.id, p2.id])
 
-            // 新组合 B 继承 parentA 的 id 作为 parentId
+            // New composite B inherits parentA id as parentId
             expect(subComposite.parentId).toBe(parentA.id)
 
-            // 新组合 B 包含 p1 和 p2
+            // New composite B contains p1 and p2
             expect(subComposite.childIds).toContain(p1.id)
             expect(subComposite.childIds).toContain(p2.id)
 
-            // p1 和 p2 的 parentId 变为新组合 B
+            // p1 and p2 parentId becomes new composite B
             expect(store.getObject(p1.id)?.parentId).toBe(subComposite.id)
             expect(store.getObject(p2.id)?.parentId).toBe(subComposite.id)
 
-            // 父组合 A 的 childIds 不再包含 p1, p2，而包含 subComposite 和 p3
+            // Parent A childIds no longer contains p1, p2, but subComposite and p3
             const updatedA = store.getObject(parentA.id) as CompositeObject
             expect(updatedA.childIds).not.toContain(p1.id)
             expect(updatedA.childIds).not.toContain(p2.id)
@@ -520,21 +520,21 @@ describe('Phase B: groupObjects / ungroupAll / addToComposite / removeFromCompos
         })
 
         it('should throw when grouping objects with different parentIds', () => {
-            const p1 = store.createPropObject('p1', '道具1')
-            const p2 = store.createPropObject('p2', '道具2')
-            store.createCompositeObject('组合A', [p1.id])
-            // p2 是根级对象（parentId = undefined），p1 是子对象（parentId = 组合A.id）
+            const p1 = store.createPropObject('p1', 'prop1')
+            const p2 = store.createPropObject('p2', 'prop2')
+            store.createCompositeObject('groupA', [p1.id])
+            // p2 is root object (parentId = undefined), p1 is child (parentId = groupA.id)
 
             expect(() => {
                 store.groupObjects([p1.id, p2.id])
-            }).toThrow(/same parentId|同一个 parentId/)
+            }).toThrow(/same parentId/)
         })
     })
 
     describe('ungroupAll', () => {
         it('should remove parentId from all children and delete composite', () => {
-            const p1 = store.createPropObject('p1', '道具1')
-            const p2 = store.createPropObject('p2', '道具2')
+            const p1 = store.createPropObject('p1', 'prop1')
+            const p2 = store.createPropObject('p2', 'prop2')
             const composite = store.groupObjects([p1.id, p2.id])
 
             store.ungroupAll(composite.id)
@@ -545,22 +545,22 @@ describe('Phase B: groupObjects / ungroupAll / addToComposite / removeFromCompos
         })
 
         it('should preserve child objects after ungroup', () => {
-            const p1 = store.createPropObject('p1', '道具1')
+            const p1 = store.createPropObject('p1', 'prop1')
             const composite = store.groupObjects([p1.id])
 
             store.ungroupAll(composite.id)
 
-            // 子对象仍然存在
+            // Child objects still exist
             expect(store.getObject(p1.id)).toBeDefined()
         })
     })
 
     describe('addToComposite', () => {
         it('should add objects to existing composite', () => {
-            const p1 = store.createPropObject('p1', '道具1')
+            const p1 = store.createPropObject('p1', 'prop1')
             const composite = store.groupObjects([p1.id])
 
-            const p2 = store.createPropObject('p2', '道具2')
+            const p2 = store.createPropObject('p2', 'prop2')
             store.addToComposite(composite.id, [p2.id])
 
             const updated = store.getObject(composite.id) as CompositeObject
@@ -569,10 +569,10 @@ describe('Phase B: groupObjects / ungroupAll / addToComposite / removeFromCompos
         })
 
         it('should preserve world position when adding a root object into a nested union composite', () => {
-            const arm = store.createPropObject('arm', '左臂')
+            const arm = store.createPropObject('arm', 'left_arm')
             store.updateObject(arm.id, { x: 120, y: 80 })
 
-            const sword = store.createPropObject('sword', '剑')
+            const sword = store.createPropObject('sword', 'sword')
             store.updateObject(sword.id, { x: 180, y: 90 })
 
             const entity = store.groupObjects([arm.id, sword.id], 'entity') as CompositeObject
@@ -591,7 +591,7 @@ describe('Phase B: groupObjects / ungroupAll / addToComposite / removeFromCompos
                 rotation: Math.PI / 12,
             })
 
-            const prop = store.createPropObject('dynamic', '动态道具')
+            const prop = store.createPropObject('dynamic', 'dynamic_prop')
             store.updateObject(prop.id, {
                 x: 1320,
                 y: 760,
@@ -606,7 +606,7 @@ describe('Phase B: groupObjects / ungroupAll / addToComposite / removeFromCompos
 
             expect(after.parentId).toBe(union.id)
 
-            // 挂入嵌套 union 后，应保持画布世界坐标不跳变
+            // After attaching to nested union, canvas world coordinates should not jump
             const entityAfter = store.getObject(entity.id)!
             const unionAfter = store.getObject(union.id)!
             const worldAfter = resolveActionWorldTransform(
@@ -656,8 +656,8 @@ describe('Phase B: groupObjects / ungroupAll / addToComposite / removeFromCompos
 
     describe('removeFromComposite', () => {
         it('should remove child from composite and clear parentId', () => {
-            const p1 = store.createPropObject('p1', '道具1')
-            const p2 = store.createPropObject('p2', '道具2')
+            const p1 = store.createPropObject('p1', 'prop1')
+            const p2 = store.createPropObject('p2', 'prop2')
             const composite = store.groupObjects([p1.id, p2.id])
 
             store.removeFromComposite([p1.id])
@@ -671,23 +671,23 @@ describe('Phase B: groupObjects / ungroupAll / addToComposite / removeFromCompos
 
     describe('compositeMode=bind delete behavior', () => {
         it('should bubble children when bind-mode composite is deleted', () => {
-            const p1 = store.createPropObject('p1', '道具1')
+            const p1 = store.createPropObject('p1', 'prop1')
             const composite = store.groupObjects([p1.id], 'union')
 
             store.removeObject(composite.id)
 
-            // bind 模式：子对象应存活（冒泡），parentId 清除
+            // bind mode: children should survive (bubble up), parentId cleared
             expect(store.getObject(p1.id)).toBeDefined()
             expect(store.getObject(p1.id)?.parentId).toBeUndefined()
         })
 
         it('should bubble children to grandparent when nested bind-mode composite is deleted', () => {
-            // 爷爷 A → 父亲 B(bind) → 孙子 C
-            const propC = store.createPropObject('pC', '孙子道具')
+            // Grandparent A -> Father B(bind) -> Grandchild C
+            const propC = store.createPropObject('pC', 'grandchildProp')
             const compositeB = store.groupObjects([propC.id], 'union')
-            const compositeA = store.createCompositeObject('爷爷', [compositeB.id])
+            const compositeA = store.createCompositeObject('grandparent', [compositeB.id])
 
-            // 删除 B → C 应冒泡到 A（而非 undefined）
+            // Delete B -> C should bubble to A (not undefined)
             store.removeObject(compositeB.id)
 
             expect(store.getObject(propC.id)).toBeDefined()
@@ -695,39 +695,39 @@ describe('Phase B: groupObjects / ungroupAll / addToComposite / removeFromCompos
         })
 
         it('should propagate flipX when union composite with flipX is deleted (onBeforeDelete)', () => {
-            // v19.2: union composite flipX 冒泡修复回归测试
-            const p1 = store.createPropObject('p1', '道具1')
+            // v19.2: union composite flipX bubbling fix regression test
+            const p1 = store.createPropObject('p1', 'prop1')
             const composite = store.groupObjects([p1.id], 'union')
 
-            // 设置 composite flipX=true
+            // Set composite flipX=true
             store.updateObject(composite.id, { flipX: true } as Partial<import('@/types/sceneObject').SceneObject>)
 
-            // 删除 composite → 子对象冒泡
+            // Delete composite -> children bubble up
             store.removeObject(composite.id)
 
-            // 子对象应继承 flipX=true
+            // Children should inherit flipX=true
             expect(store.getObject(p1.id)).toBeDefined()
             expect(store.getObject(p1.id)?.flipX).toBe(true)
         })
 
         it('should propagate flipX when dissolving union composite with flipX', () => {
-            // v19.2: dissolveComposite 路径 flipX 回归保护
-            const p1 = store.createPropObject('p1', '道具1')
+            // v19.2: dissolveComposite path flipX regression protection
+            const p1 = store.createPropObject('p1', 'prop1')
             const composite = store.groupObjects([p1.id], 'union')
 
-            // 设置 composite flipX=true
+            // Set composite flipX=true
             store.updateObject(composite.id, { flipX: true } as Partial<import('@/types/sceneObject').SceneObject>)
 
-            // 解散 composite → 子对象冒泡
+            // Dissolve composite -> children bubble up
             store.dissolveComposite(composite.id)
 
-            // 子对象应继承 flipX=true
+            // Children should inherit flipX=true
             expect(store.getObject(p1.id)).toBeDefined()
             expect(store.getObject(p1.id)?.flipX).toBe(true)
         })
 
         it('should keep render matrix when dissolving nested entity composite with transform origin child', () => {
-            const parent = store.createCompositeObject('父级')
+            const parent = store.createCompositeObject('parent')
             store.updateObject(parent.id, {
                 x: 4507.540983606557,
                 y: 1594.0387481371088,
@@ -737,7 +737,7 @@ describe('Phase B: groupObjects / ungroupAll / addToComposite / removeFromCompos
                 flipX: false,
             } as Partial<CompositeObject>)
 
-            const child = store.createPropObject('child', '带转轴子对象')
+            const child = store.createPropObject('child', 'child_with_pivot')
             store.updateObject(child.id, {
                 x: 8.679135962929422,
                 y: -29.78506891273628,
@@ -749,7 +749,7 @@ describe('Phase B: groupObjects / ungroupAll / addToComposite / removeFromCompos
                 transformOriginY: -63.333335876464844,
             } as Partial<import('@/types/sceneObject').SceneObject>)
 
-            const entity = store.createCompositeObject('待删除 entity', [child.id], undefined, undefined, 'entity')
+            const entity = store.createCompositeObject('entity_to_delete', [child.id], undefined, undefined, 'entity')
             store.updateObject(entity.id, {
                 parentId: parent.id,
                 x: 55.485864037070996,
@@ -786,17 +786,17 @@ describe('Phase B: groupObjects / ungroupAll / addToComposite / removeFromCompos
         })
 
         it('should propagate flipX when ungrouping union composite with flipX', () => {
-            // v19.2: ungroupAll 路径 flipX 回归保护
-            const p1 = store.createPropObject('p1', '道具1')
+            // v19.2: ungroupAll path flipX regression protection
+            const p1 = store.createPropObject('p1', 'prop1')
             const composite = store.groupObjects([p1.id], 'union')
 
-            // 设置 composite flipX=true
+            // Set composite flipX=true
             store.updateObject(composite.id, { flipX: true } as Partial<import('@/types/sceneObject').SceneObject>)
 
-            // 拆组 → 子对象独立
+            // Ungroup -> children become standalone
             store.ungroupAll(composite.id)
 
-            // 子对象应继承 flipX=true
+            // Children should inherit flipX=true
             expect(store.getObject(p1.id)).toBeDefined()
             expect(store.getObject(p1.id)?.flipX).toBe(true)
         })
@@ -804,10 +804,10 @@ describe('Phase B: groupObjects / ungroupAll / addToComposite / removeFromCompos
 
     describe('ungroupAll nesting bubble', () => {
         it('should bubble children to parent composite when ungrouping nested composite', () => {
-            // A → B → C，拆分 B → C 回到 A
-            const propC = store.createPropObject('pC', '孙子')
+            // A -> B -> C, ungroup B -> C returns to A
+            const propC = store.createPropObject('pC', 'grandchild')
             const compositeB = store.groupObjects([propC.id])
-            const compositeA = store.createCompositeObject('爷爷', [compositeB.id])
+            const compositeA = store.createCompositeObject('grandparent', [compositeB.id])
 
             store.ungroupAll(compositeB.id)
 
@@ -819,22 +819,22 @@ describe('Phase B: groupObjects / ungroupAll / addToComposite / removeFromCompos
 
     describe('removeFromComposite nesting bubble', () => {
         it('should bubble child to parent composite when removing from nested composite', () => {
-            const propC = store.createPropObject('pC', '孙子')
+            const propC = store.createPropObject('pC', 'grandchild')
             const compositeB = store.groupObjects([propC.id])
-            const compositeA = store.createCompositeObject('爷爷', [compositeB.id])
+            const compositeA = store.createCompositeObject('grandparent', [compositeB.id])
 
             store.removeFromComposite([propC.id])
 
             expect(store.getObject(propC.id)).toBeDefined()
-            // C 从 B 中移出 → 冒泡到 B 的 parentId（= A.id）
+            // C removed from B -> bubbles to B's parentId (= A.id)
             expect(store.getObject(propC.id)?.parentId).toBe(compositeA.id)
         })
 
         it('should keep world position when bubbling child to parent composite', () => {
-            const compositeA = store.createCompositeObject('爷爷')
+            const compositeA = store.createCompositeObject('grandparent')
             store.updateObject(compositeA.id, { x: 100, y: 200 } as Partial<CompositeObject>)
 
-            const compositeB = store.createCompositeObject('父级')
+            const compositeB = store.createCompositeObject('parent')
             store.updateObject(compositeB.id, {
                 parentId: compositeA.id,
                 x: 10,
@@ -842,7 +842,7 @@ describe('Phase B: groupObjects / ungroupAll / addToComposite / removeFromCompos
             } as Partial<CompositeObject>)
             ;(store.getObject(compositeA.id) as CompositeObject).childIds.push(compositeB.id)
 
-            const propC = store.createPropObject('pC', '孙子')
+            const propC = store.createPropObject('pC', 'grandchild')
             store.updateObject(propC.id, {
                 parentId: compositeB.id,
                 x: 5,
@@ -865,13 +865,13 @@ describe('Phase B: groupObjects / ungroupAll / addToComposite / removeFromCompos
 
     describe('cycle detection', () => {
         it('should throw error when adding ancestor to descendant composite', () => {
-            // A 包含 B → 尝试将 A 加入 B → 应抛 Error
+            // A contains B -> attempt to add A to B -> should throw Error
             const compositeB = store.createCompositeObject('B')
             const compositeA = store.createCompositeObject('A', [compositeB.id])
 
             expect(() => {
                 store.addToComposite(compositeB.id, [compositeA.id])
-            }).toThrow(/Circular reference|循环引用/)
+            }).toThrow(/Circular reference/)
         })
 
         it('should throw error for deep cycle: A→B→C, try to add A into C', () => {
@@ -881,12 +881,12 @@ describe('Phase B: groupObjects / ungroupAll / addToComposite / removeFromCompos
 
             expect(() => {
                 store.addToComposite(compositeC.id, [compositeA.id])
-            }).toThrow(/Circular reference|循环引用/)
+            }).toThrow(/Circular reference/)
         })
 
         it('should allow adding unrelated object (no cycle)', () => {
             const compositeA = store.createCompositeObject('A')
-            const prop = store.createPropObject('p1', '道具')
+            const prop = store.createPropObject('p1', 'prop')
 
             expect(() => {
                 store.addToComposite(compositeA.id, [prop.id])

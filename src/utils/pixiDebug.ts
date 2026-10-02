@@ -1,6 +1,6 @@
 /**
- * PixiJS 对象调试工具
- * 为 PixiJS 对象添加调试信息，方便开发调试
+ * PixiJS object debugging utility
+ * Adds debug information to PixiJS objects for development debugging
  */
 
 import type { Container } from 'pixi.js'
@@ -8,54 +8,54 @@ import type { Container } from 'pixi.js'
 import type { SceneObject } from '@/stores/sceneObjectStore'
 
 /**
- * 为 PixiJS 对象添加调试信息
- * @param displayObject PixiJS 显示对象
- * @param obj 场景对象数据
- * @param extraInfo 额外的调试信息
+ * Add debug info to PixiJS object
+ * @param displayObject PixiJS display object
+ * @param obj Scene object data
+ * @param extraInfo Additional debug info
  */
 export function addPixiDebugInfo(
   displayObject: Container,
   obj: SceneObject,
   extraInfo?: Record<string, unknown>
 ): void {
-  // 设置对象名称，方便在控制台中识别
+  // Set object name for easy identification in console
   displayObject.name = `${obj.type}_${obj.name}_${obj.id.slice(-6)}`
 
-    // 挂载自定义调试数据
-    ; (displayObject as unknown as { debugInfo: unknown }).debugInfo = {
-      // 基础信息
-      id: obj.id,
-      type: obj.type,
-      name: obj.name,
+  // Mount custom debug data
+  ;(displayObject as unknown as { debugInfo: unknown }).debugInfo = {
+    // Basic info
+    id: obj.id,
+    type: obj.type,
+    name: obj.name,
 
-      // 位置和尺寸
-      position: { x: obj.x, y: obj.y },
-      size: { width: obj.width, height: obj.height },
+    // Position and dimensions
+    position: { x: obj.x, y: obj.y },
+    size: { width: obj.width, height: obj.height },
 
-      // 变换信息
-      transform: {
-        scaleX: obj.scaleX,
-        scaleY: obj.scaleY,
-        rotation: obj.rotation,
-        alpha: obj.alpha
-      },
+    // Transform info
+    transform: {
+      scaleX: obj.scaleX,
+      scaleY: obj.scaleY,
+      rotation: obj.rotation,
+      alpha: obj.alpha
+    },
 
-      // 层级和状态
-      zIndex: obj.zIndex,
-      visible: obj.visible,
+    // Hierarchy and state
+    zIndex: obj.zIndex,
+    visible: obj.visible,
 
-      // 时间戳
-      createdTime: Date.now(),
+    // Timestamp
+    createdTime: Date.now(),
 
-      // 额外信息
-      ...extraInfo
-    }
+    // Extra info
+    ...extraInfo
+  }
 }
 
 /**
- * 更新 PixiJS 对象的调试信息
- * @param displayObject PixiJS 显示对象
- * @param updates 要更新的字段
+ * Update debug info of PixiJS object
+ * @param displayObject PixiJS display object
+ * @param updates Fields to update
  */
 export function updatePixiDebugInfo(
   displayObject: Container,
@@ -71,23 +71,23 @@ export function updatePixiDebugInfo(
 }
 
 /**
- * 打印 PixiJS 对象的调试信息
- * @param displayObject PixiJS 显示对象
+ * Log debug info of PixiJS object
+ * @param displayObject PixiJS display object
  */
 export function logPixiDebugInfo(displayObject: Container): void {
   const debugInfo = (displayObject as unknown as { debugInfo: unknown }).debugInfo
   if (debugInfo) {
     //console.log(`[PixiDebug] ${displayObject.name}:`, debugInfo)
   } else {
-    console.warn('[PixiDebug] 对象没有调试信息:', displayObject)
+    console.warn('[PixiDebug] Object has no debug info:', displayObject)
   }
 }
 
 /**
- * 为子对象添加调试信息（部件、精灵等）
- * @param displayObject PixiJS 显示对象
- * @param name 子对象名称
- * @param info 调试信息
+ * Add debug info to child object (part, sprite, etc.)
+ * @param displayObject PixiJS display object
+ * @param name Child object name
+ * @param info Debug info
  */
 export function addChildDebugInfo(
   displayObject: Container,
@@ -95,9 +95,9 @@ export function addChildDebugInfo(
   info: Record<string, unknown>
 ): void {
   displayObject.name = name
-    ; (displayObject as unknown as { debugInfo: unknown }).debugInfo = {
-      name,
-      ...info,
-      createdTime: Date.now()
-    }
+  ;(displayObject as unknown as { debugInfo: unknown }).debugInfo = {
+    name,
+    ...info,
+    createdTime: Date.now()
+  }
 }

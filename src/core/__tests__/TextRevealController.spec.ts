@@ -29,7 +29,7 @@ function makeText(overrides: Partial<TextObject> = {}): TextObject {
     zIndex: 1,
     visible: true,
     spawned: true,
-    content: '测试文本',
+    content: 'Test text',
     fontSize: 32,
     fontFamily: 'Noto Sans SC',
     fontWeight: 'normal',

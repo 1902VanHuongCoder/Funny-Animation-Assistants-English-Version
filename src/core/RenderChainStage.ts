@@ -1,28 +1,28 @@
 /**
- * RenderChainStage — renderChain 驱动的自定义渲染容器
+ * RenderChainStage — Custom render container driven by renderChain
  *
- * 核心功能：
- * override render() 方法，按 renderChain 顺序逐个调用叶子容器的 render(renderer)，
- * 实现 union 子对象与同级对象的交叉渲染。
+ * Core functionality:
+ * Overrides the render() method to call leaf containers' render(renderer) one by one in renderChain order,
+ * enabling interleaved rendering between union child objects and sibling objects.
  *
- * 原理：
- * PIXI 的标准渲染流程（递归遍历 children）无法跨越 union 容器边界交叉排序。
- * 通过 override render()，我们绕过默认的 children 遍历，
- * 按 renderChain 展开顺序直接调用每个叶子容器的 render(renderer)。
+ * Principles:
+ * Standard PIXI rendering (recursive child traversal) cannot interleave sorting across union container boundaries.
+ * By overriding render(), we bypass default children traversal and directly invoke each leaf container's render(renderer)
+ * according to the flattened renderChain order.
  *
- * 关键保证：
- * - container.render(renderer) 使用已计算好的 worldTransform（由 updateTransform() 递归完成）
- * - 因此即使对象在 union 容器内，被 entity 级 render() 调用时变换仍然正确
- * - union 容器保留在 entity.children 中以参与 updateTransform()，但不被直接 render
+ * Key guarantees:
+ * - container.render(renderer) uses the pre-computed worldTransform (calculated recursively via updateTransform())
+ * - Therefore even if an object is inside a union container, its transform remains correct when called by entity-level render()
+ * - Union containers remain in entity.children to participate in updateTransform(), but are not rendered directly
  *
- * renderChain 规则：
- * - union composite 不出现在 renderChain 中，其子对象被展开平铺
- * - entity composite 出现在 renderChain 中，拥有自己的 renderChain
- * - renderChain 是渲染顺序的唯一权威来源
+ * renderChain rules:
+ * - Union composites do not appear in renderChain; their child objects are flattened out
+ * - Entity composites appear in renderChain and possess their own renderChain
+ * - renderChain is the single source of truth for rendering order
  *
- * Resolver 模式（根级 stage 专用）：
- * - 传入 chainResolver/containerResolver 回调，每次 render 时动态获取最新数据
- * - 避免根级 stage 因对象增删/zIndex 变化导致 renderChain 过期
+ * Resolver pattern (root stage specific):
+ * - Passes chainResolver/containerResolver callbacks to dynamically retrieve latest data on each render
+ * - Avoids stale renderChain on root stage due to object additions/deletions/zIndex changes
  */
 import * as PIXI from 'pixi.js'
 
@@ -34,21 +34,21 @@ type RootRenderChainOverrideContainer = PIXI.Container & {
 }
 
 /**
- * 按 renderChain 顺序渲染容器内的对象
+ * Render objects in container in renderChain order
  *
- * 替代 PIXI 默认的 children 递归渲染。
- * 遍历 renderChain 中的每个 ID，从 containerMap 查找对应的 PIXI 容器，
- * 直接调用其 render(renderer)。
+ * Replaces PIXI's default recursive children rendering.
+ * Iterates through each ID in renderChain, retrieves corresponding PIXI container from containerMap,
+ * and calls its render(renderer) directly.
  *
- * union 子对象虽然在 union 容器内（获得自动变换传播），
- * 但被本函数独立调度渲染，实现与其他子对象的交叉排序。
+ * While union child objects reside inside union containers (receiving automatic transform propagation),
+ * they are scheduled and rendered independently by this function to achieve interleaved sorting with other child objects.
  *
- * 不在 renderChain 中的 children（如 overlay、selection box）在最后渲染。
+ * Children not in renderChain (such as overlays, selection boxes) are rendered at the end.
  *
- * @param entityContainer entity composite 的 PIXI 容器
- * @param renderChain 有序 ID 列表（union 已展开）
- * @param containerMap objectId → PIXI.Container 的映射
- * @param renderer PIXI.Renderer 实例
+ * @param entityContainer PIXI container of entity composite
+ * @param renderChain Ordered ID list (unions flattened)
+ * @param containerMap Mapping of objectId -> PIXI.Container
+ * @param renderer PIXI.Renderer instance
  */
 export function renderByRenderChain(
     entityContainer: PIXI.Container,
@@ -56,19 +56,19 @@ export function renderByRenderChain(
     containerMap: ReadonlyMap<string, PIXI.Container>,
     renderer: PIXI.Renderer,
 ): void {
-    // 两类集合严格区分：
-    // directlyRendered: 叶子容器 — 已通过 container.render(renderer) 完整渲染（含其内部 PIXI 子节点）
-    //                   兜底阶段必须完全跳过，不可递归进入其内部（否则精灵会被按 PIXI children 顺序重绘，破坏 renderChain 排序）
-    // handledAncestors: union 容器壳 — 仅作为祖先被标记，自身无可视内容
-    //                   兜底阶段必须递归探查，寻找不在 renderChain 中的动态 spawn 子对象
+    // Strictly differentiate two sets:
+    // directlyRendered: Leaf containers — completely rendered via container.render(renderer) (including internal PIXI children).
+    //                   Fallback phase must completely skip them, not recursively entering (otherwise sprites redraw in PIXI children order, breaking renderChain sorting).
+    // handledAncestors: Union container shells — marked only as ancestors, having no visual content themselves.
+    //                   Fallback phase must recursively inspect them to find dynamic spawned child objects not in renderChain.
     const directlyRendered = new Set<PIXI.Container>()
     const handledAncestors = new Set<PIXI.Container>()
     const renderedClipWrappers = new Set<PIXI.Container>()
 
-    // 祖先可见性检查：从 container 向上回溯到 entityContainer（不含），
-    // 若任一祖先 visible=false 或 renderable=false 则视为不可见。
-    // 与 PIXI 默认 worldVisible 语义对齐，弥补 renderChain 渲染绕过祖先 render() 的差异。
-    // 修复：union composite 设为 visible=false（含「穿透+隐藏」）时，子对象仍被显示的问题。
+    // Ancestor visibility check: traverse up from container to entityContainer (exclusive);
+    // if any ancestor has visible=false or renderable=false, consider invisible.
+    // Aligns with PIXI default worldVisible semantics, compensating for renderChain bypassing ancestor render().
+    // Fixes issue where children still displayed when union composite was set to visible=false.
     const isAncestorChainVisible = (container: PIXI.Container): boolean => {
         let parent = container.parent
         while (parent && parent !== entityContainer) {
@@ -78,17 +78,17 @@ export function renderByRenderChain(
         return true
     }
 
-    // 按 renderChain 顺序逐个渲染叶子容器
+    // Render leaf containers one by one in renderChain order
     for (const objectId of renderChain) {
         const container = containerMap.get(objectId)
         if (!container || container.destroyed || !container.visible) continue
-        // 祖先链可见性检查（union/entity 等中间容器）
+        // Ancestor chain visibility check (intermediate containers like union/entity)
         if (!isAncestorChainVisible(container)) continue
 
-        // Clip-Mask Phase 1：maskRenderer 会把 target 原位包进一个临时 wrapper。
-        // renderChain 为了交叉排序会直接调 target.render(renderer)，这会绕过 parent wrapper，
-        // 导致挂在 wrapper 上的 mask/filter 完全不生效。这里检测到 clip wrapper 时，改为渲染
-        // wrapper；同一 wrapper 只渲染一次，避免同一个被裁 target 重复绘制。
+        // Clip-Mask Phase 1: maskRenderer wraps target in-place inside a temporary wrapper.
+        // renderChain normally invokes target.render(renderer) directly for interleaved sorting, bypassing parent wrapper,
+        // causing masks/filters attached to the wrapper to not take effect. When clip wrapper is detected here, render the
+        // wrapper instead; each wrapper is rendered only once to avoid duplicate drawing.
         const renderContainer = isClipMaskWrapper(container.parent) ? container.parent : container
         if (isClipMaskWrapper(renderContainer)) {
             if (renderedClipWrappers.has(renderContainer)) continue
@@ -99,8 +99,8 @@ export function renderByRenderChain(
         directlyRendered.add(renderContainer)
         if (renderContainer !== container) directlyRendered.add(container)
 
-        // 标记其所有祖先 union 容器（直到 entityContainer）
-        // 这些容器自身不应被整体 render，但需要在兜底阶段递归探查
+        // Mark all ancestor union containers (up to entityContainer)
+        // These containers themselves should not be rendered as a whole, but inspected recursively during fallback
         let parent = renderContainer.parent
         while (parent && parent !== entityContainer) {
             handledAncestors.add(parent)
@@ -108,14 +108,14 @@ export function renderByRenderChain(
         }
     }
 
-    // 渲染不在 renderChain 中的 children（overlay、selection box、动态加入 union 但未在 renderChain 中的对象等）
+    // Render children not in renderChain (overlays, selection boxes, objects dynamically added to union but not in renderChain, etc.)
     const renderRemainingChildren = (parent: PIXI.Container): void => {
         for (const child of parent.children) {
             if (directlyRendered.has(child as PIXI.Container)) {
-                // 叶子容器 — 已在主循环中完整渲染（含内部所有 PIXI 子节点），完全跳过
+                // Leaf container — already rendered in main loop (including all internal PIXI children), skip entirely
             } else if (handledAncestors.has(child as PIXI.Container)) {
-                // union 容器壳 — 自身无可视内容，递归探查其子对象中是否有未被覆盖的动态 spawn 对象
-                // 但若该 union 自身 visible=false / renderable=false，则其整个子树不应渲染
+                // Union container shell — has no visual content itself, recursively inspect children for uncovered dynamic spawn objects
+                // But if union itself is visible=false / renderable=false, its entire subtree should not render
                 if (!child.visible || !(child as PIXI.Container).renderable) continue
                 if ((child as PIXI.Container).children?.length > 0) {
                     renderRemainingChildren(child as PIXI.Container)
@@ -129,14 +129,14 @@ export function renderByRenderChain(
 }
 
 /**
- * 为 entity composite 安装自定义渲染逻辑（静态 Map 模式）
+ * Install custom render logic for entity composite (Static Map mode)
  *
- * 在 entity 容器上 override render() 方法，
- * 使其按 renderChain 顺序渲染而非默认的 children 遍历。
+ * Overrides render() method on entity container so that it renders in renderChain order
+ * rather than default children traversal.
  *
- * @param entityContainer entity composite 的 PIXI 容器
- * @param renderChain 有序 ID 列表
- * @param containerMap objectId → PIXI.Container 的映射（静态快照）
+ * @param entityContainer PIXI container of entity composite
+ * @param renderChain Ordered ID list
+ * @param containerMap Mapping of objectId -> PIXI.Container (static snapshot)
  */
 export function installRenderChainRenderer(
     entityContainer: PIXI.Container,
@@ -145,27 +145,27 @@ export function installRenderChainRenderer(
 ): void {
     if (renderChain.length === 0) return
 
-    // Override render 方法
+    // Override render method
     entityContainer.render = function customRender(renderer: PIXI.Renderer): void {
         if (!this.visible || this.worldAlpha <= 0 || !this.renderable) return
 
-        // 确保 worldTransform 已更新
-        // PIXI 标准流程：renderer.render(stage) → stage.updateTransform() → 递归更新所有 children
-        // 此时所有 children（包括 union 内的子对象）的 worldTransform 已就绪
+        // Ensure worldTransform is updated
+        // Standard PIXI flow: renderer.render(stage) -> stage.updateTransform() -> recursively updates all children
+        // At this point worldTransform of all children (including objects inside unions) is ready
 
-        // 手动管理 filter/mask 管线，同时保持 renderChain 渲染顺序
-        // 参照 PIXI Container.renderAdvanced() 的完整流程：
-        //   1. 过滤 disabled filters → push enabled 到 FilterSystem
+        // Manually manage filter/mask pipeline while preserving renderChain order
+        // Reference complete flow of PIXI Container.renderAdvanced():
+        //   1. Filter disabled filters -> push enabled to FilterSystem
         //   2. push mask
-        //   3. 渲染内容
-        //   4. batch.flush() — 关键！将待处理的绘制调用提交到当前 render target
-        //   5. pop mask → pop filter
-        // 缺少 batch.flush() 会导致 GL_INVALID_OPERATION: Insufficient buffer size
+        //   3. Render content
+        //   4. batch.flush() — Critical! Submits pending draw calls to current render target
+        //   5. pop mask -> pop filter
+        // Missing batch.flush() causes GL_INVALID_OPERATION: Insufficient buffer size
         const filters = this.filters
         const mask = this._mask
         const needsAdvanced = (filters && filters.length > 0) ?? !!mask
 
-        // 收集启用的 filter（PIXI 内部用 _enabledFilters，我们用局部变量避免污染）
+        // Collect enabled filters (PIXI internally uses _enabledFilters; we use local variable to avoid pollution)
         let enabledFilters: PIXI.Filter[] | null = null
         if (filters && filters.length > 0) {
             enabledFilters = filters.filter(f => f.enabled)
@@ -179,10 +179,10 @@ export function installRenderChainRenderer(
             renderer.mask.push(this, mask)
         }
 
-        // 按 renderChain 顺序渲染子对象（无论是否有 filter/mask）
+        // Render child objects in renderChain order (regardless of filter/mask existence)
         renderByRenderChain(this, renderChain, containerMap, renderer)
 
-        // 关键：在 pop 之前刷新批次，确保所有绘制调用已提交到当前 render target
+        // Critical: Flush batch before pop, ensuring all draw calls are committed to current render target
         if (needsAdvanced) {
             renderer.batch.flush()
         }
@@ -194,21 +194,21 @@ export function installRenderChainRenderer(
         }
     }
 
-    // 标记已安装自定义渲染（用于调试和测试）
+    // Mark custom renderer as installed (for debugging and testing)
     ;(entityContainer as PIXI.Container & { _hasRenderChainOverride?: boolean })._hasRenderChainOverride = true
 }
 
 /**
- * 为根级容器（stage/contentViewport）安装 renderChain 驱动的渲染逻辑（Resolver 模式）
+ * Install renderChain-driven render logic for root-level containers (stage/contentViewport) (Resolver mode)
  *
- * 与 installRenderChainRenderer 不同，此模式使用回调函数动态获取 renderChain 和容器映射，
- * 确保每次 render 时使用最新数据（根级 stage 的对象列表和 zIndex 是动态变化的）。
+ * Unlike installRenderChainRenderer, this mode dynamically retrieves renderChain and container mapping via callback functions,
+ * ensuring latest data is used on every render (root-level stage object list and zIndex change dynamically).
  *
- * 适用场景：编辑器 targetLayer/activeLayer、ScenePlayer stage、FrameCapture contentViewport
+ * Applicable scenarios: Editor targetLayer/activeLayer, ScenePlayer stage, FrameCapture contentViewport
  *
- * @param stageContainer 根级 PIXI 容器
- * @param chainResolver 每次 render 时调用，返回当前的有序 renderChain ID 列表
- * @param containerResolver 每次 render 时调用，根据 objectId 返回对应的 PIXI 容器
+ * @param stageContainer Root-level PIXI container
+ * @param chainResolver Called on each render, returns current ordered renderChain ID list
+ * @param containerResolver Called on each render, returns corresponding PIXI container by objectId
  */
 export function installRootRenderChainRenderer(
     stageContainer: PIXI.Container,
@@ -222,15 +222,15 @@ export function installRootRenderChainRenderer(
     stageContainer.render = function rootCustomRender(renderer: PIXI.Renderer): void {
         if (!this.visible || this.worldAlpha <= 0 || !this.renderable) return
 
-        // 每次 render 时动态获取最新 renderChain 和容器映射
+        // Dynamically get latest renderChain and container mapping on each render
         const renderChain = chainResolver()
         if (renderChain.length === 0) {
-            // renderChain 为空时回退到标准渲染
+            // Fall back to standard rendering when renderChain is empty
             originalRender(renderer)
             return
         }
 
-        // 手动管理 filter/mask 管线（与 entity 级一致的 renderAdvanced 模式）
+        // Manually manage filter/mask pipeline (consistent with entity-level renderAdvanced pattern)
         const filters = this.filters
         const mask = this._mask
         const needsAdvanced = (filters && filters.length > 0) ?? !!mask
@@ -248,7 +248,7 @@ export function installRootRenderChainRenderer(
             renderer.mask.push(this, mask)
         }
 
-        // 构建临时 Map（仅包含本次 renderChain 需要的容器）
+        // Build temporary Map (contains only containers needed by current renderChain)
         const containerMap = new Map<string, PIXI.Container>()
         for (const id of renderChain) {
             const c = containerResolver(id)
@@ -280,20 +280,20 @@ export function uninstallRootRenderChainRenderer(stageContainer: PIXI.Container)
 }
 
 /**
- * 更新已安装的自定义渲染逻辑的 renderChain 和 containerMap
+ * Update renderChain and containerMap for installed custom render logic
  *
- * 当 renderChain 或 containerMap 变化时（如对象添加/删除/重排），
- * 需要重新安装渲染逻辑。
+ * When renderChain or containerMap changes (e.g. object added/deleted/reordered),
+ * render logic needs to be re-installed.
  *
- * @param entityContainer entity composite 的 PIXI 容器
- * @param renderChain 新的有序 ID 列表
- * @param containerMap 新的 objectId → PIXI.Container 映射
+ * @param entityContainer PIXI container of entity composite
+ * @param renderChain New ordered ID list
+ * @param containerMap New objectId -> PIXI.Container mapping
  */
 export function updateRenderChainRenderer(
     entityContainer: PIXI.Container,
     renderChain: readonly string[],
     containerMap: ReadonlyMap<string, PIXI.Container>,
 ): void {
-    // 直接重新安装（覆盖上一次的 override）
+    // Re-install directly (overwrites previous override)
     installRenderChainRenderer(entityContainer, renderChain, containerMap)
 }

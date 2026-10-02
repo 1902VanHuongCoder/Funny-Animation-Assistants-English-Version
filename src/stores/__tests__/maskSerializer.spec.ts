@@ -1,7 +1,7 @@
 /**
- * Clip-Mask Phase 1 — maskSerializer 序列化 + finalizeMaskTargets 单元测试
+ * Clip-Mask Phase 1 — maskSerializer Serialization + finalizeMaskTargets Unit Tests
  *
- * 详见 docs/features/clip-mask.md（v2.1）§11、§14.1（Stage A）。
+ * See docs/features/clip-mask.md (v2.1) §11, §14.1 (Stage A).
  */
 
 import { createPinia, setActivePinia } from 'pinia'
@@ -37,8 +37,8 @@ describe('Clip-Mask Phase 1 — maskSerializer + finalizeMaskTargets', () => {
     })
 
     describe('createMaskObject', () => {
-        it('创建蒙版默认 mode=inside_visible、targetIds=[]', () => {
-            const m = store.createMaskObject('蒙版1', 'rectangle')
+        it('creates mask with default mode=inside_visible and targetIds=[]', () => {
+            const m = store.createMaskObject('Mask 1', 'rectangle')
             expect(m.type).toBe('mask')
             expect(m.shape).toBe('rectangle')
             expect(m.mode).toBe('inside_visible')
@@ -47,18 +47,18 @@ describe('Clip-Mask Phase 1 — maskSerializer + finalizeMaskTargets', () => {
         })
     })
 
-    describe('round-trip 保留非空 targetIds', () => {
-        it('1 mask + 3 prop 目标，序列化-反序列化后字段完整', () => {
-            const p1 = store.createPropObject('p1', '道具1')
-            const p2 = store.createPropObject('p2', '道具2')
-            const p3 = store.createPropObject('p3', '道具3')
-            const mask = store.createMaskObject('蒙版', 'ellipse', { width: 300, height: 200 })
+    describe('round-trip preserves non-empty targetIds', () => {
+        it('1 mask + 3 prop targets: fields intact after serialization-deserialization', () => {
+            const p1 = store.createPropObject('p1', 'Prop 1')
+            const p2 = store.createPropObject('p2', 'Prop 2')
+            const p3 = store.createPropObject('p3', 'Prop 3')
+            const mask = store.createMaskObject('Mask', 'ellipse', { width: 300, height: 200 })
             store.updateObject<MaskObject>(mask.id, { targetIds: [p1.id, p2.id, p3.id] })
 
-            // 序列化
+            // Serialize
             const dtos = [p1, p2, p3, mask].map(o => store.toSetupObject(store.getObject(o.id)!))
 
-            // 重置 store 后反序列化
+            // Deserialize after resetting store
             setActivePinia(createPinia())
             store = useSceneObjectStore()
             for (const d of dtos) store.fromSetupObject(d, noopResolveActor)
@@ -75,10 +75,10 @@ describe('Clip-Mask Phase 1 — maskSerializer + finalizeMaskTargets', () => {
         })
     })
 
-    describe('脏数据清理', () => {
-        it('死引用：targetIds 中不存在的 id 被静默剔除', () => {
-            const p1 = store.createPropObject('p1', '道具1')
-            const mask = store.createMaskObject('蒙版', 'rectangle')
+    describe('Dirty data cleanup', () => {
+        it('dead reference: nonexistent IDs in targetIds silently pruned', () => {
+            const p1 = store.createPropObject('p1', 'Prop 1')
+            const mask = store.createMaskObject('Mask', 'rectangle')
             store.updateObject<MaskObject>(mask.id, { targetIds: [p1.id, 'ghost-id'] })
 
             const dtos = [p1, mask].map(o => store.toSetupObject(store.getObject(o.id)!))
@@ -93,9 +93,9 @@ describe('Clip-Mask Phase 1 — maskSerializer + finalizeMaskTargets', () => {
             expect(warnSpy).toHaveBeenCalled()
         })
 
-        it('mask→mask 嵌套被剔除', () => {
-            const innerMask = store.createMaskObject('内蒙版', 'rectangle')
-            const outerMask = store.createMaskObject('外蒙版', 'rectangle')
+        it('mask->mask nesting pruned', () => {
+            const innerMask = store.createMaskObject('Inner Mask', 'rectangle')
+            const outerMask = store.createMaskObject('Outer Mask', 'rectangle')
             store.updateObject<MaskObject>(outerMask.id, { targetIds: [innerMask.id] })
 
             const dtos = [innerMask, outerMask].map(o => store.toSetupObject(store.getObject(o.id)!))
@@ -109,10 +109,10 @@ describe('Clip-Mask Phase 1 — maskSerializer + finalizeMaskTargets', () => {
             expect(restored.targetIds).toEqual([])
         })
 
-        it('非法目标类型被剔除', () => {
-            const cam = store.createCameraObject('相机')
-            const mask = store.createMaskObject('蒙版', 'rectangle')
-            // 直接绕过 UI 写入非法 targetIds
+        it('illegal target type pruned', () => {
+            const cam = store.createCameraObject('Camera')
+            const mask = store.createMaskObject('Mask', 'rectangle')
+            // Bypass UI to write illegal targetIds directly
             store.updateObject<MaskObject>(mask.id, { targetIds: [cam.id] })
 
             const dtos = [cam, mask].map(o => store.toSetupObject(store.getObject(o.id)!))
@@ -123,12 +123,12 @@ describe('Clip-Mask Phase 1 — maskSerializer + finalizeMaskTargets', () => {
             store.finalizeMaskTargets()
 
             const restored = store.getObject(mask.id) as MaskObject | undefined
-            // 相机不通过 fromSetupObject 加载（无 serializer），因此 restored 仍是 mask 自身
+            // Camera not loaded via fromSetupObject (no serializer); restored is still mask itself
             expect(restored?.targetIds ?? []).toEqual([])
         })
 
-        it('同 target 多 mask 冲突：起始索引较小者胜', () => {
-            const p = store.createPropObject('p', '道具')
+        it('multiple masks on same target: mask with smaller starting index wins', () => {
+            const p = store.createPropObject('p', 'Prop')
             const maskA = store.createMaskObject('A', 'rectangle')
             const maskB = store.createMaskObject('B', 'rectangle')
             store.updateObject<MaskObject>(maskA.id, { targetIds: [p.id] })
@@ -147,11 +147,11 @@ describe('Clip-Mask Phase 1 — maskSerializer + finalizeMaskTargets', () => {
             expect(b.targetIds).toEqual([])
         })
 
-        it('未知 shape 降级为 rectangle 并 warn', () => {
+        it('unknown shape downgrades to rectangle with warning', () => {
             const dto = {
                 id: 'mask-x',
                 type: 'mask',
-                name: '蒙版',
+                name: 'Mask',
                 refId: '',
                 x: 0, y: 0, width: 100, height: 100,
                 scaleX: 1, scaleY: 1, rotation: 0, alpha: 1, flipX: false,
@@ -169,11 +169,11 @@ describe('Clip-Mask Phase 1 — maskSerializer + finalizeMaskTargets', () => {
             expect(warnSpy).toHaveBeenCalled()
         })
 
-        it('不支持的 mode 降级为 inside_visible 并 warn', () => {
+        it('unsupported mode downgrades to inside_visible with warning', () => {
             const dto = {
                 id: 'mask-y',
                 type: 'mask',
-                name: '蒙版',
+                name: 'Mask',
                 refId: '',
                 x: 0, y: 0, width: 100, height: 100,
                 scaleX: 1, scaleY: 1, rotation: 0, alpha: 1, flipX: false,

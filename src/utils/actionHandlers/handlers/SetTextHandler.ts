@@ -1,7 +1,7 @@
 /**
  * SetText Action Handler (Text PRD Phase 0 + Phase 1)
- * 处理文本属性的瞬时设置
- * 直接操作 state 上的文本字段（遵循 SetScreenEffectHandler 模式）
+ * Handles instantaneous setting of text properties
+ * Directly operates on text fields on state (follows SetScreenEffectHandler pattern)
  */
 
 import type { SetTextAction } from '@/types/screenplay'
@@ -17,7 +17,7 @@ export const SetTextHandler: ActionHandler<SetTextAction> = {
 
     applyToState(state: WriteableState, action: SetTextAction): void {
         const { params } = action
-        // Phase 0: 基本属性
+        // Phase 0: Basic properties
         if (params.content !== undefined) state.content = params.content
         if (params.fontSize !== undefined) state.fontSize = params.fontSize
         if (params.fontFamily !== undefined) state.fontFamily = params.fontFamily
@@ -27,16 +27,16 @@ export const SetTextHandler: ActionHandler<SetTextAction> = {
         if (params.align !== undefined) state.align = params.align
         if (params.wordWrap !== undefined) state.wordWrap = params.wordWrap
         if (params.wordWrapWidth !== undefined) state.wordWrapWidth = params.wordWrapWidth
-        // Phase 1: 描边
+        // Phase 1: Stroke
         if (params.stroke !== undefined) state.stroke = params.stroke
         if (params.strokeThickness !== undefined) state.strokeThickness = params.strokeThickness
-        // Phase 1: 投影
+        // Phase 1: Drop shadow
         if (params.dropShadow !== undefined) state.dropShadow = params.dropShadow
         if (params.dropShadowColor !== undefined) state.dropShadowColor = params.dropShadowColor
         if (params.dropShadowBlur !== undefined) state.dropShadowBlur = params.dropShadowBlur
         if (params.dropShadowAngle !== undefined) state.dropShadowAngle = params.dropShadowAngle
         if (params.dropShadowDistance !== undefined) state.dropShadowDistance = params.dropShadowDistance
-        // Phase 1: 间距
+        // Phase 1: Spacing
         if (params.letterSpacing !== undefined) state.letterSpacing = params.letterSpacing
         if (params.lineHeight !== undefined) {
             const resolved = resolveTextLineHeight(
@@ -52,7 +52,7 @@ export const SetTextHandler: ActionHandler<SetTextAction> = {
         }
         if (params.textBoxMode !== undefined) state.textBoxMode = params.textBoxMode
         if (params.writingMode !== undefined) state.writingMode = params.writingMode
-        // Phase 2: 打字机
+        // Phase 2: Typewriter
         if (params.revealSpeed !== undefined) {
             const speed = Number(params.revealSpeed)
             state.revealSpeed = Number.isFinite(speed)

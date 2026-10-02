@@ -1,7 +1,7 @@
 /**
  * AudioController.spec.ts
  *
- * computeAudioState 纯函数单元测试
+ * computeAudioState pure function unit tests
  */
 
 import { describe, expect, it } from 'vitest'
@@ -55,14 +55,14 @@ function createBlockInfo(
 // ============================================================================
 
 describe('computeAudioState', () => {
-    describe('初始状态（无 Action）', () => {
-        it('默认 playbackState 为 stop 时，shouldPlay 为 false', () => {
+    describe('Initial state (no Action)', () => {
+        it('when default playbackState is stop, shouldPlay is false', () => {
             const obj = createAudioObject()
             const result = computeAudioState(obj, [], 0, 0)
             expect(result.shouldPlay).toBe(false)
         })
 
-        it('playbackState 为 play 时，shouldPlay 为 true', () => {
+        it('when playbackState is play, shouldPlay is true', () => {
             const obj = createAudioObject({
                 playbackState: 'play',
                 volume: 0.8,
@@ -77,7 +77,7 @@ describe('computeAudioState', () => {
     })
 
     describe('Play Action', () => {
-        it('在 Action 时间点之后应该播放', () => {
+        it('should play after Action timestamp', () => {
             const obj = createAudioObject()
             const blocks: AudioBlockInfo[] = [
                 createBlockInfo(0, [{
@@ -94,7 +94,7 @@ describe('computeAudioState', () => {
             expect(result.playTime).toBe(100) // blockStart(0) + slotStart(100)
         })
 
-        it('在 Action 时间点之前应该不播放', () => {
+        it('should not play before Action timestamp', () => {
             const obj = createAudioObject()
             const blocks: AudioBlockInfo[] = [
                 createBlockInfo(0, [{
@@ -107,7 +107,7 @@ describe('computeAudioState', () => {
             expect(result.shouldPlay).toBe(false)
         })
 
-        it('后续 Play Action 应该覆盖前一个', () => {
+        it('subsequent Play Action should override previous one', () => {
             const obj = createAudioObject()
             const blocks: AudioBlockInfo[] = [
                 createBlockInfo(0, [
@@ -132,7 +132,7 @@ describe('computeAudioState', () => {
     })
 
     describe('Stop Action', () => {
-        it('Stop Action 后应该停止播放', () => {
+        it('should stop playback after Stop Action', () => {
             const obj = createAudioObject()
             const blocks: AudioBlockInfo[] = [
                 createBlockInfo(0, [
@@ -152,7 +152,7 @@ describe('computeAudioState', () => {
             expect(result.shouldPlay).toBe(false)
         })
 
-        it('Stop Action 带 fadeOut 时，处于 FadeOut 区间内', () => {
+        it('when Stop Action has fadeOut, volume is within FadeOut interval', () => {
             const obj = createAudioObject()
             const blocks: AudioBlockInfo[] = [
                 createBlockInfo(0, [
@@ -164,11 +164,11 @@ describe('computeAudioState', () => {
                     {
                         slotIndex: 1,
                         target: 'audio-1',
-                        params: { action: 'stop', fadeOut: 2 }, // 2秒 fadeOut
+                        params: { action: 'stop', fadeOut: 2 }, // 2-second fadeOut
                     },
                 ], [{ startTime: 0 }, { startTime: 1000 }]),
             ]
-            // 在 stop 点 (1000ms) 之后，fadeOut 结束 (3000ms) 之前
+            // After stop point (1000ms), before fadeOut ends (3000ms)
             const result = computeAudioState(obj, blocks, 2000, 0)
             expect(result.shouldPlay).toBe(true)
             expect(result.inFadeOutTail).toBe(true)
@@ -176,7 +176,7 @@ describe('computeAudioState', () => {
             expect(result.stopTime).toBe(1000)
         })
 
-        it('fadeOut 结束后应该停止播放', () => {
+        it('should stop playback after fadeOut finishes', () => {
             const obj = createAudioObject()
             const blocks: AudioBlockInfo[] = [
                 createBlockInfo(0, [
@@ -188,34 +188,34 @@ describe('computeAudioState', () => {
                     {
                         slotIndex: 1,
                         target: 'audio-1',
-                        params: { action: 'stop', fadeOut: 1 }, // 1秒 fadeOut
+                        params: { action: 'stop', fadeOut: 1 }, // 1-second fadeOut
                     },
                 ], [{ startTime: 0 }, { startTime: 1000 }]),
             ]
-            // fadeOut 结束后 (1000 + 1000 = 2000ms)
+            // After fadeOut finishes (1000 + 1000 = 2000ms)
             const result = computeAudioState(obj, blocks, 2500, 0)
             expect(result.shouldPlay).toBe(false)
         })
     })
 
-    describe('自然结束 FadeOut（非循环）', () => {
-        it('非循环 + 有 fadeOut + 已知时长 → 自然结束前 FadeOut', () => {
+    describe('Natural finish FadeOut (non-looping)', () => {
+        it('non-looping + fadeOut + known duration -> FadeOut before natural finish', () => {
             const obj = createAudioObject()
             const blocks: AudioBlockInfo[] = [
                 createBlockInfo(0, [{
                     slotIndex: 0,
                     target: 'audio-1',
-                    params: { action: 'play', volume: 1.0, loop: false, fadeOut: 1 }, // 1秒 fadeOut
+                    params: { action: 'play', volume: 1.0, loop: false, fadeOut: 1 }, // 1-second fadeOut
                 }], [{ startTime: 0 }]),
             ]
-            // 音频 5 秒，fadeOut 1 秒 → autoStopStartTime = 0 + 5000 - 1000 = 4000ms
+            // Audio 5s, fadeOut 1s -> autoStopStartTime = 0 + 5000 - 1000 = 4000ms
             const result = computeAudioState(obj, blocks, 4500, 5)
             expect(result.shouldPlay).toBe(true)
             expect(result.inFadeOutTail).toBe(true)
             expect(result.stopTime).toBe(4000)
         })
 
-        it('自然结束后应该停止', () => {
+        it('should stop after natural finish', () => {
             const obj = createAudioObject()
             const blocks: AudioBlockInfo[] = [
                 createBlockInfo(0, [{
@@ -229,13 +229,13 @@ describe('computeAudioState', () => {
         })
     })
 
-    describe('不同对象的隔离', () => {
-        it('不应该匹配其他对象的 Action', () => {
+    describe('Isolation across different objects', () => {
+        it('should not match actions belonging to other objects', () => {
             const obj = createAudioObject({ id: 'audio-1' })
             const blocks: AudioBlockInfo[] = [
                 createBlockInfo(0, [{
                     slotIndex: 0,
-                    target: 'audio-2', // 不同对象
+                    target: 'audio-2', // Different object
                     params: { action: 'play', volume: 1.0, loop: true },
                 }], [{ startTime: 0 }]),
             ]

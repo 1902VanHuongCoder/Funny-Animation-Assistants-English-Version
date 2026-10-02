@@ -1,6 +1,6 @@
 /**
  * Animation Player (v11.0)
- * Animation 播放器，负责解析 AnimationDefinition 并驱动播放
+ * Animation player responsible for parsing AnimationDefinition and driving playback
  */
 
 import type {
@@ -13,44 +13,44 @@ import type {
 import { AnimationTrackEvaluator, AUTO_DURATION_MARKER, mergeTrackOutputs } from './AnimationTrackEvaluator'
 
 /**
- * Animation 播放器实例
+ * Animation player instance
  */
 export class AnimationPlayer {
-    /** 当前播放的 Animation 定义 */
+    /** Currently playing Animation definition */
     private definition: AnimationDefinition | null = null
 
-    /** 播放状态 */
+    /** Playback state */
     private _state: AnimationPlayState = 'stopped'
 
-    /** 归一化进度 (0-1) */
+    /** Normalized progress (0-1) */
     private _progress = 0
 
-    /** 播放速度 */
+    /** Playback speed */
     private _speed = 1.0
 
-    /** 是否循环 */
+    /** Whether to loop */
     private _loop = false
 
-    /** Animation 总时长 (ms) */
+    /** Total Animation duration (ms) */
     private _duration = 0
 
-    /** v12.x: Auto Duration 运行时注入的时长 (ms) */
+    /** v12.x: Runtime injected duration for Auto Duration (ms) */
     private _runtimeDuration: number | undefined = undefined
 
-    /** 更新回调 */
+    /** Update callback */
     private onUpdateCallback: ((output: AnimationOutput) => void) | null = null
 
-    /** v11.2: 停止回调（用于恢复静止帧等操作） */
+    /** v11.2: Stop callback (used for restoring still frame etc.) */
     private onStopCallback: ((definition: AnimationDefinition) => void) | null = null
 
-    /** v11.5: 循环回调 */
+    /** v11.5: Loop callback */
     private onLoopCallback: ((definition: AnimationDefinition) => void) | null = null
 
 
 
     /**
-     * 构造函数
-     * @param onUpdate 可选的更新回调
+     * Constructor
+     * @param onUpdate Optional update callback
      */
     constructor(onUpdate?: (output: AnimationOutput) => void) {
         if (onUpdate) {
@@ -58,7 +58,7 @@ export class AnimationPlayer {
         }
     }
 
-    // ===== 公共访问器 =====
+    // ===== Public Accessors =====
 
     get state(): AnimationPlayState {
         return this._state
@@ -100,12 +100,12 @@ export class AnimationPlayer {
         return this.definition
     }
 
-    // ===== 控制方法 =====
+    // ===== Control Methods =====
 
     /**
-     * 播放 Animation
-     * @param definition Animation 定义
-     * @param params 可选的播放参数
+     * Play Animation
+     * @param definition Animation definition
+     * @param params Optional playback parameters
      */
     play(
         definition: AnimationDefinition,
@@ -113,15 +113,15 @@ export class AnimationPlayer {
     ): void {
         this.definition = definition
 
-        // v12.x: 存储 runtimeDuration 用于 Auto Duration 解析
+        // v12.x: Store runtimeDuration for Auto Duration resolution
         this._runtimeDuration = params?.runtimeDuration
         this._duration = this.calculateDuration(definition)
 
-        // 应用播放参数
+        // Apply playback parameters
         this._speed = params?.speed ?? 1.0
         this._loop = params?.loop ?? definition.loop
 
-        // 是否从头开始
+        // Whether to start from the beginning
         if (params?.reset !== false) {
             this._progress = 0
         }
@@ -130,8 +130,8 @@ export class AnimationPlayer {
     }
 
     /**
-     * 停止播放
-     * v11.2: 停止时触发 onStop 回调
+     * Stop playback
+     * v11.2: Triggers onStop callback on stop
      */
     stop(): void {
         if (this.onStopCallback && this.definition && this._state !== 'filled') {
@@ -143,7 +143,7 @@ export class AnimationPlayer {
     }
 
     /**
-     * 暂停播放
+     * Pause playback
      */
     pause(): void {
         if (this._state === 'playing') {
@@ -152,7 +152,7 @@ export class AnimationPlayer {
     }
 
     /**
-     * 恢复播放
+     * Resume playback
      */
     resume(): void {
         if (this._state === 'paused') {
@@ -161,56 +161,56 @@ export class AnimationPlayer {
     }
 
     /**
-     * 设置更新回调
+     * Set update callback
      */
     setOnUpdate(callback: (output: AnimationOutput) => void): void {
         this.onUpdateCallback = callback
     }
 
     /**
-     * v11.2: 设置停止回调
-     * 回调在动画停止时触发，可用于恢复静止帧等操作
+     * v11.2: Set stop callback
+     * Callback triggers when animation stops, useful for restoring still frames etc.
      */
     setOnStop(callback: (definition: AnimationDefinition) => void): void {
         this.onStopCallback = callback
     }
 
     /**
-     * v11.5: 设置循环回调
+     * v11.5: Set loop callback
      */
     setOnLoop(callback: (definition: AnimationDefinition) => void): void {
         this.onLoopCallback = callback
     }
 
     /**
-     * 跳转到指定进度
-     * @param progress 归一化进度 (0-1)
+     * Seek to specified progress
+     * @param progress Normalized progress (0-1)
      */
     seek(progress: number): void {
         this._progress = Math.max(0, Math.min(1, progress))
     }
 
     /**
-     * 设置播放速度
+     * Set playback speed
      */
     setSpeed(speed: number): void {
         this._speed = Math.max(0.1, Math.min(10, speed))
     }
 
     /**
-     * 设置是否循环
+     * Set whether to loop
      */
     setLoop(loop: boolean): void {
         this._loop = loop
     }
 
-    // ===== 更新方法 =====
+    // ===== Update Methods =====
 
     /**
-     * 每帧更新
-     * 由渲染循环调用
-     * @param deltaTime 距上一帧的时间 (ms)
-     * @returns 当前帧的输出状态
+     * Per-frame update
+     * Called by render loop
+     * @param deltaTime Time elapsed since previous frame (ms)
+     * @returns Output state of current frame
      */
     update(deltaTime: number): AnimationOutput | null {
         if (!this.definition) {
@@ -229,17 +229,17 @@ export class AnimationPlayer {
             return null
         }
 
-        // 更新进度
+        // Update progress
         if (this._duration > 0) {
             const progressDelta = (deltaTime * this._speed) / this._duration
             this._progress += progressDelta
 
-            // 处理播放完成
+            // Handle playback completion
             if (this._progress >= 1) {
                 if (this._loop) {
                     this._progress = this._progress % 1
 
-                    // v11.5: 触发循环回调
+                    // v11.5: Trigger loop callback
                     if (this.onLoopCallback && this.definition) {
                         this.onLoopCallback(this.definition)
                     }
@@ -256,10 +256,10 @@ export class AnimationPlayer {
             }
         }
 
-        // 计算输出
+        // Calculate output
         const output = this.evaluate(this._progress)
 
-        // 触发回调
+        // Trigger callback
         if (this.onUpdateCallback) {
             this.onUpdateCallback(output)
         }
@@ -268,7 +268,7 @@ export class AnimationPlayer {
     }
 
     /**
-     * 获取当前帧的输出（不更新进度）
+     * Get output of current frame (without updating progress)
      */
     getCurrentOutput(): AnimationOutput | null {
         if (!this.definition) {
@@ -277,19 +277,19 @@ export class AnimationPlayer {
         return this.evaluate(this._progress)
     }
 
-    // ===== 私有方法 =====
+    // ===== Private Methods =====
 
     /**
-     * 计算 Animation 总时长
+     * Calculate total Animation duration
      */
     private calculateDuration(definition: AnimationDefinition): number {
         if (definition.type !== 'track') return 1000
         let maxDuration = 0
 
-        // 计算轨道时长
+        // Calculate track durations
         for (const track of definition.tracks) {
             const trackDuration = AnimationTrackEvaluator.getTrackDuration(track)
-            // v12.x: AUTO_DURATION_MARKER 使用 runtimeDuration 替代
+            // v12.x: AUTO_DURATION_MARKER replaced with runtimeDuration
             const resolvedDuration = trackDuration === AUTO_DURATION_MARKER
                 ? (this._runtimeDuration ?? 1000)
                 : trackDuration
@@ -302,8 +302,8 @@ export class AnimationPlayer {
     }
 
     /**
-     * 求值当前进度的所有轨道
-     * v11.2: 每个轨道使用独立的进度（基于轨道自身的 duration）
+     * Evaluate all tracks at current progress
+     * v11.2: Each track uses independent progress (based on track's own duration)
      */
     private evaluate(progress: number): AnimationOutput {
         if (!this.definition) {
@@ -314,12 +314,12 @@ export class AnimationPlayer {
             }
         }
 
-        // v11.2: 当前已播放时间 (ms)
+        // v11.2: Current elapsed time (ms)
         const elapsedTime = progress * this._duration
 
-        // 计算主轨道输出
-        // v11.2: 每个轨道使用独立的进度
-        // v11.52: 过滤掉 frame_sequence 轨道，帧动画直接使用 AnimatedSprite.play()
+        // Calculate main track outputs
+        // v11.2: Each track uses independent progress
+        // v11.52: Filter out frame_sequence tracks; frame animation directly uses AnimatedSprite.play()
         if (this.definition.type !== 'track') {
             return { transforms: [], visibilities: [], effects: [] }
         }
@@ -328,31 +328,31 @@ export class AnimationPlayer {
         )
         const trackOutputs = evaluableTracks.map(track => {
             const rawTrackDuration = AnimationTrackEvaluator.getTrackDuration(track)
-            // v12.x: AUTO_DURATION_MARKER 使用 runtimeDuration 替代
+            // v12.x: AUTO_DURATION_MARKER replaced with runtimeDuration
             const trackDuration = rawTrackDuration === AUTO_DURATION_MARKER
                 ? (this._runtimeDuration ?? 1000)
                 : rawTrackDuration
 
-            // 计算轨道独立进度
+            // Calculate track independent progress
             let trackProgress: number
             if (trackDuration === Infinity || trackDuration <= 0) {
-                // 无限时长或无效时长，使用全局进度
+                // Infinite or invalid duration, use global progress
                 trackProgress = progress
             } else if (trackDuration >= this._duration) {
-                // 轨道时长 >= 总时长，使用全局进度
+                // Track duration >= total duration, use global progress
                 trackProgress = progress
             } else {
-                // v11.2: 轨道时长 < 总时长
+                // v11.2: Track duration < total duration
                 if (this._loop) {
-                    // Animation 循环时，轨道也循环播放
+                    // When Animation loops, track also loops
                     trackProgress = (elapsedTime % trackDuration) / trackDuration
                 } else {
-                    // Animation 非循环时，轨道播完后停留在最终状态
+                    // When Animation does not loop, track stays at final state after completion
                     trackProgress = Math.min(1, elapsedTime / trackDuration)
                 }
             }
 
-            // v11.70: 传递 trackDuration 用于进度驱动的特效计算
+            // v11.70: Pass trackDuration for progress-driven effect calculation
             const effectiveDuration = trackDuration === Infinity ? this._duration : trackDuration
             return AnimationTrackEvaluator.evaluate(track, trackProgress, effectiveDuration)
         })
@@ -364,14 +364,14 @@ export class AnimationPlayer {
 }
 
 /**
- * Animation Player 管理器
- * 用于管理多个播放器实例
+ * Animation Player Manager
+ * Used to manage multiple player instances
  */
 export class AnimationPlayerManager {
     private players = new Map<string, AnimationPlayer>()
 
     /**
-     * 获取或创建播放器
+     * Get or create player
      */
     getOrCreate(id: string): AnimationPlayer {
         let player = this.players.get(id)
@@ -383,14 +383,14 @@ export class AnimationPlayerManager {
     }
 
     /**
-     * 获取播放器
+     * Get player
      */
     get(id: string): AnimationPlayer | undefined {
         return this.players.get(id)
     }
 
     /**
-     * 移除播放器
+     * Remove player
      */
     remove(id: string): boolean {
         const player = this.players.get(id)
@@ -403,7 +403,7 @@ export class AnimationPlayerManager {
     }
 
     /**
-     * 更新所有播放器
+     * Update all players
      */
     updateAll(deltaTime: number): Map<string, AnimationOutput | null> {
         const outputs = new Map<string, AnimationOutput | null>()
@@ -414,7 +414,7 @@ export class AnimationPlayerManager {
     }
 
     /**
-     * 停止所有播放器
+     * Stop all players
      */
     stopAll(): void {
         for (const player of this.players.values()) {
@@ -423,7 +423,7 @@ export class AnimationPlayerManager {
     }
 
     /**
-     * 清空所有播放器
+     * Clear all players
      */
     clear(): void {
         this.stopAll()
@@ -431,14 +431,14 @@ export class AnimationPlayerManager {
     }
 
     /**
-     * 获取所有播放器 ID
+     * Get all player IDs
      */
     getAllIds(): string[] {
         return Array.from(this.players.keys())
     }
 
     /**
-     * 获取播放中的播放器数量
+     * Get number of currently playing players
      */
     getPlayingCount(): number {
         let count = 0
@@ -452,14 +452,14 @@ export class AnimationPlayerManager {
 }
 
 /**
- * 创建 Animation 播放器
+ * Create Animation player
  */
 export function createAnimationPlayer(onUpdate?: (output: AnimationOutput) => void): AnimationPlayer {
     return new AnimationPlayer(onUpdate)
 }
 
 /**
- * 创建 Animation 播放器管理器
+ * Create Animation player manager
  */
 export function createAnimationPlayerManager(): AnimationPlayerManager {
     return new AnimationPlayerManager()

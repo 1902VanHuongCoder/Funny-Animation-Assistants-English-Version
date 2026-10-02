@@ -1,7 +1,7 @@
 /**
- * Background 序列化器
+ * Background serializer
  *
- * 从 sceneObjectStore.toSetupObject / fromSetupObject 的 background case 提取。
+ * Extracted from sceneObjectStore.toSetupObject / fromSetupObject background case.
  */
 
 import { useBackgroundStore } from '@/stores/backgroundStore'
@@ -12,13 +12,13 @@ import { registerTypeSerializer } from './index'
 
 const backgroundSerializer: TypeSerializer = {
     serializeFields(_obj: SceneObject, _base: Record<string, unknown>): void {
-        // v16: animations/initialAnimations 已统一在 toSetupObject base 处理
+        // v16: animations/initialAnimations handled uniformly in toSetupObject base
     },
 
     deserialize(objData: SceneObject, ctx: DeserializeContext): void {
         const backgroundStore = useBackgroundStore()
         const bgAsset = backgroundStore.getBackground(objData.refId)
-        const bgName = bgAsset?.name ?? '背景'
+        const bgName = bgAsset?.name ?? 'Background'
 
         const bgObj = ctx.createBackgroundObject(
             objData.refId,

@@ -1,8 +1,8 @@
 import { saveAs } from 'file-saver'
 
 /**
- * 日志服务
- * 用于收集运行时日志并支持导出到文件
+ * Log service
+ * Used to collect runtime logs and support export to file
  */
 class LogService {
   private static instance: LogService
@@ -21,25 +21,25 @@ class LogService {
   }
 
   /**
-   * 开始收集日志
+   * Start collecting logs
    */
   startCollection() {
     this.logs = []
     this.isCollecting = true
-    this.addLog('========== 日志收集开始 ==========')
-    this.addLog(`时间: ${new Date().toLocaleString()}`)
+    this.addLog('========== Log Collection Started ==========')
+    this.addLog(`Time: ${new Date().toLocaleString()}`)
   }
 
   /**
-   * 停止收集
+   * Stop collecting logs
    */
   stopCollection() {
     this.isCollecting = false
-    this.addLog('========== 日志收集结束 ==========')
+    this.addLog('========== Log Collection Ended ==========')
   }
 
   /**
-   * 添加日志
+   * Add log message
    */
   addLog(message: string) {
     if (!this.isCollecting) return
@@ -47,7 +47,7 @@ class LogService {
   }
 
   /**
-   * 导出日志到文件
+   * Export logs to file
    */
   exportLogs(filename = 'scene_preview_log.md') {
     if (this.logs.length === 0) return
@@ -58,7 +58,7 @@ class LogService {
   }
 
   /**
-   * 获取当前日志内容
+   * Get current log content
    */
   getLogs(): string {
     return this.logs.join('\n')

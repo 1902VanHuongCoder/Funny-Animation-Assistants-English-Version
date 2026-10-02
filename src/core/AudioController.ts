@@ -1,13 +1,13 @@
 /**
- * AudioController — 统一音频状态计算模块
+ * AudioController — Unified audio state computation module
  *
- * 从 ScenePlayer.vue 的 updateAudio() 提取状态计算逻辑为纯函数。
- * 实际的 WebAudio I/O 仍由 ScenePlayer 控制。
+ * Extracts state computation logic from ScenePlayer.vue updateAudio() as pure functions.
+ * Actual WebAudio I/O is still controlled by ScenePlayer.
  *
- * 设计原则：
- * - 纯函数，无副作用，不依赖任何 PIXI/WebAudio API
- * - 可单元测试，不需要 mock 任何浏览器 API
- * - FrameCapture 不播放音频，但如果未来需要音频时间轴信息，可直接使用此模块
+ * Design principles:
+ * - Pure functions, side-effect free, independent of any PIXI/WebAudio API
+ * - Unit testable without mocking browser APIs
+ * - FrameCapture does not play audio, but if audio timeline info is needed in the future, this module can be used directly
  */
 
 import type { SceneObject } from '@/types/sceneObject'
@@ -22,7 +22,7 @@ import type {
 // ============================================================================
 
 /**
- * BlockPlayInfo 的精简版本，仅包含音频计算所需字段
+ * Lightweight version of BlockPlayInfo, containing only fields needed for audio computation
  */
 export interface AudioBlockInfo {
     startTime: number
@@ -31,24 +31,24 @@ export interface AudioBlockInfo {
 }
 
 /**
- * 音频状态计算结果
+ * Audio state computation result
  */
 export interface AudioStateResult {
-    /** 是否应该播放 */
+    /** Whether it should play */
     shouldPlay: boolean
-    /** 目标音量 (0-1) */
+    /** Target volume (0-1) */
     targetVolume: number
-    /** 是否循环 */
+    /** Whether to loop */
     loop: boolean
-    /** 播放起始时间 (绝对时间, ms) */
+    /** Playback start time (absolute time, ms) */
     playTime: number
-    /** 淡入时长 (秒) */
+    /** Fade-in duration (seconds) */
     fadeIn: number
-    /** 是否处于 FadeOut 尾部 */
+    /** Whether currently in fade-out tail */
     inFadeOutTail: boolean
-    /** FadeOut 时长 (秒) */
+    /** Fade-out duration (seconds) */
     fadeOutDuration: number
-    /** Stop 时间 (绝对时间, ms) */
+    /** Stop time (absolute time, ms) */
     stopTime: number
 }
 
@@ -57,18 +57,18 @@ export interface AudioStateResult {
 // ============================================================================
 
 /**
- * 计算音频对象在给定绝对时间的播放状态
+ * Compute playback state of audio object at given absolute time
  *
- * 此函数是纯函数，不产生任何副作用：
- * - 不访问任何 WebAudio API
- * - 不修改任何外部状态
- * - 仅基于输入数据计算并返回结果
+ * This is a pure function without side effects:
+ * - Does not access WebAudio APIs
+ * - Does not modify external state
+ * - Computes and returns results solely based on input data
  *
- * @param objSetup         音频对象的 Setup 定义
- * @param blockPlayInfos   所有 Block 的播放信息（用于回溯历史 set_audio 动作）
- * @param currentAbsTime   当前绝对时间 (ms)
- * @param audioDurationSec 已知的音频实际时长 (秒)，用于自然结束时的 fadeOut 计算。
- *                         如果音频尚未加载则传 0。
+ * @param objSetup         Setup definition of audio object
+ * @param blockPlayInfos   Playback info of all Blocks (for backtracking historical set_audio actions)
+ * @param currentAbsTime   Current absolute time (ms)
+ * @param audioDurationSec Known audio duration (seconds), used for fadeOut calculation on natural completion.
+ *                         Pass 0 if audio has not loaded yet.
  */
 export function computeAudioState(
     objSetup: SceneObject,
@@ -87,7 +87,7 @@ export function computeAudioState(
         stopTime: 0,
     }
 
-    // ──── 1. 确定初始播放状态 ────
+    // ──── 1. Determine initial playback state ────
     let activePlayAction: {
         params: SetAudioAction['params']
         virtualTime: number
@@ -117,7 +117,7 @@ export function computeAudioState(
         }
     }
 
-    // ──── 2. 遍历所有 Block 的 set_audio 动作，确定最终状态 ────
+    // ──── 2. Iterate through set_audio actions of all Blocks to determine final state ────
     for (const info of blockPlayInfos) {
         const actions = info.blockActions.filter(
             (a: Action) => a.type === 'set_audio' && a.target === objSetup.id,
@@ -149,7 +149,7 @@ export function computeAudioState(
         }
     }
 
-    // ──── 3. 根据 Play/Stop/FadeOut 状态计算最终结果 ────
+    // ──── 3. Compute final result based on Play/Stop/FadeOut states ────
     if (!activePlayAction) {
         return result
     }
@@ -182,7 +182,7 @@ export function computeAudioState(
         && (Number(playParams.fadeOut) || 0) > 0
         && audioDurationSec > 0
     ) {
-        // 非循环 + 有 fadeOut + 已知时长 → 计算自然结束前的 FadeOut
+        // Non-looping + has fadeOut + known duration -> compute FadeOut before natural end
         const fadeOutSec = Number(playParams.fadeOut) || 0
         const durationMs = audioDurationSec * 1000
         const fadeOutMs = fadeOutSec * 1000

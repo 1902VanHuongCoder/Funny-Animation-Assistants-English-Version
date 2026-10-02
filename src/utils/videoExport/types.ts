@@ -1,47 +1,47 @@
 // Types are defined inline in this file
 
 /**
- * 硬件加速模式
+ * Hardware acceleration mode
  */
 export type HardwareAcceleration = 'prefer-hardware' | 'prefer-software'
 
 /**
- * 导出配置
+ * Export configuration
  */
 export interface VideoExportConfig {
-    // 导出范围
+    // Export range
     episodeId: string
 
-    // 视频参数
+    // Video parameters
     resolution: {
-        width: number   // 像素宽度
-        height: number  // 像素高度
-        scale: number   // 相机视口倍数 (1x, 1.5x, 2x)
+        width: number   // Pixel width
+        height: number  // Pixel height
+        scale: number   // Camera viewport multiplier (1x, 1.5x, 2x)
     }
     frameRate: number
-    videoBitrate: number  // bps，如 8_000_000 = 8Mbps
+    videoBitrate: number  // bps, e.g. 8_000_000 = 8Mbps
 
-    // 音频参数
-    audioBitrate: number  // bps，如 128_000 = 128kbps
-    audioSampleRate: 48000  // 固定 48kHz
+    // Audio parameters
+    audioBitrate: number  // bps, e.g. 128_000 = 128kbps
+    audioSampleRate: 48000  // Fixed 48kHz
 
-    // 编码器配置
+    // Encoder configuration
     videoCodec: 'avc1.640028'  // H.264 High Profile Level 4.0
     audioCodec: 'mp4a.40.2'    // AAC-LC
 
-    // 硬件加速
-    hardwareAcceleration: HardwareAcceleration  // 编码器类型
+    // Hardware acceleration
+    hardwareAcceleration: HardwareAcceleration  // Encoder type
 
-    // 水印配置
-    showWatermark?: boolean  // 是否显示水印，默认 false
+    // Watermark configuration
+    showWatermark?: boolean  // Whether to show watermark, default false
 
-    // 字幕配置
-    showSubtitles?: boolean  // 是否显示字幕，默认 false
+    // Subtitle configuration
+    showSubtitles?: boolean  // Whether to show subtitles, default false
     subtitleStyle?: SubtitleStyle
 }
 
 /**
- * 导出字幕样式
+ * Export subtitle style
  */
 export interface SubtitleStyle {
     fontFamily: string
@@ -54,60 +54,60 @@ export interface SubtitleStyle {
 }
 
 /**
- * 导出状态
+ * Export status
  */
 export type VideoExportStatus =
     | 'idle'
-    | 'preparing'   // 准备资源
-    | 'encoding'    // 编码中
-    | 'muxing'      // 封装中
+    | 'preparing'   // Preparing resources
+    | 'encoding'    // Encoding
+    | 'muxing'      // Muxing
     | 'completed'
     | 'error'
     | 'cancelled'
 
 /**
- * 导出进度信息
+ * Export progress information
  */
 export interface VideoExportProgress {
     currentFrame: number
     totalFrames: number
     percentage: number  // 0-100
 
-    // 时间信息
+    // Timing information
     elapsedTime: number      // ms
     estimatedRemaining: number  // ms
 
-    // 当前阶段
+    // Current stage
     stage: 'preparing' | 'encoding' | 'muxing'
     stageMessage: string
 
-    // 场景信息（新增）
-    currentScene?: string       // 当前场景名称
-    currentSceneIndex?: number  // 当前场景索引
-    totalScenes?: number        // 总场景数
+    // Scene information
+    currentScene?: string       // Current scene name
+    currentSceneIndex?: number  // Current scene index
+    totalScenes?: number        // Total scene count
 }
 
 /**
- * 导出状态数据
+ * Export state data
  */
 export interface VideoExportState {
     status: VideoExportStatus
     progress: VideoExportProgress
 
-    // 错误信息
+    // Error information
     error?: {
         code: string
         message: string
         details?: unknown
     }
 
-    // 输出
+    // Output
     outputBlob?: Blob
     outputFileName?: string
 }
 
 /**
- * 音频轨道信息
+ * Audio track information
  */
 export interface AudioTrack {
     buffer: AudioBuffer
@@ -120,12 +120,12 @@ export interface AudioTrack {
 }
 
 /**
- * 进度回调
+ * Progress callback
  */
 export type ProgressCallback = (progress: VideoExportProgress) => void
 
 /**
- * 导出选项
+ * Export options
  */
 export interface VideoExportOptions {
     onProgress?: ProgressCallback
@@ -133,32 +133,32 @@ export interface VideoExportOptions {
 }
 
 /**
- * 用户导出设置（可配置项）
+ * User export settings (configurable items)
  */
 export interface ExportSettings {
     resolution: '1080p' | '720p'
     frameRate: 60
     quality: 'low' | 'medium' | 'high' | 'ultra'
-    encoder: 'hardware' | 'software'  // 编码器类型
-    showWatermark: boolean  // 是否显示水印,默认 false
-    showSubtitles: boolean  // 是否显示字幕,默认 false
+    encoder: 'hardware' | 'software'  // Encoder type
+    showWatermark: boolean  // Whether to show watermark, default false
+    showSubtitles: boolean  // Whether to show subtitles, default false
     subtitleStyle: SubtitleStyle
 }
 
 /**
- * 导出结果信息
+ * Export result information
  */
 export interface ExportResult {
     success: boolean
-    fileSize: number           // 文件大小（字节）
-    duration: number           // 导出耗时（毫秒）
-    totalFrames: number        // 总帧数
+    fileSize: number           // File size (bytes)
+    duration: number           // Export duration (ms)
+    totalFrames: number        // Total frame count
     resolution: {
         width: number
         height: number
     }
     frameRate: number
     quality: string
-    errorMessage?: string      // 错误消息
-    errorDetails?: string      // 错误详情
+    errorMessage?: string      // Error message
+    errorDetails?: string      // Error details
 }

@@ -28,11 +28,11 @@ import type { TextureProvider } from '@/core/TextureProvider'
 import { useAnimationStore } from '@/stores/animationStore'
 import { useBackgroundStore } from '@/stores/backgroundStore'
 import type { Episode } from '@/stores/episodeStore'
-// v7.3: effectStore 已删除
+// v7.3: effectStore removed
 import { useExpressionStore } from '@/stores/expressionStore'
 import { useProjectStore } from '@/stores/projectStore'
 import { usePropStore } from '@/stores/propStore'
-// Phase 4e: ObjectStateSnapshot 已由 SceneObject 替代
+// Phase 4e: ObjectStateSnapshot replaced by SceneObject
 import type { CompositeObject, SceneObject, SymbolObject } from '@/types/sceneObject'
 import type { Action, BlockPlayInfo, RuntimeSceneSnapshot, RuntimeSlot, SetSceneStructureAction } from '@/types/screenplay'
 import {
@@ -129,13 +129,13 @@ function applyPreviewSceneStructureAction(
     }
 }
 
-// PlayableSprite 接口已提取到 spriteAnimationDriver 共享模块
+// PlayableSprite interface extracted to spriteAnimationDriver shared module
 
-// v11.80: AnimStateParam 已移除，使用内联类型定义
+// v11.80: AnimStateParam removed, inline type definitions used
 
 /**
- * 帧捕获模块
- * 负责离屏渲染并提取视频帧
+ * Frame capture module
+ * Responsible for offscreen rendering and extracting video frames
  */
 export class FrameCapture {
     private renderer: PIXI.Renderer | null = null
@@ -143,7 +143,7 @@ export class FrameCapture {
     private config: VideoExportConfig
     private episode: Episode
 
-    // 渲染容器层级
+    // Render container hierarchy
     private stage: PIXI.Container | null = null
     private scaleContainer: PIXI.Container | null = null
     private contentViewport: PIXI.Container | null = null
@@ -152,7 +152,7 @@ export class FrameCapture {
     // Stores
     private backgroundStore = useBackgroundStore()
     private propStore = usePropStore()
-    // v7.3: effectStore 已删除
+    // v7.3: effectStore removed
     private expressionStore = useExpressionStore()
     private projectStore = useProjectStore()
 
@@ -162,7 +162,7 @@ export class FrameCapture {
     private assetLoader = useAssetLoader()
     private getTexture = this.assetLoader.getTexture
 
-    // 当前场景缓存
+    // Current scene cache
     private currentSceneIndex = -1
     private objectContainers = new Map<string, PIXI.Container>()
 
@@ -172,65 +172,65 @@ export class FrameCapture {
         boundsX?: number, boundsY?: number
     }>()
 
-    // v14.2: 追踪每个角色最后一次测量 bounds 时的姿态
+    // v14.2: Track pose for each character at last bounds measurement
     private lastMeasuredPose = new Map<string, string>()
 
-    // Block 播放信息（每个场景）
+    // Block playback information (per scene)
     private blockPlayInfos: BlockPlayInfo[] = []
     private ttsTimingCache = new Map<string, TTSTimingFile | null>()
     private pendingTTSTimingLoads = new Map<string, Promise<TTSTimingFile | null>>()
 
-    // camera_follow 最后跟随位置
+    // camera_follow last follow position
     private lastFollowPosition: { x: number; y: number } | null = null
     private lastEvaluatedCameraState: RuntimeCameraState | null = null
 
-    // 水印
+    // Watermark
     private watermarkSprite: PIXI.Sprite | null = null
 
-    // 字幕
+    // Subtitles
     private subtitleContainer: PIXI.Container | null = null
     private subtitleBackground: PIXI.Graphics | null = null
     private subtitleText: PIXI.Text | null = null
 
-    // v11.60: Animation Player 注册表（统一 Map，消除按类型分发的 if/else 分支）
+    // v11.60: Animation Player registry (unified Map, eliminating type-based if/else branches)
     private objectAnimationPlayers = new Map<string, GenericAnimationPlayer>()
     private triggeredAnimations = new Set<string>()
 
 
-    // P2: Composite own 模式离屏渲染目标
+    // P2: Composite own mode offscreen render target
     private compositeRenderTargets = new Map<string, CompositeRenderTarget>()
 
-    // 方案B: camera_follow 首帧 BBox 偏移量缓存
+    // Scheme B: camera_follow first frame BBox offset cache
     private followBBoxOffsets = new Map<string, { dx: number, dy: number }>()
 
-    // v25: 光照滤镜缓存
+    // v25: Lighting filter cache
     private lightingFilterCache: LightingFilterCache = {}
 
-    // Clip-Mask Phase 1：蒙版渲染器资源（FrameCapture 路径）
+    // Clip-Mask Phase 1: Mask renderer resources (FrameCapture path)
     private maskRendererResources: MaskRendererResources = createMaskRendererResources()
 
-    // RenderHost 桥接（共享渲染管线依赖注入）
+    // RenderHost bridge (shared render pipeline dependency injection)
     private renderHost: RenderHost
 
     private animationStore = useAnimationStore()
-    private lastFrameTimeInScene = 0  // 用于计算 deltaTime
-    // v11.82: 帧动画时间累积器（基于 deltaTime 推进，避免绝对时间计算的精度问题）
+    private lastFrameTimeInScene = 0  // Used to compute deltaTime
+    // v11.82: Frame animation time accumulator (advances based on deltaTime, avoiding absolute time precision issues)
     private spriteAnimTimeAccumulator = new WeakMap<PIXI.AnimatedSprite, number>()
-    // v11.88: 追踪上一个 Block 用于 autoStopOnBlockEnd 处理
+    // v11.88: Track previous Block for autoStopOnBlockEnd handling
     private previousBlockInfo: BlockPlayInfo | null = null
 
-    // v14.x: 统一渲染器实例
+    // v14.x: Unified renderer instance
     private sceneObjectRenderer: SceneObjectRenderer
 
-    // 导出路径临时覆盖 PIXI 分辨率设置，销毁时恢复，避免影响编辑器/预览
+    // Export path temporarily overrides PIXI resolution settings, restored on destroy to avoid affecting editor/preview
     private previousPixiResolution = PIXI.settings.RESOLUTION
     private didOverridePixiSettings = false
 
-    // PA: AnimationController 集成
+    // PA: AnimationController integration
     private currentScene: Episode['scenes'][number] | null = null
     private animationController: AnimationController
 
-    // P0: ObjectStateHost — 桥接本地缓存给统一渲染器
+    // P0: ObjectStateHost — bridge local cache to unified renderer
     private objectStateHost: ObjectStateHost
 
     private createAnimationHost(): AnimationHost {
@@ -239,7 +239,7 @@ export class FrameCapture {
             getObjectContainer: (id: string) => this.objectContainers.get(id) ?? null,
             getSceneObjects: () => this.currentScene?.setup.objects ?? [],
             getAnimationDefinition: (objectId: string, animName: string) => {
-                // v16: 统一从 SceneObject.animations 查找（hydrate 保证已填充）
+                // v16: Find from SceneObject.animations (hydration guarantees populated)
                 const obj = this.currentScene?.setup.objects.find(o => o.id === objectId)
                 if (!obj) return null
                 return this.animationStore.getObjectAnimationByName(obj, animName) ?? null
@@ -251,8 +251,8 @@ export class FrameCapture {
     }
 
     /**
-     * 统一获取对象的 GenericAnimationPlayer
-     * 消除按类型分发的 if/else 链
+     * Uniformly get GenericAnimationPlayer for an object
+     * Eliminates type-based if/else dispatch chain
      */
     private getAnimationPlayerForObject(objId: string): GenericAnimationPlayer | null {
         return this.objectAnimationPlayers.get(objId) ?? null
@@ -262,7 +262,7 @@ export class FrameCapture {
         this.episode = episode
         this.config = config
 
-        // v14.x: 初始化统一渲染器
+        // v14.x: Initialize unified renderer
         const textureProvider: TextureProvider = {
             getTexture: (url: string) => {
                 const tex = this.getTexture(url)
@@ -281,16 +281,16 @@ export class FrameCapture {
             }
         )
 
-        // PA: 初始化 AnimationController
+        // PA: Initialize AnimationController
         this.animationController = new AnimationController(this.createAnimationHost(), this.triggeredAnimations)
 
-        // P0: 构造 ObjectStateHost
+        // P0: Construct ObjectStateHost
         this.objectStateHost = {
             getObjectDimensions: (id: string) => this.objectDimensions.get(id),
             setObjectDimensions: (id: string, dims: { width: number; height: number }) => this.objectDimensions.set(id, dims),
         }
 
-        // 构造 RenderHost（共享渲染管线依赖注入）
+        // Construct RenderHost (shared render pipeline dependency injection)
         this.renderHost = {
             sceneObjectRenderer: this.sceneObjectRenderer,
             objectContainers: this.objectContainers,
@@ -303,17 +303,17 @@ export class FrameCapture {
     }
 
     /**
-     * 初始化
+     * Initialize
      */
     async initialize(): Promise<void> {
 
         if (typeof OffscreenCanvas === 'undefined') {
-            throw new Error('当前浏览器不支持 OffscreenCanvas')
+            throw new Error('Current browser does not support OffscreenCanvas')
         }
 
-        // 方案 D: 直接渲染到目标视频分辨率，避免 1456×819×2 -> 1920×1080
-        // 的非整数下采样重新引入采样相位闪烁。不要开启 ROUND_PIXELS：
-        // 相机/角色动画含亚像素移动时，像素取整会把平滑运动变成 1px 跳格。
+        // Scheme D: Render directly to target video resolution, avoiding 1456x819x2 -> 1920x1080
+        // non-integer downsampling introducing sampling phase flicker. Do not enable ROUND_PIXELS:
+        // When camera/character animation has subpixel movement, pixel rounding turns smooth motion into 1px stepping.
         const exportPixelRatio = this.config.resolution.width / CAMERA_BASE_WIDTH
 
         this.previousPixiResolution = PIXI.settings.RESOLUTION
@@ -336,8 +336,8 @@ export class FrameCapture {
             preserveDrawingBuffer: false,
             autoDensity: false,
             powerPreference: 'high-performance',
-            // 禁用事件系统，因为 OffscreenCanvas 不需要处理 DOM 事件
-            // 这可以防止渲染器销毁后产生 "lastObjectRendered" 错误
+            // Disable event system, as OffscreenCanvas does not need to handle DOM events
+            // This prevents "lastObjectRendered" error after renderer is destroyed
             eventMode: 'none',
             eventFeatures: {
                 move: false,
@@ -347,13 +347,13 @@ export class FrameCapture {
             },
         })
 
-        // 手动禁用事件系统，确保不会注册任何 DOM 事件监听器
+        // Manually disable event system to ensure no DOM event listeners are registered
         const rendererWithEvents = this.renderer as unknown as { events: { destroy: () => void } }
         if (rendererWithEvents.events) {
             try {
                 rendererWithEvents.events.destroy()
             } catch (e) {
-                // 忽略
+                // Ignore
             }
         }
 
@@ -361,7 +361,7 @@ export class FrameCapture {
         this.stage.name = 'frame-capture-root-stage'
         this.stage.sortableChildren = true
 
-        // resolution 已处理像素密度放大，scaleContainer 不再需要额外缩放
+        // resolution already handles pixel density scaling, scaleContainer no longer needs extra scaling
         this.scaleContainer = new PIXI.Container()
         this.scaleContainer.name = 'frame-capture-scale-container'
         this.scaleContainer.scale.set(1, 1)
@@ -372,7 +372,7 @@ export class FrameCapture {
         this.scaleContainer.addChild(this.contentViewport)
         this.stage.addChild(this.scaleContainer)
 
-        // 只有在明确启用水印时才加载
+        // Only load when watermark is explicitly enabled
         if (this.config.showWatermark === true) {
             await this.loadWatermark()
         }
@@ -394,12 +394,12 @@ export class FrameCapture {
         }
 
         const sample = samples.join('\n').replace(/#/g, '')
-        return sample.trim() || '测试字幕'
+        return sample.trim() || 'Sample Subtitle'
     }
 
     /**
-     * 渲染指定场景和时间点的帧
-     * v11.81: 改为 async，确保场景完全加载
+     * Render frame for specified scene and timestamp
+     * v11.81: Converted to async to ensure scene is fully loaded
      */
     async renderFrame(sceneIndex: number, timeInScene: number, absoluteTime: number): Promise<VideoFrame> {
         if (!this.renderer || !this.offscreenCanvas || !this.stage || !this.contentViewport) {
@@ -411,32 +411,32 @@ export class FrameCapture {
             throw new Error(`Scene ${sceneIndex} not found`)
         }
 
-        // 如果切换场景，重新创建对象
+        // If switching scene, recreate objects
         if (sceneIndex !== this.currentSceneIndex) {
-            // v11.81: await loadScene 确保场景完全加载
+            // v11.81: await loadScene to ensure scene is fully loaded
             await this.loadScene(scene)
             this.prepareBlockPlayInfos(scene)
             await this.preloadTTSTimingsForBlockInfos()
             this.currentSceneIndex = sceneIndex
-            // PA: 更新 currentScene 给 AnimationController 使用
+            // PA: Update currentScene for AnimationController use
             this.currentScene = scene
-            // v11.60: 应用初始动画状态
+            // v11.60: Apply initial animation states
             this.applyInitialAnimationStates(scene)
             this.lastFrameTimeInScene = 0
         }
 
-        // 找到当前时间对应的 Block
+        // Find Block corresponding to current time
         const currentInfo = this.getBlockAtTime(timeInScene)
         let blockLocalTime = 0
         let currentPivotCenters: Map<string, { x: number; y: number }> | null = null
-        // Phase 2 Fix: 提升 states 到外层，供光照滤镜使用 Action 评估后的对象状态
+        // Phase 2 Fix: Hoist states to outer scope so lighting filter uses Action-evaluated object states
         let evaluatedStates: Map<string, SceneObject> | null = null
 
         if (currentInfo) {
-            // v11.88: 检测 Block 切换，处理 autoStopOnBlockEnd
+            // v11.88: Detect Block switch, handle autoStopOnBlockEnd
             if (this.previousBlockInfo && this.previousBlockInfo !== currentInfo) {
                 this.applyAutoStopOnBlockEnd(this.previousBlockInfo)
-                // v11.88: Block 切换时清空动画触发状态，确保新 Block 中的动画能够正常触发
+                // v11.88: Clear animation trigger state on Block switch to ensure animations trigger properly in new Block
                 this.triggeredAnimations.clear()
                 this.followBBoxOffsets.clear()
             }
@@ -444,57 +444,57 @@ export class FrameCapture {
 
             blockLocalTime = timeInScene - currentInfo.startTime
 
-            // 1. 评估所有对象状态
+            // 1. Evaluate all object states
             const states = this.evaluateStates(currentInfo, blockLocalTime)
             evaluatedStates = states
             currentPivotCenters = this.applyStates(states, scene, currentInfo.startSnapshot.renderChain)
 
-            // 1.5: 对象刚变为可见时，立即补启动延迟的初始动画，
-            // 减少出生同帧的首帧静止感。
+            // 1.5: When object just becomes visible, immediately trigger delayed initial animations,
+            // reducing stillness on the spawn frame.
             this.animationController.syncDeferredInitialAnimations()
 
-            // 2. 更新动画状态（处理 set_anim）
+            // 2. Update animation state (handle set_anim)
             this.updateAnimationStates(currentInfo, blockLocalTime)
         } else {
-            // 没有 Block，使用初始状态
+            // No Block, use initial state
             this.applyInitialCameraTransform(scene)
             this.lastEvaluatedCameraState = null
         }
 
-        // 5. 计算 deltaTime（必须在帧动画更新之前）
+        // 5. Compute deltaTime (must precede frame animation update)
         const deltaTime = timeInScene - this.lastFrameTimeInScene
         this.lastFrameTimeInScene = timeInScene
 
-        // 6. 更新所有帧动画（基于 deltaTime 推进 AnimatedSprite）
-        // v11.82: 使用 deltaTime 累积机制，避免绝对时间计算的精度问题和跳帧
+        // 6. Update all frame animations (advance AnimatedSprite based on deltaTime)
+        // v11.82: Use deltaTime accumulation mechanism, avoiding absolute time precision issues and frame skips
         this.updateAnimations(Math.max(0, deltaTime))
 
-        // 7. 更新动画 Player（手动推进 deltaTime）
+        // 7. Update animation Player (manually advance deltaTime)
         this.objectAnimationPlayers.forEach(player => player.update(Math.max(0, deltaTime)))
 
-        // v20: union 子对象在容器内，动画变换自动传播，无需 sharedPropagateUnionAnimations
+        // v20: union child objects are inside container, transforms propagate automatically, no sharedPropagateUnionAnimations needed
 
-        // P2: 更新 composite own 模式的离屏渲染纹理（必须在 player.update 之后、renderer.render 之前）
+        // P2: Update offscreen render texture for composite own mode (must occur after player.update and before renderer.render)
         updateCompositeRenderTargetsInOrder(
             this.compositeRenderTargets,
             evaluatedStates ? [...evaluatedStates.values()] : (this.currentScene?.setup?.objects ?? [])
         )
 
         if (currentInfo && currentPivotCenters) {
-            // 方案B: 统一通过首帧 BBox 偏移量计算稳定的跟随点
+            // Scheme B: Compute stable follow point via first-frame BBox offset
             const followCenters = this.computeFollowVisualCenters(currentPivotCenters, currentInfo.blockActions, evaluatedStates)
             this.updateCamera(currentInfo, blockLocalTime, followCenters, Math.max(0, deltaTime))
         }
 
         this.updateSubtitleOverlay(currentInfo, blockLocalTime)
 
-        // 6. 显示水印
+        // 6. Show watermark
         if (this.watermarkSprite) {
             this.watermarkSprite.visible = true
         }
 
-        // v25.3: 光照滤镜 — 通过 updateTransform + toGlobal 获取精确屏幕坐标
-        // Phase 2 Fix: 使用 evaluatedStates（含 Action 产生的光照变化）+ absoluteTime（视频时间轴）
+        // v25.3: Lighting filter — get precise screen coordinates via updateTransform + toGlobal
+        // Phase 2 Fix: Use evaluatedStates (including lighting changes from Actions) + absoluteTime (video timeline)
         if (this.sceneStage && this.contentViewport && scene) {
             this.contentViewport.updateTransform()
             const lightObjects = evaluatedStates
@@ -514,9 +514,9 @@ export class FrameCapture {
             )
         }
 
-        // Clip-Mask Phase 1：在 render 之前更新 worldTransform 并应用所有蒙版
+        // Clip-Mask Phase 1: Update worldTransform and apply all masks before render
         if (this.stage && scene) {
-            // 根 stage 没有 parent，直接 updateTransform 会 NPE，逐子节点刷新。
+            // Root stage has no parent, direct updateTransform causes NPE, refresh children individually.
             for (const child of this.stage.children) {
                 child.updateTransform()
             }
@@ -524,10 +524,10 @@ export class FrameCapture {
             applyAllMasks(maskStateObjects, (id) => this.objectContainers.get(id), this.maskRendererResources)
         }
 
-        // 渲染
+        // Render
         this.renderer.render(this.stage)
 
-        // 隐藏水印（避免影响下一帧）
+        // Hide watermark (avoid affecting next frame)
         if (this.watermarkSprite) {
             this.watermarkSprite.visible = false
         }
@@ -550,14 +550,14 @@ export class FrameCapture {
                 bitmap.close()
                 return videoFrame
             } catch (fallbackError) {
-                console.error('[FrameCapture] 创建 VideoFrame 失败:', fallbackError)
+                console.error('[FrameCapture] Failed to create VideoFrame:', fallbackError)
                 throw fallbackError
             }
         }
     }
 
     /**
-     * 准备 Block 播放信息
+     * Prepare Block playback information
      */
     private prepareBlockPlayInfos(scene: Episode['scenes'][number]): void {
         this.ttsTimingCache.clear()
@@ -624,7 +624,7 @@ export class FrameCapture {
                 return timing
             })
             .catch(error => {
-                console.warn('[FrameCapture] 加载 TTS timing 失败，降级为连续播放:', audioPath, error)
+                console.warn('[FrameCapture] Failed to load TTS timing, falling back to continuous playback:', audioPath, error)
                 this.ttsTimingCache.set(audioPath, null)
                 return null
             })
@@ -637,7 +637,7 @@ export class FrameCapture {
     }
 
     /**
-     * 获取当前时间对应的 Block
+     * Get Block corresponding to current time
      */
     private getBlockAtTime(timeInScene: number): BlockPlayInfo | null {
         for (const info of this.blockPlayInfos) {
@@ -645,7 +645,7 @@ export class FrameCapture {
                 return info
             }
         }
-        // 如果超出范围，返回最后一个
+        // If out of range, return last
         if (this.blockPlayInfos.length > 0) {
             const lastInfo = this.blockPlayInfos[this.blockPlayInfos.length - 1]
             if (lastInfo && timeInScene >= lastInfo.endTime) {
@@ -656,7 +656,7 @@ export class FrameCapture {
     }
 
     /**
-     * 评估所有对象状态
+     * Evaluate all object states
      */
     private evaluateStates(
         currentInfo: BlockPlayInfo,
@@ -732,7 +732,7 @@ export class FrameCapture {
             parentOverrides,
         )
 
-        // Clip-Mask Phase 1 — D1.5 mask post-pass（与 ScenePlayer.evaluateStates / applyBlockActionsToState 一致）
+        // Clip-Mask Phase 1 — D1.5 mask post-pass (consistent with ScenePlayer.evaluateStates / applyBlockActionsToState)
         if (currentSlotIndex !== -1) {
             const setMaskActionsThroughCurrentSlot = orderedBlockActions.filter(
                 a => a.type === 'set_mask' && a.slotIndex <= currentSlotIndex,
@@ -792,7 +792,7 @@ export class FrameCapture {
         this.rebuildCompositeChildIdsInStateMap(states)
         this.reconcileEntityRenderChainsInStateMap(states)
 
-        // Text reveal actions — 注入 revealProgress
+        // Text reveal actions — inject revealProgress
         for (const [, state] of states) {
             if (state.type !== 'text') continue
             const textState = state as import('@/types/sceneObject').TextObject
@@ -826,7 +826,7 @@ export class FrameCapture {
     }
 
     /**
-     * 应用对象状态并返回视觉中心位置
+     * Apply object states and return visual center position
      */
     private applyStates(
         states: Map<string, SceneObject>,
@@ -843,7 +843,7 @@ export class FrameCapture {
                 if (!state) continue
 
                 const newParentId = state.parentId ?? null
-                // v20: union/entity 统一挂载到 parentId 对应的容器
+                // v20: union/entity attach to container corresponding to parentId
                 let targetParent: PIXI.Container
                 if (!newParentId) {
                     targetParent = this.sceneStage
@@ -869,18 +869,18 @@ export class FrameCapture {
                 pivotCenters.set(objSetup.id, center)
             }
 
-            // 灯光对象：renderable=false 隐藏渲染，保留 transform 更新
+            // Light objects: renderable=false hides rendering, retains transform updates
             if (objSetup.type === 'light') {
                 container.renderable = false
             }
 
-            // v11.82: 与 ScenePlayer.applyStatesAndCacheTransforms 保持一致
+            // v11.82: Consistent with ScenePlayer.applyStatesAndCacheTransforms
             const player = this.getAnimationPlayerForObject(objSetup.id)
             if (player) player.cacheBaseTransform()
         }
 
-        // v23: 为根级容器安装/更新 renderChain 驱动的渲染逻辑
-        // 渲染顺序完全由 renderChain + sortRenderChainByZIndex 决定
+        // v23: Install/update renderChain-driven rendering logic for root-level containers
+        // Render order is entirely determined by renderChain + sortRenderChainByZIndex
         const activeRenderChain = reconcileRenderChain(
             renderChain ?? scene.setup.renderChain ?? [],
             [...states.values()],
@@ -898,15 +898,15 @@ export class FrameCapture {
                 (id) => this.objectContainers.get(id),
             )
         }
-        // 关键：导出也需基于 runtime 状态排序 entity 内部 renderChain，避免与预览行为不一致
+        // Critical: export also sorts entity internal renderChain based on runtime state to match preview behavior
         const runtimeObjectsToSort = scene.setup.objects.map(obj => states.get(obj.id) ?? obj)
-        // v22: entity composite 内部排序 + 根级 union 排序，传入 getZIndex
+        // v22: entity composite internal sort + root-level union sort, pass getZIndex
         sharedSortCompositeContainers(
             runtimeObjectsToSort, this.objectContainers, this.compositeRenderTargets,
             (id) => states.get(id)?.zIndex ?? scene.setup.objects.find(o => o.id === id)?.zIndex ?? 0,
         )
 
-        // P2: 将子对象的本地坐标 visual center 转换为场景世界坐标
+        // P2: Convert child local visual center to scene world coordinates
         if (this.contentViewport) {
             this.contentViewport.updateTransform()
             for (const objSetup of scene.setup.objects) {
@@ -999,8 +999,8 @@ export class FrameCapture {
     }
 
     /**
-     * 应用单个对象状态
-     * P0: 委托给统一渲染器
+     * Apply single object state
+     * P0: Delegate to unified renderer
      */
     private applyObjectState(
         container: PIXI.Container,
@@ -1010,13 +1010,13 @@ export class FrameCapture {
     ): { x: number; y: number } | null {
         const result = this.sceneObjectRenderer.applyObjectState(container, state, objSetup, this.objectStateHost)
 
-        // v20: union 子对象在容器内（真实 PIXI 父子关系），变换自动传播，无需 applyUnionProxyChain
+        // v20: union children are inside container (real PIXI hierarchy), transforms propagate automatically, no applyUnionProxyChain needed
 
         return result
     }
 
     /**
-     * 方案B: 统一首帧 BBox 偏移量锁定
+     * Scheme B: Unified first-frame BBox offset lock
      */
     private computeFollowVisualCenters(
         pivotCenters: Map<string, { x: number; y: number }>,
@@ -1038,7 +1038,7 @@ export class FrameCapture {
             const pivotCenter = pivotCenters.get(followTarget)
             if (!pivotCenter) continue
 
-            // 检查缓存
+            // Check cache
             if (this.followBBoxOffsets.has(action.id)) {
                 const offset = this.followBBoxOffsets.get(action.id)!
                 result.set(followTarget, {
@@ -1048,7 +1048,7 @@ export class FrameCapture {
                 continue
             }
 
-            // 首帧：从 PIXI 容器计算 BBox 中心偏移量
+            // First frame: compute BBox center offset from PIXI container
             const container = this.objectContainers.get(followTarget)
             if (!container) continue
 
@@ -1078,7 +1078,7 @@ export class FrameCapture {
     }
 
     /**
-     * 更新相机
+     * Update camera
      */
     private updateCamera(
         currentInfo: BlockPlayInfo,
@@ -1086,10 +1086,10 @@ export class FrameCapture {
         centers: Map<string, { x: number; y: number }>,
         frameDeltaMs: number,
     ): void {
-        // 处理 camera_follow
+        // Handle camera_follow
         const cameraActions = currentInfo.blockActions.filter((a: Action) => a.target === 'camera')
 
-        // 遍历所有 camera_follow 动作，更新 lastFollowPosition
+        // Traverse all camera_follow actions, update lastFollowPosition
         for (const action of cameraActions) {
             if (action.type === 'camera_follow') {
                 const followTarget = action.params?.followTarget
@@ -1122,7 +1122,7 @@ export class FrameCapture {
     }
 
     /**
-     * 应用相机变换 — P0 委托给统一渲染器
+     * Apply camera transform — P0 delegated to unified renderer
      */
     private applyCameraTransform(cameraState: RuntimeCameraState): void {
         if (!this.contentViewport) return
@@ -1130,7 +1130,7 @@ export class FrameCapture {
     }
 
     /**
-     * 应用初始相机变换
+     * Apply initial camera transform
      */
     private applyInitialCameraTransform(scene: Episode['scenes'][number]): void {
         if (!this.contentViewport) return
@@ -1144,8 +1144,8 @@ export class FrameCapture {
     }
 
     /**
-     * 加载场景对象
-     * v11.81: 改为 async，确保角色完全初始化
+     * Load scene objects
+     * v11.81: Converted to async to ensure character fully initialized
      */
     private async loadScene(scene: Episode['scenes'][number]): Promise<void> {
         if (!this.contentViewport) return
@@ -1157,24 +1157,24 @@ export class FrameCapture {
         this.sceneStage.sortableChildren = true
         this.contentViewport.addChild(this.sceneStage)
 
-        // v19: 优先按 renderChain 排序，fallback 到 zIndex
+        // v19: Prioritize renderChain sort, fallback to zIndex
         const objects = scene.setup.objects
 
-        // Text PRD Phase 0: 预加载 setup 字体，以及 Action Mode 的 set_text 字体切换
-        // 阻塞导出，确保字体在渲染前可用（与 ScenePlayer.syncResources 一致）
+        // Text PRD Phase 0: Preload setup fonts and Action Mode set_text font switching
+        // Block export to ensure fonts are available before rendering (consistent with ScenePlayer.syncResources)
         await preloadSceneFonts(collectSceneFontPreloadObjects(objects, scene.script ?? []))
 
-        // v16: animations 已持久化，不再需要运行时 hydrate
+        // v16: animations persisted, no longer requires runtime hydration
 
         for (const obj of objects) {
             try {
                 await sharedRenderObject(obj, this.sceneStage, this.renderHost)
             } catch (e) {
-                console.error(`[FrameCapture] 渲染对象失败: ${obj.type} ${obj.id}`, e)
+                console.error(`[FrameCapture] Failed to render object: ${obj.type} ${obj.id}`, e)
             }
         }
 
-        // v11.81: 在所有对象创建后进行测量（与 ScenePlayer.measureObjects 一致）
+        // v11.81: Measure after all objects created (consistent with ScenePlayer.measureObjects)
         this.measureObjects(scene)
         sharedSyncObjectBoundsToPlayers(this.objectDimensions, this.objectAnimationPlayers)
 
@@ -1186,7 +1186,7 @@ export class FrameCapture {
     }
 
     /**
-     * 测量对象尺寸 — P0 委托给统一渲染器
+     * Measure object dimensions — P0 delegated to unified renderer
      */
     private measureObjects(scene: Episode['scenes'][number]): void {
         this.sceneObjectRenderer.measureObjectBounds(
@@ -1197,7 +1197,7 @@ export class FrameCapture {
     }
 
     /**
-     * 加载水印
+     * Load watermark
      */
     private async loadWatermark(): Promise<void> {
         try {
@@ -1207,7 +1207,7 @@ export class FrameCapture {
 
             await new Promise<void>((resolve, reject) => {
                 img.onload = () => resolve()
-                img.onerror = (e) => reject(new Error(`无法加载水印图片${typeof e === 'string' ? ': ' + e : ''}`))
+                img.onerror = (e) => reject(new Error(`Failed to load watermark image${typeof e === 'string' ? ': ' + e : ''}`))
                 img.src = watermarkUrl
             })
 
@@ -1215,7 +1215,7 @@ export class FrameCapture {
             this.watermarkSprite = new PIXI.Sprite(texture)
 
             const padding = 15
-            // 水印尺寸基于输出缩放比（而非内部超采样 pixelRatio）
+            // Watermark size based on output scale ratio (not internal supersampling pixelRatio)
             const outputScale = this.config.resolution.width / CAMERA_BASE_WIDTH
             const watermarkWidth = 480 / outputScale
             const watermarkHeight = 96 / outputScale
@@ -1227,14 +1227,14 @@ export class FrameCapture {
             this.watermarkSprite.zIndex = 10000
             this.stage!.addChild(this.watermarkSprite)
         } catch (error) {
-            console.warn('[FrameCapture] 水印加载失败，将继续导出（无水印）:', error)
+            console.warn('[FrameCapture] Watermark load failed, continuing export without watermark:', error)
             this.watermarkSprite = null
         }
     }
 
     /**
-     * 创建导出字幕覆盖层。
-     * 坐标使用 CAMERA_BASE_* 逻辑尺寸，由 renderer resolution 映射到实际视频像素。
+     * Create export subtitle overlay.
+     * Coordinates use CAMERA_BASE_* logical dimensions, mapped to actual video pixels by renderer resolution.
      */
     private createSubtitleOverlay(): void {
         if (!this.stage) return
@@ -1359,7 +1359,7 @@ export class FrameCapture {
     }
 
     /**
-     * PA: 更新动画状态 — 委托给 AnimationController
+     * PA: Update animation state — delegated to AnimationController
     */
     private updateAnimationStates(
         currentInfo: BlockPlayInfo,
@@ -1378,43 +1378,43 @@ export class FrameCapture {
     }
 
     /**
-     * PA: Block 结束时自动停止动画 — 委托给 AnimationController
+     * PA: Auto-stop animation at block end — delegated to AnimationController
      */
     private applyAutoStopOnBlockEnd(prevBlockInfo: BlockPlayInfo): void {
         this.animationController.processAutoStopOnBlockEnd(prevBlockInfo.blockActions)
     }
 
     /**
-     * PA: 应用初始动画状态 — 委托给 AnimationController
-     * 保留 FrameCapture 特有的 prop _shouldPlay 管理
+     * PA: Apply initial animation state — delegated to AnimationController
+     * Retain FrameCapture-specific prop _shouldPlay management
      */
     private applyInitialAnimationStates(scene: Episode['scenes'][number]): void {
         this.currentScene = scene
-        // v16: 资源动画已在对象创建时深克隆到 obj.animations（PRD 7.5）
+        // v16: Asset animations deep cloned to obj.animations at creation (PRD 7.5)
         this.animationController.processInitialAnimationStates()
-        // FrameCapture 特有：prop 初始动画的 _shouldPlay 管理
-        // 由 handleAnimationTriggered 钩子在 processInitialAnimationStates 内部处理
+        // FrameCapture specific: prop initial animation _shouldPlay management
+        // Handled by handleAnimationTriggered hook inside processInitialAnimationStates
     }
 
     /**
-     * PA: 处理动画触发后的 FrameCapture 特有行为
-     * 主要管理 _shouldPlay 标志（离屏渲染时 PIXI ticker 不运行）
-     * 角色动画由 CharacterSprite 内部管理，无需处理
+     * PA: Handle animation triggered FrameCapture-specific behavior
+     * Primarily manages _shouldPlay flag (PIXI ticker does not run during offscreen rendering)
+     * Character animations managed internally by CharacterSprite, no handling needed
      *
-     * v16: 从 scene objects 推导 objectType 和 refId，不再由调用方传入
+     * v16: Deduce objectType and refId from scene objects, no longer passed by caller
      */
     private handleAnimationTriggered(
         objectId: string,
         _animName: string,
         cmd: 'play' | 'stop',
     ): void {
-        // 从场景对象中获取 objectType 和 refId
+        // Get objectType and refId from scene objects
         const obj = this.currentScene?.setup.objects.find(o => o.id === objectId)
         if (!obj) return
 
         const objectType = obj.type
 
-        // 帧动画子节点名称映射
+        // Frame animation child node name mapping
         const spriteNameMap: Record<string, string> = {
             prop: 'prop_animation',
             background: 'bg_animation',
@@ -1441,7 +1441,7 @@ export class FrameCapture {
         }
     }
 
-    /** 获取资源的帧率 */
+    /** Get asset framerate */
     private getAssetFps(obj: SceneObject): number {
         const objectType = obj.type
         const refId = obj.refId
@@ -1466,28 +1466,28 @@ export class FrameCapture {
     }
 
     /**
-     * 更新所有帧动画（手动推进 AnimatedSprite）
-     * v11.82: 使用 deltaTime 累积机制，与 ScenePlayer ticker 行为一致
-     * @param deltaTime 距上一帧的时间差 (ms)
+     * Update all frame animations (manually advance AnimatedSprite)
+     * v11.82: Uses deltaTime accumulation mechanism, consistent with ScenePlayer ticker behavior
+     * @param deltaTime Time difference from previous frame (ms)
      */
     private updateAnimations(deltaTime: number): void {
         advanceAllObjectAnimations(this.objectContainers, deltaTime, this.spriteAnimTimeAccumulator)
     }
 
     /**
-     * 清理当前场景的所有资源
+     * Clean up all resources for current scene
      */
     private clearScene(): void {
         if (!this.contentViewport) return
 
-        // P2: 先清理离屏渲染目标
+        // P2: Clean up offscreen render targets first
         this.compositeRenderTargets.forEach(crt => crt.destroy())
         this.compositeRenderTargets.clear()
 
-        // Clip-Mask Phase 1：清理蒙版渲染资源
+        // Clip-Mask Phase 1: Clean up mask render resources
         disposeMaskRendererResources(this.maskRendererResources)
 
-        // v11.60: 销毁 Animation Player 实例
+        // v11.60: Destroy Animation Player instances
         this.objectAnimationPlayers.forEach(player => player.destroy())
         this.objectAnimationPlayers.clear()
 
@@ -1511,35 +1511,35 @@ export class FrameCapture {
 
 
     /**
-     * 清理资源
+     * Clean up resources
      */
     destroy(): void {
         this.clearScene()
 
         if (this.renderer) {
             try {
-                // OffscreenCanvas 没有 style 属性，需要特殊处理
-                // 先手动销毁事件系统，避免它尝试访问 canvas.style
+                // OffscreenCanvas has no style property, requires special handling
+                // Manually destroy event system first to prevent it accessing canvas.style
                 const renderer = this.renderer as unknown as { events?: { domElement: object | null; destroy: () => void } }
                 const events = renderer.events
                 if (events) {
-                    // 清除事件系统的目标元素引用，防止访问 canvas.style
+                    // Clear event system target element reference to prevent accessing canvas.style
                     if (events.domElement) {
                         events.domElement = null
                     }
-                    // 销毁事件系统
+                    // Destroy event system
                     try {
                         events.destroy()
                     } catch (e) {
-                        // 忽略事件系统销毁错误
+                        // Ignore event system destruction error
                     }
                 }
 
-                // 现在可以安全销毁渲染器
-                // 传递 false 避免尝试移除 view
+                // Now safe to destroy renderer
+                // Pass false to avoid attempting to remove view
                 this.renderer.destroy(false)
             } catch (error) {
-                console.warn('[FrameCapture] 销毁渲染器时出现警告:', error)
+                console.warn('[FrameCapture] Warning destroying renderer:', error)
             }
             this.renderer = null
         }
@@ -1557,7 +1557,7 @@ export class FrameCapture {
         this.subtitleBackground = null
         this.subtitleText = null
 
-        // v25: 清理光照滤镜缓存
+        // v25: Clean up lighting filter cache
         if (this.lightingFilterCache.instance) {
             this.lightingFilterCache.instance.destroy()
             delete this.lightingFilterCache.instance

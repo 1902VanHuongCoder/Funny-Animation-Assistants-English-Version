@@ -33,7 +33,7 @@ describe('stateUtils', () => {
 
             const diff = compareObjectState(baseChar, currentChar)
 
-            // character 类型已移除，这些字段不再触发 diff
+            // character type removed; these fields no longer trigger diff
             expect(diff.transform).toBeUndefined()
         })
 
@@ -43,7 +43,7 @@ describe('stateUtils', () => {
 
             const diff = compareObjectState(baseChar, currentChar)
 
-            // character 类型已移除，layerPresetId 不再产生 diff
+            // character type removed; layerPresetId no longer produces diff
             expect(diff.transform).toBeUndefined()
         })
 
@@ -55,7 +55,7 @@ describe('stateUtils', () => {
             } as SceneObject
             // Case 1: Value change
             const diff1 = compareObjectState(baseChar, { ...baseChar, partAssetOverrides: { head: 'a2' } } as SceneObject)
-            // character 类型已移除，partAssetOverrides 变更不产生 diff
+            // character type removed; partAssetOverrides change does not produce diff
             expect(diff1.transform).toBeUndefined()
 
             // Case 2: Key addition
@@ -130,7 +130,7 @@ describe('stateUtils', () => {
 
         it('should handle camera target', () => {
             const startState = getStartStateFromSetup(mockSetup, {} as SceneObject, 'camera')
-            // camera 伪 SceneObject 不再包含 zoom 字段（Phase 4e）
+            // camera pseudo SceneObject no longer contains zoom field (Phase 4e)
             expect(startState?.x).toBe(0)
         })
     })

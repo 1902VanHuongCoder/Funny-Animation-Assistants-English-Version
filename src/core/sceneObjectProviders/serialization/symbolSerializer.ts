@@ -1,7 +1,7 @@
 /**
- * Symbol 序列化器
+ * Symbol serializer
  *
- * 处理 SymbolObject 的 materials / currentMaterialId 子类型特化字段。
+ * Handles SymbolObject subtype-specialized fields: materials / currentMaterialId.
  */
 
 import type { SceneObject, SymbolObject } from '@/types/sceneObject'
@@ -12,22 +12,22 @@ import { registerTypeSerializer } from './index'
 const symbolSerializer: TypeSerializer = {
     serializeFields(obj: SceneObject, base: Record<string, unknown>): void {
         const sym = obj as SymbolObject
-        // v16: materials 直接序列化（_runtimeUrl 已从类型中移除，无需手动剥离）
+        // v16: serialize materials directly (_runtimeUrl already removed from types, no need to strip manually)
         base['materials'] = sym.materials.map(m => ({
             ...m,
-            // 确保 frames 深拷贝（避免引用共享）
+            // Ensure deep copy of frames (avoid shared references)
             ...(m.frames ? { frames: m.frames.map(f => ({ ...f })) } : {}),
         }))
         if (sym.currentMaterialId !== undefined) {
             base['currentMaterialId'] = sym.currentMaterialId
         }
-        // v16: animations/initialAnimations 已统一在 toSetupObject base 处理
+        // v16: animations/initialAnimations handled uniformly in toSetupObject base
     },
 
     deserialize(objData: SceneObject, ctx: DeserializeContext): void {
         const symData = objData as SymbolObject
         const symbolObj = ctx.createSymbolObject(
-            objData.alias ?? objData.name ?? '元件',
+            objData.alias ?? objData.name ?? 'Symbol',
             objData.id,
             objData.alias ?? '',
         )

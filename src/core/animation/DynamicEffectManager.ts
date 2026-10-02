@@ -1,76 +1,76 @@
 /**
  * DynamicEffectManager.ts (v11.0)
  * 
- * 动态特效管理器，实现 5 种实时视觉特效：
- * - wave: 波浪摆动
- * - breathe: 呼吸脉冲（缩放）
- * - float: 上下浮动
- * - glow: 发光效果（需要滤镜支持）
- * - motion_blur: 运动模糊（需要滤镜支持）
+ * Dynamic effect manager implementing 5 real-time visual effects:
+ * - wave: Wave oscillation
+ * - breathe: Breathing pulse (scaling)
+ * - float: Floating up and down
+ * - glow: Glow effect (requires renderer filter support)
+ * - motion_blur: Motion blur (requires renderer filter support)
  * 
- * 特效通过数学函数实时计算，无需关键帧
+ * Effects are calculated in real-time via mathematical functions, without keyframes
  */
 
 import type { EffectParams } from '@/types/animation'
 
 /**
- * 特效输出结果
+ * Effect output result
  */
 export interface EffectOutput {
-    // 变换增量（叠加到基础变换上）
+    // Transform deltas (additive on top of base transform)
     deltaX?: number
     deltaY?: number
     deltaScaleX?: number
     deltaScaleY?: number
-    deltaRotation?: number  // 弧度
+    deltaRotation?: number  // radians
     deltaAlpha?: number
 
-    // 滤镜参数（需要渲染器支持）
+    // Filter parameters (requires renderer support)
     glowColor?: string
     glowIntensity?: number
     glowSize?: number
 
-    // 运动模糊参数（需要渲染器支持）
+    // Motion blur parameters (requires renderer support)
     motionBlurVelocity?: [number, number]  // [velocityX, velocityY]
     motionBlurKernelSize?: number
 
-    // 石化特效参数
-    petrifyProgress?: number     // 石化进度 0-1
-    petrifyGrayScale?: boolean   // 是否去色
+    // Petrify effect parameters
+    petrifyProgress?: number     // Petrify progress 0-1
+    petrifyGrayScale?: boolean   // Whether to desaturate
 
-    // 碎裂特效参数
-    shatterProgress?: number     // 碎裂进度 0-1
-    shatterAlpha?: number        // 消散透明度
+    // Shatter effect parameters
+    shatterProgress?: number     // Shatter progress 0-1
+    shatterAlpha?: number        // Fade-out opacity
 }
 
 /**
- * 特效实例状态
+ * Effect instance state
  */
 interface EffectInstance {
     params: EffectParams
     startTime: number
     isActive: boolean
-    wasActive: boolean  // 用于检测从非活动变为活动的过渡
+    wasActive: boolean  // Used to detect inactive-to-active transition
 }
 
 /**
  * DynamicEffectManager
- * 管理和计算动态特效
+ * Manages and calculates dynamic effects
  */
 export class DynamicEffectManager {
     private effects = new Map<string, EffectInstance>()
     private currentTime = 0
 
     /**
-     * 添加或更新特效
-     * @param effectId 特效唯一标识
-     * @param params 特效参数
+     * Add or update effect
+     * @param effectId Unique effect ID
+     * @param params Effect parameters
      */
     addEffect(effectId: string, params: EffectParams): void {
         const existing = this.effects.get(effectId)
         if (existing) {
-            // 特效已存在
-            // 如果类型变化了，或者 jelly 类型从非活动变为活动，重置 startTime
+            // Effect already exists
+            // If type changed, or jelly type transitioned from inactive to active, reset startTime
             const reactivateJelly = params.type === 'jelly' && !existing.wasActive
 
             if (existing.params.type !== params.type || reactivateJelly) {
@@ -80,7 +80,7 @@ export class DynamicEffectManager {
             existing.wasActive = existing.isActive
             existing.isActive = true
         } else {
-            // 新特效，设置 startTime
+            // New effect, set startTime
             this.effects.set(effectId, {
                 params,
                 startTime: this.currentTime,
@@ -91,15 +91,15 @@ export class DynamicEffectManager {
     }
 
     /**
-     * 移除特效
-     * @param effectId 特效唯一标识
+     * Remove effect
+     * @param effectId Unique effect ID
      */
     removeEffect(effectId: string): void {
         this.effects.delete(effectId)
     }
 
     /**
-     * 暂停特效
+     * Pause effect
      */
     pauseEffect(effectId: string): void {
         const effect = this.effects.get(effectId)
@@ -110,7 +110,7 @@ export class DynamicEffectManager {
     }
 
     /**
-     * 恢复特效
+     * Resume effect
      */
     resumeEffect(effectId: string): void {
         const effect = this.effects.get(effectId)
@@ -120,17 +120,17 @@ export class DynamicEffectManager {
     }
 
     /**
-     * 更新时间
-     * @param deltaTime 时间增量（毫秒）
+     * Update time
+     * @param deltaTime Time delta (ms)
      */
     update(deltaTime: number): void {
         this.currentTime += deltaTime
     }
 
     /**
-     * 计算特效输出
-     * @param effectId 特效唯一标识
-     * @returns 特效输出结果
+     * Evaluate effect output
+     * @param effectId Unique effect ID
+     * @returns Effect output result
      */
     evaluate(effectId: string): EffectOutput | null {
         const effect = this.effects.get(effectId)
@@ -141,8 +141,8 @@ export class DynamicEffectManager {
     }
 
     /**
-     * 计算所有活动特效并合并输出
-     * @returns 合并后的特效输出
+     * Evaluate all active effects and merge outputs
+     * @returns Merged effect output
      */
     evaluateAll(): EffectOutput {
         const combined: EffectOutput = {
@@ -160,7 +160,7 @@ export class DynamicEffectManager {
             const elapsed = this.currentTime - effect.startTime
             const output = this.calculateEffect(effect.params, elapsed)
 
-            // 合并变换增量
+            // Merge transform deltas
             combined.deltaX = (combined.deltaX ?? 0) + (output.deltaX ?? 0)
             combined.deltaY = (combined.deltaY ?? 0) + (output.deltaY ?? 0)
             combined.deltaScaleX = (combined.deltaScaleX ?? 0) + (output.deltaScaleX ?? 0)
@@ -168,7 +168,7 @@ export class DynamicEffectManager {
             combined.deltaRotation = (combined.deltaRotation ?? 0) + (output.deltaRotation ?? 0)
             combined.deltaAlpha = (combined.deltaAlpha ?? 0) + (output.deltaAlpha ?? 0)
 
-            // 滤镜参数使用最后一个
+            // Filter parameters use the last one
             if (output.glowColor) combined.glowColor = output.glowColor
             if (output.glowIntensity) combined.glowIntensity = output.glowIntensity
             if (output.glowSize) combined.glowSize = output.glowSize
@@ -180,10 +180,10 @@ export class DynamicEffectManager {
     }
 
     /**
-     * 根据特效类型计算输出
+     * Calculate output based on effect type
      */
     private calculateEffect(params: EffectParams, elapsedMs: number): EffectOutput {
-        const t = elapsedMs / 1000 // 转换为秒
+        const t = elapsedMs / 1000 // Convert to seconds
 
         switch (params.type) {
             case 'wave':
@@ -212,24 +212,24 @@ export class DynamicEffectManager {
     }
 
     /**
-     * 波浪摆动效果
-     * 使物体像旗帜或水草一样左右/上下摆动
+     * Wave oscillation effect
+     * Makes object sway horizontally/vertically like a flag or seaweed
      */
     private calculateWave(
         params: { type: 'wave'; speed?: number; amplitude?: number; frequency?: number; direction?: 'horizontal' | 'vertical' | 'both' },
         t: number
     ): EffectOutput {
         const speed = params.speed ?? 1
-        const amplitude = params.amplitude ?? 5  // 像素
+        const amplitude = params.amplitude ?? 5  // pixels
         const frequency = params.frequency ?? 2  // Hz
         const direction = params.direction ?? 'horizontal'
 
-        // 正弦波计算位移
+        // Sine wave displacement
         const phase = t * speed * frequency * Math.PI * 2
         const displacement = Math.sin(phase) * amplitude
 
-        // 添加少量旋转增强摆动感
-        const rotationAmplitude = amplitude * 0.01  // 弧度
+        // Add minor rotation to enhance sway feel
+        const rotationAmplitude = amplitude * 0.01  // radians
         const rotation = Math.sin(phase) * rotationAmplitude
 
         if (direction === 'horizontal') {
@@ -253,19 +253,19 @@ export class DynamicEffectManager {
     }
 
     /**
-     * 呼吸脉冲效果
-     * 使物体周期性缩放，模拟呼吸或心跳
+     * Breathing pulse effect
+     * Periodically scales object, simulating breathing or heartbeat
      */
     private calculateBreathe(
         params: { type: 'breathe'; intensity?: number; speed?: number },
         t: number
     ): EffectOutput {
-        const intensity = params.intensity ?? 0.05  // 缩放幅度 (5%)
+        const intensity = params.intensity ?? 0.05  // Scale amplitude (5%)
         const speed = params.speed ?? 1
 
-        // 使用平滑的正弦波
+        // Use smooth sine wave
         const phase = t * speed * Math.PI * 2
-        // (1 - cos) / 2 产生 0-1 的平滑波形
+        // (1 - cos) / 2 produces smooth 0-1 waveform
         const scale = (1 - Math.cos(phase)) / 2 * intensity
 
         return {
@@ -275,21 +275,21 @@ export class DynamicEffectManager {
     }
 
     /**
-     * 上下浮动效果
-     * 使物体像漂浮在水面上一样上下移动
+     * Floating effect
+     * Makes object move up and down like floating on water
      */
     private calculateFloat(
         params: { type: 'float'; amplitude?: number; speed?: number },
         t: number
     ): EffectOutput {
-        const amplitude = params.amplitude ?? 10  // 像素
+        const amplitude = params.amplitude ?? 10  // pixels
         const speed = params.speed ?? 1
 
-        // 使用正弦波计算 Y 位移
-        const phase = t * speed * Math.PI * 2 * 0.5  // 较慢的频率更自然
+        // Calculate Y displacement with sine wave
+        const phase = t * speed * Math.PI * 2 * 0.5  // Slower frequency is more natural
         const deltaY = Math.sin(phase) * amplitude
 
-        // 添加微小的水平摆动
+        // Add slight horizontal sway
         const deltaX = Math.cos(phase * 0.7) * amplitude * 0.2
 
         return {
@@ -299,8 +299,8 @@ export class DynamicEffectManager {
     }
 
     /**
-     * 发光效果
-     * 使物体产生脉动的发光轮廓（需要渲染器滤镜支持）
+     * Glow effect
+     * Produces a pulsating glow outline on object (requires renderer filter support)
      */
     private calculateGlow(
         params: { type: 'glow'; color?: string; intensity?: number; size?: number },
@@ -310,7 +310,7 @@ export class DynamicEffectManager {
         const baseIntensity = params.intensity ?? 2.0
         const baseSize = params.size ?? 15
 
-        // 发光强度脉动
+        // Glow intensity pulsation
         const phase = t * Math.PI * 2
         const pulse = (Math.sin(phase) + 1) / 2  // 0-1
 
@@ -322,20 +322,20 @@ export class DynamicEffectManager {
     }
 
     /**
-     * 运动模糊效果
-     * 根据方向和速度计算模糊参数
+     * Motion blur effect
+     * Computes blur parameters based on direction and speed
      */
     private calculateMotionBlur(
         params: { type: 'motion_blur'; velocity?: number; angle?: number; kernelSize?: number },
         t: number
     ): EffectOutput {
         const velocity = params.velocity ?? 20
-        const angle = params.angle ?? 0  // 度数
+        const angle = params.angle ?? 0  // degrees
         const kernelSize = params.kernelSize ?? 5
 
-        // 根据角度计算速度分量
+        // Calculate velocity components based on angle
         const radians = angle * Math.PI / 180
-        // 添加轻微脉动效果
+        // Add subtle pulsation effect
         const pulse = 0.8 + Math.sin(t * Math.PI * 2) * 0.2
         const velocityX = Math.cos(radians) * velocity * pulse
         const velocityY = Math.sin(radians) * velocity * pulse
@@ -347,8 +347,8 @@ export class DynamicEffectManager {
     }
 
     /**
-     * 果冻抖动效果
-     * 使用阻尼弹簧模型模拟弹性振动
+     * Jelly wobble effect
+     * Simulates elastic vibration using damped spring model
      */
     private calculateJelly(
         params: { type: 'jelly'; stiffness?: number; damping?: number; intensity?: number },
@@ -358,12 +358,12 @@ export class DynamicEffectManager {
         const damping = params.damping ?? 0.3
         const intensity = params.intensity ?? 0.3
 
-        // 阻尼振动公式: A * e^(-damping*t) * cos(stiffness*t)
+        // Damped vibration formula: A * e^(-damping*t) * cos(stiffness*t)
         const decay = Math.exp(-damping * t * stiffness)
         const oscillation = Math.cos(stiffness * t * Math.PI * 2)
         const scaleOffset = decay * oscillation * intensity
 
-        // X/Y 方向相位差产生果冻感
+        // Phase difference in X/Y directions creates jelly feel
         return {
             deltaScaleX: scaleOffset,
             deltaScaleY: scaleOffset * Math.cos(t * stiffness * 0.7)
@@ -371,8 +371,8 @@ export class DynamicEffectManager {
     }
 
     /**
-     * 挤压拉伸效果
-     * X/Y 方向互补缩放，模拟体积守恒
+     * Squash and stretch effect
+     * Complementary scaling in X/Y directions, simulating volume conservation
      */
     private calculateSquash(
         params: { type: 'squash'; intensity?: number; speed?: number },
@@ -381,11 +381,11 @@ export class DynamicEffectManager {
         const intensity = params.intensity ?? 0.2
         const speed = params.speed ?? 2
 
-        // 使用绝对值正弦波产生周期性挤压
+        // Use absolute sine wave to produce periodic squash
         const phase = t * speed * Math.PI * 2
         const squashFactor = Math.abs(Math.sin(phase)) * intensity
 
-        // X 拉伸，Y 压缩（体积守恒）
+        // X stretch, Y squash (volume conservation)
         return {
             deltaScaleX: squashFactor,
             deltaScaleY: -squashFactor
@@ -393,8 +393,8 @@ export class DynamicEffectManager {
     }
 
     /**
-     * 震动/点头效果
-     * 周期性的旋转或位移
+     * Shake / nod effect
+     * Periodic rotation or translation
      */
     private calculateShake(
         params: { type: 'shake'; speed?: number; range?: number; axis?: 'x' | 'y' | 'rotation' },
@@ -408,7 +408,7 @@ export class DynamicEffectManager {
         const offset = Math.sin(phase) * range
 
         if (axis === 'rotation') {
-            // 旋转震动（度转弧度）
+            // Rotation shake (degrees to radians)
             return {
                 deltaRotation: offset * (Math.PI / 180)
             }
@@ -424,8 +424,8 @@ export class DynamicEffectManager {
     }
 
     /**
-     * 石化特效
-     * 随时间推进逐渐石化，返回 progress 供渲染器应用 ColorMatrixFilter
+     * Petrify effect
+     * Gradually petrifies over time, returns progress for renderer ColorMatrixFilter application
      */
     private calculatePetrify(
         params: { type: 'petrify'; duration?: number; intensity?: number; grayScale?: boolean },
@@ -435,7 +435,7 @@ export class DynamicEffectManager {
         const intensity = params.intensity ?? 1.0
         const grayScale = params.grayScale ?? true
 
-        // 计算进度 (0-1)，并应用 intensity 缩放
+        // Calculate progress (0-1), scaled by intensity
         const rawProgress = Math.min(t / duration, 1.0)
         const progress = rawProgress * intensity
 
@@ -446,20 +446,20 @@ export class DynamicEffectManager {
     }
 
     /**
-     * 碎裂特效
-     * 随时间推进物体逐渐消散，返回 progress 和 alpha 供渲染器应用
+     * Shatter effect
+     * Object gradually dissipates over time, returns progress and alpha for renderer application
      */
     private calculateShatter(
         params: { type: 'shatter'; pieceCount?: number; explodeForce?: number; duration?: number },
         t: number
     ): EffectOutput {
         const duration = params.duration ?? 1.5
-        // pieceCount 和 explodeForce 在当前简化实现中仅影响渲染器行为，这里只计算进度
+        // pieceCount and explodeForce only affect renderer behavior in simplified implementation; only compute progress here
 
-        // 计算进度 (0-1)
+        // Calculate progress (0-1)
         const progress = Math.min(t / duration, 1.0)
 
-        // Alpha 从 1 渐变到 0，使用 easeOutQuad 让消失更自然
+        // Alpha fades from 1 to 0, using easeOutQuad for more natural dissipation
         // easeOutQuad: 1 - (1-t)^2
         const easeOutQuad = 1 - (1 - progress) * (1 - progress)
         const alpha = 1.0 - easeOutQuad
@@ -470,25 +470,25 @@ export class DynamicEffectManager {
         }
     }
 
-    // ========== v11.70: 进度驱动模式 ==========
+    // ========== v11.70: Progress-driven mode ==========
 
     /**
-     * v11.70: 进度驱动模式 - 根据动画进度计算特效输出
-     * 纯函数，不依赖 Manager 的内部状态（currentTime/startTime）
+     * v11.70: Progress-driven mode - compute effect output based on animation progress
+     * Pure function, independent of Manager internal state (currentTime/startTime)
      * 
-     * @param params 特效参数
-     * @param progress 动画进度 (0-1)
-     * @param duration 动画时长 (ms)
-     * @returns 特效输出结果
+     * @param params Effect parameters
+     * @param progress Animation progress (0-1)
+     * @param duration Animation duration (ms)
+     * @returns Effect output result
      */
     static calculateWithProgress(params: EffectParams, progress: number, duration: number): EffectOutput {
-        const t = (progress * duration) / 1000 // 转换为秒
+        const t = (progress * duration) / 1000 // Convert to seconds
         return DynamicEffectManager.calculateEffectStatic(params, t)
     }
 
     /**
-     * v11.70: 静态特效计算
-     * 将原有的 calculateEffect 逻辑抽取为静态方法
+     * v11.70: Static effect calculation
+     * Extracts original calculateEffect logic as static method
      */
     private static calculateEffectStatic(params: EffectParams, t: number): EffectOutput {
         switch (params.type) {
@@ -517,7 +517,7 @@ export class DynamicEffectManager {
         }
     }
 
-    // ========== v11.70: 静态版本的特效计算方法 ==========
+    // ========== v11.70: Static effect calculation methods ==========
 
     private static calculateWaveStatic(
         params: { type: 'wave'; speed?: number; amplitude?: number; frequency?: number; direction?: 'horizontal' | 'vertical' | 'both' },
@@ -665,7 +665,7 @@ export class DynamicEffectManager {
     }
 
     /**
-     * 清除所有特效
+     * Clear all effects
      */
     clear(): void {
         this.effects.clear()
@@ -673,7 +673,7 @@ export class DynamicEffectManager {
     }
 
     /**
-     * 获取活动特效数量
+     * Get number of active effects
      */
     get activeCount(): number {
         let count = 0
@@ -684,7 +684,7 @@ export class DynamicEffectManager {
     }
 }
 
-// 导出单例工厂函数
+// Export singleton factory function
 let _instance: DynamicEffectManager | null = null
 
 export function getDynamicEffectManager(): DynamicEffectManager {

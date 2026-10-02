@@ -1,9 +1,9 @@
 /**
- * 文本处理工具函数
+ * Text processing utility functions
  */
 
 /**
- * 统一文本换行符，避免 CRLF / Unicode Line Separator 干扰渲染与测量。
+ * Normalize text line breaks to avoid CRLF / Unicode Line Separator interfering with rendering and measurement.
  */
 export function normalizeTextContent(text: string | null | undefined): string {
   if (!text) return ''
@@ -13,7 +13,7 @@ export function normalizeTextContent(text: string | null | undefined): string {
 }
 
 /**
- * 自动行高策略：统一安全系数，避免跨字体出现重叠。
+ * Automatic line height strategy: unified safety factor to avoid text overlap across fonts.
  */
 export function getAutoTextLineHeight(_fontFamily: string | null | undefined, fontSize: number | null | undefined): number {
   const size = fontSize ?? 72
@@ -28,10 +28,10 @@ export interface ResolvedTextLineHeight {
 }
 
 /**
- * 统一行高解析：
- * - undefined/null/非法值 => 自动
- * - 历史自动值（fontSize * 1.3）=> 迁移到自动
- * - 其它正数 => 显式行高
+ * Unified line height resolution:
+ * - undefined/null/invalid value => auto
+ * - Legacy automatic value (fontSize * 1.3) => migrate to auto
+ * - Other positive numbers => explicit line height
  */
 export function resolveTextLineHeight(
   fontFamily: string | null | undefined,
@@ -58,8 +58,8 @@ export function resolveTextLineHeight(
 }
 
 /**
- * 自动 leading（行距附加项）补偿：
- * 使用 0 作为统一安全默认值，避免负 leading 导致文字重叠。
+ * Automatic leading compensation:
+ * Uses 0 as unified safe default to prevent negative leading causing text overlap.
  */
 export function getAutoTextLeading(
   _fontFamily: string | null | undefined,
@@ -71,8 +71,8 @@ export function getAutoTextLeading(
 }
 
 /**
- * 将角度映射到 PIXI 可用的线性渐变方向（水平/垂直 + 正反向）。
- * 注：PIXI.TextStyle 本身不支持任意角度，这里取最接近的 4 向离散映射。
+ * Map angle to PIXI usable linear gradient direction (horizontal/vertical + forward/reverse).
+ * Note: PIXI.TextStyle does not support arbitrary angles; uses closest 4-way discrete mapping.
  */
 export function resolveTextGradient(
   stops: { offset: number; color: string }[] | null | undefined,
@@ -101,12 +101,12 @@ export function resolveTextGradient(
 }
 
 /**
- * 中间截断字符串
- * @param text 原始文本
- * @param maxLength 最大长度
- * @param startChars 保留开头的字符数
- * @param endChars 保留结尾的字符数
- * @returns 截断后的文本
+ * Truncate string in the middle
+ * @param text Original text
+ * @param maxLength Maximum length
+ * @param startChars Number of characters to preserve at start
+ * @param endChars Number of characters to preserve at end
+ * @returns Truncated text
  */
 export function truncateMiddle(
   text: string,
@@ -118,7 +118,7 @@ export function truncateMiddle(
     return text
   }
 
-  // 如果文本太短，无法按要求保留前后字符，则直接保留前半部分
+  // If text is too short to retain both start and end characters, keep the front part directly
   if (text.length <= startChars + endChars + 3) {
     return text.substring(0, maxLength - 3) + '...'
   }

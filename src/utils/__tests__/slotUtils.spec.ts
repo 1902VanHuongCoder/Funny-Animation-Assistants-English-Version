@@ -19,52 +19,52 @@ function subtitleSlots(slots: RuntimeSlot[]): RuntimeSlot[] {
 
 describe('slotUtils subtitle segmentation', () => {
     it('# splits runtime slots and is hidden from preview subtitle text', () => {
-        const block = makeNarration('前半句#后半句。')
+        const block = makeNarration('First part#second part.')
         const slots = parseBlockToSlots(block)
         const rawSubtitleTexts = subtitleSlots(slots).map(slot => slot.text)
         const displaySubtitleTexts = buildSubtitleDisplaySlots(slots).map(slot => slot.text)
 
-        expect(rawSubtitleTexts).toEqual(['前半句#', '后半句。'])
-        expect(displaySubtitleTexts).toEqual(['前半句#后半句。'])
+        expect(rawSubtitleTexts).toEqual(['First part#', 'second part.'])
+        expect(displaySubtitleTexts).toEqual(['First part#second part.'])
         const displaySlots = buildSubtitleDisplaySlots(slots)
-        expect(getSubtitleTextAtTime(block, slots, displaySlots[0]!.startTime)).toBe('前半句后半句。')
+        expect(getSubtitleTextAtTime(block, slots, displaySlots[0]!.startTime)).toBe('First partsecond part.')
     })
 
     it('keeps a Chinese period as display break even when # follows it', () => {
-        const block = makeNarration('三人站在山崖边向下张望。#只见山脚下的徐家村方向，')
+        const block = makeNarration('The group stood on the cliff looking down.#Seeing the direction of the village,')
         const slots = parseBlockToSlots(block)
         const displaySlots = buildSubtitleDisplaySlots(slots)
 
         expect(displaySlots.map(slot => slot.text)).toEqual([
-            '三人站在山崖边向下张望。#',
-            '只见山脚下的徐家村方向，',
+            'The group stood on the cliff looking down.#',
+            'Seeing the direction of the village,',
         ])
-        expect(getSubtitleTextAtTime(block, slots, displaySlots[0]!.startTime)).toBe('三人站在山崖边向下张望。')
-        expect(getSubtitleTextAtTime(block, slots, displaySlots[1]!.startTime)).toBe('只见山脚下的徐家村方向，')
+        expect(getSubtitleTextAtTime(block, slots, displaySlots[0]!.startTime)).toBe('The group stood on the cliff looking down.')
+        expect(getSubtitleTextAtTime(block, slots, displaySlots[1]!.startTime)).toBe('Seeing the direction of the village,')
     })
 
     it('splits display subtitles at a normal Chinese period', () => {
-        const block = makeNarration('三人冲出破旧的炭棚，站在山崖边向下张望。只见山脚下的徐家村方向，')
+        const block = makeNarration('Rushing out,standing on the cliff looking down. Seeing the direction of the village,')
         const slots = parseBlockToSlots(block)
         const displaySlots = buildSubtitleDisplaySlots(slots)
 
         expect(displaySlots.map(slot => slot.text)).toEqual([
-            '三人冲出破旧的炭棚，站在山崖边向下张望。',
-            '只见山脚下的徐家村方向，',
+            'Rushing out,standing on the cliff looking down.',
+            'Seeing the direction of the village,',
         ])
-        expect(getSubtitleTextAtTime(block, slots, displaySlots[0]!.startTime)).toBe('三人冲出破旧的炭棚，站在山崖边向下张望。')
-        expect(getSubtitleTextAtTime(block, slots, displaySlots[1]!.startTime)).toBe('只见山脚下的徐家村方向，')
+        expect(getSubtitleTextAtTime(block, slots, displaySlots[0]!.startTime)).toBe('Rushing out,standing on the cliff looking down.')
+        expect(getSubtitleTextAtTime(block, slots, displaySlots[1]!.startTime)).toBe('Seeing the direction of the village,')
     })
 
     it('splits runtime slots at every supported punctuation mark for action anchoring', () => {
-        const block = makeNarration('徐小满进入棚中，看着冒烟的灶台和收拾妥当的空地，一脸羡慕。', 6372)
+        const block = makeNarration('Entering into the shed, looking at the smoking stove and cleared space, filled with admiration.', 6372)
         const slots = parseBlockToSlots(block)
         const rawSubtitleTexts = subtitleSlots(slots).map(slot => slot.text)
 
         expect(rawSubtitleTexts).toEqual([
-            '徐小满进入棚中，',
-            '看着冒烟的灶台和收拾妥当的空地，',
-            '一脸羡慕。',
+            'Entering into the shed,',
+            'looking at the smoking stove and cleared space,',
+            'filled with admiration.',
         ])
         expect(slots).toHaveLength(5)
     })

@@ -1,26 +1,26 @@
 /**
- * useAnimationWorkbenchRenderer — 工作台预览渲染辅助
+ * useAnimationWorkbenchRenderer — Workbench preview rendering helper
  *
- * 现状（Phase 2b 结束后）：
- *   本模块仅保留一个顶层命令式 helper —— runPreviewTracksOnCanvas()，
- *   它承载了原本内联在 AnimationWorkbench.vue 里的 applyPreviewTracksToCanvas 主体：
- *     1) 按 target 分组 active preview 轨道
- *     2) 对上一轮受影响但本轮不再覆盖的目标做残留清理
- *     3) 对每个目标：reset + origin-delta 补偿 + transform/visibility/effect 合成
- *     4) 一次性写回容器；更新 previouslyAffectedKeys
+ * Current status (post-Phase 2b):
+ *   This module only retains a top-level imperative helper —— runPreviewTracksOnCanvas(),
+ *   which hosts the core logic originally inlined in AnimationWorkbench.vue's applyPreviewTracksToCanvas:
+ *     1) Group active preview tracks by target
+ *     2) Clean up residue for targets affected in previous turn but not covered in current turn
+ *     3) For each target: reset + origin-delta compensation + transform/visibility/effect composition
+ *     4) Write back to container in one shot; update previouslyAffectedKeys
  *
- *   所有依赖（rootContainer / 缓存 Map / resolver 回调 / side-effect 回调等）
- *   通过 PreviewTracksRenderDeps 注入——调用方（AnimationWorkbench.vue）负责
- *   持有并装配这些本地状态，本模块不持有任何可变状态。
+ *   All dependencies (rootContainer / cache Map / resolver callbacks / side-effect callbacks, etc.)
+ *   are injected via PreviewTracksRenderDeps — caller (AnimationWorkbench.vue) is responsible for
+ *   holding and assembling these local states; this module does not hold any mutable state.
  *
- * 历史说明：
- *   先前版本曾包含一个 useAnimationWorkbenchRenderer() composable 骨架，
- *   设计目标是把基准缓存 / 播放头 / keyframe commit 都内聚进来，
- *   但始终未被任何地方 wire，且主工作台短期内也不便切换到它
- *   （PivotEditorPanel 仍依赖 LightweightCanvas + AnimationSceneObjectStore
- *   这条独立数据隔离路径，详见 /memories/repo/animation-workbench-pivot.txt）。
- *   Phase 4 已把骨架整体删除；若未来要恢复 composable 形态，应在
- *   "主画布不再直连 AnimationSceneObjectStore" 之后再启动。
+ * History notes:
+ *   Previous version included a useAnimationWorkbenchRenderer() composable skeleton,
+ *   designed to encapsulate base caches / playhead / keyframe commit,
+ *   but was never wired anywhere, and main workbench cannot easily switch to it short term
+ *   (PivotEditorPanel still depends on LightweightCanvas + AnimationSceneObjectStore
+ *   independent data isolation path, see /memories/repo/animation-workbench-pivot.txt).
+ *   Phase 4 removed the skeleton entirely; if restored as composable in the future, it should
+ *   be initiated after "main canvas no longer connects directly to AnimationSceneObjectStore".
  */
 
 import * as PIXI from 'pixi.js'
@@ -44,19 +44,19 @@ import {
     type VisibilityTrackOutput,
 } from '@/types/animation'
 
-// Phase 2b: 预览轨道合成迁移
+// Phase 2b: Preview track composition migration
 // ----------------------------------------------------------------------------
-// 将原本内联在 AnimationWorkbench.vue 中的 applyPreviewTracksToCanvas 整体
-// 迁移到本模块，作为一个纯"命令式"顶层函数：调用方提供所有必需的容器引用 /
-// 缓存 / 解析回调（PreviewTracksRenderDeps），函数按时间 time 在这些容器上
-// 执行一次合成并写回。
+// Migrate applyPreviewTracksToCanvas previously inlined in AnimationWorkbench.vue
+// entirely to this module as a pure "imperative" top-level function: caller provides all
+// required container references / caches / resolve callbacks (PreviewTracksRenderDeps),
+// and the function executes a composition at time 'time' on these containers and writes back.
 //
-// 目的：
-//   1) 代码位置与 Phase 2 骨架统一 —— 后续把 caches 也内聚到 composable 时，
-//      调用方替换成 composable 提供的同名 deps 即可；
-//   2) AnimationWorkbench.vue 的同名函数降级为一层薄壳（一次性组织 deps），
-//      便于后续整体删除；
-//   3) 纯函数参数 + 显式依赖注入，便于未来补 workbench 合成级单测。
+// Goals:
+//   1) Code location unified with Phase 2 skeleton —— when caches are encapsulated in composable later,
+//      caller can replace with same-name deps provided by composable;
+//   2) AnimationWorkbench.vue's same-named function downgraded to thin wrapper (arranging deps once),
+//      convenient for eventual complete removal;
+//   3) Pure function arguments + explicit dependency injection, convenient for workbench composition unit tests.
 // ============================================================================
 
 export interface PreviewTracksEffectDelta {
@@ -78,24 +78,24 @@ export interface PreviewTracksEffectDelta {
 }
 
 export interface PreviewTracksRenderDeps {
-    /** 根容器（若为 null 则整个函数短路） */
+    /** Root container (if null, entire function short-circuits) */
     rootContainer: PIXI.Container | null
-    /** 当前参与预览的轨道下标（来自 previewMode 计算） */
+    /** Active preview track indices (computed from previewMode) */
     activePreviewTrackIndexes: readonly number[]
-    /** 完整动画定义（用于按下标取轨道 + 读 loop） */
+    /** Full animation definition (for indexing tracks + reading loop) */
     animationDef: AnimationDefinition
-    /** 全局时长（ms），通常等于 ctx.trackDuration.value */
+    /** Global duration (ms), usually equal to ctx.trackDuration.value */
     globalDurationMs: number
-    /** 拖动播放头时关闭帧序列/滤镜类时序轨道；播放预览时打开。 */
+    /** Turn off frame_sequence/filter temporal tracks when scrubbing playhead; turn on during playback preview. */
     includeTemporalTracks?: boolean
 
-    // 可变缓存（函数会读取并更新）
+    // Mutable cache (read and updated by function)
     previouslyAffectedKeys: Set<string>
     baseStateCache: Map<string, ContainerBaseState>
     initialContainerBaseStateCache: Map<string, ContainerBaseState>
     objectBaseStateCache: Map<string, { transformOriginX: number; transformOriginY: number }>
 
-    // Resolver 回调
+    // Resolver callbacks
     resolveTargetObjectIdForTrack: (track: AnimationTrack) => string | null
     resolveTargetContainerForTrack: (track: AnimationTrack) => PIXI.Container
     resolveContainerForKey: (key: string) => PIXI.Container | null
@@ -103,7 +103,7 @@ export interface PreviewTracksRenderDeps {
     getBaseStateForTrack: (track: AnimationTrack) => ContainerBaseState
     getSceneObjectById: (objectId: string | null) => { flipX?: boolean; transformOriginX?: number; transformOriginY?: number } | null
 
-    // Side-effect 回调（由调用方持有本地状态，如 filter bundles、sprite frame）
+    // Side-effect callbacks (local state held by caller, e.g. filter bundles, sprite frame)
     resetContainerToBaseStateWithKey: (container: PIXI.Container, state: ContainerBaseState, key: string) => void
     applyFrameSequenceTrackToContainer: (track: AnimationTrack & { trackType: 'frame_sequence' }, container: PIXI.Container, progress: number) => void
     applyEffectFiltersForKey: (container: PIXI.Container, key: string, deltas: PreviewTracksEffectDelta[]) => void
@@ -111,13 +111,13 @@ export interface PreviewTracksRenderDeps {
 }
 
 /**
- * 按当前时间在 deps.rootContainer / partContainers 上合成并写回所有激活的预览轨道。
+ * Compose and write back all active preview tracks onto deps.rootContainer / partContainers at current time.
  *
- * 语义等价于原 AnimationWorkbench.applyPreviewTracksToCanvas（Phase 2b 迁移前的实现）。
- * 调用完成后：
- *   - previouslyAffectedKeys 被更新为本轮 affected；
- *   - 受影响容器的 position/scale/rotation/pivot/alpha/filters/sprite frame 已写到最终态；
- *   - 单轨 'current' 模式不使用本函数（仍走 applyTimeToCanvas 分支）。
+ * Semantically equivalent to original AnimationWorkbench.applyPreviewTracksToCanvas (pre-Phase 2b implementation).
+ * After completion:
+ *   - previouslyAffectedKeys is updated to current affected keys;
+ *   - affected container position/scale/rotation/pivot/alpha/filters/sprite frame are written to final state;
+ *   - single-track 'current' mode does not use this function (still uses applyTimeToCanvas branch).
  */
 export function runPreviewTracksOnCanvas(deps: PreviewTracksRenderDeps, time: number): void {
     if (!deps.rootContainer) return
@@ -126,7 +126,7 @@ export function runPreviewTracksOnCanvas(deps: PreviewTracksRenderDeps, time: nu
         .map(index => deps.animationDef.tracks[index])
         .filter((track): track is AnimationTrack => !!track)
 
-    // 1) 按 target 分组（等价于正式播放器的"跨对象委托"）
+    // 1) Group by target (equivalent to formal player's "cross-object delegation")
     const tracksByKey = new Map<string, AnimationTrack[]>()
     for (const track of tracks) {
         const key = deps.resolveTargetObjectIdForTrack(track) ?? TARGET_SELF
@@ -137,7 +137,7 @@ export function runPreviewTracksOnCanvas(deps: PreviewTracksRenderDeps, time: nu
 
     const affectedKeys = new Set<string>(tracksByKey.keys())
 
-    // 2) 先把上一轮有、本轮没有的目标恢复到 base（含滤镜清理）
+    // 2) Restore targets from previous turn that are not in current turn to base (including filter cleanup)
     for (const prevKey of deps.previouslyAffectedKeys) {
         if (affectedKeys.has(prevKey)) continue
         const state = deps.initialContainerBaseStateCache.get(prevKey) ?? deps.baseStateCache.get(prevKey)
@@ -147,7 +147,7 @@ export function runPreviewTracksOnCanvas(deps: PreviewTracksRenderDeps, time: nu
         deps.resetContainerToBaseStateWithKey(container, state, prevKey)
     }
 
-    // 3) 对每个 target：reset + 合成 + 一次性写回
+    // 3) For each target: reset + composite + write back once
     const globalDurationMs = deps.globalDurationMs
     const loop = deps.animationDef.loop === true
     const elapsedMs = Math.max(0, time) * globalDurationMs
@@ -157,15 +157,15 @@ export function runPreviewTracksOnCanvas(deps: PreviewTracksRenderDeps, time: nu
         const container = deps.resolveTargetContainerForTrack(representative)
         const base = deps.baseStateCache.get(key) ?? deps.getBaseStateForTrack(representative)
 
-        // reset：清滤镜并还原变换
+        // reset: clear filters and restore transform
         deps.resetContainerToBaseStateWithKey(container, base, key)
 
-        // v: 若当前 store 中的 transformOrigin 与 mount 时相比已改变（例如用户通过
-        // PivotEditorPanel 拖动了十字），则按"delta"补偿到 container.pivot / base.position。
-        // baseStateCache 捕获自 onContainerReady（此时 SceneObjectRenderer 已执行 applyObjectState），
-        // 因此 base.pivot = PivotBase + originAtMount，base.position 同理含 flipSign*originAtMount；
-        // 不能按"当前 origin"全量再加一次，否则在 origin != 0 的子对象上会双加 origin，
-        // 引起旋转时 (I − R(θ))·origin 的轴心漂移（表现为腿在 50% 进度处脱离身体）。
+        // If current store transformOrigin changed compared to mount time (e.g. user dragged
+        // pivot cross in PivotEditorPanel), compensate to container.pivot / base.position as "delta".
+        // baseStateCache is captured from onContainerReady (when SceneObjectRenderer already applied applyObjectState),
+        // so base.pivot = PivotBase + originAtMount, and base.position contains flipSign*originAtMount;
+        // Cannot add "current origin" in full again, otherwise on sub-objects with origin != 0 origin would be double-added,
+        // causing pivot drift of (I - R(θ))·origin during rotation (e.g. legs detaching from body at 50% progress).
         let basePositionX = base.position.x
         let basePositionY = base.position.y
         let effectivePivotX = base.pivot.x
@@ -190,14 +190,14 @@ export function runPreviewTracksOnCanvas(deps: PreviewTracksRenderDeps, time: nu
                     basePositionX = base.position.x + baseFlipSign * dOX
                     basePositionY = base.position.y + dOY
                 } else {
-                    // origin 未变：base.pivot 已包含正确的 PivotBase + origin，
-                    // 此处仅防御 reset 残留（resetContainerToBaseStateWithKey 已设过，这里等价保险）。
+                    // origin unchanged: base.pivot already contains correct PivotBase + origin,
+                    // here only defensive against reset residue (already set by resetContainerToBaseStateWithKey).
                     container.pivot.set(base.pivot.x, base.pivot.y)
                 }
             }
         }
 
-        // 分类评估：transform/visibility/effect 参与合成；frame_sequence 独立处理
+        // Classified evaluation: transform/visibility/effect participate in composition; frame_sequence handled separately
         const transforms: TransformTrackOutput[] = []
         const visibilities: VisibilityTrackOutput[] = []
         const effectDeltas: ReturnType<typeof DynamicEffectManager.calculateWithProgress>[] = []
@@ -224,9 +224,9 @@ export function runPreviewTracksOnCanvas(deps: PreviewTracksRenderDeps, time: nu
         }
 
         if (visualPivot) {
-            // track.pivot 是当前 transform 轨道的动画基准点。先把 base 姿态平移到
-            // 新 pivot 下的等价静止姿态：无旋转/缩放输出时对象不动；有旋转/缩放时，
-            // 后续 transform 会自然围绕新 pivot 计算出位置变化。
+            // track.pivot is animation reference point of current transform track. First translate base pose
+            // to equivalent rest pose under new pivot: object doesn't move when no rotation/scale output;
+            // with rotation/scale, subsequent transform naturally computes position changes around new pivot.
             const dPX = visualPivot.x - effectivePivotX
             const dPY = visualPivot.y - effectivePivotY
             basePositionX += baseFlipSign * dPX
@@ -236,7 +236,7 @@ export function runPreviewTracksOnCanvas(deps: PreviewTracksRenderDeps, time: nu
             container.pivot.set(effectivePivotX, effectivePivotY)
         }
 
-        // 合成：复用正式播放器的 transform 累加 / visibility 相乘 / effect numeric delta 相乘规则
+        // Composition: reuse formal player rules of transform accumulation / visibility multiplication / effect numeric delta multiplication
         const composed = createEmptyComposedTransform()
         const compositionCtx: CompositionContext = {
             baseRotation: base.rotation,
@@ -253,7 +253,7 @@ export function runPreviewTracksOnCanvas(deps: PreviewTracksRenderDeps, time: nu
         for (const v of visibilities) accumulateVisibilityOutput(composed, v)
         for (const d of effectDeltas) {
             accumulateEffectDelta(composed, d)
-            // shatter 的额外 alpha 衰减（与旧实现一致，只是现在叠加进 alphaProduct）
+            // Extra alpha attenuation for shatter (consistent with old implementation, now combined into alphaProduct)
             if (d.shatterAlpha !== undefined) {
                 composed.alphaProduct *= Math.max(0, d.shatterAlpha)
             } else if (d.shatterProgress !== undefined) {
@@ -261,7 +261,7 @@ export function runPreviewTracksOnCanvas(deps: PreviewTracksRenderDeps, time: nu
             }
         }
 
-        // 写回（一次性）
+        // Write back (in one shot)
         applyComposedTransformToContainer(container, {
             x: basePositionX,
             y: basePositionY,
@@ -271,20 +271,20 @@ export function runPreviewTracksOnCanvas(deps: PreviewTracksRenderDeps, time: nu
             alpha: base.alpha,
         }, composed)
 
-        // 单独处理特效滤镜（stateful，按 target key 缓存）
+        // Handle effect filters separately (stateful, cached by target key)
         if (rawEffectTracks.length > 0) {
             deps.applyEffectFiltersForKey(container, key, effectDeltas)
         }
     }
 
-    // 4) 记录本轮 affected，供下一轮做残留清理
+    // 4) Record affected keys for residue cleanup in next turn
     deps.previouslyAffectedKeys.clear()
     for (const k of affectedKeys) deps.previouslyAffectedKeys.add(k)
 }
 
 /**
- * 顶层内部 helper：与旧 AnimationWorkbench.computeTrackProgress 等价。
- * 单独命名以避免与 composable 内部的同名私有函数冲突。
+ * Top-level internal helper: equivalent to legacy AnimationWorkbench.computeTrackProgress.
+ * Named uniquely to avoid conflicts with same-named private functions inside composable.
  */
 function computeTrackProgressInternal(
     elapsedMs: number,

@@ -1,13 +1,13 @@
 /**
- * TTS 预处理共享工具函数
+ * TTS preprocessing shared utility functions
  *
- * 统一了 ActionPreviewDialog / ScenePreviewDialog / ScriptPreviewDialog 三处
- * 重复的 TTS 逻辑，使所有消费方（包括视频导出）共享同一管线。
+ * Unifies duplicate TTS logic across ActionPreviewDialog / ScenePreviewDialog / ScriptPreviewDialog,
+ * allowing all consumers (including video export) to share the same pipeline.
  *
- * 核心设计原则：
- * - 纯函数，不依赖任何 Store（通过 TTSContext 参数传入数据）
- * - 统一使用 scene.setup.objects 作为数据源（actorId 是 setup 级属性）
- * - 单 Block 粒度处理，调用方控制循环
+ * Core design principles:
+ * - Pure functions, independent of any Store (data passed via TTSContext parameter)
+ * - Uniformly uses scene.setup.objects as data source (actorId is setup-level property)
+ * - Single Block granularity, caller controls looping
  */
 
 import { DEFAULT_VOLUME, FALLBACK_VOICE_ID, getValidSpeedValue, getValidVolumeValue, getVoiceEngine } from '@/constants/voiceOptions'
@@ -20,45 +20,45 @@ import { ttsClient } from './ttsClient'
 import { decodeBase64AudioToAudioBuffer } from './ttsTiming'
 
 // ─────────────────────────────────────────────────────────────
-// 类型定义
+// Type Definitions
 // ─────────────────────────────────────────────────────────────
 
-/** TTS 处理上下文（纯数据，无 Store 依赖） */
+/** TTS processing context (pure data, no Store dependency) */
 export interface TTSContext {
-    sceneObjects: SceneObject[]       // 场景的 setup.objects（用于查找角色 → actor）
-    actors: ActorConfig[]             // 项目演员列表
-    narrator: NarratorConfig | null   // 旁白配置
+    sceneObjects: SceneObject[]       // Scene setup.objects (used to look up character → actor)
+    actors: ActorConfig[]             // Project actors list
+    narrator: NarratorConfig | null   // Narrator configuration
     episodeId: string
     sceneId: string
-    onProgress?: ((msg: string) => void) | undefined // 进度回调
+    onProgress?: ((msg: string) => void) | undefined // Progress callback
 }
 
-/** ensureBlockTTS 返回值：null 表示该 block 不需要 TTS（如 action block） */
+/** ensureBlockTTS return value: null indicates block does not require TTS (such as action block) */
 export interface TTSResult {
     ttsConfig: TTSConfig
     regenerated: boolean
 }
 
 // ─────────────────────────────────────────────────────────────
-// 纯函数：音色 / 语速解析
+// Pure Functions: Voice / Speed Resolution
 // ─────────────────────────────────────────────────────────────
 
 /**
- * 在 actors 列表中查找与指定 sceneObject 关联的 actor。
- * 优先通过 extraInfo (v20) 精确匹配，回退到 refId 兼容旧数据。
+ * Look up actor associated with specified sceneObject in actors list.
+ * Prioritizes extraInfo (v20) exact match, falls back to refId for backwards compatibility.
  */
 function findActorForInstance(
     instance: SceneObject,
     actors: ActorConfig[]
 ): ActorConfig | undefined {
-    // v20: 通过 extraInfo 精确匹配（最优先）
+    // v20: Exact match via extraInfo (highest priority)
     const info = instance.extraInfo
     if (info?.kind === 'actor') {
         const actor = actors.find(a => a.id === info.actorId)
         if (actor) return actor
     }
 
-    // 通过 refId 匹配 characterId（兼容旧数据）
+    // Match characterId via refId (backwards compatibility)
     if (instance.refId) {
         return actors.find(a => a.characterId === instance.refId)
     }
@@ -67,7 +67,7 @@ function findActorForInstance(
 }
 
 /**
- * 解析 Block 对应的 VoiceId（纯函数，无 Store 依赖）
+ * Resolve VoiceId corresponding to Block (pure function, no Store dependency)
  */
 export function resolveVoiceId(
     block: ScriptBlock,
@@ -96,7 +96,7 @@ export function resolveVoiceId(
 }
 
 /**
- * 解析 Block 对应的语速（纯函数，无 Store 依赖）
+ * Resolve voice speed corresponding to Block (pure function, no Store dependency)
  */
 export function resolveVoiceSpeed(
     block: ScriptBlock,
@@ -126,7 +126,7 @@ export function resolveVoiceSpeed(
 }
 
 /**
- * 解析 Block 对应的音量（纯函数，无 Store 依赖）
+ * Resolve voice volume corresponding to Block (pure function, no Store dependency)
  */
 export function resolveVoiceVolume(
     block: ScriptBlock,
@@ -156,12 +156,12 @@ export function resolveVoiceVolume(
 }
 
 // ─────────────────────────────────────────────────────────────
-// 核心管线：单 Block TTS 确保
+// Core Pipeline: Single Block TTS Guarantee
 // ─────────────────────────────────────────────────────────────
 
 /**
- * 检查单个 Block 是否需要重新生成 TTS。
- * 返回 true 表示需要重新生成。
+ * Check whether a single Block needs TTS regeneration.
+ * Returns true if regeneration is needed.
  */
 async function checkNeedRegenerate(
     originalBlock: ScriptBlock,
@@ -175,7 +175,7 @@ async function checkNeedRegenerate(
 
     const existingConfig = originalBlock.ttsConfig
 
-    // 1. 无 audioPath  或 blob:/data: 脏数据
+    // 1. Missing audioPath or blob:/data: dirty data
     if (
         !existingConfig?.audioPath ||
         existingConfig.audioPath.startsWith('blob:') ||
@@ -184,18 +184,18 @@ async function checkNeedRegenerate(
         return true
     }
 
-    // 2. 磁盘文件不存在
+    // 2. Disk file does not exist
     const audioFileExists = await checkAudioExists(existingConfig.audioPath)
     if (!audioFileExists) {
         return true
     }
 
-    // 3. 无时长
+    // 3. Missing duration
     if (!existingConfig.duration) {
         return true
     }
 
-    // 4. 内容变更检测
+    // 4. Content change detection
     if (existingConfig.generatedFrom) {
         const gen = existingConfig.generatedFrom
         const currentText = originalBlock.text
@@ -207,12 +207,12 @@ async function checkNeedRegenerate(
             return true
         }
 
-        // 对话 Block 检查 instanceId 变更
+        // Dialogue Block checks instanceId change
         if (originalBlock.type === 'dialogue' && gen.instanceId !== originalBlock.instanceId) {
             return true
         }
     } else {
-        // 旧数据无 generatedFrom：强制重新生成
+        // Legacy data without generatedFrom: force regeneration
         return true
     }
 
@@ -220,21 +220,21 @@ async function checkNeedRegenerate(
 }
 
 /**
- * 确保单个 Block 的 TTS 已生成。
+ * Ensure TTS for a single Block has been generated.
  *
- * @param originalBlock  原始 Store 中的 Block（用于读取/对比 ttsConfig）
- * @param copyBlock      副本中的 Block（用于更新副本数据）
- * @param ctx            TTS 上下文
+ * @param originalBlock  Original Block in Store (for reading/comparing ttsConfig)
+ * @param copyBlock      Block in copy (for updating copy data)
+ * @param ctx            TTS context
  *
- * @returns TTSResult 或 null（action block 或空文本不需要 TTS）
- * @throws  如果 TTS 合成失败，会向上抛出错误
+ * @returns TTSResult or null (action block or empty text does not require TTS)
+ * @throws  Throws error if TTS synthesis fails
  */
 export async function ensureBlockTTS(
     originalBlock: ScriptBlock,
     copyBlock: ScriptBlock,
     ctx: TTSContext
 ): Promise<TTSResult | null> {
-    // 只处理 dialogue 和 narration
+    // Only process dialogue and narration
     if (originalBlock.type !== 'dialogue' && originalBlock.type !== 'narration') {
         return null
     }
@@ -258,10 +258,10 @@ export async function ensureBlockTTS(
     if (needRegenerate) {
         const text = originalBlock.text
         if (!text || text.trim().length === 0) {
-            throw new Error('文本内容为空')
+            throw new Error('Text content is empty')
         }
 
-        ctx.onProgress?.(`正在生成语音: ${text.substring(0, 10)}...`)
+        ctx.onProgress?.(`Generating speech: ${text.substring(0, 10)}...`)
 
         const result = await ttsClient.synthesize({
             text,
@@ -277,7 +277,7 @@ export async function ensureBlockTTS(
         }
 
         if (!result.audioBase64) {
-            throw new Error('TTS生成结果缺少Base64数据，无法保存')
+            throw new Error('TTS generation result missing Base64 data, cannot save')
         }
 
         const cacheKey = `${text}_${voiceId}_${speed}`
@@ -300,16 +300,16 @@ export async function ensureBlockTTS(
             generatedFrom
         }
 
-        // 更新原始 Store（持久化）
+        // Update original Store (persistence)
         episodeStore.updateBlockInScene(ctx.episodeId, ctx.sceneId, originalBlock.id, { ttsConfig })
 
-        // 同步更新副本
+        // Synchronously update copy
         copyBlock.ttsConfig = JSON.parse(JSON.stringify(ttsConfig)) as TTSConfig
 
         return { ttsConfig, regenerated: true }
     }
 
-    // 不需要重新生成：确保副本也有 Config
+    // No regeneration needed: ensure copy also has Config
     const existingConfig = originalBlock.ttsConfig
     if (existingConfig) {
         copyBlock.ttsConfig = JSON.parse(JSON.stringify(existingConfig)) as TTSConfig
@@ -331,16 +331,16 @@ async function ensureTimingSidecar(
     try {
         await ensureTTSTiming(audioPath, audioBuffer)
     } catch (error) {
-        console.warn('[TTS] timing sidecar 生成失败，继续使用音频:', error)
+        console.warn('[TTS] timing sidecar generation failed, continuing with audio:', error)
     }
 }
 
 /**
- * 确保整个场景的所有 Block 都已完成 TTS。
+ * Ensure all Blocks in the entire scene have completed TTS.
  *
- * @param originalScene 原始 Store 中的场景
- * @param copyScene     副本中的场景
- * @param ctx           TTS 上下文（sceneId 从 ctx 获取）
+ * @param originalScene Scene in original Store
+ * @param copyScene     Scene in copy
+ * @param ctx           TTS context (sceneId retrieved from ctx)
  */
 export async function ensureSceneTTS(
     originalScene: SceneContainer,
@@ -352,7 +352,7 @@ export async function ensureSceneTTS(
         sceneId: originalScene.id
     }
 
-    ctx.onProgress?.('正在检查语音资源...')
+    ctx.onProgress?.('Checking voice resources...')
 
     for (let i = 0; i < originalScene.script.length; i++) {
         const originalBlock = originalScene.script[i]
@@ -364,11 +364,11 @@ export async function ensureSceneTTS(
 }
 
 /**
- * 确保整个 Episode 的所有场景都已完成 TTS（用于视频导出）。
+ * Ensure all scenes in the entire Episode have completed TTS (used for video export).
  *
- * @param episode     原始 Episode（原始 Store 数据）
- * @param episodeCopy 副本 Episode
- * @param ctx         简化上下文
+ * @param episode     Original Episode (original Store data)
+ * @param episodeCopy Copy Episode
+ * @param ctx         Simplified context
  */
 export async function ensureEpisodeTTS(
     episode: { id: string; scenes: SceneContainer[] },
@@ -384,7 +384,7 @@ export async function ensureEpisodeTTS(
         const copyScene = episodeCopy.scenes[i]
         if (!originalScene || !copyScene) continue
 
-        ctx.onProgress?.(`正在处理场景 ${i + 1}/${episode.scenes.length}: ${originalScene.title || '未命名'}`)
+        ctx.onProgress?.(`Processing scene ${i + 1}/${episode.scenes.length}: ${originalScene.title || 'Untitled'}`)
 
         await ensureSceneTTS(originalScene, copyScene, {
             sceneObjects: originalScene.setup.objects,

@@ -1,27 +1,27 @@
 /**
- * Action 工具函数
- * 提供语义化的 Action 类型判断，提高代码可读性
+ * Action utility functions
+ * Provides semantic Action type predicates to improve code readability
  * 
- * v9.3: 生命周期判断改用 SetLifecycleAction
+ * v9.3: Lifecycle checks use SetLifecycleAction
  */
 
 import type { Action, SetLifecycleAction } from '@/types/screenplay'
 
-// ==================== 生命周期 Action 判断 ====================
+// ==================== Lifecycle Action Predicates ====================
 
 /**
- * 判断是否为出生 Action (Birth Action)
+ * Determine whether action is a Birth Action
  * 
- * v9.3: 使用 set_lifecycle action 判断出生
- * 当 set_lifecycle action 包含 spawned: true 时，表示对象在此时刻"出生"进入场景。
+ * v9.3: Use set_lifecycle action to determine birth
+ * When set_lifecycle action contains spawned: true, the object "births" into the scene at this moment.
  * 
- * @param action - 要判断的 Action
- * @returns 如果是出生 Action 返回 true
+ * @param action - Action to check
+ * @returns True if birth action
  * 
  * @example
  * ```ts
  * if (isBirthAction(action)) {
- *   // 显示 🌱 图标
+ *   // Display 🌱 icon
  * }
  * ```
  */
@@ -31,18 +31,18 @@ export function isBirthAction(action: Action): action is SetLifecycleAction {
 }
 
 /**
- * 判断是否为死亡 Action (Death Action)
+ * Determine whether action is a Death Action
  * 
- * v9.3: 使用 set_lifecycle action 判断消亡
- * 当 set_lifecycle action 包含 spawned: false 时，表示对象在此时刻"消亡"退出场景。
+ * v9.3: Use set_lifecycle action to determine death
+ * When set_lifecycle action contains spawned: false, the object exits the scene at this moment.
  * 
- * @param action - 要判断的 Action
- * @returns 如果是死亡 Action 返回 true
+ * @param action - Action to check
+ * @returns True if death action
  * 
  * @example
  * ```ts
  * if (isDeathAction(action)) {
- *   // 显示 🍂 图标
+ *   // Display 🍂 icon
  * }
  * ```
  */
@@ -52,25 +52,25 @@ export function isDeathAction(action: Action): action is SetLifecycleAction {
 }
 
 /**
- * 判断是否为生命周期 Action (Birth 或 Death)
+ * Determine whether action is a lifecycle action (Birth or Death)
  * 
- * @param action - 要判断的 Action
- * @returns 如果是生命周期相关的 Action 返回 true
+ * @param action - Action to check
+ * @returns True if lifecycle-related action
  */
 export function isLifecycleAction(action: Action): action is SetLifecycleAction {
     return isBirthAction(action) || isDeathAction(action)
 }
 
-// ==================== 几何变换 Action 判断 ====================
+// ==================== Geometric Transform Action Predicates ====================
 
 /**
- * 判断 set_transform action 是否包含几何属性变化
+ * Determine whether set_transform action contains geometry property mutations
  * 
- * 几何属性包括：x, y, scaleX, scaleY, rotation
- * 用于检测与 tween_transform 的互斥冲突。
+ * Geometry properties include: x, y, scaleX, scaleY, rotation
+ * Used to detect mutual exclusion conflicts with tween_transform.
  * 
- * @param action - 要判断的 Action
- * @returns 如果包含几何属性返回 true
+ * @param action - Action to check
+ * @returns True if containing geometry properties
  */
 export function hasGeometryParams(action: Action): boolean {
     if (action.type !== 'set_transform') return false
@@ -84,10 +84,10 @@ export function hasGeometryParams(action: Action): boolean {
     )
 }
 
-// ==================== 生命周期 Action 图标 ====================
+// ==================== Lifecycle Action Icons ====================
 
-/** 出生 Action 图标 - 种子/萌芽🌱 */
+/** Birth Action Icon - Sprout/Germination 🌱 */
 export const BIRTH_ACTION_ICON = '🌱'
 
-/** 死亡 Action 图标 - 凋零/落叶🍂 */
+/** Death Action Icon - Withered/Fallen Leaf 🍂 */
 export const DEATH_ACTION_ICON = '🍂'

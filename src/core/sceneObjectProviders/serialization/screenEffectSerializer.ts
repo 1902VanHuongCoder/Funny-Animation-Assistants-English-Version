@@ -1,7 +1,7 @@
 /**
- * ScreenEffect 序列化器
+ * ScreenEffect serializer
  *
- * 从 sceneObjectStore.toSetupObject / fromSetupObject 的 screen_effect case 提取。
+ * Extracted from sceneObjectStore.toSetupObject / fromSetupObject screen_effect case.
  */
 
 import type { SceneObject, ScreenEffectObject } from '@/types/sceneObject'
@@ -22,7 +22,7 @@ const screenEffectSerializer: TypeSerializer = {
         const effectData = objData as ScreenEffectObject
         const effectObj = ctx.createScreenEffectObject(
             effectData.effectClass ?? 'fullscreen_cover',
-            objData.alias ?? '画面特效',
+            objData.alias ?? 'Screen Effect',
             effectData.params ?? {},
             objData.id,
             objData.alias ?? '',

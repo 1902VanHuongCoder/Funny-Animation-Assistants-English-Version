@@ -1,17 +1,17 @@
 /**
- * Mask 序列化器（Clip-Mask Phase 1）
+ * Mask serializer (Clip-Mask Phase 1)
  *
- * 详见 docs/features/clip-mask.md（v2.1）。
+ * See docs/features/clip-mask.md (v2.1).
  *
- * 特化字段：
+ * Specialized fields:
  * - shape: 'rectangle' | 'ellipse'
- * - mode:  'inside_visible'（Phase 1 仅一种值；脏数据降级 + warn）
- * - targetIds: string[]（被裁切目标 id 列表）
+ * - mode:  'inside_visible' (Phase 1 single mode; fallback + warn on invalid data)
+ * - targetIds: string[] (list of clipped target IDs)
  *
- * 反序列化两阶段：
- * 1) 当前 deserialize：用空 targetIds 创建对象，把读到的 targetIds 暂存到 ctx.pendingMaskTargets。
- * 2) 由 sceneObjectStore.finalizeMaskTargets() 在所有对象就绪后回填，并清理：
- *    死引用 / 非法类型 / mask→mask 嵌套 / 同 target 多 mask 冲突。
+ * Two-phase deserialization:
+ * 1) Current deserialize: Creates object with empty targetIds, temporarily staging read targetIds in ctx.pendingMaskTargets.
+ * 2) Handled by sceneObjectStore.finalizeMaskTargets() after all objects are ready, cleaning up:
+ *    dead references / invalid types / mask->mask nesting / multi-mask conflicts on same target.
  */
 
 import type { MaskMode, MaskObject, MaskShape, SceneObject } from '@/types/sceneObject'
@@ -33,7 +33,7 @@ const maskSerializer: TypeSerializer = {
     deserialize(objData: SceneObject, ctx: DeserializeContext): void {
         const raw = objData as MaskObject
 
-        // 形状：未知值降级为 rectangle + warn
+        // Shape: unknown value falls back to rectangle + warn
         let shape: MaskShape = 'rectangle'
         if (raw.shape && ALLOWED_SHAPES.has(raw.shape)) {
             shape = raw.shape
@@ -41,7 +41,7 @@ const maskSerializer: TypeSerializer = {
             console.warn(`[mask] unknown shape '${raw.shape}' for mask ${raw.id}; fallback to 'rectangle'`)
         }
 
-        // 模式：Phase 1 仅 inside_visible，脏数据降级 + warn
+        // Mode: Phase 1 inside_visible only; fallback + warn on dirty data
         let mode: MaskMode = 'inside_visible'
         if (raw.mode && ALLOWED_MODES.has(raw.mode)) {
             mode = raw.mode
@@ -50,7 +50,7 @@ const maskSerializer: TypeSerializer = {
         }
 
         const created = ctx.createMaskObject(
-            objData.name ?? '蒙版',
+            objData.name ?? 'Mask',
             shape,
             { mode },
             objData.id,
@@ -75,7 +75,7 @@ const maskSerializer: TypeSerializer = {
             parentId: objData.parentId,
         })
 
-        // 缓存 targetIds，等所有对象就绪后由 finalizeMaskTargets 回填
+        // Cache targetIds, backfilled by finalizeMaskTargets after all objects are ready
         const targets = Array.isArray(raw.targetIds)
             ? raw.targetIds.filter((t): t is string => typeof t === 'string' && t.length > 0)
             : []

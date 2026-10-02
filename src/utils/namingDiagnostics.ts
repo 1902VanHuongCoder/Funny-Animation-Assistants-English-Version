@@ -1,11 +1,11 @@
 /**
- * 角色命名诊断工具
+ * Character naming diagnostics utility
  *
- * 支持四类检测：
- *   D1 重复 alias：同一角色根子树中 alias 相同的多个对象
- *   D2 缺推荐名：系统推荐名词表中未在角色内出现的项
- *   D3 非规范命名：对象 alias/name 与某推荐名 "相似但不相等"（编辑距离 ≤ 1 或子串关系）
- *   D4 改名影响：改名/改 alias 时，列出受影响的预定义动作
+ * Supports four categories of detection:
+ *   D1 Duplicate alias: Multiple objects sharing the same alias in the same character root subtree
+ *   D2 Missing recommended name: Entries in the system recommended names list not present in character
+ *   D3 Non-standard naming: Object alias/name is "similar but not equal" to a recommended name (edit distance <= 1 or substring relation)
+ *   D4 Rename impact: When renaming/modifying alias, lists affected preset animations
  */
 
 import { RECOMMENDED_NAMES, RECOMMENDED_NAMES_SET } from '@/constants/recommendedNames'
@@ -47,7 +47,7 @@ export interface MissingRecommendedEntry {
 }
 
 /**
- * 检测推荐名词表中未被角色 alias/name 覆盖的项
+ * Detect entries in recommended names list not covered by character alias/name
  */
 export function findMissingRecommendedNames(
   rootCompositeId: string,
@@ -75,7 +75,7 @@ export interface NonStandardNameEntry {
   suggested: string
 }
 
-/** Levenshtein 编辑距离（迭代实现） */
+/** Levenshtein edit distance (iterative implementation) */
 export function editDistance(a: string, b: string): number {
   if (a === b) return 0
   if (a.length === 0) return b.length
@@ -100,7 +100,7 @@ export function editDistance(a: string, b: string): number {
   return prev[n] ?? 0
 }
 
-/** 判定 candidate 是否与 target "相似但不等"：编辑距离 ≤ 1 或子串关系 */
+/** Determine whether candidate is "similar but not equal" to target: edit distance <= 1 or substring relation */
 export function isSimilarButNotEqual(candidate: string, target: string): boolean {
   if (!candidate || !target) return false
   if (candidate === target) return false
@@ -109,8 +109,8 @@ export function isSimilarButNotEqual(candidate: string, target: string): boolean
 }
 
 /**
- * 寻找与某推荐名相似但不相等的 alias/name
- * 返回建议把 value 改为 suggested（最接近的推荐名）
+ * Find alias/name similar but not equal to a recommended name
+ * Returns suggestion to change value to suggested (closest recommended name)
  */
 export function findNonStandardNames(
   rootCompositeId: string,
@@ -123,7 +123,7 @@ export function findNonStandardNames(
     const obj = sceneObjects.get(id)
     if (!obj) continue
 
-    // 如果对象的 alias/name 本身就是推荐名，跳过
+    // If object alias/name itself is a recommended name, skip
     const aliasIsRecommended = obj.alias ? RECOMMENDED_NAMES_SET.has(obj.alias) : false
     const nameIsRecommended = RECOMMENDED_NAMES_SET.has(obj.name)
 
@@ -131,7 +131,7 @@ export function findNonStandardNames(
       const sug = findClosestRecommended(obj.alias)
       if (sug) results.push({ objectId: id, field: 'alias', value: obj.alias, suggested: sug })
     }
-    // 仅在 alias 为空且 name 不规范时检测 name，避免双重报告
+    // Only check name if alias is empty and name is non-standard, avoiding double reports
     if (!obj.alias && !nameIsRecommended) {
       const sug = findClosestRecommended(obj.name)
       if (sug) results.push({ objectId: id, field: 'name', value: obj.name, suggested: sug })
@@ -157,11 +157,11 @@ export interface RenameImpactEntry {
 }
 
 /**
- * 分析改名影响：遍历所有模板，列出 expectedTargets 中
- * recommendedName 或 fallbackNames 包含 oldName 的项。
+ * Analyze rename impact: traverse all templates, listing entries in expectedTargets
+ * where recommendedName or fallbackNames contains oldName.
  *
- * 同时匹配 fallbackNames：由于系统模板可通过粗粒度名（左臂 / 右腿）
- * 作为细粒度目标的回退，对粗粒度名的重命名也会影响这些模板。
+ * Also matches fallbackNames: since system templates can use coarse-grained names (left arm / right leg)
+ * as fallbacks for fine-grained targets, renaming coarse names also impacts these templates.
  */
 export function analyzeRenameImpact(
   oldName: string,

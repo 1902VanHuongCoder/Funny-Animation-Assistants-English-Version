@@ -1,22 +1,22 @@
 /**
- * Union Composite 虚拟边界计算工具
+ * Union Composite virtual bounding box calculation utility
  *
- * Union composite 的 PIXI Container 是空代理容器（renderable = false），
- * 子对象平铺到上级容器，`getLocalBounds()` 返回 0。
- * 此工具通过子容器角点坐标换算得到虚拟包围盒。
+ * The PIXI Container of a Union composite is an empty proxy container (renderable = false),
+ * and child objects are flattened onto the parent container, so `getLocalBounds()` returns 0.
+ * This utility computes the virtual bounding box by converting child container corner coordinates.
  */
 import * as PIXI from 'pixi.js'
 
 type ContainerResolver = (childId: string) => PIXI.Container | null | undefined
 
 /**
- * 计算 union composite 的虚拟边界
- * 通过遍历子容器角点，坐标换算到 proxyContainer 的局部坐标系
+ * Computes the virtual bounding box of a union composite
+ * Traverses child container corners and transforms coordinates to proxyContainer's local coordinate system
  *
- * @param childIds - 子对象 ID 列表
- * @param containerResolver - 根据 ID 获取子容器的回调
- * @param proxyContainer - union 的代理容器（坐标换算的参考系）
- * @returns 虚拟包围盒 { x, y, width, height }
+ * @param childIds - List of child object IDs
+ * @param containerResolver - Callback to get child container by ID
+ * @param proxyContainer - Union's proxy container (reference frame for coordinate conversion)
+ * @returns Virtual bounding box { x, y, width, height }
  */
 export function computeUnionBounds(
     childIds: string[],

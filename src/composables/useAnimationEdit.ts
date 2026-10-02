@@ -1,15 +1,15 @@
 /**
- * useAnimationEdit - Animation WYSIWYG 编辑器核心 composable
+ * useAnimationEdit - Animation WYSIWYG editor core composable
  * 
- * 职责：
- * - 深拷贝 AnimationDefinition 作为本地编辑状态
- * - 关键帧 CRUD（始终保持按 time 排序）
- * - 播放头管理 + evaluateAtTime
- * - Auto-Key 逻辑
- * - 播放控制（内部使用 AnimationPlayer）
- * - 脏数据追踪
+ * Responsibilities:
+ * - Deep clone AnimationDefinition as local editing state
+ * - Keyframe CRUD (always sorted by time)
+ * - Playhead management + evaluateAtTime
+ * - Auto-Key logic
+ * - Playback control (internally uses AnimationPlayer)
+ * - Dirty state tracking
  * 
- * 数据隔离：不读写 sceneObjectStore，编辑期间所有变换仅写入本地 keyframe 数据
+ * Data isolation: Does not read/write sceneObjectStore; all transformations during editing are written only to local keyframe data
  */
 
 import { computed, reactive, ref } from 'vue'
@@ -28,98 +28,98 @@ import type {
     VisibilityTrackOutput,
 } from '@/types/animation'
 
-/** 关键帧时间匹配容差 */
+/** Keyframe time matching tolerance */
 const TIME_TOLERANCE = 0.005
 
 export interface UseAnimationEditOptions {
-    /** 原始动画定义（传入后深拷贝） */
+    /** Original animation definition (deep-cloned upon input) */
     animation: AnimationDefinition
-    /** 初始编辑的 transform track 索引 */
+    /** Initially edited transform track index */
     initialTrackIndex?: number
 }
 
 export function useAnimationEdit(options: UseAnimationEditOptions) {
-    // ===== 核心编辑状态 =====
+    // ===== Core Editing State =====
 
-    /** 本地深拷贝的动画定义（reactive） */
+    /** Local deep-cloned animation definition (reactive) */
     const animationDef = reactive<AnimationDefinition>(
         JSON.parse(JSON.stringify(options.animation)) as AnimationDefinition
     )
 
-    /** 初始快照，用于脏数据比较（切换动画时需要同步更新） */
+    /** Initial snapshot for dirty state comparison (needs synchronized update when switching animations) */
     let initialSnapshot = JSON.stringify(options.animation)
 
-    /** 当前编辑的 track 索引 */
+    /** Currently edited track index */
     const currentTrackIndex = ref(options.initialTrackIndex ?? findFirstTransformTrackIndex())
 
-    /** 当前选中的关键帧索引（-1 = 无选中） */
+    /** Currently selected keyframe index (-1 = none selected) */
     const selectedKeyframeIndex = ref(0)
 
-    /** 播放头位置（归一化 0-1） */
+    /** Playhead position (normalized 0-1) */
     const playheadPosition = ref(0)
 
-    /** Auto-Key 永远开启（拖拽即写入关键帧） */
+    /** Auto-Key always enabled (dragging writes keyframe directly) */
     const autoKeyEnabled = ref(true)
 
-    /** 播放状态 */
+    /** Playback state */
     const isPlaying = ref(false)
 
-    /** 循环播放 */
+    /** Loop playback */
     const loopPlayback = ref(false)
 
-    /** 内部播放器（预留，暂由 rAF loop 替代） */
+    /** Internal player (reserved, currently replaced by rAF loop) */
     // const player = shallowRef(new AnimationPlayer())
 
-    // ===== 计算属性 =====
+    // ===== Computed Properties =====
 
-    /** 所有轨道（全类型） */
+    /** All tracks (all types) */
     const allTracks = computed(() =>
         animationDef.tracks
             .map((t, i) => ({ track: t, index: i }))
     )
 
-    /** 可用的 transform track 列表 */
+    /** Available transform tracks */
     const transformTracks = computed(() =>
         animationDef.tracks
             .map((t, i) => ({ track: t, index: i }))
             .filter(({ track }) => track.trackType === 'transform')
     )
 
-    /** 当前编辑的 track（任意类型） */
+    /** Currently edited track (any type) */
     const currentTrackAny = computed((): AnimationTrack | null => {
         if (currentTrackIndex.value < 0) return null
         return animationDef.tracks[currentTrackIndex.value] ?? null
     })
 
-    /** 当前编辑的 transform track（仅当类型匹配时返回） */
+    /** Currently edited transform track (returned only when type matches) */
     const currentTrack = computed(() => {
         const track = currentTrackAny.value
         if (track?.trackType === 'transform') return track
         return null
     })
 
-    /** 当前编辑的 visibility track（仅当类型匹配时返回） */
+    /** Currently edited visibility track (returned only when type matches) */
     const currentVisibilityTrack = computed(() => {
         const track = currentTrackAny.value
         if (track?.trackType === 'visibility') return track
         return null
     })
 
-    /** 当前编辑的 effect track（仅当类型匹配时返回） */
+    /** Currently edited effect track (returned only when type matches) */
     const currentEffectTrack = computed(() => {
         const track = currentTrackAny.value
         if (track?.trackType === 'effect') return track
         return null
     })
 
-    /** 当前编辑的 frame_sequence track（仅当类型匹配时返回） */
+    /** Currently edited frame_sequence track (returned only when type matches) */
     const currentFrameSequenceTrack = computed(() => {
         const track = currentTrackAny.value
         if (track?.trackType === 'frame_sequence') return track
         return null
     })
 
-    /** 三态选中模型 */
+    /** Tri-state selection model */
     type SelectionMode = 'none' | 'track' | 'keyframe'
     const selectionMode = computed((): SelectionMode => {
         if (currentTrackIndex.value < 0) return 'none'
@@ -127,24 +127,24 @@ export function useAnimationEdit(options: UseAnimationEditOptions) {
         return 'keyframe'
     })
 
-    /** 当前轨道是否支持关键帧编辑 */
+    /** Whether current track supports keyframe editing */
     const isKeyframable = computed(() => {
         const t = currentTrackAny.value
         return t?.trackType === 'transform' || t?.trackType === 'visibility'
     })
 
-    /** 当前 track 的关键帧列表（transform-only，保留以向后兼容） */
+    /** Current track's keyframe list (transform-only, kept for backwards compatibility) */
     const keyframes = computed(() => currentTrack.value?.keyframes ?? [])
 
-    /** 当前选中的关键帧（transform-only） */
+    /** Currently selected keyframe (transform-only) */
     const selectedKeyframe = computed(() => {
         if (selectedKeyframeIndex.value < 0) return null
         return keyframes.value[selectedKeyframeIndex.value] ?? null
     })
 
     /**
-     * 当前活动轨道的关键帧列表（transform 或 visibility）。
-     * seekPrev/Next 和 findKeyframeAtTime 应使用此集合而非 keyframes。
+     * Active track keyframes list (transform or visibility).
+     * seekPrev/Next and findKeyframeAtTime should use this collection instead of keyframes.
      */
     const activeKeyframes = computed((): { time: number }[] => {
         const t = currentTrackAny.value
@@ -153,10 +153,10 @@ export function useAnimationEdit(options: UseAnimationEditOptions) {
         return []
     })
 
-    /** 运行时动态轨道时长覆写（如 frame_sequence 根据总帧数/fps 计算） */
+    /** Runtime dynamic track duration override (e.g., frame_sequence calculated from total frames/fps) */
     const trackDurationOverrideMs = ref<number | null>(null)
 
-    /** 当前 track 时长 (ms)（支持 transform / visibility / 运行时覆写） */
+    /** Current track duration (ms) (supports transform / visibility / runtime override) */
     const trackDuration = computed(() => {
         if (trackDurationOverrideMs.value !== null) return trackDurationOverrideMs.value
         const track = currentTrack.value ?? currentVisibilityTrack.value
@@ -166,26 +166,26 @@ export function useAnimationEdit(options: UseAnimationEditOptions) {
         return d
     })
 
-    /** 是否有未保存的修改 */
+    /** Whether there are unsaved changes */
     const hasUnsavedChanges = computed(() =>
         JSON.stringify(animationDef) !== initialSnapshot
     )
 
-    /** 当前时间点的评估输出 */
+    /** Evaluated output at the current time point */
     const currentOutput = computed(() => evaluateAtTime(playheadPosition.value))
 
-    // ===== 帮助函数 =====
+    // ===== Helper Functions =====
 
     function findFirstTransformTrackIndex(): number {
         const idx = options.animation.tracks.findIndex(t => t.trackType === 'transform')
         return idx >= 0 ? idx : 0
     }
 
-    // ===== 关键帧操作 =====
+    // ===== Keyframe Operations =====
 
     /**
-     * 对当前 track 的关键帧数组重排（按 time 升序）
-     * Hard constraint: AnimationTrackEvaluator.findKeyframes 假设已排序
+     * Resort current track keyframes array (ascending by time)
+     * Hard constraint: AnimationTrackEvaluator.findKeyframes assumes sorted array
      */
     function sortKeyframes() {
         const track = currentTrack.value
@@ -194,7 +194,7 @@ export function useAnimationEdit(options: UseAnimationEditOptions) {
     }
 
     /**
-     * 更新指定关键帧的属性
+     * Update specified keyframe properties
      */
     function updateKeyframe(index: number, values: Partial<TransformKeyframe>) {
         const track = currentTrack.value
@@ -205,17 +205,17 @@ export function useAnimationEdit(options: UseAnimationEditOptions) {
 
         Object.assign(kf, values)
 
-        // 如果修改了 time，需要重排
+        // If time was modified, resort keyframes
         if ('time' in values) {
             sortKeyframes()
-            // 重排后找到这个帧的新索引
+            // Find new index of this keyframe after sort
             const newIdx = track.keyframes.findIndex(k => k === kf)
             if (newIdx >= 0) selectedKeyframeIndex.value = newIdx
         }
     }
 
     /**
-     * 在播放头位置添加关键帧（基于当前插值状态）
+     * Add keyframe at playhead position (based on current interpolated state)
      */
     function addKeyframeAtPlayhead(): number {
         const track = currentTrack.value
@@ -223,14 +223,14 @@ export function useAnimationEdit(options: UseAnimationEditOptions) {
 
         const time = playheadPosition.value
 
-        // 检查该时间点是否已有关键帧
+        // Check if keyframe already exists at this time point
         const existing = findKeyframeAtTime(time)
         if (existing >= 0) {
             selectedKeyframeIndex.value = existing
             return existing
         }
 
-        // 基于插值状态创建新帧
+        // Create new keyframe based on interpolated state
         const interpolated = AnimationTrackEvaluator.evaluateTransform(track, time)
         const newKf: TransformKeyframe = {
             time,
@@ -246,14 +246,14 @@ export function useAnimationEdit(options: UseAnimationEditOptions) {
     }
 
     /**
-     * 插入关键帧并保持排序
-     * @returns 插入后的索引
+     * Insert keyframe and keep sorted
+     * @returns Inserted index
      */
     function insertKeyframeSorted(kf: TransformKeyframe): number {
         const track = currentTrack.value
         if (!track) return -1
 
-        // 找到正确的插入位置
+        // Find correct insertion index
         let insertIdx = track.keyframes.findIndex(k => k.time > kf.time)
         if (insertIdx === -1) insertIdx = track.keyframes.length
 
@@ -263,10 +263,10 @@ export function useAnimationEdit(options: UseAnimationEditOptions) {
     }
 
     /**
-     * 删除指定关键帧（保留最少 2 帧约束）
+     * Remove specified keyframe (retains minimum 2 keyframes constraint)
      */
     function removeKeyframe(index: number) {
-        // 支持 transform 和 visibility 轨道
+        // Supports transform and visibility tracks
         const trackType = currentTrackAny.value?.trackType
         const kfs = activeKeyframes.value
         if (kfs.length <= 2) return
@@ -280,15 +280,15 @@ export function useAnimationEdit(options: UseAnimationEditOptions) {
             return
         }
 
-        // 调整选中索引
+        // Adjust selected index
         if (selectedKeyframeIndex.value >= kfs.length - 1) {
             selectedKeyframeIndex.value = kfs.length - 2
         }
     }
 
     /**
-     * v13 (Scheme B)：将关键帧拆分为 valueIn / valueOut
-     * 初始 out 等于当前 valueIn 的同字段值，语义不变；用户随后可独立编辑。
+     * v13 (Scheme B): Split keyframe into valueIn / valueOut
+     * Initial out equals current valueIn field values with unchanged semantics; user can edit independently later.
      */
     function splitKeyframeAt(index: number): boolean {
         const trackType = currentTrackAny.value?.trackType
@@ -317,7 +317,7 @@ export function useAnimationEdit(options: UseAnimationEditOptions) {
     }
 
     /**
-     * v13 (Scheme B)：合并关键帧的 valueIn / valueOut（丢弃 out，保留 valueIn）
+     * v13 (Scheme B): Merge keyframe valueIn / valueOut (discards out, retains valueIn)
      */
     function mergeKeyframeAt(index: number): boolean {
         const trackType = currentTrackAny.value?.trackType
@@ -337,7 +337,7 @@ export function useAnimationEdit(options: UseAnimationEditOptions) {
     }
 
     /**
-     * v13 (Scheme B)：判定关键帧是否处于“拆分”状态（存在至少一个 out 字段）
+     * v13 (Scheme B): Determine whether keyframe is structurally split (has at least one out field)
      */
     function isKeyframeStructurallySplit(
         kf: TransformKeyframe | VisibilityKeyframe | undefined | null,
@@ -347,8 +347,8 @@ export function useAnimationEdit(options: UseAnimationEditOptions) {
     }
 
     /**
-     * 更新关键帧的 valueOut 字段（自动确保 out 对象存在）
-     * value 为 undefined 表示回退到顶层 valueIn（即删除该 out 字段）
+     * Update keyframe valueOut field (ensures out object exists)
+     * value === undefined indicates fallback to top-level valueIn (i.e. delete that out field)
      */
     function updateKeyframeOut(
         index: number,
@@ -385,7 +385,7 @@ export function useAnimationEdit(options: UseAnimationEditOptions) {
     }
 
     /**
-     * 复制选中的关键帧到播放头位置
+     * Duplicate selected keyframe to playhead position
      */
     function duplicateKeyframeToPlayhead(): number {
         const track = currentTrackAny.value
@@ -423,7 +423,7 @@ export function useAnimationEdit(options: UseAnimationEditOptions) {
     }
 
     /**
-     * 重置选中的关键帧为默认值
+     * Reset selected keyframe to default values
      */
     function resetKeyframe(index: number) {
         const kf = currentTrack.value?.keyframes[index]
@@ -439,18 +439,18 @@ export function useAnimationEdit(options: UseAnimationEditOptions) {
         if (kf.flipX !== undefined) delete kf.flipX
     }
 
-    // ===== 复制 / 粘贴 =====
+    // ===== Copy / Paste =====
 
-    /** 关键帧剪贴板 */
+    /** Keyframe clipboard */
     let keyframeClipboard:
         | { trackType: 'transform'; keyframe: TransformKeyframe }
         | { trackType: 'visibility'; keyframe: VisibilityKeyframe }
         | null = null
 
-    /** 剪贴板是否有内容（响应式，供 UI 禁用/启用「粘贴」按钮） */
+    /** Whether clipboard has content (reactive, for UI paste button enable/disable) */
     const hasKeyframeClipboard = ref(false)
 
-    /** 剪贴板中的关键帧类型（供 UI 判断当前轨道是否允许粘贴） */
+    /** Type of keyframe in clipboard (for UI to determine if current track accepts paste) */
     const keyframeClipboardType = ref<'transform' | 'visibility' | null>(null)
 
     function canPasteKeyframeToCurrentTrack(): boolean {
@@ -460,7 +460,7 @@ export function useAnimationEdit(options: UseAnimationEditOptions) {
     }
 
     /**
-     * 复制选中的关键帧到剪贴板
+     * Copy selected keyframe to clipboard
      */
     function copyKeyframe() {
         const track = currentTrackAny.value
@@ -486,8 +486,8 @@ export function useAnimationEdit(options: UseAnimationEditOptions) {
     }
 
     /**
-     * 将剪贴板中的关键帧粘贴到播放头位置
-     * @returns 插入后的索引，无剪贴板内容返回 -1
+     * Paste keyframe from clipboard to playhead position
+     * @returns Inserted index, or -1 if no clipboard content
      */
     function pasteKeyframe(): number {
         const clipboard = keyframeClipboard
@@ -520,7 +520,7 @@ export function useAnimationEdit(options: UseAnimationEditOptions) {
     }
 
     /**
-     * 查找指定时间点的关键帧索引（支持 transform 和 visibility 轨道）
+     * Find keyframe index at specified time (supports transform and visibility tracks)
      */
     function findKeyframeAtTime(time: number): number {
         const kfs = activeKeyframes.value
@@ -530,10 +530,10 @@ export function useAnimationEdit(options: UseAnimationEditOptions) {
         return -1
     }
 
-    // ===== 评估 =====
+    // ===== Evaluation =====
 
     /**
-     * 评估指定时间点的变换输出
+     * Evaluate transform output at specified time
      */
     function evaluateAtTime(time: number): TransformTrackOutput | null {
         const track = currentTrack.value
@@ -541,30 +541,30 @@ export function useAnimationEdit(options: UseAnimationEditOptions) {
         return AnimationTrackEvaluator.evaluateTransform(track, time)
     }
 
-    // ===== 画布交互 → 关键帧写入 =====
+    // ===== Canvas Interaction -> Keyframe Commit =====
 
-    /** `commitTransformAtPlayhead` 的返回状态 */
+    /** Return status for `commitTransformAtPlayhead` */
     type CommitTransformResult =
-        /** 已更新播放头位置上已存在的关键帧 */
+        /** Updated existing keyframe at playhead position */
         | { status: 'updated'; index: number }
-        /** 空轨道 — 自动创建了第一个关键帧 */
+        /** Empty track - created first keyframe */
         | { status: 'created'; index: number }
-        /** 轨道不存在或类型不匹配（未写入） */
+        /** Track does not exist or type mismatch (not committed) */
         | { status: 'no-track' }
-        /** 轨道已有关键帧，但播放头不在任何关键帧上 — 不创建新帧，由调用方还原画布 */
+        /** Track has keyframes but playhead is not on any keyframe - no new frame created, caller restores canvas */
         | { status: 'skipped-no-keyframe-at-playhead' }
 
     /**
-     * 画布拖拽/缩放/旋转结束后，将变换差值写入当前播放头位置的关键帧。
+     * After canvas drag/scale/rotate ends, commits transform delta into keyframe at current playhead position.
      *
-     * 行为（v22 起）：
-     * - 若当前时间点已存在关键帧：更新该帧。
-     * - 若轨道尚无任何关键帧：创建第一个关键帧（建立初始姿态）。
-     * - 若轨道已有关键帧但播放头不在任何关键帧上：**不会自动创建新帧**。
-     *   调用方应将画布还原到插值姿态，并提示用户先显式添加关键帧。
+     * Behavior (from v22):
+     * - If keyframe exists at current time point: update that keyframe.
+     * - If track has no keyframes: create first keyframe (establish baseline pose).
+     * - If track has keyframes but playhead is not on any keyframe: **will not automatically create a new keyframe**.
+     *   Caller should restore canvas to interpolated pose and prompt user to explicitly add a keyframe first.
      *
-     * @param values 关键帧空间的差值（相对于基准姿态）
-     * @returns 本次提交的结果，调用方可据此决定是否需要还原画布 / 提示用户
+     * @param values Keyframe space delta (relative to baseline pose)
+     * @returns Result of commit, caller can decide whether to restore canvas or notify user
      */
     function commitTransformAtPlayhead(values: Partial<TransformKeyframe>): CommitTransformResult {
         return commitAutoKey(values)
@@ -578,13 +578,13 @@ export function useAnimationEdit(options: UseAnimationEditOptions) {
         const existingIdx = findKeyframeAtTime(time)
 
         if (existingIdx >= 0) {
-            // 更新已有关键帧
+            // Update existing keyframe
             Object.assign(track.keyframes[existingIdx]!, finalValues)
             return { status: 'updated', index: existingIdx }
         }
 
         if (track.keyframes.length === 0) {
-            // 空轨道：创建第一帧（建立初始姿态）
+            // Empty track: create first keyframe (establish baseline pose)
             const interpolated = AnimationTrackEvaluator.evaluateTransform(track, time)
             const newKf: TransformKeyframe = {
                 time,
@@ -600,11 +600,11 @@ export function useAnimationEdit(options: UseAnimationEditOptions) {
             return { status: 'created', index: idx }
         }
 
-        // 轨道已有关键帧但播放头不在任何帧上：不静默创建，交由调用方还原画布并提示
+        // Track already has keyframes but playhead is not on any frame: do not silently create, caller restores canvas and prompts
         return { status: 'skipped-no-keyframe-at-playhead' }
     }
 
-    // ===== 播放控制 =====
+    // ===== Playback Control =====
 
     let animationFrameId: number | null = null
     let lastTimestamp: number | null = null
@@ -659,12 +659,12 @@ export function useAnimationEdit(options: UseAnimationEditOptions) {
     }
 
     /**
-     * 跳转到指定时间
+     * Seek to specified time
      */
     function seekTo(time: number) {
         playheadPosition.value = Math.max(0, Math.min(1, time))
 
-        // 如果恰好在关键帧上，选中它
+        // If precisely on a keyframe, select it
         const idx = findKeyframeAtTime(playheadPosition.value)
         if (idx >= 0) {
             selectedKeyframeIndex.value = idx
@@ -672,7 +672,7 @@ export function useAnimationEdit(options: UseAnimationEditOptions) {
     }
 
     /**
-     * 跳到上一个关键帧（支持 transform 和 visibility 轨道）
+     * Seek to previous keyframe (supports transform and visibility tracks)
      */
     function seekPrevKeyframe() {
         const kfs = activeKeyframes.value
@@ -684,12 +684,12 @@ export function useAnimationEdit(options: UseAnimationEditOptions) {
                 return
             }
         }
-        // 已在最前，跳到 0
+        // Already at start, seek to 0
         seekTo(0)
     }
 
     /**
-     * 跳到下一个关键帧（支持 transform 和 visibility 轨道）
+     * Seek to next keyframe (supports transform and visibility tracks)
      */
     function seekNextKeyframe() {
         const kfs = activeKeyframes.value
@@ -701,13 +701,13 @@ export function useAnimationEdit(options: UseAnimationEditOptions) {
                 return
             }
         }
-        // 已在最后，跳到 1
+        // Already at end, seek to 1
         seekTo(1)
     }
 
-    // ===== Track 设置操作 =====
+    // ===== Track Settings Operations =====
 
-    /** 切换当前编辑的 track（支持任意轨道类型） */
+    /** Switch currently edited track (supports any track type) */
     function selectTrack(index: number) {
         if (index < 0 || index >= animationDef.tracks.length) return
         currentTrackIndex.value = index
@@ -715,34 +715,34 @@ export function useAnimationEdit(options: UseAnimationEditOptions) {
         playheadPosition.value = 0
     }
 
-    /** 取消所有选中（返回动画级） */
+    /** Deselect all (return to animation level) */
     function deselectAll() {
         currentTrackIndex.value = -1
         selectedKeyframeIndex.value = -1
     }
 
-    /** 仅选中轨道（不选中关键帧） */
+    /** Select track only (without selecting a keyframe) */
     function selectTrackOnly(index: number) {
         if (index < 0 || index >= animationDef.tracks.length) return
         currentTrackIndex.value = index
         selectedKeyframeIndex.value = -1
     }
 
-    /** 更新轨道 pivot */
+    /** Update track pivot */
     function updatePivot(pivot: { x: number; y: number }) {
         const track = currentTrack.value
         if (!track) return
         track.pivot = { ...pivot }
     }
 
-    /** 清除轨道自定义 pivot，回退到对象默认变换点 */
+    /** Clear custom track pivot, fallback to object default transform point */
     function clearPivot() {
         const track = currentTrack.value
         if (!track) return
         delete track.pivot
     }
 
-    /** 更新轨道 easing（支持 transform 和 visibility 轨道） */
+    /** Update track easing (supports transform and visibility tracks) */
     function updateEasing(easing: string) {
         const track = currentTrack.value ?? currentVisibilityTrack.value
         if (!track) return
@@ -753,31 +753,31 @@ export function useAnimationEdit(options: UseAnimationEditOptions) {
         }
     }
 
-    /** 更新动画循环设置 */
+    /** Update animation loop setting */
     function updateLoop(loop: boolean) {
         animationDef.loop = loop
     }
 
-    /** 更新动画填充模式 */
+    /** Update animation fill mode */
     function updateFillMode(fillMode: 'none' | 'forwards') {
         animationDef.fillMode = fillMode
     }
 
-    /** 更新动画默认播放方式 */
+    /** Update animation default timing mode */
     function updateTimingMode(timingMode: AnimationTimingMode) {
         animationDef.timingMode = timingMode
     }
 
-    /** 更新轨道时长（支持 transform 和 visibility 轨道） */
+    /** Update track duration (supports transform and visibility tracks) */
     function updateDuration(duration: number | 'auto') {
         const track = currentTrack.value ?? currentVisibilityTrack.value
         if (!track) return
         track.duration = duration
     }
 
-    // ===== 轨道 CRUD =====
+    // ===== Track CRUD =====
 
-    /** 添加轨道 */
+    /** Add track */
     function addTrack(track: AnimationTrack): number {
         animationDef.tracks.push(track)
         const idx = animationDef.tracks.length - 1
@@ -786,11 +786,11 @@ export function useAnimationEdit(options: UseAnimationEditOptions) {
         return idx
     }
 
-    /** 删除轨道 */
+    /** Remove track */
     function removeTrack(index: number) {
         if (index < 0 || index >= animationDef.tracks.length) return
         animationDef.tracks.splice(index, 1)
-        // 调整选中索引
+        // Adjust selected index
         if (currentTrackIndex.value >= animationDef.tracks.length) {
             currentTrackIndex.value = animationDef.tracks.length - 1
         }
@@ -800,22 +800,22 @@ export function useAnimationEdit(options: UseAnimationEditOptions) {
         }
     }
 
-    // ===== Visibility 操作 =====
+    // ===== Visibility Operations =====
 
-    /** 评估指定时间点的可见性输出 */
+    /** Evaluate visibility output at specified time */
     function evaluateVisibilityAtTime(time: number): VisibilityTrackOutput | null {
         const track = currentVisibilityTrack.value
         if (!track) return null
         return AnimationTrackEvaluator.evaluateVisibility(track, time)
     }
 
-    /** 在播放头位置添加可见性关键帧 */
+    /** Add visibility keyframe at playhead position */
     function addVisibilityKeyframeAtPlayhead(): number {
         const track = currentVisibilityTrack.value
         if (!track) return -1
 
         const time = playheadPosition.value
-        // 检查该时间点是否已有关键帧
+        // Check if keyframe already exists at this time point
         const existing = track.keyframes.findIndex(k => Math.abs(k.time - time) < TIME_TOLERANCE)
         if (existing >= 0) {
             selectedKeyframeIndex.value = existing
@@ -835,7 +835,7 @@ export function useAnimationEdit(options: UseAnimationEditOptions) {
         return insertIdx
     }
 
-    /** 更新可见性关键帧 */
+    /** Update visibility keyframe */
     function updateVisibilityKeyframe(index: number, values: Partial<VisibilityKeyframe>) {
         const track = currentVisibilityTrack.value
         if (!track || index < 0 || index >= track.keyframes.length) return
@@ -849,18 +849,18 @@ export function useAnimationEdit(options: UseAnimationEditOptions) {
         }
     }
 
-    // ===== Effect 操作 =====
+    // ===== Effect Operations =====
 
-    /** 更新 Effect 轨道的特效参数 */
+    /** Update effect track parameters */
     function updateEffectParams(params: EffectParams) {
         const track = currentEffectTrack.value
         if (!track) return
         track.effectParams = params
     }
 
-    // ===== FrameSequence 操作 =====
+    // ===== FrameSequence Operations =====
 
-    /** 更新 FrameSequence 轨道参数 */
+    /** Update FrameSequence track parameters */
     function updateFrameSequenceTrack(values: Partial<Pick<FrameSequenceTrack, 'fps' | 'loop' | 'assetId'>>) {
         const track = currentFrameSequenceTrack.value
         if (!track) return
@@ -869,28 +869,28 @@ export function useAnimationEdit(options: UseAnimationEditOptions) {
         if (values.assetId !== undefined) track.assetId = values.assetId
     }
 
-    /** 设置/清除运行时动态轨道时长覆写 */
+    /** Set or clear runtime dynamic track duration override */
     function setTrackDurationOverride(durationMs: number | null) {
         trackDurationOverrideMs.value = durationMs
     }
 
-    // ===== 重置（切换动画） =====
+    // ===== Reset (Switch Animation) =====
 
     function resetAnimation(newAnim: AnimationDefinition) {
         pause()
         const fresh = JSON.parse(JSON.stringify(newAnim)) as AnimationDefinition
-        // 原地替换 reactive 对象的所有字段
+        // In-place replace all fields of reactive object
         for (const key of Object.keys(animationDef) as (keyof AnimationDefinition)[]) {
             if (!(key in fresh)) delete (animationDef as Record<string, unknown>)[key]
         }
         Object.assign(animationDef, fresh)
-        // 重置脏状态基线为新动画的快照，防止误报"已修改"
+        // Reset dirty state baseline to fresh snapshot to avoid false "modified" alerts
         initialSnapshot = JSON.stringify(fresh)
         trackDurationOverrideMs.value = null
-        // 重置播放头和选中状态
+        // Reset playhead and selection state
         playheadPosition.value = 0
         if (newAnim.tracks.length === 0) {
-            // 空动画：不选中任何轨道/关键帧
+            // Empty animation: deselect all tracks and keyframes
             currentTrackIndex.value = -1
             selectedKeyframeIndex.value = -1
         } else {
@@ -904,16 +904,16 @@ export function useAnimationEdit(options: UseAnimationEditOptions) {
         initialSnapshot = JSON.stringify(animationDef)
     }
 
-    // ===== 清理 =====
+    // ===== Cleanup =====
 
     function dispose() {
         pause()
     }
 
-    // ===== 导出 =====
+    // ===== Export =====
 
     return {
-        // 数据
+        // Data
         animationDef,
         currentTrackIndex,
         currentTrack,
@@ -935,7 +935,7 @@ export function useAnimationEdit(options: UseAnimationEditOptions) {
         selectionMode,
         isKeyframable,
 
-        // 关键帧操作
+        // Keyframe operations
         updateKeyframe,
         addKeyframeAtPlayhead,
         removeKeyframe,
@@ -955,13 +955,13 @@ export function useAnimationEdit(options: UseAnimationEditOptions) {
         sortKeyframes,
         findKeyframeAtTime,
 
-        // 评估
+        // Evaluation
         evaluateAtTime,
 
-        // 画布交互
+        // Canvas interaction
         commitTransformAtPlayhead,
 
-        // 播放控制
+        // Playback control
         play,
         pause,
         togglePlay,
@@ -969,7 +969,7 @@ export function useAnimationEdit(options: UseAnimationEditOptions) {
         seekPrevKeyframe,
         seekNextKeyframe,
 
-        // Track 设置
+        // Track settings
         selectTrack,
         selectTrackOnly,
         deselectAll,
@@ -981,29 +981,29 @@ export function useAnimationEdit(options: UseAnimationEditOptions) {
         updateFillMode,
         updateTimingMode,
 
-        // 轨道 CRUD
+        // Track CRUD
         addTrack,
         removeTrack,
 
-        // Visibility 操作
+        // Visibility operations
         evaluateVisibilityAtTime,
         addVisibilityKeyframeAtPlayhead,
         updateVisibilityKeyframe,
 
-        // Effect 操作
+        // Effect operations
         currentEffectTrack,
         updateEffectParams,
 
-        // FrameSequence 操作
+        // FrameSequence operations
         currentFrameSequenceTrack,
         updateFrameSequenceTrack,
         setTrackDurationOverride,
 
-        // 切换动画
+        // Switch animation
         resetAnimation,
         markSaved,
 
-        // 清理
+        // Cleanup
         dispose,
     }
 }

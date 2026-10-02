@@ -1,6 +1,6 @@
 /**
- * 剧本编辑器类型定义
- * 对应 ScreenPlayEditor_PRD.md
+ * Screenplay editor type definitions
+ * Corresponds to ScreenPlayEditor_PRD.md
  */
 
 import type { AnimationTimingMode } from './animation'
@@ -9,129 +9,129 @@ export type { SceneObject }
 
 export const SCENE_ACTION_TARGET = '_scene_' as const
 
-// ==================== 场景状态快照 ====================
+// ==================== Scene State Snapshot ====================
 
 /**
- * 相机状态
+ * Camera state
  */
 export interface CameraState {
   x: number
   y: number
   zoom: number
-  transition?: 'cut' | 'fade' // 转场方式
+  transition?: 'cut' | 'fade' // Transition mode
 }
 
 /**
- * 演员状态
+ * Actor state
  */
 export interface ActorState {
   x: number
   y: number
-  state: string // 人物姿态名称，如 "stand_nervous"
-  expression?: string // 表情名称，如 "blush"
+  state: string // Character pose name, e.g. "stand_nervous"
+  expression?: string // Expression name, e.g. "blush"
 }
 
 
 
-// ==================== 动作系统 ====================
+// ==================== Action System ====================
 
 /**
- * 动作类型枚举 (v6.3 精简版)
- * 瞬时动作 (Point Actions): 在特定时间点触发，立即改变状态
- * 持续动作 (Duration Actions): 在一段时间内持续进行插值变化
+ * Action type enum (v6.3 streamlined)
+ * Point Actions: triggered at a specific timestamp, immediately alters state
+ * Duration Actions: continuously interpolates changes over a duration
  * 
- * 设计原则：
- * - set_transform: 控制视觉属性 (alpha, visible, flipX, zIndex)
- * - tween_transform: 控制几何属性的渐变 (x, y, scaleX, scaleY, rotation)
+ * Design principles:
+ * - set_transform: Controls transform properties (x, y, scale, rotation, alpha)
+ * - tween_transform: Controls geometric property tweens (x, y, scaleX, scaleY, rotation)
  */
 export type ActionType =
-  // --- 瞬时动作 (Point Actions) ---
-  | 'set_scene_structure'   // 场景级父子结构状态补丁
-  | 'set_transform'   // 瞬间改变几何属性 (x/y/scale/rotation/alpha)
-  | 'set_visual'      // 瞬间改变视觉属性 (visible/flipX/zIndex) v9.3新增
-  | 'set_lifecycle'   // 控制对象出生/消亡 (spawned) v9.3新增
-  | 'set_composite'   // P2: 修改组合对象自身属性 (compositeMode/renderChain)
-  | 'set_mask'        // Clip-Mask Phase 1: 修改蒙版对象自身属性 (targetIds/shape)
+  // --- Point Actions ---
+  | 'set_scene_structure'   // Scene-level parent-child hierarchy state patch
+  | 'set_transform'   // Immediately change geometric properties (x/y/scale/rotation/alpha)
+  | 'set_visual'      // Immediately change visual properties (visible/flipX/zIndex) added in v9.3
+  | 'set_lifecycle'   // Control object spawn/despawn (spawned) added in v9.3
+  | 'set_composite'   // P2: Modify composite object own properties (compositeMode/renderChain)
+  | 'set_mask'        // Clip-Mask Phase 1: Modify mask object own properties (targetIds/shape)
 
-  | 'set_anim'        // 设置组件动画状态 (v6.3 新增, v10.0 重命名)
-  | 'set_audio'       // 设置音频播放状态 (v7.5 新增, v10.0 重命名)
-  | 'set_screen_effect' // 瞬时设置画面特效参数 (Phase 1 新增)
-  | 'set_light'        // 瞬时设置光源参数 (点光源 PRD Phase 0.5)
-  | 'set_material'    // v16: 切换 SymbolObject 的当前素材
-  | 'set_text'        // 瞬时设置文本属性 (Text PRD Phase 0)
-  | 'set_text_reveal' // 文本显现/打字机播放控制
-  | 'camera_cut'      // 镜头切 (瞬间切换机位)
-  // --- 持续动作 (Duration Actions) ---
-  | 'tween_transform' // 补间变换 (x/y/scale/rotation/alpha)
-  | 'tween_screen_effect' // 渐变画面特效参数 (Phase 1 新增)
-  | 'tween_light'      // 渐变光源参数 (点光源 PRD Phase 0.5)
-  | 'tween_text'       // 渐变文本属性 (Text PRD Phase 1)
-  | 'camera_move'     // 运镜 (推拉摇移)
-  | 'camera_shake'    // 震动
-  | 'camera_follow'   // 跟随 (v6.5 新增)
+  | 'set_anim'        // Set component animation state (v6.3 added, v10.0 renamed)
+  | 'set_audio'       // Set audio playback state (v7.5 added, v10.0 renamed)
+  | 'set_screen_effect' // Instantly set screen effect parameters (Phase 1 added)
+  | 'set_light'        // Instantly set light parameters (Point light PRD Phase 0.5)
+  | 'set_material'    // v16: Switch current material of SymbolObject
+  | 'set_text'        // Instantly set text properties (Text PRD Phase 0)
+  | 'set_text_reveal' // Text reveal / typewriter playback control
+  | 'camera_cut'      // Camera cut (instant camera switch)
+  // --- Duration Actions ---
+  | 'tween_transform' // Tween transform (x/y/scale/rotation/alpha)
+  | 'tween_screen_effect' // Tween screen effect parameters (Phase 1 added)
+  | 'tween_light'      // Tween light parameters (Point light PRD Phase 0.5)
+  | 'tween_text'       // Tween text properties (Text PRD Phase 1)
+  | 'camera_move'     // Camera move (pan/tilt/zoom)
+  | 'camera_shake'    // Camera shake
+  | 'camera_follow'   // Camera follow (v6.5 added)
 
 /**
- * 动作分类 (v6.2)
- * point: 瞬时动作，在 Slot 起始点触发
- * duration: 持续动作，填满 Slot 全时长
+ * Action category (v6.2)
+ * point: Point action, triggered at Slot start
+ * duration: Duration action, spans full Slot duration
  */
 export type ActionCategory = 'point' | 'duration'
 
 /**
- * 动作基础接口 (v6.2)
+ * Action base interface (v6.2)
  */
 export interface BaseAction {
   id: string           // UUID
-  target: string       // 目标标识 (通常是 Actor Alias 或 Object ID)
+  target: string       // Target identifier (usually Actor Alias or Object ID)
   type: ActionType
-  category: ActionCategory // 动作分类
-  slotIndex: number    // 依附的起始槽位下标
-  order?: number        // 同一 slot 内的显式执行顺序；旧数据为空时使用兼容排序
+  category: ActionCategory // Action category
+  slotIndex: number    // Attached starting slot index
+  order?: number        // Explicit execution order within same slot; legacy uses fallback sort when omitted
 }
 
-// ==================== 瞬时动作 (Point Actions) ====================
+// ==================== Point Actions ====================
 
 /**
- * 几何变换参数 (v9.3 重新定义)
- * 包含几何变换和透明度
- * 可与 tween_transform 共存：set_transform 设置初始状态，tween_transform 从该状态开始渐变
+ * Geometric transform parameters (redefined in v9.3)
+ * Contains geometric transform and opacity
+ * Coexists with tween_transform: set_transform sets initial state, tween_transform tweens from that state
  */
 export interface SetTransformParams {
-  // 几何属性
-  x?: number          // X 坐标
-  y?: number          // Y 坐标
-  scaleX?: number     // X 缩放
-  scaleY?: number     // Y 缩放
-  rotation?: number   // 旋转角度 (弧度)
-  // 透明度 (可即时设置或动画过渡)
-  alpha?: number      // 透明度 (0-1)
-  // 变换原点覆盖（像素偏移，覆盖 SceneObjectBase 的基线值）
+  // Geometric properties
+  x?: number          // X coordinate
+  y?: number          // Y coordinate
+  scaleX?: number     // X scale
+  scaleY?: number     // Y scale
+  rotation?: number   // Rotation angle (radians)
+  // Opacity (instant or animated)
+  alpha?: number      // Opacity (0-1)
+  // Transform origin override (pixel offset, overrides SceneObjectBase baseline value)
   transformOriginX?: number
   transformOriginY?: number
 }
 
 /**
- * 视觉属性参数 (v9.3 新增)
- * 控制对象的显示属性，与所有 Action 可共存
+ * Visual property parameters (added in v9.3)
+ * Controls object display properties, coexists with all Actions
  */
 export interface SetVisualParams {
-  visible?: boolean   // 可见性
-  flipX?: boolean     // 水平翻转
-  zIndex?: number     // 层级
-  receiveLighting?: boolean // 是否受全局光照影响
-  castShadow?: boolean // 是否投射脚底阴影
+  visible?: boolean   // Visibility
+  flipX?: boolean     // Horizontal flip
+  zIndex?: number     // Z-index layer
+  receiveLighting?: boolean // Whether affected by global lighting
+  castShadow?: boolean // Whether to cast foot shadow
 }
 
 /**
- * 生命周期参数 (v9.3 新增)
- * 控制动态对象的出生和消亡
+ * Lifecycle parameters (added in v9.3)
+ * Controls spawn and despawn of dynamic objects
  */
 export interface SetLifecycleParams {
-  spawned: boolean    // true=出生, false=消亡
+  spawned: boolean    // true=spawn, false=despawn
   /**
-   * 本段结束后自动消亡（仅对出生 Action 生效）
-   * - true（默认）：Block 结束时，如果该对象没有被手动消亡，则自动消亡
-   * - false：对象在 Block 结束后继续存活，继承到后续 Block
+   * Automatically despawn after block ends (effective for spawn Action only)
+   * - true (default): At block end, if object not manually despawned, despawns automatically
+   * - false: Object persists after block ends, inherited into subsequent blocks
    */
   autoDespawnOnBlockEnd?: boolean
 }
@@ -152,9 +152,9 @@ export interface GroupSceneStructureOperation extends BaseSceneStructureOperatio
   memberIds: string[]
   parentId: string | null
   /**
-   * 本段结束后自动解除结构（仅对成组操作生效）。
-   * - undefined / true：Block 结束时自动停用结构对象，并恢复成员父级
-   * - false：结构对象及其成员结构继承到后续 Block
+   * Automatically dismantle structure after block ends (effective for grouping only).
+   * - undefined / true: Automatically disable structure object and restore member parents at block end
+   * - false: Structure object and member hierarchy inherited into subsequent blocks
    */
   autoRestoreOnBlockEnd?: boolean
 }
@@ -178,9 +178,9 @@ export interface SetSceneStructureParams {
 }
 
 /**
- * 瞬间改变几何属性动作 (v9.3 重新定义)
- * 用于即时变换对象位置、缩放、旋转和透明度
- * 可与 tween_transform 共存：先瞬时设置，再开始补间渐变
+ * Instant geometric transform action (redefined in v9.3)
+ * Used to instantly change object position, scale, rotation, and opacity
+ * Coexists with tween_transform: sets instant values first, then begins tween transition
  */
 export interface SetTransformAction extends BaseAction {
   type: 'set_transform'
@@ -189,8 +189,8 @@ export interface SetTransformAction extends BaseAction {
 }
 
 /**
- * 视觉属性动作 (v9.3 新增)
- * 瞬间改变对象的显示属性，与所有 Action 可共存
+ * Visual properties action (added in v9.3)
+ * Instantly changes object display properties, coexists with all Actions
  */
 export interface SetVisualAction extends BaseAction {
   type: 'set_visual'
@@ -199,9 +199,9 @@ export interface SetVisualAction extends BaseAction {
 }
 
 /**
- * 生命周期动作 (v9.3 新增)
- * 控制动态对象的出生和消亡
- * 图标: 🌱 (出生) / 🍂 (消亡)
+ * Lifecycle action (added in v9.3)
+ * Controls spawn and despawn of dynamic objects
+ * Icon: 🌱 (spawn) / 🍂 (despawn)
  */
 export interface SetLifecycleAction extends BaseAction {
   type: 'set_lifecycle'
@@ -222,7 +222,7 @@ export interface SetSceneStructureAction extends BaseAction {
  */
 export interface SetCompositeParams {
   compositeMode?: 'entity' | 'union'
-  renderChain?: string[]  // entity 内部渲染链排序
+  renderChain?: string[]  // Internal entity render chain ordering
 }
 
 /**
@@ -238,23 +238,23 @@ export interface SetCompositeAction extends BaseAction {
 /**
  * Clip-Mask Phase 1: Params for modifying mask object properties
  *
- * 字段族合一（同 set_composite / set_visual）：所有 mask 专属字段聚合到一个 Action 类型。
- * 不包含 mode（Phase 1 锁定 inside_visible，UI 不暴露）。
- * width/height 属于 mask 几何定义；transform 仍走 set_transform。
+ * Unified field family (like set_composite / set_visual): aggregates all mask-specific fields into one Action type.
+ * Mode omitted (Phase 1 locked to inside_visible, not exposed in UI).
+ * width/height belong to mask geometry definition; transform still handled via set_transform.
  */
 export interface SetMaskParams {
-  /** 替换 mask.targetIds（部分更新语义：未提供 = 不变） */
+  /** Replace mask.targetIds (partial update: unchanged if omitted) */
   targetIds?: string[]
-  /** 蒙版形状切换 */
+  /** Mask shape switch */
   shape?: 'rectangle' | 'ellipse'
-  /** 蒙版原始宽度（部分更新语义：未提供 = 不变） */
+  /** Mask raw width (partial update: unchanged if omitted) */
   width?: number
-  /** 蒙版原始高度（部分更新语义：未提供 = 不变） */
+  /** Mask raw height (partial update: unchanged if omitted) */
   height?: number
 }
 
 /**
- * Clip-Mask Phase 1: 修改蒙版对象自身属性 (targetIds / shape / width / height)
+ * Clip-Mask Phase 1: Modify mask object properties (targetIds / shape / width / height)
  * Target = mask object ID
  */
 export interface SetMaskAction extends BaseAction {
@@ -266,12 +266,12 @@ export interface SetMaskAction extends BaseAction {
 
 
 /**
- * 镜头切动作
+ * Camera cut action
  */
 export interface CameraCutAction extends BaseAction {
   type: 'camera_cut'
   category: 'point'
-  target: 'camera' // 固定
+  target: 'camera' // Fixed
   params: {
     x: number
     y: number
@@ -280,61 +280,61 @@ export interface CameraCutAction extends BaseAction {
 }
 
 /**
- * 设置动画播放状态动作 (v11.0)
- * 统一控制所有类型的动画（帧序列、变换、特效等）
+ * Set animation playback state action (v11.0)
+ * Uniformly controls all animation types (frame sequences, transforms, effects, etc.)
  * 
- * 使用 animName 引用目标对象资源中定义的 AnimationDefinition
+ * References AnimationDefinition in target object asset via animName
  * 
- * v11.88: 新增 autoStopOnBlockEnd 属性控制 Block 结束时是否自动停止（放在每个动画项内）
- *         移除旧格式向后兼容属性
- * v12.x:  恢复 loop 覆盖能力，放在每个动画项内独立控制
+ * v11.88: Added autoStopOnBlockEnd property to control auto-stop at block end (per animation item)
+ *         Removed legacy backward compatibility properties
+ * v12.x:  Restored loop override capability, controlled independently per animation item
  */
 export interface SetAnimAction extends BaseAction {
   type: 'set_anim'
   category: 'point'
   params: {
     /**
-     * v11.88: 多动画控制
-     * - animName: 引用目标对象资源中定义的 Animation
-     * - action: 控制指令，默认 'play'
-     * - autoStopOnBlockEnd: 是否在 Block 结束时自动停止
-     * - loop: 覆盖 AnimationDefinition.loop（undefined = 跟随定义）
-     * - timingMode: 覆盖 AnimationDefinition.timingMode（undefined = 跟随定义）
+     * v11.88: Multi-animation control
+     * - animName: References Animation defined in target object asset
+     * - action: Control instruction, default 'play'
+     * - autoStopOnBlockEnd: Whether to stop automatically when block ends
+     * - loop: Overrides AnimationDefinition.loop (undefined = follows definition)
+     * - timingMode: Overrides AnimationDefinition.timingMode (undefined = follows definition)
      */
     animations: {
       animName: string
       action?: 'play' | 'stop'
       /**
-       * v11.88: 本段结束后停止
-       * - true (默认): Block 结束时自动停止此动画
-       * - false: 动画持续到后续 Block，直到被显式停止
+       * v11.88: Stop after current block
+       * - true (default): Automatically stop this animation when block ends
+       * - false: Animation continues into subsequent blocks until explicitly stopped
        */
       autoStopOnBlockEnd?: boolean
       /**
-       * v12.x: 循环覆盖（三态）
-       * - undefined (默认): 跟随 AnimationDefinition.loop
-       * - true: 强制循环
-       * - false: 强制不循环
+       * v12.x: Loop override (tri-state)
+       * - undefined (default): Follows AnimationDefinition.loop
+       * - true: Force loop
+       * - false: Force non-loop
        */
       loop?: boolean
       /**
-       * v21: 播放方式覆盖（三态）
-       * - undefined (默认): 跟随 AnimationDefinition.timingMode
-       * - continuous: 动作触发后连续播放
-       * - tts_speech: 仅在 TTS 有声片段内播放
+       * v21: Playback mode override (tri-state)
+       * - undefined (default): Follows AnimationDefinition.timingMode
+       * - continuous: Continuous playback after action triggers
+       * - tts_speech: Play only during TTS voiced segments
        */
       timingMode?: AnimationTimingMode
     }[]
 
     /**
-     * 可选：播放参数（应用于所有动画）
+     * Optional: playback parameters (applied to all animations)
      */
-    reset?: boolean       // play 时是否从头开始，默认 true
+    reset?: boolean       // Whether to start from beginning on play, default true
   }
 }
 
 /**
- * 设置音频播放状态动作 (v7.5, v10.0 重命名)
+ * Set audio playback state action (v7.5, renamed in v10.0)
  */
 export interface SetAudioAction extends BaseAction {
   type: 'set_audio'
@@ -349,26 +349,26 @@ export interface SetAudioAction extends BaseAction {
 }
 
 /**
- * 画面特效参数 (Phase 1 新增)
- * 用于 set_screen_effect 和 tween_screen_effect 动作
+ * Screen effect parameters (Phase 1 added)
+ * Used for set_screen_effect and tween_screen_effect actions
  */
 export interface SetScreenEffectParams {
-  // 覆盖不透明度统一由 SceneObject.alpha 控制，不再使用 coverOpacity
-  baseColor?: string          // 覆盖颜色
+  // Overlay opacity uniformly controlled by SceneObject.alpha, coverOpacity no longer used
+  baseColor?: string          // Overlay color
   holeShape?: 'circle' | 'horizontal_ellipse' | 'vertical_ellipse' | 'rectangle'
   holeCenterX?: number
   holeCenterY?: number
   holeWidth?: number
   holeHeight?: number
-  openRatio?: number          // 开合比例 0~1
-  feather?: number            // 羽化半径
-  targetId?: string           // 跟随目标 ID
+  openRatio?: number          // Open/close ratio 0~1
+  feather?: number            // Feather radius
+  targetId?: string           // Follow target ID
   offsetX?: number
   offsetY?: number
 }
 
 /**
- * 瞬时设置画面特效参数 (Phase 1 新增)
+ * Instantly set screen effect parameters (Phase 1 added)
  */
 export interface SetScreenEffectAction extends BaseAction {
   type: 'set_screen_effect'
@@ -377,15 +377,15 @@ export interface SetScreenEffectAction extends BaseAction {
 }
 
 /**
- * v16: 切换元件素材参数
+ * v16: Switch symbol material parameters
  */
 export interface SetMaterialParams {
-  materialId: string  // 目标素材 ID
+  materialId: string  // Target material ID
 }
 
 /**
- * v16: 切换元件素材动作
- * 目标必须是 SymbolObject
+ * v16: Switch symbol material action
+ * Target must be a SymbolObject
  */
 export interface SetMaterialAction extends BaseAction {
   type: 'set_material'
@@ -394,8 +394,8 @@ export interface SetMaterialAction extends BaseAction {
 }
 
 /**
- * 文本属性参数 (Text PRD Phase 0 + Phase 1)
- * 用于 set_text 动作
+ * Text property parameters (Text PRD Phase 0 + Phase 1)
+ * Used for set_text action
  */
 export interface SetTextParams {
   content?: string
@@ -407,7 +407,7 @@ export interface SetTextParams {
   align?: 'left' | 'center' | 'right'
   wordWrap?: boolean
   wordWrapWidth?: number
-  // Phase 1: 视觉增强
+  // Phase 1: Visual enhancement
   stroke?: string
   strokeThickness?: number
   letterSpacing?: number
@@ -419,7 +419,7 @@ export interface SetTextParams {
   dropShadowBlur?: number
   dropShadowAngle?: number
   dropShadowDistance?: number
-  // Phase 2: 动画
+  // Phase 2: Animation
   revealSpeed?: number
   fillType?: 'linear_gradient'
   gradientStops?: { offset: number; color: string }[]
@@ -433,7 +433,7 @@ export interface SetTextParams {
 }
 
 /**
- * 瞬时设置文本属性 (Text PRD Phase 0)
+ * Instantly set text properties (Text PRD Phase 0)
  */
 export interface SetTextAction extends BaseAction {
   type: 'set_text'
@@ -442,8 +442,8 @@ export interface SetTextAction extends BaseAction {
 }
 
 /**
- * 文本显现动作
- * 用于触发 TextObject 的程序化显现效果，例如打字机。
+ * Text reveal action
+ * Used to trigger programmatic reveal effects on TextObject, e.g. typewriter.
  */
 export interface SetTextRevealAction extends BaseAction {
   type: 'set_text_reveal'
@@ -455,8 +455,8 @@ export interface SetTextRevealAction extends BaseAction {
 }
 
 /**
- * 文本渐变参数 (Text PRD Phase 1)
- * 可插值的文本属性子集
+ * Text tween parameters (Text PRD Phase 1)
+ * Subset of interpolatable text properties
  */
 export interface TweenTextParams {
   color?: string
@@ -466,8 +466,8 @@ export interface TweenTextParams {
 }
 
 /**
- * 渐变文本属性动作 (Text PRD Phase 1)
- * 控制文本颜色/字号/字距/描边粗细的平滑过渡
+ * Tween text properties action (Text PRD Phase 1)
+ * Smoothly transitions text color/font size/letter spacing/stroke thickness
  */
 export interface TweenTextAction extends BaseDurationAction {
   type: 'tween_text'
@@ -475,24 +475,24 @@ export interface TweenTextAction extends BaseDurationAction {
 }
 
 /**
- * 光源参数 (点光源 PRD Phase 0.5)
- * 用于 set_light 和 tween_light 动作
- * 环境光与点光源共用同一接口，运行时根据 lightType 忽略不适用字段
+ * Light parameters (Point light PRD Phase 0.5)
+ * Used for set_light and tween_light actions
+ * Ambient and point lights share same interface, ignoring inapplicable fields at runtime based on lightType
  */
 export interface SetLightParams {
-  lightColor?: string       // 光照颜色 (hex)，环境光+点光源均有效
-  lightIntensity?: number   // 光照强度 0~2，环境光+点光源均有效
-  lightRadius?: number      // 光照半径（像素），仅 point 有效
-  // Phase 1: 闪烁和方向性
-  flicker?: number          // 闪烁强度 0~1
-  flickerSpeed?: number     // 闪烁速度 0~1
-  directionMode?: 'omni' | 'cone'  // 发光模式
-  directionAngle?: number   // 方向角（弧度）
-  coneAngle?: number        // 扇形开角（角度制）
+  lightColor?: string       // Light color (hex), valid for ambient + point
+  lightIntensity?: number   // Light intensity 0~2, valid for ambient + point
+  lightRadius?: number      // Light radius (pixels), point only
+  // Phase 1: Flicker and directionality
+  flicker?: number          // Flicker intensity 0~1
+  flickerSpeed?: number     // Flicker speed 0~1
+  directionMode?: 'omni' | 'cone'  // Emission mode
+  directionAngle?: number   // Direction angle (radians)
+  coneAngle?: number        // Cone angle (degrees)
 }
 
 /**
- * 瞬时设置光源参数 (点光源 PRD Phase 0.5)
+ * Instantly set light parameters (Point light PRD Phase 0.5)
  */
 export interface SetLightAction extends BaseAction {
   type: 'set_light'
@@ -500,21 +500,21 @@ export interface SetLightAction extends BaseAction {
   params: SetLightParams
 }
 
-// ==================== 持续动作 (Duration Actions) ====================
+// ==================== Duration Actions ====================
 
 /**
- * 持续动作基础接口 (v6.2)
+ * Duration action base interface (v6.2)
  */
 export interface BaseDurationAction extends BaseAction {
   category: 'duration'
-  slotSpan: number     // 槽位跨度，默认 1，>1 表示跨槽位动作
-  easing?: string      // 缓动函数名，如 'linear', 'easeInOutQuad'
+  slotSpan: number     // Slot span, default 1, >1 indicates multi-slot action
+  easing?: string      // Easing function name, e.g. 'linear', 'easeInOutQuad'
 }
 
 /**
- * 补间变换参数 (v9.3 更新)
- * 包含几何变换和透明度，用于渐变动画
- * 可与 set_transform 共存：set_transform 设置初始状态，tween_transform 从该状态渐变到目标
+ * Tween transform parameters (updated in v9.3)
+ * Contains geometric transform and opacity for tween animations
+ * Coexists with set_transform: set_transform sets initial state, tween_transform tweens towards target
  */
 export interface TweenTransformParams {
   x?: number
@@ -522,12 +522,12 @@ export interface TweenTransformParams {
   scaleX?: number
   scaleY?: number
   rotation?: number
-  alpha?: number      // v9.3: 透明度动画过渡 (0-1)
+  alpha?: number      // v9.3: Opacity animation transition (0-1)
 }
 
 /**
- * 补间变换动作 (v6.3)
- * 控制对象的几何属性渐变
+ * Tween transform action (v6.3)
+ * Controls geometric property tweens of object
  */
 export interface TweenTransformAction extends BaseDurationAction {
   type: 'tween_transform'
@@ -535,8 +535,8 @@ export interface TweenTransformAction extends BaseDurationAction {
 }
 
 /**
- * 渐变画面特效参数动作 (Phase 1 新增)
- * 控制特效参数的平滑过渡（如 openRatio、feather 等）
+ * Tween screen effect parameters action (Phase 1 added)
+ * Controls smooth transition of effect parameters (e.g. openRatio, feather, etc.)
  */
 export interface TweenScreenEffectAction extends BaseDurationAction {
   type: 'tween_screen_effect'
@@ -544,8 +544,8 @@ export interface TweenScreenEffectAction extends BaseDurationAction {
 }
 
 /**
- * 渐变光源参数动作 (点光源 PRD Phase 0.5)
- * 控制光源颜色/强度/半径的平滑过渡
+ * Tween light parameters action (Point light PRD Phase 0.5)
+ * Controls smooth transition of light color/intensity/radius
  */
 export interface TweenLightAction extends BaseDurationAction {
   type: 'tween_light'
@@ -553,7 +553,7 @@ export interface TweenLightAction extends BaseDurationAction {
 }
 
 /**
- * 运镜动作
+ * Camera move action
  */
 export interface CameraMoveAction extends BaseDurationAction {
   type: 'camera_move'
@@ -566,105 +566,105 @@ export interface CameraMoveAction extends BaseDurationAction {
 }
 
 /**
- * 震动动作
+ * Camera shake action
  */
 export interface CameraShakeAction extends BaseDurationAction {
   type: 'camera_shake'
   target: 'camera'
   params: {
-    intensity: number // 震动强度 (像素)
-    decay: boolean    // 是否随时间衰减
-    frequency: number // 震动频率 (Hz)
+    intensity: number // Shake intensity (pixels)
+    decay: boolean    // Whether to decay over time
+    frequency: number // Shake frequency (Hz)
   }
 }
 
 /**
- * 跟随动作 (v6.5 新增)
- * 将相机中心锁定在指定对象上
+ * Camera follow action (v6.5 added)
+ * Locks camera center onto specified object
  */
 export interface CameraFollowAction extends BaseDurationAction {
   type: 'camera_follow'
   target: 'camera'
   params: {
-    followTarget: string  // 跟随目标 (actor alias 或 object id)
-    damping?: number      // 阻尼系数 (0=死跟，>0=平滑跟随)，默认 0
-    offsetX?: number      // X 偏移量，默认 0
-    offsetY?: number      // Y 偏移量，默认 -50（人物稍微偏下）
-    zoom?: number         // 缩放级别，不设置则保持当前 zoom
-    smoothEntry?: boolean      // v15: 平滑入场（默认 false），从当前位置滑动到目标
-    smoothEntryDuration?: number // v15: 平滑入场时长（ms），默认 300
-    autoZoom?: boolean         // v15: 自动推拉（默认 false），正弦波缩放振荡
-    autoZoomRange?: number     // v15: 推拉幅度（基准 zoom 的百分比），默认 5
-    autoZoomCycles?: number    // v15: 推拉次数（完整周期数），默认 0.5
-    constrainBounds?: boolean  // v6.9: 边界约束，限制相机在画布范围内
+    followTarget: string  // Follow target (actor alias or object id)
+    damping?: number      // Damping coefficient (0=rigid lock, >0=smooth follow), default 0
+    offsetX?: number      // X offset, default 0
+    offsetY?: number      // Y offset, default -50 (character slightly lower)
+    zoom?: number         // Zoom level, maintains current zoom when omitted
+    smoothEntry?: boolean      // v15: Smooth entry (default false), slides from current position to target
+    smoothEntryDuration?: number // v15: Smooth entry duration (ms), default 300
+    autoZoom?: boolean         // v15: Auto push-pull (default false), sine wave zoom oscillation
+    autoZoomRange?: number     // v15: Push-pull range (% of base zoom), default 5
+    autoZoomCycles?: number    // v15: Push-pull cycles (full cycles), default 0.5
+    constrainBounds?: boolean  // v6.9: Boundary constraint, restricts camera within canvas bounds
   }
 }
 
-// ==================== 动作联合类型 ====================
+// ==================== Action Union Types ====================
 
 /**
- * 所有动作类型的联合 (v9.3 更新)
+ * Union of all action types (updated in v9.3)
  */
 export type Action =
   | SetSceneStructureAction
   | SetTransformAction
-  | SetVisualAction      // v9.3 新增
-  | SetLifecycleAction   // v9.3 新增
+  | SetVisualAction      // Added in v9.3
+  | SetLifecycleAction   // Added in v9.3
   | SetCompositeAction   // P2
   | SetMaskAction        // Clip-Mask Phase 1
 
   | SetAnimAction
   | SetAudioAction
-  | SetScreenEffectAction  // Phase 1 新增
-  | SetLightAction         // 点光源 PRD Phase 0.5
-  | SetMaterialAction      // v16 新增
+  | SetScreenEffectAction  // Phase 1 added
+  | SetLightAction         // Point light PRD Phase 0.5
+  | SetMaterialAction      // Added in v16
   | SetTextAction          // Text PRD Phase 0
   | SetTextRevealAction
   | CameraCutAction
   | TweenTransformAction
-  | TweenScreenEffectAction // Phase 1 新增
-  | TweenLightAction       // 点光源 PRD Phase 0.5
+  | TweenScreenEffectAction // Phase 1 added
+  | TweenLightAction       // Point light PRD Phase 0.5
   | TweenTextAction        // Text PRD Phase 1
   | CameraMoveAction
   | CameraShakeAction
   | CameraFollowAction
 
 /**
- * 瞬时动作类型（用于类型守卫）(v9.3 更新)
+ * Point action types (for type guards) (updated in v9.3)
  */
 export type PointAction =
   | SetSceneStructureAction
   | SetTransformAction
-  | SetVisualAction      // v9.3 新增
-  | SetLifecycleAction   // v9.3 新增
+  | SetVisualAction      // Added in v9.3
+  | SetLifecycleAction   // Added in v9.3
   | SetCompositeAction   // P2
   | SetMaskAction        // Clip-Mask Phase 1
 
   | SetAnimAction
   | SetAudioAction
-  | SetScreenEffectAction  // Phase 1 新增
-  | SetLightAction         // 点光源 PRD Phase 0.5
-  | SetMaterialAction      // v16 新增
+  | SetScreenEffectAction  // Phase 1 added
+  | SetLightAction         // Point light PRD Phase 0.5
+  | SetMaterialAction      // Added in v16
   | SetTextAction          // Text PRD Phase 0
   | SetTextRevealAction
   | CameraCutAction
 
 /**
- * 持续动作类型（用于类型守卫）
+ * Duration action types (for type guards)
  */
 export type DurationAction =
   | TweenTransformAction
-  | TweenScreenEffectAction // Phase 1 新增
-  | TweenLightAction       // 点光源 PRD Phase 0.5
+  | TweenScreenEffectAction // Phase 1 added
+  | TweenLightAction       // Point light PRD Phase 0.5
   | TweenTextAction        // Text PRD Phase 1
   | CameraMoveAction
   | CameraShakeAction
   | CameraFollowAction
 
-// ==================== 场景容器系统 (v5.0) ====================
+// ==================== Scene Container System (v5.0) ====================
 
 /**
- * 场景容器的 Setup 数据
+ * Scene container Setup data
  */
 export interface SceneSetup {
   camera: {
@@ -675,13 +675,13 @@ export interface SceneSetup {
     zoom: number
   }
   objects: SceneObject[]
-  /** 根级渲染链（有序 ID 列表）。union composite 不出现，其子对象展开平铺。 */
+  /** Root-level render chain (ordered ID list). Union composites omitted, children flattened. */
   renderChain: string[]
 }
 
 /**
- * 运行时相机状态
- * 从 actionEvaluator.ts 提升到 types 层统一定义
+ * Runtime camera state
+ * Promoted from actionEvaluator.ts to types layer for unified definition
  */
 export interface RuntimeCameraState {
   x: number
@@ -692,31 +692,31 @@ export interface RuntimeCameraState {
 }
 
 /**
- * 场景的运行时快照（Runtime 工作副本）
- * 由 SceneSetup 深拷贝后，经 Action 链评估产生。
+ * Scene runtime snapshot (Runtime working copy)
+ * Deep copied from SceneSetup and produced via Action chain evaluation.
  *
- * 三个消费者各自持有独立实例：
- * - 编辑器: sceneObjectStore.runtimeState (ref, 响应式, Slot 粒度)
- * - ScenePlayer: runtimeSnapshot (局部变量, 时间粒度)
- * - FrameCapture: this.runtimeSnapshot (类成员, 时间粒度)
+ * Three consumers each hold independent instances:
+ * - Editor: sceneObjectStore.runtimeState (ref, reactive, Slot granularity)
+ * - ScenePlayer: runtimeSnapshot (local variable, time granularity)
+ * - FrameCapture: this.runtimeSnapshot (class member, time granularity)
  *
- * 生命周期：
- * - 创建: 进入 Action Mode / 开始播放 / 开始导出 时
- * - 更新: 每次 Block 切换由 applyBlockActionsToState 重新计算
- * - 销毁: 退出 Action Mode / 播放结束 / 导出结束 后丢弃
+ * Lifecycle:
+ * - Created: entering Action Mode / starting playback / starting export
+ * - Updated: recomputed by applyBlockActionsToState on each Block switch
+ * - Destroyed: discarded after exiting Action Mode / ending playback / ending export
  */
 export interface RuntimeSceneSnapshot {
-  /** runtime 对象列表（经 Action 评估后的状态） */
+  /** runtime object list (state after Action evaluation) */
   objects: SceneObject[]
-  /** runtime 渲染链（经 reconcileRenderChain 协调后） */
+  /** runtime render chain (after reconcileRenderChain coordination) */
   renderChain: string[]
-  /** runtime 相机状态 */
+  /** runtime camera state */
   camera: RuntimeCameraState
 }
 
 /**
- * 从 SceneSetup 创建 RuntimeSceneSnapshot
- * 这是 Runtime 层的唯一创建入口
+ * Create RuntimeSceneSnapshot from SceneSetup
+ * The sole creation entry point in Runtime layer
  */
 export function createRuntimeSnapshot(setup: SceneSetup): RuntimeSceneSnapshot {
   const cloned = JSON.parse(JSON.stringify(setup)) as SceneSetup
@@ -734,11 +734,11 @@ export function createRuntimeSnapshot(setup: SceneSetup): RuntimeSceneSnapshot {
 }
 
 /**
- * 单个 Block 的播放信息
- * 由 prepareBlockPlayInfos 预计算，三个消费者共用。
+ * Playback information for a single Block
+ * Precomputed by prepareBlockPlayInfos, shared across three consumers.
  */
 export interface BlockPlayInfo {
-  /** Block 开始时的场景 runtime 快照 */
+  /** Scene runtime snapshot at start of Block */
   startSnapshot: RuntimeSceneSnapshot
   block: ScriptBlock
   startTime: number
@@ -750,7 +750,7 @@ export interface BlockPlayInfo {
 }
 
 /**
- * 场景容器
+ * Scene container
  */
 export interface SceneContainer {
   id: string
@@ -760,71 +760,71 @@ export interface SceneContainer {
   script: ScriptBlock[] // DialogueBlock | NarrationBlock
 }
 
-// ==================== 脚本块系统 ====================
+// ==================== Script Block System ====================
 
 /**
- * 脚本块类型
+ * Script block types
  */
 export type ScriptBlockType = 'dialogue' | 'narration' | 'action'
 
 /**
- * 脚本块基础接口
+ * Script block base interface
  */
 export interface BaseScriptBlock {
-  id: string // 唯一标识
+  id: string // Unique identifier
   type: ScriptBlockType
 }
 
 /**
- * TTS 配置接口
- * 用于 DialogueBlock 和 NarrationBlock
- * v12.8: audio 改为 audioPath，TTS 音频外置到文件系统
+ * TTS configuration interface
+ * Used for DialogueBlock and NarrationBlock
+ * v12.8: audio changed to audioPath, TTS audio externalized to file system
  */
 export interface TTSConfig {
-  duration?: number // TTS 估算时长（毫秒）
-  audioPath?: string // v12.8: TTS 音频文件相对路径 (如 "project_cache/tts/{hash}.mp3")
-  timingAudioPath?: string // 导出预加载后保留的原始音频路径，用于读取 TTS timing sidecar
-  voiceId?: number // 使用的音色ID
-  // 生成时的快照信息，用于检测内容变更
+  duration?: number // TTS estimated duration (ms)
+  audioPath?: string // v12.8: Relative path to TTS audio file (e.g. "project_cache/tts/{hash}.mp3")
+  timingAudioPath?: string // Original audio path retained after export preload, used to read TTS timing sidecar
+  voiceId?: number // Used voice ID
+  // Generation snapshot info, used to detect content changes
   generatedFrom?: {
-    instanceId?: string // v7.0: 生成时的实例ID (仅对话)
-    text: string // 生成时的文本内容
-    voiceId: number // 生成时的音色ID
-    speed: number // 生成时的语速
-    volume?: number // 生成时的音量
+    instanceId?: string // v7.0: Instance ID at generation (dialogue only)
+    text: string // Text content at generation
+    voiceId: number // Voice ID at generation
+    speed: number // Speech speed at generation
+    volume?: number // Volume at generation
   }
 }
 
 
 /**
- * 对话块
- * v7.0: actorAlias 改为 instanceId，使用场景中角色实例的ID
+ * Dialogue block
+ * v7.0: actorAlias changed to instanceId, using character instance ID in scene
  */
 export interface DialogueBlock extends BaseScriptBlock {
   type: 'dialogue'
-  instanceId: string // v7.0: 角色实例ID (SceneObject.id)
-  text: string // 对话文本
-  state?: string // 人物姿态（姿势key）
-  expression?: string // 表情ID
-  speed?: number // 语速倍率，默认 1.0
+  instanceId: string // v7.0: Character instance ID (SceneObject.id)
+  text: string // Dialogue text
+  state?: string // Character pose (pose key)
+  expression?: string // Expression ID
+  speed?: number // Speech speed multiplier, default 1.0
   ttsConfig?: TTSConfig
-  actions: Action[] // 挂载的动作列表
+  actions: Action[] // Mounted action list
 }
 
 /**
- * 旁白块
+ * Narration block
  */
 export interface NarrationBlock extends BaseScriptBlock {
   type: 'narration'
-  text: string // 旁白文本
-  speed?: number // 语速倍率，默认 1.0
+  text: string // Narration text
+  speed?: number // Speech speed multiplier, default 1.0
   ttsConfig?: TTSConfig
-  actions: Action[] // 挂载的动作列表
+  actions: Action[] // Mounted action list
 }
 
 /**
- * 演出块 (v11.1 新增)
- * 纯粹的动作展示，不包含文本
+ * Performance block (added in v11.1)
+ * Pure action presentation, contains no text
  */
 export interface ActionBlock extends BaseScriptBlock {
   type: 'action'
@@ -833,109 +833,109 @@ export interface ActionBlock extends BaseScriptBlock {
 }
 
 /**
- * 联合脚本块类型
+ * Union script block type
  */
 export type ScriptBlock = DialogueBlock | NarrationBlock | ActionBlock
 
 
 
-// ==================== 演员配置 ====================
+// ==================== Actor Configuration ====================
 
 /**
- * 演员配置
- * v7.0: 添加 id 字段，移除 alias（别名移至 SceneObject）
+ * Actor configuration
+ * v7.0: Added id field, removed alias (alias moved to SceneObject)
  */
 export interface ActorConfig {
-  id: string // v7.0: 唯一稳定ID
-  characterId: string // 人物资源 ID
-  name: string // 显示名称,如 "小明", "阿强"
-  alias?: string // 剧本中的别名
+  id: string // v7.0: Unique stable ID
+  characterId: string // Character asset ID
+  name: string // Display name, e.g. "Xiao Ming", "A Qiang"
+  alias?: string // Alias in screenplay
   voice?: {
-    // TTS 配置
+    // TTS config
     voiceId?: string
-    speed?: number // 语速倍率 (0.5 - 2.0)
-    volume?: number // 音量 (-10 - 10)
+    speed?: number // Speech speed multiplier (0.5 - 2.0)
+    volume?: number // Volume (-10 - 10)
   }
 }
 
 /**
- * 旁白配置
+ * Narrator configuration
  */
 export interface NarratorConfig {
   voice?: {
     voiceId?: string
-    speed?: number // 语速倍率 (0.5 - 2.0)
-    volume?: number // 音量 (-10 - 10)
+    speed?: number // Speech speed multiplier (0.5 - 2.0)
+    volume?: number // Volume (-10 - 10)
   }
 }
 
 
 
-// ==================== 槽位系统 (v6.2) ====================
+// ==================== Slot System (v6.2) ====================
 
 /**
- * 槽位类型 (v6.10 新增)
- * - preroll: Block 开始到第一个字幕开始之间的时间段
- * - subtitle: 字幕对应的时间段
- * - postroll: 最后一个字幕结束到 Block 结束之间的时间段
+ * Slot type (added in v6.10)
+ * - preroll: Period between Block start and first subtitle start
+ * - subtitle: Period corresponding to subtitle
+ * - postroll: Period between last subtitle end and Block end
  */
 export type SlotType = 'preroll' | 'subtitle' | 'postroll'
 
 /**
- * 运行时槽位结构 (v6.10 更新)
- * 槽位是编辑器运行时的临时容器，由 TTS 数据动态计算生成
- * 不直接存储在数据库中
+ * Runtime slot structure (updated in v6.10)
+ * Slots are temporary runtime containers in the editor, generated dynamically from TTS data
+ * Not stored directly in database
  * 
- * v6.10: 添加 type 字段区分 preroll/subtitle/postroll
- * v6.10: 添加 isEstimated 字段标识时间是否为估算值
+ * v6.10: Added type field to distinguish preroll/subtitle/postroll
+ * v6.10: Added isEstimated field to indicate whether timing is estimated
  */
 export interface RuntimeSlot {
-  type: SlotType         // 槽位类型 (v6.10 新增)
-  index: number          // 槽位序号 (0, 1, 2...)
-  text?: string          // 该分句的文本内容 (preroll/postroll 无文本)
-  startTime: number      // 相对于 Block 开始的绝对时间 (ms)
-  duration: number       // 该分句 TTS 时长 (ms)
-  isEstimated?: boolean  // 时间是否为估算值 (v6.10 新增，无 TTS 数据时为 true)
+  type: SlotType         // Slot type (added in v6.10)
+  index: number          // Slot index (0, 1, 2...)
+  text?: string          // Text content for sentence (empty for preroll/postroll)
+  startTime: number      // Absolute time relative to Block start (ms)
+  duration: number       // TTS duration for sentence (ms)
+  isEstimated?: boolean  // Whether timing is estimated (added in v6.10, true when no TTS data)
 
-  // UI 状态标识
-  isMerged?: boolean     // 是否是被合并的槽位
-  parentIndex?: number   // 如果被合并，指向的主槽位索引
-  spanCount?: number     // 如果是主槽位，表示跨越了几个原始槽位
+  // UI state flags
+  isMerged?: boolean     // Whether this is a merged slot
+  parentIndex?: number   // If merged, points to primary slot index
+  spanCount?: number     // If primary slot, indicates number of raw slots spanned
 }
 
 /**
- * 显示用槽位（处理过合并逻辑后的槽位）
+ * Display slot (slot after processing merge logic)
  */
 export interface DisplaySlot extends RuntimeSlot {
-  spanCount: number      // 跨越的原始槽位数，默认 1
+  spanCount: number      // Number of raw slots spanned, default 1
 }
 
-// ==================== 配乐管理 (v7.5) ====================
+// ==================== Soundtrack Management (v7.5) ====================
 
 /**
- * BGM 轨道定义
- * 用于跨场景背景音乐管理
+ * BGM track definition
+ * Used for cross-scene background music management
  */
 export interface BGMTrack {
-  id: string             // 唯一标识
-  assetId: string        // 关联的音频资源ID (projectStore.assets)
+  id: string             // Unique identifier
+  assetId: string        // Associated audio asset ID (projectStore.assets)
 
-  // 开始位置
+  // Start position
   start: {
     sceneId: string
-    blockId: string | null // null 表示场景开始
+    blockId: string | null // null indicates scene start
   }
 
-  // 结束位置
+  // End position
   end: {
     sceneId: string
-    blockId: string | null // null 表示场景结束
+    blockId: string | null // null indicates scene end
   }
 
   volume: number         // 0.0 ~ 1.0
-  loop: boolean          // 是否循环
+  loop: boolean          // Whether to loop
 
-  // 预留字段
-  fadeIn?: number        // 淡入时长 (秒)
-  fadeOut?: number       // 淡出时长 (秒)
+  // Reserved fields
+  fadeIn?: number        // Fade-in duration (seconds)
+  fadeOut?: number       // Fade-out duration (seconds)
 }

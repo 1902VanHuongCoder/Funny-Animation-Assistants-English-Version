@@ -1,13 +1,13 @@
 /**
- * RenderChain Manager — 统一管理场景渲染链和 entity 渲染链
+ * RenderChain Manager — Uniformly manages scene render chain and entity render chains
  *
- * v19 重构：将散布在 addObject / removeObject / dissolveComposite 中的
- * renderChain 逻辑收敛到此模块，遵循 OOP 封装原则。
+ * v19 refactor: Centralizes renderChain logic previously scattered across
+ * addObject / removeObject / dissolveComposite into this module, following OOP encapsulation principles.
  *
- * 三种所有者的 renderChain 需求：
- * - Scene (sceneRenderChain): 根级对象 ID 列表，union 展开、entity 作为单节点
- * - Entity composite (renderChain): entity 下所有可渲染对象 ID（union 展开平铺）
- * - Union composite: 无自有 renderChain — 子对象透传到上级 entity 或 sceneRenderChain
+ * Three owner renderChain requirements:
+ * - Scene (sceneRenderChain): Root-level object ID list, union expanded, entity as single node
+ * - Entity composite (renderChain): All renderable object IDs under entity (union expanded and flattened)
+ * - Union composite: No owned renderChain — child objects pass through to parent entity or sceneRenderChain
  */
 
 import type { CompositeObject, SceneObject } from '@/types/sceneObject'
@@ -17,43 +17,43 @@ function participatesInRenderChain(object: SceneObject): boolean {
   return object.type !== 'camera' && object.type !== 'audio' && object.type !== 'light'
 }
 
-// ==================== 类型定义 ====================
+// ==================== Type Definitions ====================
 
 /**
- * RenderChainManager 所需的最小 Store 依赖
- * 通过接口注入避免循环引用
+ * Minimal Store dependency required by RenderChainManager
+ * Injected via interface to avoid circular references
  */
 export interface RenderChainStoreAccessor {
   getObject(id: string): SceneObject | undefined
   getSceneRenderChain(): string[]
 }
 
-// ==================== 核心操作 ====================
+// ==================== Core Operations ====================
 
 /**
- * 对象被添加后，自动维护所属 renderChain。
+ * Automatically maintains the corresponding renderChain after an object is added.
  *
- * 规则：
- * 1. Entity composite → 初始化空 renderChain（构造保证）
- * 2. Union composite → 不加入任何 renderChain
- * 3. 子对象 → 沿 parentId 链穿透 union，追加到最近 entity 的 renderChain
- * 4. 根级对象（无 parentId）→ 追加到 sceneRenderChain（按 zIndex 插入）
+ * Rules:
+ * 1. Entity composite → Initialize empty renderChain (construction guarantee)
+ * 2. Union composite → Do not join any renderChain
+ * 3. Child object → Penetrate union along parentId chain, append to nearest entity's renderChain
+ * 4. Root-level object (no parentId) → Append to sceneRenderChain (inserted by zIndex)
  */
 export function onObjectAdded(
     object: SceneObject,
     store: RenderChainStoreAccessor,
 ): void {
-  // 规则 1: Entity composite 构造保证 — 初始化空 renderChain
+  // Rule 1: Entity composite construction guarantee — initialize empty renderChain
   if (object.type === 'composite' && (object as CompositeObject).compositeMode === 'entity') {
     if (!(object as CompositeObject).renderChain) {
       (object as CompositeObject).renderChain = []
     }
   }
 
-  // 规则 2: Union composite 不加入任何 renderChain（透传容器）
+  // Rule 2: Union composite does not join any renderChain (pass-through container)
   const isUnion = object.type === 'composite' && (object as CompositeObject).compositeMode === 'union'
 
-  // 规则 3: 子对象追加到所属 entity 的 renderChain（穿透 union 链）
+  // Rule 3: Child object appended to belonging entity's renderChain (penetrating union chain)
   if (object.parentId && !isUnion && participatesInRenderChain(object)) {
     let currentParentId: string | undefined = object.parentId
     while (currentParentId) {
@@ -66,12 +66,12 @@ export function onObjectAdded(
         }
         break
       }
-      // union → 继续沿链向上
+      // union → continue ascending the chain
       currentParentId = parentComp.parentId
     }
   }
 
-  // 规则 4: 根级对象追加到 sceneRenderChain
+  // Rule 4: Root-level object appended to sceneRenderChain
   if (!object.parentId && !isUnion) {
     if (participatesInRenderChain(object)) {
       const chain = store.getSceneRenderChain()
@@ -82,18 +82,18 @@ export function onObjectAdded(
 }
 
 /**
- * 对象被移除后，自动从所属 renderChain 中清除。
+ * Automatically cleans up from belonging renderChain after an object is removed.
  *
- * 同时处理：
- * - 从父 entity 的 renderChain 中移除
- * - 从 sceneRenderChain 中移除
+ * Handles both:
+ * - Removal from parent entity's renderChain
+ * - Removal from sceneRenderChain
  */
 export function onObjectRemoved(
     objectId: string,
     object: SceneObject,
     store: RenderChainStoreAccessor,
 ): void {
-  // 从父 entity 的 renderChain 中移除
+  // Remove from parent entity's renderChain
   if (object.parentId) {
     const parent = store.getObject(object.parentId)
     if (parent?.type === 'composite') {
@@ -104,19 +104,19 @@ export function onObjectRemoved(
     }
   }
 
-  // 从 sceneRenderChain 中移除
+  // Remove from sceneRenderChain
   removeFromRenderChain(store.getSceneRenderChain(), objectId)
 }
 
 /**
- * Composite 解散时，将其渲染顺序转移到目标 renderChain。
+ * When composite is dissolved, transfer its render order to the target renderChain.
  *
- * 效果：entity 在目标链中的位置被其子对象的有序展开"原地替换"。
- * （entity 自身 ID 在后续 removeObject 中被移除）
+ * Effect: The position of the entity in the target chain is "in-place replaced" by the ordered expansion of its child objects.
+ * (The entity's own ID is removed during subsequent removeObject)
  *
- * @param compositeId 被解散的 composite ID
- * @param preservedRenderOrder 保存的渲染顺序（展开 union 后的有序 ID 列表）
- * @param bubbleTargetId 子对象冒泡到的目标：undefined = 根级，string = 上级 composite ID
+ * @param compositeId ID of the dissolved composite
+ * @param preservedRenderOrder Preserved render order (ordered ID list after expanding union)
+ * @param bubbleTargetId Target where child objects bubble up to: undefined = root level, string = parent composite ID
  */
 export function onCompositeDissolve(
     compositeId: string,
@@ -127,7 +127,7 @@ export function onCompositeDissolve(
   if (preservedRenderOrder.length === 0) return
 
   if (!bubbleTargetId) {
-    // 冒泡到根级 → 插入 sceneRenderChain
+    // Bubble to root level → insert into sceneRenderChain
     const chain = store.getSceneRenderChain()
     const entityPos = chain.indexOf(compositeId)
     if (entityPos !== -1) {
@@ -136,7 +136,7 @@ export function onCompositeDissolve(
       chain.push(...preservedRenderOrder)
     }
   } else {
-    // 冒泡到上级 entity → 插入上级 entity 的 renderChain
+    // Bubble to parent entity → insert into parent entity's renderChain
     const parentObj = store.getObject(bubbleTargetId)
     if (parentObj?.type === 'composite') {
       const parentComp = parentObj as CompositeObject
@@ -153,8 +153,8 @@ export function onCompositeDissolve(
 }
 
 /**
- * 递归展开 childIds 中的 union 子对象（构建渲染顺序 fallback）
- * union 不出现在结果中，其子对象展开平铺
+ * Recursively expands union child objects in childIds (building render order fallback)
+ * union does not appear in the result, its child objects are flattened
  */
 export function expandChildIdsForRenderOrder(
     childIds: readonly string[],

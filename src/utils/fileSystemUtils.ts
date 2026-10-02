@@ -1,9 +1,9 @@
 /**
- * 文件系统工具
+ * File system utilities
  */
 
 /**
- * 递归遍历目录建立文件映射
+ * Recursively traverse directory to build file map
  */
 export async function buildFileMap(
   dirHandle: FileSystemDirectoryHandle,

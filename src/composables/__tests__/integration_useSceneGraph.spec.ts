@@ -89,7 +89,7 @@ describe('Integration: useSceneGraph Action Mode Logic', () => {
         // 6. Verify Mapping
         expect(result.partAssetOverrides).toBeDefined()
 
-        // 验证 partAssetOverrides 存在（characterStore 已移除，跳过表情部件映射验证）
+        // Verify partAssetOverrides exists (characterStore removed, skipping expression part mapping verification)
         expect(result.partAssetOverrides).toBeDefined()
         console.log(`TC-01: partAssetOverrides verified for ${targetCharacterDefId}`)
     })
@@ -154,7 +154,7 @@ describe('Integration: useSceneGraph Action Mode Logic', () => {
         const setupObj = scene.setup.objects.find((o: any) => o.id === targetCharId)
         const result = graph.getActionModeSlotObjectState(setupObj) as any
 
-        // 验证 partAssetOverrides 存在（characterStore 已移除，跳过表情部件映射验证）
+        // Verify partAssetOverrides exists (characterStore removed, skipping expression part mapping verification)
         expect(result.partAssetOverrides).toBeDefined()
         console.log(`TC-02: partAssetOverrides state accumulation verified for ${targetCharacterDefId}`)
 

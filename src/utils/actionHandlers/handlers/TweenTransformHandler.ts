@@ -1,10 +1,10 @@
 /**
  * TweenTransform Action Handler
- * 处理位置/缩放/旋转/透明度的持续变换
+ * Handles continuous transformation of position / scale / rotation / alpha
  *
  * v17/v27:
- * - x/y 按全局坐标存储，播放时转回当前 parent 下的本地坐标
- * - rotation/scale 按对象自身局部值存储和插值
+ * - x/y stored in global coordinates, converted back to local coordinates under current parent during playback
+ * - rotation/scale stored and interpolated using the object's local values
  */
 
 import type { TweenTransformAction } from '@/types/screenplay'
@@ -14,7 +14,7 @@ import type { ActionHandler, ActionHandlerContext, WriteableState } from '../typ
 import { decomposeMatrixForState, resolveWorldMatrix } from './SetParentHandler'
 
 /**
- * 线性插值
+ * Linear interpolation
  */
 function lerp(start: number, end: number, t: number): number {
     return start + (end - start) * t
@@ -27,9 +27,9 @@ export const TweenTransformHandler: ActionHandler<TweenTransformAction> = {
     affectsObjectState: true,
 
     applyToState(state: WriteableState, action: TweenTransformAction, context?: ActionHandlerContext): void {
-        // 瞬时应用：
-        // - x/y: 全局 → 本地
-        // - rotation/scale: 直接应用局部值
+        // Instantaneous application:
+        // - x/y: global → local
+        // - rotation/scale: directly apply local values
         const { params } = action
 
         const positionParams: { x?: number; y?: number } = {}
@@ -47,7 +47,7 @@ export const TweenTransformHandler: ActionHandler<TweenTransformAction> = {
         if (params.scaleX !== undefined) state.scaleX = params.scaleX
         if (params.scaleY !== undefined) state.scaleY = params.scaleY
         if (params.rotation !== undefined) state.rotation = params.rotation
-        // alpha 不受坐标系影响
+        // alpha is unaffected by coordinate systems
         if (params.alpha !== undefined) state.alpha = params.alpha
     },
 
@@ -60,7 +60,7 @@ export const TweenTransformHandler: ActionHandler<TweenTransformAction> = {
     ): void {
         const { params } = action
 
-        // Fast path: 无 parent → 位置/姿态都可直接按原值插值
+        // Fast path: no parent → position and pose can directly interpolate with original values
         if (!state.parentId || !context?.getObjectState) {
             if (params.x !== undefined && startState.x !== undefined) {
                 state.x = lerp(startState.x, params.x, progress)
@@ -83,16 +83,16 @@ export const TweenTransformHandler: ActionHandler<TweenTransformAction> = {
             return
         }
 
-        // 有 parent:
-        // - x/y 在全局空间插值，结果转回本地
-        // - rotation/scale 在局部空间直接插值
+        // Has parent:
+        // - x/y interpolated in global space, result converted back to local
+        // - rotation/scale directly interpolated in local space
         const getObj = context.getObjectState
 
-        // 1. startState 本地 → 全局
+        // 1. startState local → global
         const startWorld = resolveWorldMatrix(startState, getObj)
         const startDecomp = decomposeMatrixForState(startWorld, startState)
 
-        // 2. 位置在全局空间分量独立 lerp
+        // 2. Position components interpolated independently in global space
         const globalResult: { x?: number; y?: number } = {}
         if (params.x !== undefined) {
             globalResult.x = lerp(startDecomp.x, params.x, progress)
@@ -112,7 +112,7 @@ export const TweenTransformHandler: ActionHandler<TweenTransformAction> = {
             basisState.rotation = lerp(startState.rotation, params.rotation, progress)
         }
 
-        // 3. 位置: 全局 → 本地
+        // 3. Position: global → local
         const localPosition = globalToLocal(globalResult, basisState, getObj)
         if (localPosition.x !== undefined) state.x = localPosition.x
         if (localPosition.y !== undefined) state.y = localPosition.y
@@ -120,14 +120,14 @@ export const TweenTransformHandler: ActionHandler<TweenTransformAction> = {
         if (params.scaleY !== undefined && basisState.scaleY !== undefined) state.scaleY = basisState.scaleY
         if (params.rotation !== undefined && basisState.rotation !== undefined) state.rotation = basisState.rotation
 
-        // alpha 直接 lerp（不受坐标系影响）
+        // alpha directly interpolated (unaffected by coordinate systems)
         if (params.alpha !== undefined && startState.alpha !== undefined) {
             state.alpha = lerp(startState.alpha, params.alpha, progress)
         }
     },
 
     getTargetState(state: WriteableState, action: TweenTransformAction): void {
-        // 与 applyToState 相同
+        // Same as applyToState
         this.applyToState(state, action)
     }
 }

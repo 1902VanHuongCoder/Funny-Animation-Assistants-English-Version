@@ -11,9 +11,9 @@ describe('sceneLoader', () => {
     setActivePinia(createPinia())
   })
 
-  it('collectSetupFromSceneObjects 应该保存 background 的 width/height', () => {
+  it('collectSetupFromSceneObjects should save background width/height', () => {
     const sceneObjectStore = useSceneObjectStore()
-    const bg = sceneObjectStore.createBackgroundObject('bg_test', '背景')
+    const bg = sceneObjectStore.createBackgroundObject('bg_test', 'Background')
     sceneObjectStore.updateObject(bg.id, {
       x: 123,
       y: 456,
@@ -36,7 +36,7 @@ describe('sceneLoader', () => {
     expect(savedBg?.height).toBe(2222)
   })
 
-  it('loadSetupToSceneObjects 应该加载 background 的 width/height（如果存在）', () => {
+  it('loadSetupToSceneObjects should load background width/height if present', () => {
     const setup: SceneSetup = {
       camera: { x: CANVAS_CENTER_X, y: CANVAS_CENTER_Y, width: CAMERA_BASE_WIDTH, height: CAMERA_BASE_HEIGHT, zoom: 1 },
       objects: [
@@ -74,7 +74,7 @@ describe('sceneLoader', () => {
     expect(bg.height).toBe(1400)
   })
 
-  it('loadSetupToSceneObjects 应该加载 prop 的 width/height（如果存在）', () => {
+  it('loadSetupToSceneObjects should load prop width/height if present', () => {
     const setup: SceneSetup = {
       camera: { x: CANVAS_CENTER_X, y: CANVAS_CENTER_Y, width: CAMERA_BASE_WIDTH, height: CAMERA_BASE_HEIGHT, zoom: 1 },
       objects: [
@@ -110,7 +110,7 @@ describe('sceneLoader', () => {
     expect(prop.height).toBe(444)
   })
 
-  it('loadSetupToSceneObjects 应该为旧 renderChain 补齐文本对象', () => {
+  it('loadSetupToSceneObjects should backfill text objects for legacy renderChain', () => {
     const setup: SceneSetup = {
       camera: { x: CANVAS_CENTER_X, y: CANVAS_CENTER_Y, width: CAMERA_BASE_WIDTH, height: CAMERA_BASE_HEIGHT, zoom: 1 },
       objects: [
@@ -118,9 +118,9 @@ describe('sceneLoader', () => {
           id: 'sceneobject_text_1',
           type: 'text',
           refId: '',
-          name: '文本',
-          alias: '文本',
-          content: '测试文本',
+          name: 'Text',
+          alias: 'Text',
+          content: 'Test Text',
           fontSize: 72,
           fontFamily: 'Noto Sans SC',
           fontWeight: 'normal',
@@ -146,8 +146,8 @@ describe('sceneLoader', () => {
           type: 'screen_effect',
           refId: 'fullscreen_cover',
           effectClass: 'fullscreen_cover',
-          name: '黑幕',
-          alias: '黑幕',
+          name: 'Black Screen',
+          alias: 'Black Screen',
           params: { baseColor: '#000000', openRatio: 1 },
           x: 0,
           y: 0,
@@ -162,7 +162,7 @@ describe('sceneLoader', () => {
           visible: true,
         } as SceneSetup['objects'][number],
       ],
-      // 旧数据里文本曾不入链；加载时应自动补齐并按 zIndex 排序。
+      // Text was previously excluded from chain in legacy data; should auto-backfill and sort by zIndex on load.
       renderChain: ['sceneobject_effect_1'],
     }
 
@@ -172,13 +172,13 @@ describe('sceneLoader', () => {
     expect(sceneObjectStore.getSceneRenderChain()).toEqual(['sceneobject_text_1', 'sceneobject_effect_1'])
   })
 
-  it('collectSetupFromSceneObjects 应该保留所有对象类型的 refId', () => {
+  it('collectSetupFromSceneObjects should preserve refId for all object types', () => {
     const sceneObjectStore = useSceneObjectStore()
 
-    // 背景
-    const bg = sceneObjectStore.createBackgroundObject('bg_ref_123', '测试背景')
-    // 道具
-    const prop = sceneObjectStore.createPropObject('prop_ref_456', '测试道具')
+    // Background
+    const bg = sceneObjectStore.createBackgroundObject('bg_ref_123', 'Test Background')
+    // Prop
+    const prop = sceneObjectStore.createPropObject('prop_ref_456', 'Test Prop')
 
     const setup = collectSetupFromSceneObjects()
 
@@ -189,19 +189,19 @@ describe('sceneLoader', () => {
     expect(savedProp?.refId).toBe('prop_ref_456')
   })
 
-  it('loadSetupToSceneObjects 应该在 composite 排在子对象之前时正确恢复 parentId', () => {
-    // 回归测试：场景模板添加时 composite 排在子对象之前，
-    // 保存后重新加载时子对象的 parentId 必须被正确恢复
+  it('loadSetupToSceneObjects should restore parentId correctly when composite precedes children', () => {
+    // Regression test: when composite precedes children in scene templates,
+    // children parentId must be restored properly after save & reload
     const setup: SceneSetup = {
       camera: { x: CANVAS_CENTER_X, y: CANVAS_CENTER_Y, width: CAMERA_BASE_WIDTH, height: CAMERA_BASE_HEIGHT, zoom: 1 },
       objects: [
-        // composite 排在子对象之前（场景模板添加的固定顺序）
+        // composite precedes children (fixed order from scene template addition)
         {
           id: 'composite_1',
           type: 'composite',
           refId: '',
-          name: '组合',
-          alias: '组合',
+          name: 'Composite',
+          alias: 'Composite',
           childIds: ['prop_child', 'bg_child'],
           compositeMode: 'entity',
           x: 3360, y: 700,
@@ -214,8 +214,8 @@ describe('sceneLoader', () => {
           id: 'prop_child',
           type: 'prop',
           refId: 'prop_test',
-          name: '道具',
-          alias: '道具',
+          name: 'Prop',
+          alias: 'Prop',
           parentId: 'composite_1',
           x: 10, y: 20,
           width: 100, height: 100,
@@ -227,8 +227,8 @@ describe('sceneLoader', () => {
           id: 'bg_child',
           type: 'background',
           refId: 'bg_test',
-          name: '背景',
-          alias: '背景',
+          name: 'Background',
+          alias: 'Background',
           parentId: 'composite_1',
           x: 0, y: 0,
           width: 500, height: 300,
@@ -244,12 +244,12 @@ describe('sceneLoader', () => {
 
     const sceneObjectStore = useSceneObjectStore()
 
-    // 验证 composite 被正确加载
+    // Verify composite loaded correctly
     const composite = sceneObjectStore.getObject('composite_1')
     expect(composite).toBeDefined()
     expect(composite?.type).toBe('composite')
 
-    // 关键断言：子对象的 parentId 必须指向 composite
+    // Key assertion: children parentId must point to composite
     const prop = sceneObjectStore.getObject('prop_child')
     expect(prop).toBeDefined()
     expect(prop?.parentId).toBe('composite_1')
@@ -259,26 +259,26 @@ describe('sceneLoader', () => {
     expect(bg?.parentId).toBe('composite_1')
   })
 
-  it('collectSetupFromSceneObjects → loadSetupToSceneObjects 往返应保留 parentId', () => {
+  it('collectSetupFromSceneObjects -> loadSetupToSceneObjects round-trip preserves parentId', () => {
     const sceneObjectStore = useSceneObjectStore()
 
-    // 创建组合对象及子对象
-    const prop = sceneObjectStore.createPropObject('prop_ref', '道具')
-    const bg = sceneObjectStore.createBackgroundObject('bg_ref', '背景')
-    const composite = sceneObjectStore.createCompositeObject('组合', [prop.id, bg.id])
+    // Create composite object and children
+    const prop = sceneObjectStore.createPropObject('prop_ref', 'Prop')
+    const bg = sceneObjectStore.createBackgroundObject('bg_ref', 'Background')
+    const composite = sceneObjectStore.createCompositeObject('Composite', [prop.id, bg.id])
 
-    // 确认创建时 parentId 正确
+    // Confirm parentId is correct upon creation
     expect(sceneObjectStore.getObject(prop.id)?.parentId).toBe(composite.id)
     expect(sceneObjectStore.getObject(bg.id)?.parentId).toBe(composite.id)
 
-    // 保存
+    // Save
     const setup = collectSetupFromSceneObjects()
 
-    // 清空并重新加载
+    // Clear and reload
     sceneObjectStore.clearObjects()
     loadSetupToSceneObjects(setup)
 
-    // 关键断言：往返后 parentId 必须保留
+    // Key assertion: parentId must be preserved after round-trip
     const reloadedProp = sceneObjectStore.getObject(prop.id)
     expect(reloadedProp).toBeDefined()
     expect(reloadedProp?.parentId).toBe(composite.id)
@@ -288,10 +288,10 @@ describe('sceneLoader', () => {
     expect(reloadedBg?.parentId).toBe(composite.id)
   })
 
-  it('collectSetupFromSceneObjects → loadSetupToSceneObjects 往返应保留 receiveLighting 和 castShadow', () => {
+  it('collectSetupFromSceneObjects -> loadSetupToSceneObjects round-trip preserves receiveLighting and castShadow', () => {
     const sceneObjectStore = useSceneObjectStore()
 
-    const prop = sceneObjectStore.createPropObject('prop_ref_light', '测试道具')
+    const prop = sceneObjectStore.createPropObject('prop_ref_light', 'Test Prop')
     sceneObjectStore.updateObject(prop.id, {
       receiveLighting: false,
       castShadow: true,
@@ -313,10 +313,10 @@ describe('sceneLoader', () => {
     expect(reloadedProp?.castShadow).toBe(true)
   })
 
-  it('collectSetupFromSceneObjects → loadSetupToSceneObjects 往返应保留 light 的 spawned=false', () => {
+  it('collectSetupFromSceneObjects -> loadSetupToSceneObjects round-trip preserves light spawned=false', () => {
     const sceneObjectStore = useSceneObjectStore()
 
-    const light = sceneObjectStore.createLightObject('point', '测试点光源', {
+    const light = sceneObjectStore.createLightObject('point', 'Test Point Light', {
       x: 320,
       y: 480,
       lightRadius: 280,

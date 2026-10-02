@@ -1,28 +1,28 @@
 /**
  * RibbonEffect.ts (v12.0)
  * 
- * 飘带特效，基于 WaveEffect 改进
- * 头部固定，尾部大幅飘动，呈现非线性衰减效果
+ * Ribbon flutter effect, improved based on WaveEffect
+ * Fixed head, large waving tail, exhibiting non-linear damping
  */
 
 import * as PIXI from 'pixi.js'
 
 /**
- * 飘带特效参数
+ * Ribbon effect parameters
  */
 export interface RibbonEffectParams {
     type: 'ribbon'
-    speed?: number            // 速度倍率 (默认 0.5)
-    amplitude?: number        // 最大振幅 (默认 30)
-    frequency?: number        // 频率 (默认 0.5)
-    direction?: 'horizontal' | 'vertical' | 'both'  // 方向 (默认 horizontal)
-    segments?: number         // 网格分段数 (默认 10)
-    damping?: number          // 衰减指数 (默认 2，越大头部越静止)
-    phaseScale?: number       // 相位累积比例 (默认 0.2，控制波浪传播形态)
+    speed?: number            // Speed multiplier (default 0.5)
+    amplitude?: number        // Maximum amplitude (default 30)
+    frequency?: number        // Frequency (default 0.5)
+    direction?: 'horizontal' | 'vertical' | 'both'  // Direction (default horizontal)
+    segments?: number         // Grid subdivision count (default 10)
+    damping?: number          // Damping exponent (default 2, higher means more static at head)
+    phaseScale?: number       // Phase accumulation ratio (default 0.2, controls wave propagation profile)
 }
 
 /**
- * 飘带特效实例状态
+ * Ribbon effect instance state
  */
 interface RibbonInstance {
     originalSprite: PIXI.Sprite | PIXI.AnimatedSprite
@@ -35,27 +35,27 @@ interface RibbonInstance {
 
 /**
  * RibbonEffect
- * 管理飘带特效的创建、更新和销毁
+ * Manages creation, update, and destruction of ribbon effects
  */
 export class RibbonEffect {
     private instances = new Map<string, RibbonInstance>()
     private currentTime = 0
 
     /**
-     * 更新时间
-     * @param deltaTime 时间增量（毫秒）
+     * Update time
+     * @param deltaTime Time delta (ms)
      */
     update(deltaTime: number): void {
         this.currentTime += deltaTime
     }
 
     /**
-     * 为 Sprite 应用飘带特效
-     * @param partId 部位 ID
-     * @param sprite 原始 Sprite
-     * @param container 父容器
-     * @param params 特效参数
-     * @returns 创建的 SimplePlane
+     * Apply ribbon effect to Sprite
+     * @param partId Part ID
+     * @param sprite Original Sprite
+     * @param container Parent container
+     * @param params Effect parameters
+     * @returns Created SimplePlane
      */
     applyEffect(
         partId: string,
@@ -63,28 +63,28 @@ export class RibbonEffect {
         container: PIXI.Container,
         params: Omit<RibbonEffectParams, 'type'> = {}
     ): PIXI.SimplePlane | null {
-        // 如果已经有实例，只更新参数
+        // If instance exists, update parameters only
         const existing = this.instances.get(partId)
         if (existing) {
             existing.params = this.normalizeParams(params)
             return existing.simplePlane
         }
 
-        // 获取纹理
+        // Get texture
         const texture = sprite.texture
         if (!texture || texture === PIXI.Texture.EMPTY) {
             console.warn('[RibbonEffect] Cannot apply effect: sprite has no texture')
             return null
         }
 
-        // 标准化参数
+        // Normalize parameters
         const normalizedParams = this.normalizeParams(params)
         const segments = normalizedParams.segments
 
-        // 创建 SimplePlane
+        // Create SimplePlane
         const simplePlane = new PIXI.SimplePlane(texture, segments + 1, segments + 1)
 
-        // 复制原 Sprite 的变换属性
+        // Copy original Sprite transform properties
         simplePlane.position.copyFrom(sprite.position)
         simplePlane.scale.copyFrom(sprite.scale)
         simplePlane.rotation = sprite.rotation
@@ -105,12 +105,12 @@ export class RibbonEffect {
             originalAnchor = { x: anchorX, y: anchorY }
         }
 
-        // 保存原始顶点位置
+        // Save original vertex positions
         const positionBuffer = simplePlane.geometry.getBuffer('aVertexPosition')
         const originalVertices = new Float32Array(positionBuffer.data.length)
         originalVertices.set(positionBuffer.data)
 
-        // 从容器中移除原 Sprite，添加 SimplePlane
+        // Remove original Sprite from container, add SimplePlane
         const index = container.getChildIndex(sprite)
         sprite.visible = false
         sprite.renderable = false
@@ -130,12 +130,12 @@ export class RibbonEffect {
     }
 
     /**
-     * 更新所有飘带特效的顶点
+     * Update vertices for all ribbon effects
      */
     updateAllEffects(): void {
         for (const [partId, instance] of this.instances) {
             if (!this.updateVertices(partId, instance)) {
-                // 原始 Sprite 已被销毁，清理该实例
+                // Original Sprite destroyed, clean up instance
                 instance.simplePlane.destroy()
                 this.instances.delete(partId)
             }
@@ -143,20 +143,20 @@ export class RibbonEffect {
     }
 
     /**
-     * 更新单个特效的顶点
-     * @returns false 如果原始 Sprite 已被销毁，需要清理
+     * Update vertices for a single effect
+     * @returns false if original Sprite is destroyed and requires cleanup
      */
     private updateVertices(_partId: string, instance: RibbonInstance): boolean {
         const { simplePlane, originalSprite, originalVertices, params, startTime } = instance
 
-        // 安全检查：原始 Sprite 可能已被销毁（部件重建、场景对象删除等）
+        // Safety check: original Sprite might be destroyed
         if (originalSprite.destroyed || !originalSprite.transform) {
             return false
         }
 
-        const elapsed = (this.currentTime - startTime) / 1000 // 转换为秒
+        const elapsed = (this.currentTime - startTime) / 1000 // Convert to seconds
 
-        // 同步原 Sprite 的变换到 SimplePlane
+        // Sync original Sprite transform to SimplePlane
         simplePlane.position.copyFrom(originalSprite.position)
         simplePlane.scale.copyFrom(originalSprite.scale)
         simplePlane.rotation = originalSprite.rotation
@@ -184,31 +184,30 @@ export class RibbonEffect {
             const col = i % vertexPerRow
             const row = Math.floor(i / vertexPerRow)
 
-            // 原始位置
+            // Original position
             const originalX = originalVertices[i * 2]
             const originalY = originalVertices[i * 2 + 1]
 
             if (originalX === undefined || originalY === undefined) continue
 
-            // 计算波浪偏移
-
+            // Calculate wave offset
             let offsetX = 0
             let offsetY = 0
 
-            // 水平波浪 (X轴位移，基于 Y/Row)
+            // Horizontal wave (X-axis displacement, based on Y/Row)
             if (direction === 'horizontal' || direction === 'both') {
                 const linearFactor = row / segments
-                // 非线性衰减：Math.pow(linearFactor, damping)
-                // damping > 1 时，靠近头部 (0) 的部分衰减更厉害，靠近尾部 (1) 的部分动静大
+                // Non-linear damping: Math.pow(linearFactor, damping)
+                // When damping > 1, parts near head (0) damp heavily, parts near tail (1) have large motion
                 const factor = Math.pow(linearFactor, damping)
 
-                // 相位传播：phaseScale 控制波浪在飘带上的传播密度
+                // Phase propagation: phaseScale controls wave density along ribbon
                 const phase = elapsed * speed * frequency * Math.PI * 2 + row * phaseScale
 
                 offsetX = Math.sin(phase) * amplitude * factor
             }
 
-            // 垂直波浪 (Y轴位移，基于 X/Col)
+            // Vertical wave (Y-axis displacement, based on X/Col)
             if (direction === 'vertical' || direction === 'both') {
                 const linearFactor = col / segments
                 const factor = Math.pow(linearFactor, damping)
@@ -218,12 +217,12 @@ export class RibbonEffect {
                 offsetY = Math.sin(phase) * amplitude * factor
             }
 
-            // 应用两方向的叠加
+            // Apply superposition of both directions
             vertices[i * 2] = originalX + offsetX
             vertices[i * 2 + 1] = originalY + offsetY
         }
 
-        // 更新位置缓冲区
+        // Update position buffer
         const bufferData = positionBuffer.data as unknown as Float32Array
         bufferData.set(vertices)
         positionBuffer.update()
@@ -232,9 +231,9 @@ export class RibbonEffect {
     }
 
     /**
-     * 移除飘带特效，恢复原始 Sprite
-     * @param partId 部位 ID
-     * @param container 父容器
+     * Remove ribbon effect, restore original Sprite
+     * @param partId Part ID
+     * @param container Parent container
      */
     removeEffect(partId: string, container: PIXI.Container): PIXI.Sprite | PIXI.AnimatedSprite | null {
         const instance = this.instances.get(partId)
@@ -242,50 +241,50 @@ export class RibbonEffect {
 
         const { originalSprite, simplePlane } = instance
 
-        // v12.1: 如果 Sprite 或 SimplePlane 已被销毁（transform 为 null），跳过位置同步
+        // v12.1: If Sprite or SimplePlane destroyed (transform is null), skip position sync
         const spriteDestroyed = (originalSprite as unknown as { destroyed?: boolean }).destroyed === true || !(originalSprite as unknown as { transform?: unknown }).transform
         const planeDestroyed = (simplePlane as unknown as { destroyed?: boolean }).destroyed === true || !(simplePlane as unknown as { transform?: unknown }).transform
 
         if (!spriteDestroyed && !planeDestroyed) {
-            // 恢复原 Sprite 的可见性
+            // Restore original Sprite visibility
             originalSprite.visible = true
             originalSprite.renderable = true
 
-            // 同步位置
+            // Sync position
             originalSprite.position.copyFrom(simplePlane.position)
             originalSprite.scale.copyFrom(simplePlane.scale)
             originalSprite.rotation = simplePlane.rotation
             originalSprite.alpha = simplePlane.alpha
         }
 
-        // 从容器移除 SimplePlane（安全检查）
+        // Remove SimplePlane from container (safety check)
         if (!planeDestroyed) {
             container.removeChild(simplePlane)
             simplePlane.destroy()
         }
 
-        // 删除实例
+        // Delete instance
         this.instances.delete(partId)
 
         return spriteDestroyed ? null : originalSprite
     }
 
     /**
-     * 检查部位是否正在应用飘带特效
+     * Check if part has ribbon effect applied
      */
     hasEffect(partId: string): boolean {
         return this.instances.has(partId)
     }
 
     /**
-     * 获取飘带特效的 SimplePlane（如果存在）
+     * Get ribbon effect SimplePlane (if present)
      */
     getSimplePlane(partId: string): PIXI.SimplePlane | undefined {
         return this.instances.get(partId)?.simplePlane
     }
 
     /**
-     * 清除所有特效
+     * Clear all effects
      */
     clear(container: PIXI.Container): void {
         for (const partId of this.instances.keys()) {
@@ -294,7 +293,7 @@ export class RibbonEffect {
     }
 
     /**
-     * 标准化参数
+     * Normalize parameters
      */
     private normalizeParams(params: Omit<RibbonEffectParams, 'type'>): Required<Omit<RibbonEffectParams, 'type'>> {
         return {
@@ -309,7 +308,7 @@ export class RibbonEffect {
     }
 
     /**
-     * 获取活动特效数量
+     * Get active effect count
      */
     get activeCount(): number {
         return this.instances.size
@@ -317,7 +316,7 @@ export class RibbonEffect {
 }
 
 /**
- * 创建 RibbonEffect 实例
+ * Create RibbonEffect instance
  */
 export function createRibbonEffect(): RibbonEffect {
     return new RibbonEffect()

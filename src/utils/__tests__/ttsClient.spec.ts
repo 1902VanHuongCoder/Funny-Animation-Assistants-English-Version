@@ -26,8 +26,8 @@ describe('ttsClient', () => {
     const client = createClientWithManualProvider()
 
     expect(client.getActiveProviderId()).toBe('manual')
-    await expect(client.synthesize({ text: '你好' })).rejects.toBeInstanceOf(TTSProviderNotConfiguredError)
-    await expect(client.estimateDuration('你好')).resolves.toBe(500)
+    await expect(client.synthesize({ text: 'Hi' })).rejects.toBeInstanceOf(TTSProviderNotConfiguredError)
+    await expect(client.estimateDuration('Hi')).resolves.toBe(500)
   })
 
   it('can register and activate a custom provider', async () => {
@@ -45,7 +45,7 @@ describe('ttsClient', () => {
 
     client.registerProvider(provider, { activate: true })
 
-    const result = await client.synthesize({ text: '测试', voiceType: 101026 })
+    const result = await client.synthesize({ text: 'Test', voiceType: 101026 })
     expect(result).toEqual({
       audio: 'data:audio/mpeg;base64,bW9jaw==',
       audioBase64: 'bW9jaw==',
@@ -71,7 +71,7 @@ describe('ttsClient', () => {
     })
 
     const result = await provider.synthesize({
-      text: '本地合成',
+      text: 'Local synthesis',
       voiceType: 101026,
       speed: 0,
     })
@@ -80,7 +80,7 @@ describe('ttsClient', () => {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        text: '本地合成',
+        text: 'Local synthesis',
         voiceType: 101026,
         speed: 0,
       }),
@@ -95,6 +95,6 @@ describe('ttsClient', () => {
   it('estimates duration locally with a lower speech-rate bound', () => {
     expect(estimateDurationLocally('')).toBe(0)
     expect(estimateDurationLocally('####')).toBe(0)
-    expect(estimateDurationLocally('一二三四', -10)).toBe(1600)
+    expect(estimateDurationLocally('four', -10)).toBe(1600)
   })
 })

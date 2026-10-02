@@ -1,9 +1,9 @@
 /**
- * useAnimationEdit —— Scheme B (v13 valueIn/valueOut 拆分) 编辑 API 单元测试
+ * useAnimationEdit — Scheme B (v13 valueIn/valueOut split) editing API unit tests
  *
- * 覆盖：splitKeyframeAt / mergeKeyframeAt / isKeyframeStructurallySplit
+ * Covers: splitKeyframeAt / mergeKeyframeAt / isKeyframeStructurallySplit
  *      / updateKeyframeOut / updateVisibilityKeyframeOut
- * 以及：持久化往返（JSON 序列化/反序列化保留 `out` 字段）
+ * And: persistence round-trip (JSON serialization/deserialization retains `out` field)
  */
 
 import { describe, expect, it } from 'vitest'
@@ -94,19 +94,19 @@ function makeMixedAnim(): AnimationDefinition {
 }
 
 describe('useAnimationEdit — Scheme B splitKeyframeAt / mergeKeyframeAt', () => {
-    it('splitKeyframeAt: 将 transform 关键帧 valueIn 字段克隆到 out（语义不变）', () => {
+    it('splitKeyframeAt: clones transform keyframe valueIn fields to out (semantics preserved)', () => {
         const ctx = useAnimationEdit({ animation: makeTransformAnim() })
         const ok = ctx.splitKeyframeAt(1)
         expect(ok).toBe(true)
         const kf = ctx.currentTrack.value!.keyframes[1]!
         expect(kf.out).toBeDefined()
         expect(kf.out).toEqual({ x: 100, y: 50, scaleX: 2, scaleY: 2, rotation: 1 })
-        // 顶层 valueIn 字段保持不变
+        // Top-level valueIn fields remain unchanged
         expect(kf.x).toBe(100)
         expect(kf.scaleX).toBe(2)
     })
 
-    it('splitKeyframeAt: 已拆分的关键帧重复调用返回 false，不覆盖现有 out', () => {
+    it('splitKeyframeAt: returns false on already-split keyframe without overwriting existing out', () => {
         const ctx = useAnimationEdit({ animation: makeTransformAnim() })
         ctx.splitKeyframeAt(1)
         const kf = ctx.currentTrack.value!.keyframes[1]!
@@ -115,46 +115,46 @@ describe('useAnimationEdit — Scheme B splitKeyframeAt / mergeKeyframeAt', () =
         expect(kf.out!.x).toBe(999)
     })
 
-    it('mergeKeyframeAt: 删除 out 恢复单值关键帧', () => {
+    it('mergeKeyframeAt: removes out to restore single-value keyframe', () => {
         const ctx = useAnimationEdit({ animation: makeTransformAnim() })
         ctx.splitKeyframeAt(1)
         expect(ctx.mergeKeyframeAt(1)).toBe(true)
         expect(ctx.currentTrack.value!.keyframes[1]!.out).toBeUndefined()
     })
 
-    it('mergeKeyframeAt: 未拆分的关键帧返回 false', () => {
+    it('mergeKeyframeAt: returns false for un-split keyframe', () => {
         const ctx = useAnimationEdit({ animation: makeTransformAnim() })
         expect(ctx.mergeKeyframeAt(1)).toBe(false)
     })
 
-    it('isKeyframeStructurallySplit: 仅当 out 存在且至少有一个字段时返回 true', () => {
+    it('isKeyframeStructurallySplit: returns true only when out exists and has at least one field', () => {
         const ctx = useAnimationEdit({ animation: makeTransformAnim() })
         const kfs = ctx.currentTrack.value!.keyframes
         expect(ctx.isKeyframeStructurallySplit(kfs[0])).toBe(false)
         ctx.splitKeyframeAt(1)
         expect(ctx.isKeyframeStructurallySplit(kfs[1])).toBe(true)
-        // 手动清空后应视为未拆分
+        // Considered un-split after manual clearing
         kfs[1]!.out = {}
         expect(ctx.isKeyframeStructurallySplit(kfs[1])).toBe(false)
     })
 
-    it('updateKeyframeOut: 设置/更新 out 字段', () => {
+    it('updateKeyframeOut: sets/updates out fields', () => {
         const ctx = useAnimationEdit({ animation: makeTransformAnim() })
         ctx.splitKeyframeAt(1)
         ctx.updateKeyframeOut(1, 'x', 500)
         expect(ctx.currentTrack.value!.keyframes[1]!.out!.x).toBe(500)
     })
 
-    it('updateKeyframeOut: 传入 undefined 删除单个 out 字段；out 变空时整体删除', () => {
+    it('updateKeyframeOut: passing undefined deletes single out field; deletes out entirely when empty', () => {
         const ctx = useAnimationEdit({ animation: makeTransformAnim() })
         const kf = ctx.currentTrack.value!.keyframes[1]!
-        // 仅设一个 out 字段
+        // Sets only one out field
         kf.out = { x: 500 }
         ctx.updateKeyframeOut(1, 'x', undefined)
         expect(kf.out).toBeUndefined()
     })
 
-    it('updateKeyframeOut: 自动初始化 out 对象', () => {
+    it('updateKeyframeOut: automatically initializes out object', () => {
         const ctx = useAnimationEdit({ animation: makeTransformAnim() })
         const kf = ctx.currentTrack.value!.keyframes[1]!
         expect(kf.out).toBeUndefined()
@@ -162,14 +162,14 @@ describe('useAnimationEdit — Scheme B splitKeyframeAt / mergeKeyframeAt', () =
         expect(kf.out).toEqual({ scaleX: 3 })
     })
 
-    it('splitKeyframeAt (visibility): 克隆 alpha 到 out', () => {
+    it('splitKeyframeAt (visibility): clones alpha to out', () => {
         const ctx = useAnimationEdit({ animation: makeVisibilityAnim() })
         ctx.splitKeyframeAt(1)
         const kf = ctx.currentVisibilityTrack.value!.keyframes[1]!
         expect(kf.out).toEqual({ alpha: 0.5 })
     })
 
-    it('updateVisibilityKeyframeOut: 设置 / 清除 out.alpha', () => {
+    it('updateVisibilityKeyframeOut: sets / clears out.alpha', () => {
         const ctx = useAnimationEdit({ animation: makeVisibilityAnim() })
         ctx.splitKeyframeAt(1)
         ctx.updateVisibilityKeyframeOut(1, 0.2)
@@ -179,14 +179,14 @@ describe('useAnimationEdit — Scheme B splitKeyframeAt / mergeKeyframeAt', () =
     })
 })
 
-describe('useAnimationEdit — Scheme B 持久化往返 (JSON)', () => {
-    it('transform: splitKeyframeAt + 自定义 out 字段经 JSON 往返保持不变', () => {
+describe('useAnimationEdit — Scheme B Persistence Round-trip (JSON)', () => {
+    it('transform: splitKeyframeAt + custom out fields preserved across JSON round-trip', () => {
         const ctx = useAnimationEdit({ animation: makeTransformAnim() })
         ctx.splitKeyframeAt(1)
         ctx.updateKeyframeOut(1, 'x', 777)
         ctx.updateKeyframeOut(1, 'rotation', 0.25)
 
-        // 模拟“保存 → 重新加载”
+        // Simulate save -> reload
         const serialized = JSON.stringify(ctx.animationDef)
         const parsed = JSON.parse(serialized) as AnimationDefinition
         const ctx2 = useAnimationEdit({ animation: parsed })
@@ -197,7 +197,7 @@ describe('useAnimationEdit — Scheme B 持久化往返 (JSON)', () => {
         expect(ctx2.isKeyframeStructurallySplit(kf)).toBe(true)
     })
 
-    it('visibility: splitKeyframeAt + out.alpha 经 JSON 往返保持不变', () => {
+    it('visibility: splitKeyframeAt + out.alpha preserved across JSON round-trip', () => {
         const ctx = useAnimationEdit({ animation: makeVisibilityAnim() })
         ctx.splitKeyframeAt(1)
         ctx.updateVisibilityKeyframeOut(1, 0.1)
@@ -208,7 +208,7 @@ describe('useAnimationEdit — Scheme B 持久化往返 (JSON)', () => {
         expect(kf.out).toEqual({ alpha: 0.1 })
     })
 
-    it('mergeKeyframeAt 之后 JSON 中不再包含 out 字段', () => {
+    it('JSON no longer contains out field after mergeKeyframeAt', () => {
         const ctx = useAnimationEdit({ animation: makeTransformAnim() })
         ctx.splitKeyframeAt(1)
         ctx.mergeKeyframeAt(1)
@@ -218,7 +218,7 @@ describe('useAnimationEdit — Scheme B 持久化往返 (JSON)', () => {
 })
 
 describe('useAnimationEdit — clipboard workflows', () => {
-    it('copyKeyframe 会记录剪贴板类型，并阻止跨轨道粘贴', () => {
+    it('copyKeyframe records clipboard type and prevents cross-track pasting', () => {
         const ctx = useAnimationEdit({ animation: makeMixedAnim() })
 
         ctx.selectedKeyframeIndex.value = 1
@@ -250,7 +250,7 @@ describe('useAnimationEdit — clipboard workflows', () => {
         expect(ctx.currentVisibilityTrack.value!.keyframes).toHaveLength(visibilityCount)
     })
 
-    it('copyKeyframe / duplicateKeyframeToPlayhead 支持 visibility 轨道', () => {
+    it('copyKeyframe / duplicateKeyframeToPlayhead supports visibility tracks', () => {
         const ctx = useAnimationEdit({ animation: makeMixedAnim() })
 
         ctx.selectTrack(1)

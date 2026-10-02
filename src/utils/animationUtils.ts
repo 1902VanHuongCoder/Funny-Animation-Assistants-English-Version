@@ -1,33 +1,33 @@
 /**
- * Animation 工具函数
- * v11.2: 提供通用的帧序列动画工具，避免代码重复
+ * Animation utility functions
+ * v11.2: Provides common frame-sequence animation utilities to avoid code duplication
  */
 
 import * as PIXI from 'pixi.js'
 
 /**
- * 静止帧配置接口
- * 适用于旧资源、PropAsset、BackgroundAsset 等
+ * Still frame configuration interface
+ * Suitable for legacy assets, PropAsset, BackgroundAsset, etc.
  */
 export interface StillFrameConfig {
-    /** 静止帧来源：'frame' 使用序列帧，'custom' 使用自定义纹理 */
+    /** Still frame source: 'frame' uses frame sequence, 'custom' uses custom texture */
     stillFrameSource?: 'frame' | 'custom' | undefined
-    /** 静止帧索引（当 stillFrameSource='frame' 时使用） */
+    /** Still frame index (used when stillFrameSource='frame') */
     stillFrameIndex?: number | undefined
-    /** 自定义静止帧 URL（当 stillFrameSource='custom' 时使用） */
+    /** Custom still frame URL (used when stillFrameSource='custom') */
     url?: string | undefined
 }
 
 /**
- * 纹理获取器类型
+ * Texture getter type
  */
 export type TextureGetter = (url: string) => PIXI.Texture | undefined
 
 /**
- * 恢复 AnimatedSprite 的静止帧
- * @param sprite 目标 AnimatedSprite
- * @param config 静止帧配置
- * @param textureGetter 纹理获取器
+ * Restore AnimatedSprite still frame
+ * @param sprite Target AnimatedSprite
+ * @param config Still frame config
+ * @param textureGetter Texture getter
  */
 export function restoreAnimatedSpriteStillFrame(
     sprite: PIXI.AnimatedSprite,
@@ -38,7 +38,7 @@ export function restoreAnimatedSpriteStillFrame(
         return
     }
 
-    // 自定义静止帧模式
+    // Custom still frame mode
     if (config.stillFrameSource === 'custom' && config.url) {
         const stillTexture = textureGetter(config.url)
         if (stillTexture && stillTexture !== PIXI.Texture.EMPTY) {
@@ -47,7 +47,7 @@ export function restoreAnimatedSpriteStillFrame(
         }
     }
 
-    // 序列帧模式：使用指定的静止帧索引
+    // Sequence frame mode: use specified still frame index
     let stillIdx = 0
 
     if (typeof config.stillFrameIndex === 'number' &&
@@ -60,8 +60,8 @@ export function restoreAnimatedSpriteStillFrame(
 }
 
 /**
- * 恢复 AnimatedSprite 到第一帧
- * 简化版本，直接跳转到第 0 帧
+ * Restore AnimatedSprite to first frame
+ * Simplified version, directly jumps to frame 0
  */
 export function restoreAnimatedSpriteFirstFrame(sprite: PIXI.AnimatedSprite): void {
     if (sprite.textures.length > 0) {

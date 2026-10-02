@@ -4,7 +4,7 @@ import { useProjectStore } from '@/stores/projectStore'
 import { loadAssetFromDisk } from '@/utils/fileSystem'
 
 // ========================================
-// 全局单例缓存（所有组件共享）
+// Global singleton cache (shared across all components)
 // ========================================
 const globalImageCache = reactive<Record<string, string>>({})
 const globalCacheVersion = ref(0)
@@ -12,67 +12,67 @@ const globalLoadingPaths = new Set<string>()
 const globalCreatedBlobUrls = new Set<string>()
 
 /**
- * 统一的资源图片加载 Composable
- * 用于将相对路径转换为 Blob URL 用于显示
+ * Unified asset image loader Composable
+ * Converts relative paths to Blob URLs for display
  */
 export function useAssetImage() {
   const projectStore = useProjectStore()
 
   /**
-   * 获取图片 URL（同步版本，用于模板）
-   * 如果是路径，会异步加载并缓存
-   * 如果缓存中没有，返回透明占位符（避免浏览器尝试加载无效路径）
+   * Get image URL (sync version, used in templates)
+   * If it is a path, loads asynchronously and caches it
+   * If not cached, returns a transparent placeholder (avoids browser attempting to load invalid path)
    */
   function getImageUrl(pathOrUrl: string | null | undefined): string {
     if (!pathOrUrl) return ''
 
-    // 如果已经是 Blob URL 或 data URL，直接返回
+    // If already Blob URL or data URL, return directly
     if (pathOrUrl.startsWith('blob:') || pathOrUrl.startsWith('data:')) {
       return pathOrUrl
     }
 
-    // 访问 cacheVersion 以确保响应式追踪
+    // Access cacheVersion to ensure reactive tracking
     if (globalCacheVersion.value < 0) { /* noop */ }
 
-    // 检查缓存
+    // Check cache
     if (pathOrUrl in globalImageCache) {
       const cachedUrl = globalImageCache[pathOrUrl]
       return cachedUrl ?? ''
     }
 
-    // 如果是路径，异步加载（但不返回路径，避免浏览器加载失败）
+    // If it is a path, load asynchronously (do not return raw path to prevent browser image errors)
     if (projectStore.isProjectOpen && projectStore.projectHandle) {
       void loadImageUrl(pathOrUrl)
     }
 
-    // 返回透明占位符（1x1 像素的透明 PNG），避免浏览器尝试加载空字符串作为相对 URL
+    // Return transparent placeholder (1x1 pixel transparent PNG) to prevent browser loading empty string as relative URL
     return 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='
   }
 
   /**
-   * 异步加载图片 URL
+   * Asynchronously load image URL
    */
   async function loadImageUrl(path: string) {
     if (!projectStore.projectHandle) {
-      console.warn('[useAssetImage] 项目未打开，跳过加载:', path)
+      console.warn('[useAssetImage] Project not open, skipping load:', path)
       return
     }
 
-    // 如果已经在缓存中，直接返回
+    // If already in cache, return directly
     if (path in globalImageCache) {
       return
     }
 
-    // 如果正在加载中，等待加载完成
+    // If already loading, wait for completion
     if (globalLoadingPaths.has(path)) {
-      // 等待加载完成（轮询等待）
+      // Wait for completion (polling)
       while (globalLoadingPaths.has(path)) {
         await new Promise(resolve => setTimeout(resolve, 10))
       }
       return
     }
 
-    // 标记为正在加载
+    // Mark as loading
     globalLoadingPaths.add(path)
 
     try {
@@ -80,30 +80,30 @@ export function useAssetImage() {
 
       if (blobUrl) {
         globalImageCache[path] = blobUrl
-        // 记录创建的 Blob URL
+        // Record created Blob URL
         if (blobUrl.startsWith('blob:')) {
           globalCreatedBlobUrls.add(blobUrl)
         }
-        // 触发响应式更新
+        // Trigger reactive update
         globalCacheVersion.value++
       } else {
-        console.warn('[useAssetImage] 加载返回空:', path)
+        console.warn('[useAssetImage] Load returned empty:', path)
       }
     } catch (error) {
-      console.error('[useAssetImage] 加载图片失败:', path, error)
+      console.error('[useAssetImage] Failed to load image:', path, error)
     } finally {
-      // 移除加载标记
+      // Remove loading flag
       globalLoadingPaths.delete(path)
     }
   }
 
   /**
-   * 预加载多个图片
+   * Preload multiple images
    */
   async function preloadImages(paths: string[]) {
     if (!projectStore.isProjectOpen || !projectStore.projectHandle) return
 
-    // 去重路径
+    // Deduplicate paths
     const uniquePaths = Array.from(new Set(paths))
 
     await Promise.all(uniquePaths.map(path => {
@@ -115,20 +115,20 @@ export function useAssetImage() {
   }
 
   /**
-   * 清除缓存
+   * Clear cache
    */
   function clearCache() {
-    // 释放所有 Blob URL
+    // Revoke all Blob URLs
     globalCreatedBlobUrls.forEach(url => {
       try {
         URL.revokeObjectURL(url)
       } catch (error) {
-        console.error('[useAssetImage] 释放 Blob URL 失败:', url, error)
+        console.error('[useAssetImage] Failed to revoke Blob URL:', url, error)
       }
     })
     globalCreatedBlobUrls.clear()
 
-    // 清空对象
+    // Clear cache object
     Object.keys(globalImageCache).forEach(key => {
       delete globalImageCache[key]
     })
@@ -136,8 +136,8 @@ export function useAssetImage() {
   }
 
   /**
-   * 清理单个 Blob URL
-   * @param path 路径
+   * Revoke single Blob URL
+   * @param path Path
    */
   function revokeBlobUrl(path: string) {
     const url = globalImageCache[path]
@@ -148,13 +148,13 @@ export function useAssetImage() {
         delete globalImageCache[path]
         globalCacheVersion.value++
       } catch (error) {
-        console.error('[useAssetImage] 释放 Blob URL 失败:', path, error)
+        console.error('[useAssetImage] Failed to revoke Blob URL:', path, error)
       }
     }
   }
 
   /**
-   * 检查是否为路径（不是 Blob URL 或 data URL）
+   * Check if string is a path (not Blob URL or data URL)
    */
   function isPath(url: string | null | undefined): boolean {
     if (!url) return false
@@ -162,12 +162,12 @@ export function useAssetImage() {
   }
 
   /**
-   * 检查资源是否已准备好（已加载且不是占位符）
+   * Check if asset is ready (loaded and not placeholder)
    */
   function isImageReady(path: string): boolean {
-    if (!path) return true // 空路径视为 ready (不需加载)
+    if (!path) return true // Empty path is considered ready (no load needed)
     const url = globalImageCache[path]
-    // 检查是否在缓存中，且不是占位符
+    // Check if in cache and not placeholder
     return !!url && !url.startsWith('data:image/png;base64')
   }
 

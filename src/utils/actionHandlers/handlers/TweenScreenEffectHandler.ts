@@ -1,7 +1,7 @@
 /**
  * TweenScreenEffect Action Handler (Phase 1)
- * 处理画面特效参数的持续渐变
- * 直接操作 state.params 嵌套结构（消除 flat state 中间层）
+ * Handles continuous easing of screen effect parameters
+ * Directly operates on nested state.params structure (eliminating flat state intermediate layer)
  */
 
 import type { ScreenEffectParams } from '@/types/sceneObject'
@@ -10,7 +10,7 @@ import type { TweenScreenEffectAction } from '@/types/screenplay'
 import type { ActionHandler, ActionHandlerContext, WriteableState } from '../types'
 
 /**
- * 线性插值
+ * Linear interpolation
  */
 function lerp(start: number, end: number, t: number): number {
     return start + (end - start) * t
@@ -23,12 +23,12 @@ export const TweenScreenEffectHandler: ActionHandler<TweenScreenEffectAction> = 
     affectsObjectState: true,
 
     applyToState(state: WriteableState, action: TweenScreenEffectAction, _context?: ActionHandlerContext): void {
-        // 瞬时应用：直接设置为目标值
+        // Instantaneous application: directly set to target values
         const { params } = action
         state.params ??= {} as ScreenEffectParams
         const p = state.params
 
-        // coverOpacity 已删除，统一由 alpha 控制
+        // coverOpacity deleted, uniformly controlled by alpha
         if (params.baseColor !== undefined) p.baseColor = params.baseColor
         if (params.holeShape !== undefined) p.holeShape = params.holeShape
         if (params.holeCenterX !== undefined) p.holeCenterX = params.holeCenterX
@@ -53,9 +53,9 @@ export const TweenScreenEffectHandler: ActionHandler<TweenScreenEffectAction> = 
         const p = state.params
         const sp = startState.params
 
-        // 数值型参数做线性插值
+        // Linear interpolation for numeric parameters
 
-        // coverOpacity 已删除，不透明度插值统一由 tween_transform 的 alpha 处理
+        // coverOpacity deleted, opacity interpolation uniformly handled by alpha in tween_transform
         if (params.holeCenterX !== undefined && sp?.holeCenterX !== undefined) {
             p.holeCenterX = lerp(sp.holeCenterX, params.holeCenterX, progress)
         }
@@ -81,7 +81,7 @@ export const TweenScreenEffectHandler: ActionHandler<TweenScreenEffectAction> = 
             p.offsetY = lerp(sp.offsetY, params.offsetY, progress)
         }
 
-        // 非数值型参数（baseColor, holeShape, targetId）不做插值，在 progress >= 1 时切换
+        // Non-numeric parameters (baseColor, holeShape, targetId) are not interpolated, switched when progress >= 1
         if (progress >= 1) {
             if (params.baseColor !== undefined) p.baseColor = params.baseColor
             if (params.holeShape !== undefined) p.holeShape = params.holeShape
@@ -90,7 +90,7 @@ export const TweenScreenEffectHandler: ActionHandler<TweenScreenEffectAction> = 
     },
 
     getTargetState(state: WriteableState, action: TweenScreenEffectAction): void {
-        // 与 applyToState 相同
+        // Same as applyToState
         this.applyToState(state, action)
     }
 }

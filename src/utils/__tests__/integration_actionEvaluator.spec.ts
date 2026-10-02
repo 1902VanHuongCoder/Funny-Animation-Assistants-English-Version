@@ -156,8 +156,8 @@ describe('Integration: actionEvaluator with Real Project Data', () => {
         if (!setupObj) { console.error('Obj not found'); return }
         console.log('TC-AM-06: Target Object', setupObj.id, setupObj.name)
 
-        // 跳过 characterStore 相关查找（characterStore 已移除）
-        // 直接查看 action 数据结构
+        // Skip characterStore lookups (characterStore removed)
+        // Inspect action data structure directly
         console.log('TC-AM-06: Character data inspection skipped (characterStore removed)')
 
         // Scan blocks 0-2
@@ -197,7 +197,7 @@ describe('Integration: actionEvaluator with Real Project Data', () => {
 
     // =========================================================================
     // TC-AM-04: Cross-Block State Accumulation
-    // 验证跨Block属性叠加计算逻辑
+    // Verify cross-Block property accumulation calculation logic
     // =========================================================================
     it('TC-AM-04: Cross-Block State Accumulation', () => {
         if (!ensureProjectData()) return
@@ -208,20 +208,20 @@ describe('Integration: actionEvaluator with Real Project Data', () => {
         }
         const scene = episode.scenes[0]
 
-        // 确保至少有3个Block
+        // Ensure at least 3 Blocks
         if (scene.script.length < 3) {
             console.warn('Scene needs at least 3 blocks for TC-AM-04')
             return
         }
 
-        // 找一个人物对象
+        // Find a character object
         const characterObj = scene.setup.objects.find((o: SceneObject) => o.type === 'prop')
         if (!characterObj) {
             console.warn('No object found for TC-AM-04')
             return
         }
 
-        // 1. 获取初始状态 (scene.setup)
+        // 1. Get initial state (scene.setup)
         const initialState = scene.setup.objects.find((o: SceneObject) => o.id === characterObj.id)
         expect(initialState).toBeDefined()
         console.log('TC-AM-04: Initial State (setup):', {
@@ -230,7 +230,7 @@ describe('Integration: actionEvaluator with Real Project Data', () => {
             pose: (initialState as any).pose
         })
 
-        // 2. 计算Block 2开始前的状态 (即Block 0和Block 1的累积结果)
+        // 2. Compute state before Block 2 starts (accumulated result of Block 0 & 1)
         const block2 = scene.script[2]
         const prevContextBlock2 = calculatePrevContext(scene, block2.id)
         const accumulatedState = prevContextBlock2.objects.find((o: SceneObject) => o.id === characterObj.id)
@@ -245,8 +245,8 @@ describe('Integration: actionEvaluator with Real Project Data', () => {
             expression: (accumulatedState as any).expression
         })
 
-        // 3. 验证累积状态不等于初始状态（如果之前的Block有修改的话）
-        // 注意：如果之前Block没有任何action，状态可能相同
+        // 3. Verify accumulated state does not equal initial state (if prior Blocks had modifications)
+        // Note: If prior Blocks have no actions, states may be identical
         const block0 = scene.script[0]
         const block1 = scene.script[1]
         const hasActionsOnTarget =
@@ -254,11 +254,11 @@ describe('Integration: actionEvaluator with Real Project Data', () => {
             (block1.actions?.some((a: any) => a.target === characterObj.id))
 
         if (hasActionsOnTarget) {
-            // 如果有针对目标对象的action，状态应该反映这些变更
+            // If actions target this object, state should reflect changes
             console.log('TC-AM-04: Actions found affecting target, state should be accumulated')
         }
 
-        // 4. 评估Block 2内的状态变化
+        // 4. Evaluate state changes within Block 2
         const slots = parseBlockToSlots(block2)
         if (slots.length > 0 && block2.actions?.length > 0) {
             const targetActions = block2.actions.filter((a: any) => a.target === characterObj.id)
@@ -281,7 +281,7 @@ describe('Integration: actionEvaluator with Real Project Data', () => {
 
     // =========================================================================
     // TC-AM-05: Multi-Scene State Isolation
-    // 验证多场景状态隔离
+    // Verify multi-scene state isolation
     // =========================================================================
     it('TC-AM-05: Multi-Scene State Isolation', () => {
         if (!ensureProjectData()) return
@@ -294,21 +294,21 @@ describe('Integration: actionEvaluator with Real Project Data', () => {
         const scene1 = episode.scenes[0]
         const scene2 = episode.scenes[1]
 
-        // 确保场景有脚本
+        // Ensure scene has script
         if (!scene1.script?.length || !scene2.script?.length) {
             console.warn('Scenes need script blocks for TC-AM-05')
             return
         }
 
-        // 获取场景2的初始状态 (首个Block的prevContext)
+        // Get Scene 2 initial state (prevContext of first Block)
         const scene2FirstBlock = scene2.script[0]
         const scene2StartContext = calculatePrevContext(scene2, scene2FirstBlock.id)
 
-        // 场景2的初始状态应该来自其自己的setup，而不是场景1的结束状态
+        // Scene 2 initial state should come from its own setup, not Scene 1 end state
         expect(scene2StartContext).toBeDefined()
         expect(scene2StartContext.objects).toBeDefined()
 
-        // 验证scene2的setup与prevContext一致（对于首个Block）
+        // Verify scene2 setup matches prevContext (for first Block)
         const scene2SetupStr = JSON.stringify(scene2.setup)
         const scene2ContextStr = JSON.stringify(scene2StartContext)
         expect(scene2ContextStr).toBe(scene2SetupStr)
@@ -318,7 +318,7 @@ describe('Integration: actionEvaluator with Real Project Data', () => {
 
     // =========================================================================
     // TC-AM-07: Block End State Calculation
-    // 验证Block结束后最终状态计算
+    // Verify final state computation at Block end
     // =========================================================================
     it('TC-AM-07: Block End State Calculation', () => {
         if (!ensureProjectData()) return
@@ -329,7 +329,7 @@ describe('Integration: actionEvaluator with Real Project Data', () => {
             return
         }
 
-        // 找一个包含tween_transform的Block
+        // Find a Block containing tween_transform
         let targetBlock: any = null
         for (const block of scene.script) {
             if (block.actions?.some((a: any) => a.type === 'tween_transform')) {
@@ -339,7 +339,7 @@ describe('Integration: actionEvaluator with Real Project Data', () => {
         }
 
         if (!targetBlock) {
-            // 如果没有tween_transform，使用第一个有action的Block
+            // If no tween_transform, use first Block with actions
             targetBlock = scene.script.find((b: any) => b.actions?.length > 0)
         }
 
@@ -350,13 +350,13 @@ describe('Integration: actionEvaluator with Real Project Data', () => {
 
         const prevContext = calculatePrevContext(scene, targetBlock.id)
 
-        // 导入applyBlockActionsToState进行验证
+        // Import applyBlockActionsToState for verification
         const endState = applyBlockActionsToState(prevContext, targetBlock, scene)
 
         expect(endState).toBeDefined()
         expect(endState.objects).toBeDefined()
 
-        // 验证tween_transform的目标值被正确应用
+        // Verify tween_transform target values applied correctly
         const tweenActions = targetBlock.actions?.filter((a: any) => a.type === 'tween_transform') || []
         tweenActions.forEach((action: any) => {
             const endObj = endState.objects.find((o: any) => o.id === action.target)
@@ -375,7 +375,7 @@ describe('Integration: actionEvaluator with Real Project Data', () => {
 
     // =========================================================================
     // TC-EXPR-01: Expression Override State Flow
-    // 验证表情覆盖状态流转
+    // Verify expression override state flow
     // =========================================================================
     it('TC-EXPR-01: Expression Override State Flow', () => {
         if (!ensureProjectData()) return
@@ -386,14 +386,14 @@ describe('Integration: actionEvaluator with Real Project Data', () => {
             return
         }
 
-        // 找一个人物对象
+        // Find a character object
         const characterObj = scene.setup.objects.find((o: SceneObject) => o.type === 'prop')
         if (!characterObj) {
             console.warn('No object found for TC-EXPR-01')
             return
         }
 
-        // 跟踪expression在Block间的流转
+        // Track expression flow across Blocks
         const expressionFlow: string[] = []
 
         for (let i = 0; i < Math.min(3, scene.script.length); i++) {
@@ -404,7 +404,7 @@ describe('Integration: actionEvaluator with Real Project Data', () => {
             const startExpr = (objState as any)?.expression || 'default'
             expressionFlow.push(`Block${i}_start: ${startExpr}`)
 
-            // 检查该Block内是否有set_character设置新expression
+            // Check if Block has set_character configuring new expression
             const setCharAction = block.actions?.find((a: any) =>
                 a.target === characterObj.id &&
                 a.type === 'set_character' &&
@@ -417,14 +417,14 @@ describe('Integration: actionEvaluator with Real Project Data', () => {
 
         console.log('TC-EXPR-01: Expression Flow:', expressionFlow.join(' -> '))
 
-        // 验证表情在Block间正确传递
-        // 如果Block 1设置了新表情，Block 2开始时应该能看到
+        // Verify expression passes correctly across Blocks
+        // If Block 1 sets new expression, Block 2 should see it at start
         expect(expressionFlow.length).toBeGreaterThan(0)
     })
 
     // =========================================================================
     // TC-EXPR-02: Expression Asset Mapping to PartAssetOverrides
-    // 验证表情到partAssetOverrides的映射
+    // Verify expression mapping to partAssetOverrides
     // =========================================================================
     it('TC-EXPR-02: Expression Asset Mapping to PartAssetOverrides', () => {
         if (!ensureProjectData()) return
@@ -435,7 +435,7 @@ describe('Integration: actionEvaluator with Real Project Data', () => {
             return
         }
 
-        // 找带有expression参数的set_character action
+        // Find set_character action with expression parameter
         let foundAction: any = null
         for (const block of scene.script) {
             const action = block.actions?.find((a: any) =>
@@ -453,27 +453,27 @@ describe('Integration: actionEvaluator with Real Project Data', () => {
             return
         }
 
-        // 验证 action 数据结构中包含 expression 参数
+        // Verify action data structure contains expression parameter
         console.log('TC-EXPR-02: Found action with expression:', foundAction.params.expression)
 
-        // 验证 target 对象是角色类型
+        // Verify target object is character type
         const targetObj = scene.setup.objects.find((o: SceneObject) => o.id === foundAction.target)
         if (!targetObj?.refId) {
             console.warn('Target is not a character for TC-EXPR-02')
             return
         }
 
-        // characterStore 已移除，跳过角色定义查找
+        // characterStore removed, skip character definition lookup
         console.log(`TC-EXPR-02: Target object refId: ${targetObj.refId}`)
         expect(foundAction.params.expression).toBeTruthy()
     })
 
     // =========================================================================
     // TC-EXPR-03: Expression Speaking Frames Preload
-    // 验证表情口型帧预加载（测试数据收集逻辑）
+    // Verify expression mouth shape frames preload (test data collection logic)
     // =========================================================================
     it('TC-EXPR-03: Expression Speaking Frames Preload', () => {
-        // 这个测试验证表情的speakingFrames被收集用于预加载
+        // Validates expression speakingFrames collected for preloading
         const expressionStore = useExpressionStore()
 
         const expressions = Object.values(expressionStore.expressions || {})
@@ -482,14 +482,14 @@ describe('Integration: actionEvaluator with Real Project Data', () => {
             return
         }
 
-        // 检查是否有包含speakingFrames的表情
+        // Check if any expression contains speakingFrames
         let hasSpekingFrames = false
         for (const expr of expressions) {
             if (expr.speakingFrames && expr.speakingFrames.length > 0) {
                 hasSpekingFrames = true
                 console.log(`TC-EXPR-03: Expression ${expr.id} has ${expr.speakingFrames.length} speaking frames`)
 
-                // 验证每个帧都有URL
+                // Verify each frame has URL
                 expr.speakingFrames.forEach((frame: any, idx: number) => {
                     expect(frame.url).toBeDefined()
                     console.log(`  Frame ${idx}: ${frame.url?.substring(0, 50)}...`)

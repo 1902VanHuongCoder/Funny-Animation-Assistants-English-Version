@@ -1,8 +1,8 @@
 /**
- * 视频导出模块入口
+ * Video export module entry point
  */
 
-// 导出核心类
+// Export core classes
 export { AudioEncoderWrapper } from './AudioEncoderWrapper'
 export { AudioMixer } from './AudioMixer'
 export { FrameCapture } from './FrameCapture'
@@ -10,7 +10,7 @@ export { MP4MuxerWrapper } from './MP4MuxerWrapper'
 export { VideoEncoderWrapper } from './VideoEncoderWrapper'
 export { VideoExporter } from './VideoExporter'
 
-// 导出常量
+// Export constants
 export {
     CAMERA_BASE_HEIGHT,
     CAMERA_BASE_WIDTH,
@@ -23,7 +23,7 @@ export {
     RESOLUTION_PRESETS
 } from './constants'
 
-// 导出类型
+// Export types
 export type {
     AudioTrack,
     ExportResult,

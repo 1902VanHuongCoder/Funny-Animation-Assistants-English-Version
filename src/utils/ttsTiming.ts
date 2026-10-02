@@ -57,7 +57,7 @@ export async function decodeBase64AudioToAudioBuffer(base64Audio: string): Promi
   try {
     return await decodeAudioContext.decodeAudioData(arrayBuffer.slice(0))
   } catch (error) {
-    console.warn('[TTSTiming] 音频解码失败，跳过 timing 分析:', error)
+    console.warn('[TTSTiming] Audio decoding failed, skipping timing analysis:', error)
     return null
   }
 }
@@ -155,7 +155,7 @@ export async function loadTTSTimingFile(
   try {
     return JSON.parse(await readFileAsText(projectHandle, timingPath)) as TTSTimingFile
   } catch (error) {
-    console.warn('[TTSTiming] timing 文件读取失败，将重新分析:', timingPath, error)
+    console.warn('[TTSTiming] Failed to read timing file, re-analyzing:', timingPath, error)
     return null
   }
 }

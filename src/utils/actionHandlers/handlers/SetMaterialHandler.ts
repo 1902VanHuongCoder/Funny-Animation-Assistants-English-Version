@@ -1,6 +1,6 @@
 /**
- * SetMaterial Action Handler (v16 新增)
- * 切换 SymbolObject 的当前素材
+ * SetMaterial Action Handler (Added in v16)
+ * Switches SymbolObject's current material
  */
 
 import type { SetMaterialAction } from '@/types/screenplay'
@@ -17,7 +17,7 @@ export const SetMaterialHandler: ActionHandler<SetMaterialAction> = {
         const { params } = action
         if (params.materialId !== undefined) {
             state.currentMaterialId = params.materialId
-            // v18: 同时写入 refId，使 ExpressionObject 也能响应 set_material
+            // v18: Also write refId so ExpressionObject can also respond to set_material
             state.refId = params.materialId
         }
     }

@@ -1,13 +1,13 @@
 /**
- * File System Access API 工具函数
- * 用于管理项目文件夹结构中的资产文件
+ * File System Access API Utility Functions
+ * Used to manage asset files in the project directory structure
  */
 
 /**
- * 确保目录存在，如果不存在则创建
- * @param parentHandle 父目录句柄
- * @param path 相对路径（如 "assets/characters"）
- * @returns 目录句柄
+ * Ensure directory exists, create if not
+ * @param parentHandle Parent directory handle
+ * @param path Relative path (e.g. "assets/characters")
+ * @returns Directory handle
  */
 export async function ensureDirectory(
   parentHandle: FileSystemDirectoryHandle,
@@ -24,9 +24,9 @@ export async function ensureDirectory(
 }
 
 /**
- * 安全获取子目录句柄
- * Chrome 的 File System Access API 会拒绝某些目录名（如以 .swf/.ini 等扩展名结尾的名称）。
- * 此函数先尝试 getDirectoryHandle，失败后回退到遍历父目录的 entries() 来查找匹配的目录。
+ * Safely get subdirectory handle
+ * Chrome's File System Access API rejects certain directory names (such as names ending with .swf/.ini extensions).
+ * This function first tries getDirectoryHandle, then falls back to traversing parent directory entries() to find matching directory.
  */
 export async function getDirectoryHandleSafe(
   parentHandle: FileSystemDirectoryHandle,
@@ -35,26 +35,26 @@ export async function getDirectoryHandleSafe(
   try {
     return await parentHandle.getDirectoryHandle(name)
   } catch (error) {
-    // TypeError = "Name is not allowed" (浏览器安全限制)
+    // TypeError = "Name is not allowed" (browser security restriction)
     if (error instanceof TypeError) {
-      // 回退：遍历父目录的条目来查找匹配的子目录
+      // Fallback: traverse parent directory entries to find matching subdirectory
       for await (const [entryName, handle] of parentHandle.entries()) {
         if (handle.kind === 'directory' && entryName === name) {
           return handle
         }
       }
-      throw new Error(`目录不存在（名称被浏览器限制）: ${name}`)
+      throw new Error(`Directory does not exist (name restricted by browser): ${name}`)
     }
     throw error
   }
 }
 
 /**
- * 保存资产文件到磁盘（完整版本）
- * @param parentHandle 父目录句柄
- * @param relativePath 相对路径（如 "assets/backgrounds/bg_123.png"）
- * @param file 要保存的文件对象
- * @returns 相对路径
+ * Save asset file to disk (full version)
+ * @param parentHandle Parent directory handle
+ * @param relativePath Relative path (e.g. "assets/backgrounds/bg_123.png")
+ * @param file File object to save
+ * @returns Relative path
  */
 export async function saveFileToDisk(
   parentHandle: FileSystemDirectoryHandle,
@@ -65,19 +65,19 @@ export async function saveFileToDisk(
   const fileName = parts.pop()!
   const dirPath = parts.join('/')
 
-  // 确保目录存在
+  // Ensure directory exists
   const dirHandle = dirPath
     ? await ensureDirectory(parentHandle, dirPath)
     : parentHandle
 
-  // 检查文件是否已存在，如果存在则删除
+  // Check if file already exists; delete if so
   try {
     await dirHandle.removeEntry(fileName, { recursive: false })
   } catch {
-    // 文件不存在，忽略错误
+    // File does not exist, ignore error
   }
 
-  // 创建文件并写入（使用 keepExistingData: false 确保原子写入）
+  // Create file and write (use keepExistingData: false for atomic write)
   const fileHandle = await dirHandle.getFileHandle(fileName, { create: true })
   const writable = await fileHandle.createWritable({ keepExistingData: false })
   await writable.write(file)
@@ -88,10 +88,10 @@ export async function saveFileToDisk(
 }
 
 /**
- * 从磁盘加载资产文件
- * @param parentHandle 父目录句柄
- * @param relativePath 相对路径（如 "assets/backgrounds/bg_123.png"）
- * @returns Blob URL（用于在浏览器中显示）
+ * Load asset file from disk
+ * @param parentHandle Parent directory handle
+ * @param relativePath Relative path (e.g. "assets/backgrounds/bg_123.png")
+ * @returns Blob URL (used for display in browser)
  */
 export async function loadAssetFromDisk(
   parentHandle: FileSystemDirectoryHandle,
@@ -102,16 +102,16 @@ export async function loadAssetFromDisk(
     const fileName = parts.pop()!
     const dirPath = parts.join('/')
 
-    // 获取目录句柄（添加超时保护）
+    // Get directory handle (with timeout protection)
     let dirHandle = parentHandle
     if (dirPath) {
       const dirParts = dirPath.split('/').filter(p => p.length > 0)
 
       for (const part of dirParts) {
         try {
-          // 为每个 getDirectoryHandle 添加 5 秒超时
+          // Add 5 second timeout for each getDirectoryHandle
           const timeoutPromise = new Promise<never>((_, reject) => {
-            setTimeout(() => reject(new Error(`访问目录超时: ${part}`)), 5000)
+            setTimeout(() => reject(new Error(`Directory access timeout: ${part}`)), 5000)
           })
 
           dirHandle = await Promise.race([
@@ -121,21 +121,21 @@ export async function loadAssetFromDisk(
         } catch (error: unknown) {
           const dirError = error as Error & { name?: string; message?: string }
           if (dirError.name === 'NotFoundError') {
-            throw new Error(`目录不存在: ${part}`)
+            throw new Error(`Directory does not exist: ${part}`)
           } else if (dirError.name === 'SecurityError') {
-            throw new Error(`没有权限访问目录: ${part}`)
-          } else if (dirError.message?.includes('超时')) {
-            throw new Error(`访问目录超时: ${part}，请检查文件系统权限`)
+            throw new Error(`No permission to access directory: ${part}`)
+          } else if (dirError.message?.toLowerCase().includes('timeout')) {
+            throw new Error(`Directory access timeout: ${part}, please check file system permissions`)
           } else {
-            throw new Error(`无法访问目录: ${part} - ${dirError.message}`)
+            throw new Error(`Cannot access directory: ${part} - ${dirError.message}`)
           }
         }
       }
     }
 
-    // 读取文件（添加超时保护）
+    // Read file (with timeout protection)
     const fileTimeoutPromise = new Promise<never>((_, reject) => {
-      setTimeout(() => reject(new Error(`读取文件超时: ${fileName}`)), 5000)
+      setTimeout(() => reject(new Error(`File read timeout: ${fileName}`)), 5000)
     })
 
     const fileHandle = await Promise.race([
@@ -145,24 +145,24 @@ export async function loadAssetFromDisk(
 
     const file = await fileHandle.getFile()
 
-    // v12.8 Fix: 使用 arrayBuffer 读取内容创建独立的 Blob
-    // 之前直接使用 File 对象 (URL.createObjectURL(file)) 会保持与磁盘文件的引用
-    // 如果磁盘文件被修改（例如自动保存或其他进程写入），该 Blob URL 会立即失效导致 ERR_UPLOAD_FILE_CHANGED
+    // v12.8 Fix: Use arrayBuffer to read content and create independent Blob
+    // Previously, directly using File object (URL.createObjectURL(file)) maintained reference to disk file
+    // If disk file was modified (e.g., auto-saved or written by another process), that Blob URL invalidated immediately causing ERR_UPLOAD_FILE_CHANGED
     const buffer = await file.arrayBuffer()
     const blob = new Blob([buffer], { type: file.type })
     const blobUrl = URL.createObjectURL(blob)
     return blobUrl
   } catch (error) {
-    console.error('[loadAssetFromDisk] 加载失败:', relativePath, error)
+    console.error('[loadAssetFromDisk] Load failed:', relativePath, error)
     throw error
   }
 }
 
 /**
- * 检测文件是否存在
- * @param parentHandle 父目录句柄
- * @param relativePath 相对路径
- * @returns 文件是否存在
+ * Check if file exists
+ * @param parentHandle Parent directory handle
+ * @param relativePath Relative path
+ * @returns Whether file exists
  */
 export async function fileExists(
   parentHandle: FileSystemDirectoryHandle,
@@ -173,7 +173,7 @@ export async function fileExists(
     const fileName = parts.pop()!
     const dirPath = parts.join('/')
 
-    // 获取目录句柄
+    // Get directory handle
     let dirHandle = parentHandle
     if (dirPath) {
       const dirParts = dirPath.split('/').filter(p => p.length > 0)
@@ -181,12 +181,12 @@ export async function fileExists(
         try {
           dirHandle = await getDirectoryHandleSafe(dirHandle, part)
         } catch {
-          return false // 目录不存在
+          return false // Directory does not exist
         }
       }
     }
 
-    // 检测文件是否存在
+    // Check if file exists
     try {
       await dirHandle.getFileHandle(fileName)
       return true
@@ -199,9 +199,9 @@ export async function fileExists(
 }
 
 /**
- * 从磁盘删除资产文件
- * @param parentHandle 父目录句柄
- * @param relativePath 相对路径
+ * Delete asset file from disk
+ * @param parentHandle Parent directory handle
+ * @param relativePath Relative path
  */
 export async function deleteAssetFromDisk(
   parentHandle: FileSystemDirectoryHandle,
@@ -212,7 +212,7 @@ export async function deleteAssetFromDisk(
     const fileName = parts.pop()!
     const dirPath = parts.join('/')
 
-    // 获取目录句柄
+    // Get directory handle
     let dirHandle = parentHandle
     if (dirPath) {
       for (const part of dirPath.split('/').filter(p => p.length > 0)) {
@@ -220,20 +220,20 @@ export async function deleteAssetFromDisk(
       }
     }
 
-    // 删除文件
+    // Delete file
     await dirHandle.removeEntry(fileName, { recursive: false })
 
   } catch (error) {
-    // 文件可能不存在，忽略错误
+    // File might not exist, ignore error
 
   }
 }
 
 /**
- * 读取文件内容为文本
- * @param parentHandle 父目录句柄
- * @param relativePath 相对路径
- * @returns 文件内容（文本）
+ * Read file content as text
+ * @param parentHandle Parent directory handle
+ * @param relativePath Relative path
+ * @returns File content (text)
  */
 export async function readFileAsText(
   parentHandle: FileSystemDirectoryHandle,
@@ -256,10 +256,10 @@ export async function readFileAsText(
 }
 
 /**
- * 写入文本到文件
- * @param parentHandle 父目录句柄
- * @param relativePath 相对路径
- * @param content 文件内容（文本）
+ * Write text to file
+ * @param parentHandle Parent directory handle
+ * @param relativePath Relative path
+ * @param content File content (text)
  */
 export async function writeFileAsText(
   parentHandle: FileSystemDirectoryHandle,
@@ -270,12 +270,12 @@ export async function writeFileAsText(
   const fileName = parts.pop()!
   const dirPath = parts.join('/')
 
-  // 确保目录存在
+  // Ensure directory exists
   const dirHandle = dirPath
     ? await ensureDirectory(parentHandle, dirPath)
     : parentHandle
 
-  // 创建或获取文件句柄
+  // Create or get file handle
   const fileHandle = await dirHandle.getFileHandle(fileName, { create: true })
   const writable = await fileHandle.createWritable()
   await writable.write(content)

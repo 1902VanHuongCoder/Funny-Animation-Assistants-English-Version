@@ -1,11 +1,11 @@
 /**
- * Block播放器 Composable
- * 统一封装TTS生成、播放控制、时间轴更新等逻辑
+ * Block Player Composable
+ * Unified encapsulation of TTS generation, playback control, timeline updates, etc.
  * 
- * 使用场景：
- * 1. SceneEditMode.vue - Action模式预览
- * 2. 剧本编辑页面 - Block预览
- * 3. 全剧预览/导出 - 连续播放多个Block
+ * Usage scenarios:
+ * 1. SceneEditMode.vue - Action mode preview
+ * 2. Screenplay edit page - Block preview
+ * 3. Full script preview/export - Sequential playback of multiple Blocks
  */
 
 import { computed, ref } from 'vue'
@@ -16,42 +16,42 @@ import { useEpisodeStore } from '@/stores/episodeStore'
 import { useProjectStore } from '@/stores/projectStore'
 import type { ScriptBlock } from '@/types/screenplay'
 
-// Block类型联合
+// Block type union
 export type PlayableBlock = ScriptBlock
 
-// 播放状态
+// Playback state
 export interface PlaybackState {
   isPlaying: boolean
   isPaused: boolean
-  currentTime: number      // 当前播放时间（毫秒）
-  duration: number         // 总时长（毫秒）
-  progress: number         // 播放进度 0-1
-  error: string | null     // 错误信息
+  currentTime: number      // Current playback time (ms)
+  duration: number         // Total duration (ms)
+  progress: number         // Playback progress 0-1
+  error: string | null     // Error message
 }
 
-// 播放器配置
+// Player configuration
 export interface BlockPlayerOptions {
   episodeId: string
   sceneId: string
   blockId: string
-  onTimeUpdate?: (time: number) => void  // 时间更新回调
-  onPlayEnd?: () => void                  // 播放结束回调
+  onTimeUpdate?: (time: number) => void  // Time update callback
+  onPlayEnd?: () => void                  // Playback end callback
 }
 
 import { type AudioInstance, audioKit } from '@/utils/WebAudioKit'
 
 /**
- * Block播放器 Composable
- * 仅负责播放控制，不负责资源生成
+ * Block Player Composable
+ * Only responsible for playback control, not asset generation
  */
 export function useBlockPlayer(options: BlockPlayerOptions) {
-  // 播放状态
+  // Playback state
   const isPlaying = ref(false)
   const isPaused = ref(false)
   const currentTime = ref(0)
   const error = ref<string | null>(null)
 
-  // 内部状态
+  // Internal state
   let animationFrame: number | null = null
   let playStartTime = 0
   let playStartOffset = 0
@@ -78,7 +78,7 @@ export function useBlockPlayer(options: BlockPlayerOptions) {
     return 1
   }
 
-  // 获取当前Block
+  // Get current Block
   const currentBlock = computed((): PlayableBlock | null => {
     const episodeStore = useEpisodeStore()
     const episode = episodeStore.getEpisode(options.episodeId)
@@ -90,27 +90,27 @@ export function useBlockPlayer(options: BlockPlayerOptions) {
     return scene.script.find((b) => b.id === options.blockId) ?? null
   })
 
-  // 获取Block时长
+  // Get Block duration
   const duration = computed((): number => {
     const block = currentBlock.value
     if (!block) return 0
 
-    // 优先使用 action 类型的 duration
+    // Prefer action type duration
     if (block.type === 'action') {
       return block.duration || 0
     }
 
-    // 对话/旁白使用 TTS duration
+    // Dialogue/narration uses TTS duration
     return block.ttsConfig?.duration ?? 0
   })
 
-  // 播放进度
+  // Playback progress
   const progress = computed((): number => {
     if (duration.value <= 0) return 0
     return Math.min(currentTime.value / duration.value, 1)
   })
 
-  // 聚合状态
+  // Aggregated state
   const state = computed((): PlaybackState => ({
     isPlaying: isPlaying.value,
     isPaused: isPaused.value,
@@ -121,27 +121,27 @@ export function useBlockPlayer(options: BlockPlayerOptions) {
   }))
 
   /**
-   * 开始播放
-   * @param audioUrl 可选的音频地址（如果不传则尝试从 block.ttsConfig.audioPath 加载）
+   * Start playback
+   * @param audioUrl Optional audio address (if omitted, loads from block.ttsConfig.audioPath)
    */
   async function play(audioUrl?: string): Promise<void> {
-    // 如果已经在播放，忽略
+    // If already playing, ignore
     if (isPlaying.value) return
 
     error.value = null
 
-    // 检查时长
+    // Check duration
     if (duration.value <= 0) {
-      error.value = 'Block时长为0，无法播放'
+      error.value = 'Block duration is 0, cannot play'
       return
     }
 
-    // 如果已经播放到结尾，重置到开头
+    // If already played to the end, reset to start
     if (currentTime.value >= duration.value) {
       currentTime.value = 0
     }
 
-    // 如果是暂停状态，继续播放
+    // If paused, resume playback
     if (isPaused.value) {
       isPaused.value = false
     }
@@ -150,10 +150,10 @@ export function useBlockPlayer(options: BlockPlayerOptions) {
     playStartTime = performance.now()
     playStartOffset = currentTime.value
 
-    // 播放音频（如果有）
+    // Play audio (if any)
     const block = currentBlock.value
     if (block && (block.type === 'dialogue' || block.type === 'narration')) {
-      // v12.8: 优先使用传入的 URL，否则通过 audioPath 懒加载
+      // v12.8: Prefer passed URL, otherwise lazy load via audioPath
       let finalAudioUrl = audioUrl
       if (!finalAudioUrl && block.ttsConfig?.audioPath) {
         const { loadAudioUrl, getAudioUrl } = useAssetAudio()
@@ -163,16 +163,16 @@ export function useBlockPlayer(options: BlockPlayerOptions) {
 
       if (finalAudioUrl) {
         try {
-          // 确保 AudioContext 已初始化
+          // Ensure AudioContext is initialized
           await audioKit.init()
 
-          // 加载音频 (如果是 Blob URL，load 会很快)
+          // Load audio (if Blob URL, loading is fast)
           await audioKit.load(finalAudioUrl)
 
-          // 计算播放偏移 (currentTime是毫秒，audioKit需要秒)
+          // Calculate playback offset (currentTime is ms, audioKit needs seconds)
           const startOffset = Math.max(0, currentTime.value / 1000)
 
-          // 播放
+          // Play
           audioInstance = await audioKit.play(finalAudioUrl, {
             volume: getBlockPlaybackVolume(block),
             loop: false,
@@ -180,18 +180,18 @@ export function useBlockPlayer(options: BlockPlayerOptions) {
           })
 
         } catch (err) {
-          console.error('[BlockPlayer] 音频播放失败:', err)
+          console.error('[BlockPlayer] Failed to play audio:', err)
           audioInstance = null
         }
       }
     }
 
-    // 启动动画循环
+    // Start animation loop
     startPlaybackLoop()
   }
 
   /**
-   * 暂停播放
+   * Pause playback
    */
   function pause(): void {
     if (!isPlaying.value) return
@@ -199,37 +199,37 @@ export function useBlockPlayer(options: BlockPlayerOptions) {
     isPlaying.value = false
     isPaused.value = true
 
-    // 停止动画循环
+    // Stop animation loop
     if (animationFrame !== null) {
       cancelAnimationFrame(animationFrame)
       animationFrame = null
     }
 
-    // 暂停音频
+    // Pause audio
     if (audioInstance) {
       audioInstance.stop()
       audioInstance = null
     }
 
-    // 记录暂停位置
+    // Record paused position
     playStartOffset = currentTime.value
   }
 
   /**
-   * 停止播放（重置到开头）
+   * Stop playback (reset to start)
    */
   function stop(): void {
     isPlaying.value = false
     isPaused.value = false
     currentTime.value = 0
 
-    // 停止动画循环
+    // Stop animation loop
     if (animationFrame !== null) {
       cancelAnimationFrame(animationFrame)
       animationFrame = null
     }
 
-    // 停止音频
+    // Stop audio
     if (audioInstance) {
       audioInstance.stop()
       audioInstance = null
@@ -239,41 +239,28 @@ export function useBlockPlayer(options: BlockPlayerOptions) {
   }
 
   /**
-   * 跳转到指定时间
+   * Seek to specified time
    */
   function seek(time: number): void {
     currentTime.value = Math.max(0, Math.min(time, duration.value))
 
-    // 如果正在播放，更新起始时间
+    // If currently playing, update start time
     if (isPlaying.value) {
       playStartTime = performance.now()
       playStartOffset = currentTime.value
 
-      // 同步音频 (AudioKit 不支持 seek instance，必须 stop 后重新 play)
-      // 但由于 useBlockPlayer 的 play 逻辑是 based on currentTime 的，
-      // 所以我们这里只需要停止当前音频，play() 会在下一次调用时（如果是 toggle）或者
-      // 我们在 seek 中不应该自动 play，除非 isPlaying 是 true。
-      // 但由于 AudioKit play 也是 async 的，且这里是 seek。
-      // 最好的做法是：Stop 当前音频 -> 如果 isPlaying，重新调用 play()
-
+      // Sync audio (AudioKit does not support seeking instances, must stop and re-play)
+      // Stop current audio
       if (audioInstance) {
         audioInstance.stop()
         audioInstance = null
       }
 
-      // 如果需要继续播放，则重新触发 play
-      // 注意：play 是 async 的，这里直接调用可能会有竞态，但作为简单的播放器实现尚可接受
-      void play() // 这里 play 会检查 isPlaying 状态吗？ play 函数开头检查了 flag，所以我们不能直接调 play 因为它会 return
-
-      // 需要手动触发音频部分的重播逻辑。
-      // 为了简单，我们只停止音频。用户 seek 后界面通常会暂停或继续。
-      // 如果 isPlaying 保持 true，我们需要重播音频。
-
-      // 重置 playStartTime 以匹配新的 offset
+      // Reset playStartTime to match new offset
       playStartTime = performance.now()
       playStartOffset = currentTime.value
 
-      // v12.8: Re-trigger audio if playing (使用 audioPath 懒加载)
+      // v12.8: Re-trigger audio if playing (lazy load using audioPath)
       const block = currentBlock.value
       if (block && (block.type === 'dialogue' || block.type === 'narration') && block.ttsConfig?.audioPath) {
         const { loadAudioUrl, getAudioUrl } = useAssetAudio()
@@ -291,12 +278,12 @@ export function useBlockPlayer(options: BlockPlayerOptions) {
       }
     }
 
-    // 触发时间更新回调
+    // Trigger time update callback
     options.onTimeUpdate?.(currentTime.value)
   }
 
   /**
-   * 播放/暂停切换
+   * Toggle play/pause
    */
   async function toggle(): Promise<void> {
     if (isPlaying.value) {
@@ -307,7 +294,7 @@ export function useBlockPlayer(options: BlockPlayerOptions) {
   }
 
   /**
-   * 播放动画循环
+   * Playback animation loop
    */
   function startPlaybackLoop(): void {
     function loop() {
@@ -316,21 +303,21 @@ export function useBlockPlayer(options: BlockPlayerOptions) {
       const elapsed = performance.now() - playStartTime
       const newTime = playStartOffset + elapsed
 
-      // 添加500ms的缓冲时间，避免突然中断
+      // Add 500ms buffer time to avoid abrupt interruption
       const bufferTime = 500
       const effectiveDuration = duration.value + bufferTime
 
       if (newTime >= effectiveDuration) {
-        // 播放结束
+        // Playback finished
         currentTime.value = duration.value
         isPlaying.value = false
         isPaused.value = false
 
-        // 触发回调
+        // Trigger callbacks
         options.onTimeUpdate?.(duration.value)
         options.onPlayEnd?.()
 
-        // 停止音频
+        // Stop audio
         if (audioInstance) {
           audioInstance.stop()
           audioInstance = null
@@ -346,7 +333,7 @@ export function useBlockPlayer(options: BlockPlayerOptions) {
   }
 
   /**
-   * 销毁播放器
+   * Destroy player
    */
   function destroy(): void {
     stop()
@@ -358,7 +345,7 @@ export function useBlockPlayer(options: BlockPlayerOptions) {
   }
 
   return {
-    // 状态
+    // State
     state,
     isPlaying,
     isPaused,
@@ -368,7 +355,7 @@ export function useBlockPlayer(options: BlockPlayerOptions) {
     error,
     currentBlock,
 
-    // 方法
+    // Methods
     play,
     pause,
     stop,

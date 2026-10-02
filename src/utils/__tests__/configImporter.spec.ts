@@ -1,10 +1,10 @@
 /**
- * configImporter 单元测试
+ * configImporter Unit Tests
  *
- * 测试 config.json 解析、路径收集、坐标转换、层级处理
+ * Tests config.json parsing, path collection, coordinate transformation, hierarchy processing
  *
- * 注意：convertConfigToSceneObjects 会为根节点创建一个 CompositeObject，
- * 所以输出中总有一个根 composite。
+ * Note: convertConfigToSceneObjects creates a CompositeObject for root node,
+ * so output always contains a root composite.
  */
 import { describe, expect, it } from 'vitest'
 
@@ -57,44 +57,44 @@ function makeConfigRoot(children: (ConfigSymbolNode | ConfigCompositeNode)[]): C
 // ===== Tests =====
 
 describe('parseConfigJson', () => {
-  it('应正确解析合法的 config.json', () => {
+  it('should parse valid config.json correctly', () => {
     const config = makeConfigRoot([makeSymbolNode()])
     const result = parseConfigJson(JSON.stringify(config))
     expect(result.type).toBe('composite')
     expect(result.children.length).toBe(1)
   })
 
-  it('应在根节点不是 composite 时抛出错误', () => {
+  it('should throw error when root node is not composite', () => {
     const badJson = JSON.stringify({ type: 'symbol', name: 'Bad' })
-    expect(() => parseConfigJson(badJson)).toThrow('根节点必须为 composite 类型')
+    expect(() => parseConfigJson(badJson)).toThrow('root node must be of type composite')
   })
 
-  it('应在缺少 children 时抛出错误', () => {
+  it('should throw error when children is missing', () => {
     const badJson = JSON.stringify({ type: 'composite', name: 'NoChildren', version: 'ver2.0.0' })
-    expect(() => parseConfigJson(badJson)).toThrow('根节点缺少 children 数组')
+    expect(() => parseConfigJson(badJson)).toThrow('missing children array')
   })
 
-  it('应在缺少 version 字段时抛出错误', () => {
+  it('should throw error when version field is missing', () => {
     const noVersion = JSON.stringify({ type: 'composite', name: 'Root', children: [] })
-    expect(() => parseConfigJson(noVersion)).toThrow('缺少 version 字段')
+    expect(() => parseConfigJson(noVersion)).toThrow('missing version field')
   })
 
-  it('应在 version 为空字符串时抛出错误', () => {
+  it('should throw error when version is empty string', () => {
     const emptyVersion = JSON.stringify({ type: 'composite', name: 'Root', version: '', children: [] })
-    expect(() => parseConfigJson(emptyVersion)).toThrow('缺少 version 字段')
+    expect(() => parseConfigJson(emptyVersion)).toThrow('missing version field')
   })
 
-  it('应在版本号低于 ver2.0.0 时抛出错误', () => {
+  it('should throw error when version is below ver2.0.0', () => {
     const oldVersion = JSON.stringify({ type: 'composite', name: 'Root', version: 'ver1.0.0', children: [] })
-    expect(() => parseConfigJson(oldVersion)).toThrow('版本过低')
+    expect(() => parseConfigJson(oldVersion)).toThrow('version is too low')
   })
 
-  it('应在版本号格式不合法时抛出错误', () => {
+  it('should throw error when version format is invalid', () => {
     const badVersion = JSON.stringify({ type: 'composite', name: 'Root', version: '1.0', children: [] })
-    expect(() => parseConfigJson(badVersion)).toThrow('版本过低')
+    expect(() => parseConfigJson(badVersion)).toThrow('version is too low')
   })
 
-  it('应接受 ver2.0.0 及更高版本', () => {
+  it('should accept ver2.0.0 and higher', () => {
     const v200 = JSON.stringify({ type: 'composite', name: 'Root', version: 'ver2.0.0', children: [] })
     expect(() => parseConfigJson(v200)).not.toThrow()
 
@@ -107,7 +107,7 @@ describe('parseConfigJson', () => {
 })
 
 describe('isVersionSatisfied', () => {
-  it('应正确比较版本号', () => {
+  it('should compare version numbers correctly', () => {
     expect(isVersionSatisfied('ver2.0.0', '2.0.0')).toBe(true)
     expect(isVersionSatisfied('ver2.1.0', '2.0.0')).toBe(true)
     expect(isVersionSatisfied('ver3.0.0', '2.0.0')).toBe(true)
@@ -116,7 +116,7 @@ describe('isVersionSatisfied', () => {
     expect(isVersionSatisfied('ver1.0.0', '2.0.0')).toBe(false)
   })
 
-  it('应在格式不合法时返回 false', () => {
+  it('should return false when format is invalid', () => {
     expect(isVersionSatisfied('1.0', '2.0.0')).toBe(false)
     expect(isVersionSatisfied('', '2.0.0')).toBe(false)
     expect(isVersionSatisfied('ver', '2.0.0')).toBe(false)
@@ -124,7 +124,7 @@ describe('isVersionSatisfied', () => {
 })
 
 describe('collectAllFramePaths', () => {
-  it('应收集所有 symbol 节点的帧路径', () => {
+  it('should collect frame paths of all symbol nodes', () => {
     const config = makeConfigRoot([
       makeSymbolNode({ name: 'A', frames: [{ frame: 0, keyframe: 0, label: null, path: 'file:///a.png', type: 'single' }] }),
       makeSymbolNode({ name: 'B', frames: [
@@ -140,7 +140,7 @@ describe('collectAllFramePaths', () => {
     expect(paths.has('file:///b2.png')).toBe(true)
   })
 
-  it('应递归遍历嵌套 composite 中的 symbol', () => {
+  it('should recursively traverse symbols in nested composites', () => {
     const config = makeConfigRoot([
       {
         name: 'Group1',
@@ -157,8 +157,8 @@ describe('collectAllFramePaths', () => {
   })
 })
 
-describe('convertConfigToSceneObjects - 根节点处理', () => {
-  it('应为根 composite 创建 CompositeObject', async () => {
+describe('convertConfigToSceneObjects - Root node processing', () => {
+  it('should create CompositeObject for root composite', async () => {
     const config = makeConfigRoot([makeSymbolNode()])
 
     const objects = await convertConfigToSceneObjects(
@@ -166,7 +166,7 @@ describe('convertConfigToSceneObjects - 根节点处理', () => {
       new Map(), new Map(), ''
     )
 
-    // 根 composite + 1 个 symbol = 2 个对象
+    // root composite + 1 symbol = 2 objects
     expect(objects.length).toBe(2)
 
     const rootComposite = objects[0]! as CompositeObject
@@ -179,7 +179,7 @@ describe('convertConfigToSceneObjects - 根节点处理', () => {
     expect(symbol.parentId).toBe(rootComposite.id)
   })
 
-  it('根 composite 应居中到画布中心', async () => {
+  it('root composite should center on canvas', async () => {
     const config = makeConfigRoot([makeSymbolNode()])
 
     const objects = await convertConfigToSceneObjects(
@@ -187,7 +187,7 @@ describe('convertConfigToSceneObjects - 根节点处理', () => {
       new Map(), new Map(), ''
     )
 
-    // 根 composite 是唯一顶层对象，应居中
+    // root composite is sole top-level object, should center
     const root = objects[0]!
     expect(root.parentId).toBeUndefined()
     expect(root.x).toBe(CANVAS_CENTER_X)
@@ -195,13 +195,13 @@ describe('convertConfigToSceneObjects - 根节点处理', () => {
   })
 })
 
-describe('convertConfigToSceneObjects - 坐标转换', () => {
-  it('应正确使用 registrationPoint 计算中心坐标', async () => {
+describe('convertConfigToSceneObjects - Coordinate transformation', () => {
+  it('should correctly use registrationPoint to compute center coordinates', async () => {
     // registrationPoint: parentX=200, parentY=300, localX=50, localY=40
     // centerX = 200 + (100/2 - 50) = 200
     // centerY = 300 + (80/2 - 40) = 300
-    // 根 composite 中心 = 子对象均值 = (200, 300)
-    // 子局部坐标 = (200-200, 300-300) = (0, 0)
+    // root composite center = child mean = (200, 300)
+    // child local coordinates = (200-200, 300-300) = (0, 0)
     const config = makeConfigRoot([makeSymbolNode()])
 
     const objects = await convertConfigToSceneObjects(
@@ -210,12 +210,12 @@ describe('convertConfigToSceneObjects - 坐标转换', () => {
     )
 
     const symbol = objects.find(o => o.type === 'symbol')!
-    // 单个子对象，局部坐标为 (0, 0)
+    // Single child object, local coordinates (0, 0)
     expect(symbol.x).toBe(0)
     expect(symbol.y).toBe(0)
   })
 
-  it('应使用非对称 registrationPoint 正确计算偏移', async () => {
+  it('should correctly calculate offset with asymmetric registrationPoint', async () => {
     // registrationPoint: parentX=0, parentY=0, localX=0, localY=0
     // width=200, height=100
     // centerX = 0 + (200/2 - 0) = 100
@@ -234,20 +234,20 @@ describe('convertConfigToSceneObjects - 坐标转换', () => {
       new Map(), new Map(), ''
     )
 
-    // 根 composite 居中到画布
+    // root composite centered on canvas
     const root = objects[0]!
     expect(root.x).toBe(CANVAS_CENTER_X)
     expect(root.y).toBe(CANVAS_CENTER_Y)
 
-    // 子对象局部坐标 = (0, 0)
+    // child local coordinates = (0, 0)
     const symbol = objects.find(o => o.type === 'symbol')!
     expect(symbol.x).toBe(0)
     expect(symbol.y).toBe(0)
   })
 })
 
-describe('convertConfigToSceneObjects - 层级处理', () => {
-  it('应为嵌套 composite 创建完整层级', async () => {
+describe('convertConfigToSceneObjects - Hierarchy processing', () => {
+  it('should create full hierarchy for nested composites', async () => {
     const config = makeConfigRoot([
       {
         name: 'MyGroup',
@@ -265,7 +265,7 @@ describe('convertConfigToSceneObjects - 层级处理', () => {
       new Map(), new Map(), ''
     )
 
-    // 根 composite + 嵌套 composite + 2 个 symbol = 4 个对象
+    // root composite + nested composite + 2 symbols = 4 objects
     expect(objects.length).toBe(4)
 
     const composites = objects.filter(o => o.type === 'composite') as CompositeObject[]
@@ -275,11 +275,11 @@ describe('convertConfigToSceneObjects - 层级处理', () => {
     const nestedComposite = composites.find(c => c.name === 'MyGroup')!
     const symbols = objects.filter(o => o.type === 'symbol')
 
-    // 嵌套 composite 是根的子对象
+    // nested composite is child of root
     expect(nestedComposite.parentId).toBe(rootComposite.id)
     expect(rootComposite.childIds).toContain(nestedComposite.id)
 
-    // symbol 是嵌套 composite 的子对象
+    // symbol is child of nested composite
     expect(nestedComposite.childIds.length).toBe(2)
     for (const sym of symbols) {
       expect(sym.parentId).toBe(nestedComposite.id)
@@ -287,10 +287,10 @@ describe('convertConfigToSceneObjects - 层级处理', () => {
     }
   })
 
-  it('子对象坐标应为相对于 composite 的局部坐标', async () => {
-    // 两个子 symbol 位置相同: centerX=200, centerY=300
-    // 嵌套 composite 中心 = (200, 300)
-    // 子局部坐标 = (0, 0)
+  it('child coordinates should be local to composite', async () => {
+    // Both child symbols identical position: centerX=200, centerY=300
+    // nested composite center = (200, 300)
+    // child local coordinates = (0, 0)
     const config = makeConfigRoot([
       {
         name: 'Group',
@@ -316,8 +316,8 @@ describe('convertConfigToSceneObjects - 层级处理', () => {
   })
 })
 
-describe('convertConfigToSceneObjects - 整体居中', () => {
-  it('多个子对象的根 composite 应居中到画布中心', async () => {
+describe('convertConfigToSceneObjects - Overall centering', () => {
+  it('root composite with multiple children should center on canvas', async () => {
     const sym1 = makeSymbolNode({
       name: 'Left',
       instanceTransform: {
@@ -341,15 +341,15 @@ describe('convertConfigToSceneObjects - 整体居中', () => {
       new Map(), new Map(), ''
     )
 
-    // 根 composite 居中到画布中心
+    // root composite centered on canvas center
     const root = objects[0]!
     expect(root.type).toBe('composite')
     expect(root.x).toBe(CANVAS_CENTER_X)
     expect(root.y).toBe(CANVAS_CENTER_Y)
 
-    // sym1 原始 centerX = 0; sym2 原始 centerX = 400
-    // composite 中心 = (0+400)/2 = 200
-    // sym1 局部 = 0 - 200 = -200; sym2 局部 = 400 - 200 = 200
+    // sym1 original centerX = 0; sym2 original centerX = 400
+    // composite center = (0+400)/2 = 200
+    // sym1 local = 0 - 200 = -200; sym2 local = 400 - 200 = 200
     const symbols = objects.filter(o => o.type === 'symbol')
     const left = symbols.find(s => s.name === 'Left')!
     const right = symbols.find(s => s.name === 'Right')!
@@ -357,7 +357,7 @@ describe('convertConfigToSceneObjects - 整体居中', () => {
     expect(right.x).toBe(200)
   })
 
-  it('可选 fitTo 应等比缩放根 composite 到目标视口内', async () => {
+  it('optional fitTo should uniformly scale root composite inside target viewport', async () => {
     const large = makeSymbolNode({
       name: 'LargeScene',
       instanceTransform: {
@@ -385,8 +385,8 @@ describe('convertConfigToSceneObjects - 整体居中', () => {
   })
 })
 
-describe('convertConfigToSceneObjects - symbol 属性', () => {
-  it('应创建 SymbolObject 并保留 scaleX/scaleY/rotation/alpha', async () => {
+describe('convertConfigToSceneObjects - symbol properties', () => {
+  it('should create SymbolObject and preserve scaleX/scaleY/rotation/alpha', async () => {
     const node = makeSymbolNode({
       alpha: 0.65,
       instanceTransform: {

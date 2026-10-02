@@ -2,7 +2,7 @@ import type { MP4MuxerWrapper } from './MP4MuxerWrapper'
 import type { VideoExportConfig } from './types'
 
 /**
- * 视频编码器封装类
+ * Video encoder wrapper class
  */
 export class VideoEncoderWrapper {
     private encoder: VideoEncoder | null = null
@@ -16,7 +16,7 @@ export class VideoEncoderWrapper {
     }
 
     /**
-     * 初始化并配置编码器
+     * Initialize and configure encoder
      */
     async initialize(): Promise<void> {
         return new Promise((resolve, reject) => {
@@ -25,17 +25,17 @@ export class VideoEncoderWrapper {
                     try {
                         this.muxer.addVideoChunk(chunk, meta)
                     } catch (error) {
-                        console.error('[VideoEncoder] 添加视频块失败:', error)
+                        console.error('[VideoEncoder] Failed to add video chunk:', error)
                     }
                 },
                 error: (error) => {
-                    console.error('[VideoEncoder] 编码错误:', error)
+                    console.error('[VideoEncoder] Encoding error:', error)
                     reject(error)
                 },
             })
 
-            // 配置编码器
-            // 硬件编码器码率效率较低（NVENC/QSV/AMF），需要 1.5x 码率补偿以达到同等画质
+            // Configure encoder
+            // Hardware encoders have lower bitrate efficiency (NVENC/QSV/AMF), require 1.5x bitrate compensation for equivalent quality
             const effectiveBitrate = this.config.hardwareAcceleration === 'prefer-hardware'
                 ? Math.round(this.config.videoBitrate * 1.5)
                 : this.config.videoBitrate
@@ -46,13 +46,13 @@ export class VideoEncoderWrapper {
                 height: this.config.resolution.height,
                 bitrate: effectiveBitrate,
                 framerate: this.config.frameRate,
-                // 使用用户选择的编码器类型
+                // Use user-selected encoder type
                 hardwareAcceleration: this.config.hardwareAcceleration,
-                // 软件编码时启用质量优先模式，牺牲速度换取更高画质
+                // Software encoding enables quality-first mode, sacrificing speed for higher picture quality
                 ...(this.config.hardwareAcceleration === 'prefer-software'
                     ? { latencyMode: 'quality' as const }
                     : {}),
-                // AVC 配置
+                // AVC configuration
                 avc: { format: 'avc' },
             }
 
@@ -64,7 +64,7 @@ export class VideoEncoderWrapper {
     }
 
     /**
-     * 编码一帧
+     * Encode one frame
      */
     encode(frame: VideoFrame, keyFrame = false): void {
         if (!this.encoder || !this.isConfigured) {
@@ -74,13 +74,13 @@ export class VideoEncoderWrapper {
         try {
             this.encoder.encode(frame, { keyFrame })
         } catch (error) {
-            console.error('[VideoEncoder] 编码帧失败:', error)
+            console.error('[VideoEncoder] Failed to encode frame:', error)
             throw error
         }
     }
 
     /**
-     * 刷新编码器缓冲区
+     * Flush encoder buffer
      */
     async flush(): Promise<void> {
         if (!this.encoder) {
@@ -91,7 +91,7 @@ export class VideoEncoderWrapper {
     }
 
     /**
-     * 获取编码器队列大小（调试用）
+     * Get encoder queue size (for debugging)
      */
     getQueueSize(): number {
         if (!this.encoder) {
@@ -101,7 +101,7 @@ export class VideoEncoderWrapper {
     }
 
     /**
-     * 清理资源
+     * Clean up resources
      */
     async destroy(): Promise<void> {
         if (this.encoder) {
@@ -109,7 +109,7 @@ export class VideoEncoderWrapper {
                 await this.flush()
                 this.encoder.close()
             } catch (error) {
-                console.error('[VideoEncoder] 清理失败:', error)
+                console.error('[VideoEncoder] Cleanup failed:', error)
             }
             this.encoder = null
         }

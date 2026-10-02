@@ -1,19 +1,19 @@
 /**
- * Clip-Mask Phase 1 共享工具
+ * Clip-Mask Phase 1 shared utilities
  *
- * 详见 docs/features/clip-mask.md（v2.1）。
- * 本模块的实用函数被 maskSerializer / SetMaskHandler / Mask UI 等多个模块共用。
+ * See docs/features/clip-mask.md (v2.1).
+ * Utility functions in this module are shared across maskSerializer / SetMaskHandler / Mask UI, etc.
  */
 
 import type { SceneObjectType } from '@/types/sceneObject'
 
 /**
- * 判断给定 SceneObjectType 是否允许作为蒙版的裁切目标。
+ * Determines whether a given SceneObjectType is allowed as a mask clipping target.
  *
- * Phase 1 允许：visual / spatial 类型（prop / text / symbol / expression / composite / background）
- * Phase 1 禁止：
- * - 'mask'：避免蒙版嵌套（Phase 1.5 才支持）
- * - 'camera' / 'audio' / 'light' / 'screen_effect'：非空间像素对象，无裁切语义
+ * Phase 1 allowed: visual / spatial types (prop / text / symbol / expression / composite / background)
+ * Phase 1 forbidden:
+ * - 'mask': Avoid mask nesting (supported in Phase 1.5)
+ * - 'camera' / 'audio' / 'light' / 'screen_effect': Non-spatial pixel objects, no clipping semantics
  */
 export function isAllowedMaskTargetType(type: SceneObjectType): boolean {
   switch (type) {
@@ -31,7 +31,7 @@ export function isAllowedMaskTargetType(type: SceneObjectType): boolean {
     case 'screen_effect':
       return false
     default: {
-      // 兜底：未知类型按禁用处理（出现新类型时强制走显式分支）
+      // Fallback: treat unknown types as disabled (force explicit branch when new types appear)
       const _exhaustive: never = type
       return _exhaustive
     }

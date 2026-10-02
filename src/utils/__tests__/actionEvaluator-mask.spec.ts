@@ -1,12 +1,12 @@
 /**
- * Clip-Mask Phase 1 D5b — sceneStateCalculator mask post-pass 集成测试
+ * Clip-Mask Phase 1 D5b — sceneStateCalculator mask post-pass Integration Tests
  *
- * 覆盖 docs/features/clip-mask.md §3 D1.5 算法：
- *  1. 同 slot 内 set_mask 按目标 mask 折叠（最后一次写入生效）。
- *  2. Claimers 包含本 slot 参与 mask + 上游已占且本 slot 未参与的 owner。
- *  3. |Claimers| ≥ 2 时按 newState.objects 稳定索引升序取首位，其余从 candidate 剔除。
- *  4. 仅参与 mask 被写回；非参与 owner 静默保留（无隐式释放）。
- *  5. 顺序无关性：A=[X,Y]→[Y,Z], B=[]→[X] 同 slot ⇒ A=[Y,Z], B=[X]。
+ * Covers docs/features/clip-mask.md §3 D1.5 algorithm:
+ *  1. set_mask within same slot folded per target mask (last write wins).
+ *  2. Claimers includes participating masks in slot + upstream owners holding target without participating.
+ *  3. When |Claimers| >= 2, stable index ascending order selects first, pruning others from candidates.
+ *  4. Only participating masks written back; non-participating owners silently retain (no implicit release).
+ *  5. Order independence: A=[X,Y]->[Y,Z], B=[]->[X] same slot => A=[Y,Z], B=[X].
  */
 
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest'
@@ -115,7 +115,7 @@ function getMask(snap: SceneSetup | RuntimeSceneSnapshot, id: string): MaskObjec
     return m as unknown as MaskObject
 }
 
-// ==================== 测试 ====================
+// ==================== Tests ====================
 
 describe('sceneStateCalculator mask post-pass (D1.5)', () => {
     let warnSpy: ReturnType<typeof vi.spyOn>
@@ -185,7 +185,7 @@ describe('sceneStateCalculator mask post-pass (D1.5)', () => {
         const maskB = makeMask('maskB', [])
         const setup = makeSetup([propX, propY, propZ, maskA, maskB])
 
-        // 反序：B 先写、A 后写 —— 结果应与正序一致
+        // Reverse order: B writes first, A writes second — result should match forward order
         const block = makeBlock([
             makeSetMaskAction('a-b', 'maskB', 0, { targetIds: ['propX'] }),
             makeSetMaskAction('a-a', 'maskA', 0, { targetIds: ['propY', 'propZ'] }),
@@ -230,10 +230,10 @@ describe('sceneStateCalculator mask post-pass (D1.5)', () => {
         ])
 
         const result = applyBlockActionsToState(toRuntimeSnapshot(setup), block)
-        // A 静默保留 propX；B 由于 contested 且 stable index 较大 → 失败
+        // A silently retains propX; B contested and has higher stable index -> fails
         expect(getMask(result, 'maskA').targetIds).toEqual(['propX'])
         expect(getMask(result, 'maskB').targetIds).toEqual([])
-        // 必须有 warn（contested by [maskA, maskB], winner=maskA）
+        // Must warn (contested by [maskA, maskB], winner=maskA)
         expect(warnSpy).toHaveBeenCalledTimes(1)
     })
 
@@ -255,9 +255,9 @@ describe('sceneStateCalculator mask post-pass (D1.5)', () => {
     })
 
     it('non-participant owner across multiple slots stays untouched', () => {
-        // slot 0: B 申请 X 但被 A 阻挡（A 仍在 upstream，从未 release）
-        // slot 1: 无任何 set_mask
-        // 期望：A 保持原有 propX，B 仍为空
+        // slot 0: B claims X but blocked by A (A still upstream, never released)
+        // slot 1: No set_mask
+        // Expected: A keeps original propX, B remains empty
         const propX = makeProp('propX')
         const maskA = makeMask('maskA', ['propX'])
         const maskB = makeMask('maskB', [])

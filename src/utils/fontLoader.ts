@@ -1,14 +1,14 @@
 /**
- * 字体加载服务 (Text PRD Phase 0)
+ * Font loading service (Text PRD Phase 0)
  *
- * 管理预置字体的按需加载，确保字体在渲染前可用。
+ * Manages on-demand loading of preset fonts, ensuring fonts are available before rendering.
  *
- * 集成点：
- * - useSceneGraph.createTextContainer/updateObjectContainer: 创建/重建文本纹理前阻塞等待
- * - ObjectPropertiesPanel: 用户切换字体后调用 ensureFontLoaded()
+ * Integration points:
+ * - useSceneGraph.createTextContainer/updateObjectContainer: Block and wait before creating/rebuilding text texture
+ * - ObjectPropertiesPanel: Call ensureFontLoaded() after user changes font
  * - ScenePlayer.loadScene(): await preloadSceneFonts(objects)
- * - FrameCapture.loadScene(): await preloadSceneFonts(objects)，阻塞导出
- * - applyObjectState text 分支: 检测到 fontFamily 变化时 fire-and-forget
+ * - FrameCapture.loadScene(): await preloadSceneFonts(objects), block export
+ * - applyObjectState text branch: Fire-and-forget when fontFamily change is detected
  */
 
 import type { SceneObject, TextObject } from '@/types/sceneObject'
@@ -16,7 +16,7 @@ import type { ScriptBlock } from '@/types/screenplay'
 import { sortActionsForEvaluation } from '@/utils/actionOrder'
 import { normalizeTextContent } from '@/utils/textUtils'
 
-// === 预置字体目录映射 ===
+// === Preset Font Directory Mapping ===
 const PRESET_FONTS: Record<string, string> = {
     'Noto Sans SC': '/fonts/noto-sans-sc/result.css',
     'Noto Serif SC': '/fonts/noto-serif-sc/result.css',
@@ -25,31 +25,31 @@ const PRESET_FONTS: Record<string, string> = {
     'Ma Shan Zheng': '/fonts/ma-shan-zheng/result.css',
 }
 
-// 已加载 CSS 的缓存（避免重复插入 <link>）
+// Loaded CSS cache (avoids duplicate <link> injection)
 const loadedCssUrls = new Set<string>()
 
-// 正在加载中的 Promise 缓存（避免重复并发请求）
+// In-progress loading Promise cache (avoids duplicate concurrent requests)
 const loadingPromises = new Map<string, Promise<boolean>>()
 
 /**
- * 判断字体是否为预置字体
+ * Determine whether font is a preset font
  */
 export function isPresetFont(fontFamily: string): boolean {
     return fontFamily in PRESET_FONTS
 }
 
 /**
- * 获取预置字体列表（供 UI 组件使用）
+ * Get list of preset fonts (for UI components)
  */
 export function getPresetFontList(): { name: string; cssUrl: string }[] {
     return Object.entries(PRESET_FONTS).map(([name, cssUrl]) => ({ name, cssUrl }))
 }
 
 /**
- * 收集播放/导出过程中可能出现的文本字体状态。
+ * Collect text font states that may appear during playback/export.
  *
- * Scene setup 只保存初始字体；Action Mode 修改字体会落到 set_text 动作里。
- * 如果只预加载 setup 字体，Pixi.Text 在动作触发后会先用浏览器 fallback 字体生成纹理。
+ * Scene setup only saves the initial font; Action Mode font modifications reside in set_text actions.
+ * If only setup fonts are preloaded, Pixi.Text would first render textures using browser fallback fonts upon action trigger.
  */
 export function collectSceneFontPreloadObjects(
     objects: readonly SceneObject[],
@@ -108,15 +108,15 @@ function resolveTextPreloadTarget(
 }
 
 /**
- * 确保指定字体的 CSS 已加载到 DOM，并等待字体可用。
+ * Ensure specified font CSS is loaded into DOM, and wait until font is available.
  *
- * - 预置字体：动态插入 <link> 标签加载 result.css（cn-font-split 生成的按需分片）
- * - 非预置字体：依赖本地已安装，仅尝试 document.fonts.load()
+ * - Preset fonts: Dynamically insert <link> tag to load result.css (cn-font-split on-demand chunks)
+ * - Non-preset fonts: Rely on local installation, only attempt document.fonts.load()
  *
- * @returns true 如果字体已确认可用，false 如果不可用（非预置且本地未安装）
+ * @returns true if font is confirmed available, false if unavailable (non-preset and not installed locally)
  */
 export async function ensureFontLoaded(fontFamily: string, sampleText?: string): Promise<boolean> {
-    // 检查是否已有正在进行的加载
+    // Check if loading is already in progress
     const loadingKey = `${fontFamily}::${normalizeTextContent(sampleText) || '__default__'}`
     const existing = loadingPromises.get(loadingKey)
     if (existing) return existing
@@ -134,34 +134,34 @@ export async function ensureFontLoaded(fontFamily: string, sampleText?: string):
 async function _doEnsureFontLoaded(fontFamily: string, sampleText?: string): Promise<boolean> {
     const cssUrl = PRESET_FONTS[fontFamily]
     const normalizedSample = normalizeTextContent(sampleText).trim()
-    const probeText = normalizedSample || '测试文本天地人你好世界ABC123'
+    const probeText = normalizedSample || 'The quick brown fox jumps over the lazy dog ABC123'
 
     if (cssUrl) {
-        // 预置字体：插入 CSS <link>
+        // Preset font: insert CSS <link>
         if (!loadedCssUrls.has(cssUrl)) {
             await loadFontCss(cssUrl)
             loadedCssUrls.add(cssUrl)
         }
     }
 
-    // 等待字体可用（预置和自定义都尝试）
+    // Wait until font is available (attempt for both preset and custom)
     try {
-        // 传入实际文本内容，确保 unicode-range 分片字体会把当前字形预热到位。
+        // Pass actual text content to ensure unicode-range sliced fonts warm up glyphs in advance.
         await document.fonts.load(`16px "${fontFamily}"`, probeText)
         await document.fonts.ready
         return true
     } catch (e) {
-        console.warn(`[fontLoader] 字体加载失败: ${fontFamily}`, e)
+        console.warn(`[fontLoader] Failed to load font: ${fontFamily}`, e)
         return false
     }
 }
 
 /**
- * 动态插入 <link> 标签加载字体 CSS
+ * Dynamically insert <link> tag to load font CSS
  */
 function loadFontCss(url: string): Promise<void> {
     return new Promise((resolve) => {
-        // 检查是否已存在该 link
+        // Check if link already exists
         const existing = document.querySelector(`link[href="${url}"]`)
         if (existing) {
             resolve()
@@ -173,8 +173,8 @@ function loadFontCss(url: string): Promise<void> {
         link.href = url
         link.onload = () => resolve()
         link.onerror = () => {
-            console.error(`[fontLoader] CSS 加载失败: ${url}`)
-            // 不 reject，允许降级到系统字体
+            console.error(`[fontLoader] Failed to load CSS: ${url}`)
+            // Do not reject, allow fallback to system fonts
             resolve()
         }
         document.head.appendChild(link)
@@ -182,19 +182,19 @@ function loadFontCss(url: string): Promise<void> {
 }
 
 /**
- * 预加载场景中所有文本对象使用的字体。
+ * Preload fonts used by all text objects in the scene.
  *
- * 1. 遍历 objects 收集所有 TextObject 的 fontFamily（去重）
- * 2. 对每个 fontFamily 调用 ensureFontLoaded()
- * 3. 最终 await document.fonts.ready
+ * 1. Traverse objects to collect fontFamily of all TextObjects (deduplicated)
+ * 2. Call ensureFontLoaded() for each fontFamily
+ * 3. Finally await document.fonts.ready
  *
- * 调用时机：
- * - ScenePlayer.loadScene() 时
- * - FrameCapture.loadScene() 时（导出前阻塞）
- * - set_text 切换 fontFamily 时
+ * Invocation timing:
+ * - On ScenePlayer.loadScene()
+ * - On FrameCapture.loadScene() (blocks before export)
+ * - On set_text changing fontFamily
  */
 export async function preloadSceneFonts(objects: SceneObject[]): Promise<void> {
-    // 收集场景中所有文本对象使用的字体
+    // Collect fonts used by all text objects in the scene
     const fontSamples = new Map<string, string>()
     for (const obj of objects) {
         if (obj.type === 'text') {
@@ -209,10 +209,10 @@ export async function preloadSceneFonts(objects: SceneObject[]): Promise<void> {
 
     if (fontSamples.size === 0) return
 
-    // 并行加载所有字体
+    // Preload all fonts in parallel
     const loadPromises = [...fontSamples.entries()].map(([font, sample]) => ensureFontLoaded(font, sample))
     await Promise.all(loadPromises)
 
-    // 最终确认
+    // Final confirmation
     await document.fonts.ready
 }

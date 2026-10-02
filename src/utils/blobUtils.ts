@@ -1,10 +1,10 @@
 /**
- * Blob URL 与 Base64 互转工具函数
- * 用于项目文件的序列化和反序列化
+ * Blob URL and Base64 conversion utility functions
+ * Used for project file serialization and deserialization
  */
 
 /**
- * 将 Blob URL 转换为 Base64 Data URL
+ * Convert Blob URL to Base64 Data URL
  * @param blobUrl Blob URL (blob:http://...)
  * @returns Base64 Data URL (data:image/png;base64,...)
  */
@@ -32,13 +32,13 @@ export async function blobUrlToBase64(blobUrl: string): Promise<string> {
 }
 
 /**
- * 将 Base64 Data URL 转换为 Blob URL
+ * Convert Base64 Data URL to Blob URL
  * @param base64 Base64 Data URL
  * @returns Blob URL
  */
 export function base64ToBlobUrl(base64: string): string {
   try {
-    // 解析 base64 字符串
+    // Parse base64 string
     const parts = base64.split(',')
     if (parts.length !== 2) {
       throw new Error('Invalid base64 format')
@@ -59,14 +59,14 @@ export function base64ToBlobUrl(base64: string): string {
     const mimeString = mimeMatch[1] ?? ''
     const byteString = atob(data)
     
-    // 转换为 ArrayBuffer
+    // Convert to ArrayBuffer
     const ab = new ArrayBuffer(byteString.length)
     const ia = new Uint8Array(ab)
     for (let i = 0; i < byteString.length; i++) {
       ia[i] = byteString.charCodeAt(i)
     }
     
-    // 创建 Blob 并生成 URL
+    // Create Blob and generate URL
     const blob = new Blob([ab], { type: mimeString })
     return URL.createObjectURL(blob)
   } catch (error) {
@@ -76,9 +76,9 @@ export function base64ToBlobUrl(base64: string): string {
 }
 
 /**
- * 批量转换 Blob URLs 为 Base64
- * @param urls Blob URL 集合
- * @returns Map<原始URL, Base64>
+ * Batch convert Blob URLs to Base64
+ * @param urls Set of Blob URLs
+ * @returns Map<originalURL, Base64>
  */
 export async function batchBlobUrlsToBase64(urls: Set<string>): Promise<Map<string, string>> {
   const result = new Map<string, string>()
@@ -94,7 +94,7 @@ export async function batchBlobUrlsToBase64(urls: Set<string>): Promise<Map<stri
         })
       )
     } else {
-      // 非 Blob URL 直接保留
+      // Retain non-Blob URLs directly
       result.set(url, url)
     }
   }
@@ -104,8 +104,8 @@ export async function batchBlobUrlsToBase64(urls: Set<string>): Promise<Map<stri
 }
 
 /**
- * 批量转换 Base64 为 Blob URLs
- * @param base64Map Map<Base64, any>
+ * Batch convert Base64 to Blob URLs
+ * @param base64Strings Set of Base64 strings
  * @returns Map<Base64, BlobURL>
  */
 export function batchBase64ToBlobUrls(base64Strings: Set<string>): Map<string, string> {
@@ -118,10 +118,10 @@ export function batchBase64ToBlobUrls(base64Strings: Set<string>): Map<string, s
         result.set(str, blobUrl)
       } catch (error) {
         console.warn(`[BlobUtils] Failed to convert base64:`, error)
-        result.set(str, str) // 保留原值
+        result.set(str, str) // Retain original value
       }
     } else {
-      result.set(str, str) // 非 Base64 直接保留
+      result.set(str, str) // Retain non-Base64 directly
     }
   }
   
@@ -129,10 +129,10 @@ export function batchBase64ToBlobUrls(base64Strings: Set<string>): Map<string, s
 }
 
 /**
- * 递归替换对象中的所有 URL
- * @param data 数据对象
- * @param urlMap URL 映射表 Map<原始URL, 新URL>
- * @returns 替换后的数据
+ * Recursively replace all URLs in object
+ * @param data Data object
+ * @param urlMap URL mapping table Map<originalURL, newURL>
+ * @returns Replaced data
  */
 export function replaceUrlsInData(data: unknown, urlMap: Map<string, string>): unknown {
   if (typeof data === 'string') {
@@ -156,9 +156,9 @@ export function replaceUrlsInData(data: unknown, urlMap: Map<string, string>): u
 }
 
 /**
- * 递归收集对象中的所有 URL
- * @param data 数据对象
- * @param urlSet URL 集合（会被修改）
+ * Recursively collect all URLs from object
+ * @param data Data object
+ * @param urlSet Set of URLs (will be mutated)
  * @param urlType 'blob' | 'base64' | 'all'
  */
 export function collectUrlsFromData(data: unknown, urlSet: Set<string>, urlType: 'blob' | 'base64' | 'all' = 'all'): void {

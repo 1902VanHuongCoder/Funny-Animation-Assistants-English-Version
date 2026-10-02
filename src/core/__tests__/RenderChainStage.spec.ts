@@ -1,11 +1,11 @@
 /**
- * RenderChainStage 单元测试
+ * RenderChainStage Unit Tests
  *
- * 验证 override render() 方案：
- * 1. 基础排序：renderByRenderChain 按 renderChain 顺序调度 render
- * 2. 跨 union 交叉：union 内子对象能与 entity 直接子对象交叉渲染
- * 3. 深层嵌套：entity → union → union → leaf
- * 4. installRenderChainRenderer 正确安装 override
+ * Verifies override render() scheme:
+ * 1. Basic ordering: renderByRenderChain schedules render according to renderChain
+ * 2. Cross-union interleaving: children inside union can interleave render with entity direct children
+ * 3. Deep nesting: entity -> union -> union -> leaf
+ * 4. installRenderChainRenderer correctly installs override
  */
 
 import * as PIXI from 'pixi.js'
@@ -42,7 +42,7 @@ describe('renderByRenderChain', () => {
         const renderOrder: string[] = []
         const mockRenderer = {} as PIXI.Renderer
 
-        // Mock render 方法记录调用顺序
+        // Mock render method records call order
         a.render = vi.fn(() => { renderOrder.push('objA') })
         b.render = vi.fn(() => { renderOrder.push('objB') })
         c.render = vi.fn(() => { renderOrder.push('objC') })
@@ -57,9 +57,9 @@ describe('renderByRenderChain', () => {
     })
 
     it('should interleave union children with direct children', () => {
-        // entity 直接 children: propC, union(childA, childB)
+        // entity direct children: propC, union(childA, childB)
         // renderChain: ['childA', 'propC', 'childB']
-        // 期望渲染顺序: childA → propC → childB（交叉渲染）
+        // Expected render order: childA -> propC -> childB (interleaved render)
         const entity = new PIXI.Container()
         const union = makeContainer('composite_union1')
         const childA = makeContainer('childA')
@@ -82,7 +82,7 @@ describe('renderByRenderChain', () => {
 
         renderByRenderChain(entity, ['childA', 'propC', 'childB'], containerMap, mockRenderer)
 
-        // union 容器不应被渲染（它不在 renderChain 中，且其子对象已被独立渲染）
+        // union container should not be rendered (not in renderChain and children independently rendered)
         expect(renderOrder).toEqual(['childA', 'propC', 'childB'])
     })
 
@@ -111,15 +111,15 @@ describe('renderByRenderChain', () => {
 
         renderByRenderChain(entity, ['child1', 'propD'], containerMap, mockRenderer)
 
-        // child1 先渲染，propD 后渲染。union 容器不应被渲染。
+        // child1 renders first, propD renders after. union container should not be rendered.
         expect(renderOrder).toEqual(['child1', 'propD'])
     })
 
     it('should render union children NOT in renderChain (dynamic spawn fallback)', () => {
-        // 场景：PropNew 动态加入 union 但 renderChain 尚未协调
+        // Scenario: PropNew dynamically added to union but renderChain not yet reconciled
         // stage → propA, union(charA, propNew), propB
-        // renderChain: [propA, charA, propB]（缺少 propNew）
-        // 期望：propNew 仍然被渲染（通过递归 union 容器的兜底逻辑）
+        // renderChain: [propA, charA, propB] (missing propNew)
+        // Expected: propNew is still rendered (via fallback logic of recursing union container)
         const stage = new PIXI.Container()
         const propA = makeContainer('propA')
         const union = makeContainer('composite_union1')
@@ -141,63 +141,63 @@ describe('renderByRenderChain', () => {
 
         const containerMap = new Map<string, PIXI.Container>([
             ['propA', propA], ['charA', charA], ['propB', propB],
-            // 注意：propNew 不在 containerMap 中（模拟不在 renderChain 中）
+            // Note: propNew is not in containerMap (simulating absent from renderChain)
         ])
 
         renderByRenderChain(stage, ['propA', 'charA', 'propB'], containerMap, mockRenderer)
 
-        // propNew 不在 renderChain 中，但应通过递归 union 兜底被渲染
+        // propNew is not in renderChain, but should be rendered via union fallback
         expect(renderOrder).toContain('propNew')
-        // union 容器自身不应被整体渲染
+        // union container itself should not be rendered as a whole
         expect(renderOrder).not.toContain('union')
-        // renderChain 中的对象按顺序先渲染，propNew 在兜底阶段渲染
+        // Objects in renderChain render in order first, propNew renders in fallback stage
         const propNewIdx = renderOrder.indexOf('propNew')
         const propBIdx = renderOrder.indexOf('propB')
-        expect(propNewIdx).toBeGreaterThan(propBIdx) // propNew 在 renderChain 对象之后
+        expect(propNewIdx).toBeGreaterThan(propBIdx) // propNew comes after renderChain objects
     })
 
     it('should NOT double-render leaf internals inside union (rendering order regression)', () => {
-        // 回归测试：entity → union(头部[sprite头], 后发[sprite发]) 
-        // renderChain: [后发, 头部]（后发先画，头部覆盖后发）
-        // 如果兜底阶段递归进入叶子容器内部，sprite 会按 PIXI children 顺序被重绘，
-        // 导致渲染顺序变为 头部→后发（后发错误地覆盖头部）
+        // Regression test: entity -> union(head[spriteHead], backHair[spriteHair]) 
+        // renderChain: [backHair, head] (backHair draws first, head covers backHair)
+        // If fallback recursively enters leaf containers, sprites would redraw in PIXI children order,
+        // causing render order to become head -> backHair (backHair mistakenly covering head)
         const entity = new PIXI.Container()
-        const union = makeContainer('composite_头部组')
-        const 头部 = makeContainer('头部')
-        const sprite头 = makeContainer('sprite_头')
-        头部.addChild(sprite头)  // 头部内部有精灵图子节点
-        const 后发 = makeContainer('后发')
-        const sprite发 = makeContainer('sprite_发')
-        后发.addChild(sprite发)  // 后发内部有精灵图子节点
-        union.addChild(头部, 后发)
+        const union = makeContainer('composite_head_group')
+        const head = makeContainer('head')
+        const spriteHead = makeContainer('sprite_head')
+        head.addChild(spriteHead)  // head internally has sprite child node
+        const backHair = makeContainer('back_hair')
+        const spriteHair = makeContainer('sprite_hair')
+        backHair.addChild(spriteHair)  // backHair internally has sprite child node
+        union.addChild(head, backHair)
         entity.addChild(union)
 
         const renderOrder: string[] = []
         const mockRenderer = {} as PIXI.Renderer
 
-        // Mock 所有容器的 render
-        头部.render = vi.fn(() => { renderOrder.push('头部') })
-        后发.render = vi.fn(() => { renderOrder.push('后发') })
-        sprite头.render = vi.fn(() => { renderOrder.push('sprite_头') })
-        sprite发.render = vi.fn(() => { renderOrder.push('sprite_发') })
+        // Mock render for all containers
+        head.render = vi.fn(() => { renderOrder.push('head') })
+        backHair.render = vi.fn(() => { renderOrder.push('back_hair') })
+        spriteHead.render = vi.fn(() => { renderOrder.push('sprite_head') })
+        spriteHair.render = vi.fn(() => { renderOrder.push('sprite_hair') })
         union.render = vi.fn(() => { renderOrder.push('union') })
 
         const containerMap = new Map<string, PIXI.Container>([
-            ['后发', 后发], ['头部', 头部],
+            ['back_hair', backHair], ['head', head],
         ])
 
-        // renderChain: 后发在前（先画），头部在后（覆盖后发）
-        renderByRenderChain(entity, ['后发', '头部'], containerMap, mockRenderer)
+        // renderChain: backHair first, head after (covers backHair)
+        renderByRenderChain(entity, ['back_hair', 'head'], containerMap, mockRenderer)
 
-        // 核心断言：每个叶子只被 render 一次（不被兜底阶段重复渲染）
-        expect(后发.render).toHaveBeenCalledTimes(1)
-        expect(头部.render).toHaveBeenCalledTimes(1)
-        // 内部精灵图不应被单独渲染（由叶子容器的 render 递归处理）
-        expect(sprite头.render).not.toHaveBeenCalled()
-        expect(sprite发.render).not.toHaveBeenCalled()
-        // 渲染顺序正确：后发先于头部
-        expect(renderOrder).toEqual(['后发', '头部'])
-        // union 容器不应被整体渲染
+        // Core assertion: each leaf is rendered exactly once (not duplicated by fallback)
+        expect(backHair.render).toHaveBeenCalledTimes(1)
+        expect(head.render).toHaveBeenCalledTimes(1)
+        // Internal sprites should not be independently rendered (handled recursively by leaf container)
+        expect(spriteHead.render).not.toHaveBeenCalled()
+        expect(spriteHair.render).not.toHaveBeenCalled()
+        // Render order correct: backHair precedes head
+        expect(renderOrder).toEqual(['back_hair', 'head'])
+        // union container should not be rendered as a whole
         expect(renderOrder).not.toContain('union')
     })
 
@@ -219,7 +219,7 @@ describe('renderByRenderChain', () => {
 
         renderByRenderChain(entity, ['objA'], containerMap, mockRenderer)
 
-        // overlay 不在 renderChain 中 → 最后渲染
+        // overlay not in renderChain -> renders last
         expect(renderOrder).toEqual(['objA', 'overlay'])
     })
 
@@ -272,60 +272,60 @@ describe('renderByRenderChain', () => {
     })
 
     it('should correctly interleave back-hair behind body (real-world)', () => {
-        // 实际场景：entity → [后裙, 双腿, 身子, 背饰, union(头部+后发+表情), 左手, 右手]
-        // renderChain: [背饰, 后裙, 后发, 双腿, 右手, 身子, 头部, 表情, 左手]
+        // Real scenario: entity -> [backSkirt, legs, body, backOrnament, union(head+backHair+expression), leftHand, rightHand]
+        // renderChain: [backOrnament, backSkirt, backHair, legs, rightHand, body, head, expression, leftHand]
         const entity = new PIXI.Container()
-        const 后裙 = makeContainer('后裙')
-        const 双腿 = makeContainer('双腿')
-        const 身子 = makeContainer('身子')
-        const 背饰 = makeContainer('背饰')
-        const union = makeContainer('composite_头部组')
-        const 头部 = makeContainer('头部')
-        const 后发 = makeContainer('后发')
-        const 表情 = makeContainer('表情')
-        union.addChild(头部, 后发, 表情)
-        const 左手 = makeContainer('左手')
-        const 右手 = makeContainer('右手')
-        entity.addChild(后裙, 双腿, 身子, 背饰, union, 左手, 右手)
+        const backSkirt = makeContainer('back_skirt')
+        const legs = makeContainer('legs')
+        const body = makeContainer('body')
+        const backOrnament = makeContainer('back_ornament')
+        const union = makeContainer('composite_head_group')
+        const head = makeContainer('head')
+        const backHair = makeContainer('back_hair')
+        const expression = makeContainer('expression')
+        union.addChild(head, backHair, expression)
+        const leftHand = makeContainer('left_hand')
+        const rightHand = makeContainer('right_hand')
+        entity.addChild(backSkirt, legs, body, backOrnament, union, leftHand, rightHand)
 
         const renderOrder: string[] = []
         const mockRenderer = {} as PIXI.Renderer
 
-        for (const c of [后裙, 双腿, 身子, 背饰, 头部, 后发, 表情, 左手, 右手, union]) {
+        for (const c of [backSkirt, legs, body, backOrnament, head, backHair, expression, leftHand, rightHand, union]) {
             const name = c.name!
             c.render = vi.fn(() => { renderOrder.push(name) })
         }
 
         const containerMap = new Map<string, PIXI.Container>([
-            ['背饰', 背饰], ['后裙', 后裙], ['后发', 后发],
-            ['双腿', 双腿], ['右手', 右手], ['身子', 身子],
-            ['头部', 头部], ['表情', 表情], ['左手', 左手],
+            ['back_ornament', backOrnament], ['back_skirt', backSkirt], ['back_hair', backHair],
+            ['legs', legs], ['right_hand', rightHand], ['body', body],
+            ['head', head], ['expression', expression], ['left_hand', leftHand],
         ])
 
         renderByRenderChain(
             entity,
-            ['背饰', '后裙', '后发', '双腿', '右手', '身子', '头部', '表情', '左手'],
+            ['back_ornament', 'back_skirt', 'back_hair', 'legs', 'right_hand', 'body', 'head', 'expression', 'left_hand'],
             containerMap,
             mockRenderer,
         )
 
-        // 核心验证：后发在身子之前渲染（身子覆盖后发 ✅）
-        const 后发Idx = renderOrder.indexOf('后发')
-        const 身子Idx = renderOrder.indexOf('身子')
-        expect(后发Idx).toBeLessThan(身子Idx)
+        // Core verification: backHair renders before body (body covers backHair)
+        const backHairIdx = renderOrder.indexOf('back_hair')
+        const bodyIdx = renderOrder.indexOf('body')
+        expect(backHairIdx).toBeLessThan(bodyIdx)
 
-        // 头部和表情在身子之后渲染 ✅
-        const 头部Idx = renderOrder.indexOf('头部')
-        const 表情Idx = renderOrder.indexOf('表情')
-        expect(头部Idx).toBeGreaterThan(身子Idx)
-        expect(表情Idx).toBeGreaterThan(身子Idx)
+        // head and expression render after body
+        const headIdx = renderOrder.indexOf('head')
+        const expressionIdx = renderOrder.indexOf('expression')
+        expect(headIdx).toBeGreaterThan(bodyIdx)
+        expect(expressionIdx).toBeGreaterThan(bodyIdx)
 
-        // union 容器不应被单独渲染
-        expect(renderOrder).not.toContain('composite_头部组')
+        // union container should not be rendered individually
+        expect(renderOrder).not.toContain('composite_head_group')
 
-        // 完整顺序
+        // Full order
         expect(renderOrder).toEqual([
-            '背饰', '后裙', '后发', '双腿', '右手', '身子', '头部', '表情', '左手',
+            'back_ornament', 'back_skirt', 'back_hair', 'legs', 'right_hand', 'body', 'head', 'expression', 'left_hand',
         ])
     })
 })
@@ -350,7 +350,7 @@ describe('installRenderChainRenderer', () => {
 })
 
 // ============================================================================
-// installRootRenderChainRenderer — 根级 stage 场景
+// installRootRenderChainRenderer - root stage scenario
 // ============================================================================
 
 describe('installRootRenderChainRenderer', () => {
@@ -361,9 +361,9 @@ describe('installRootRenderChainRenderer', () => {
     })
 
     it('should cross-render root-level union children with direct stage children', () => {
-        // 根级场景：stage 有 propA、unionContainer(charA, charB)、propB
+        // Root scenario: stage has propA, unionContainer(charA, charB), propB
         // sceneRenderChain: [propA, charA, propB, charB]
-        // 期望渲染顺序: propA → charA → propB → charB（跨容器交叉）
+        // Expected render order: propA -> charA -> propB -> charB (cross-container interleaving)
         const stage = new PIXI.Container()
         const propA = makeContainer('propA')
         const unionContainer = makeContainer('composite_union1')
@@ -396,14 +396,14 @@ describe('installRootRenderChainRenderer', () => {
 
         stage.render(mockRenderer)
 
-        // union 容器不应被单独渲染
+        // union container should not be rendered individually
         expect(renderOrder).not.toContain('union')
-        // 按 renderChain 正确交叉渲染
+        // Interleaved correctly according to renderChain
         expect(renderOrder).toEqual(['propA', 'charA', 'propB', 'charB'])
     })
 
     it('should use latest chain from resolver on each render call', () => {
-        // 模拟 zIndex 变化后 renderChain 重排序（resolver 动态模式）
+        // Simulate renderChain reordering after zIndex change (resolver dynamic mode)
         const stage = new PIXI.Container()
         const a = makeContainer('objA')
         const b = makeContainer('objB')
@@ -424,15 +424,15 @@ describe('installRootRenderChainRenderer', () => {
             (id: string) => containerMap.get(id),
         )
 
-        // 第一次 render：顺序 A → B
+        // First render: order A -> B
         stage.render(mockRenderer)
         expect(renderOrder).toEqual(['objA', 'objB'])
 
-        // 模拟 zIndex 变化，renderChain 倒序
+        // Simulate zIndex change, renderChain inverted
         renderOrder.length = 0
         currentChain = ['objB', 'objA']
 
-        // 第二次 render：应使用新 chain，顺序 B → A
+        // Second render: should use new chain, order B -> A
         stage.render(mockRenderer)
         expect(renderOrder).toEqual(['objB', 'objA'])
     })

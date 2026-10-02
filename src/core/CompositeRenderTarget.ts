@@ -83,9 +83,9 @@ export class CompositeRenderTarget {
     }
 
     /**
-     * P2: 获取原始 source 容器（CRT 的渲染子树根）
-     * 用于运行时层级迁移时，将子对象添加到 source 而非 outputContainer，
-     * 确保子对象被包含在离屏渲染纹理中。
+     * P2: Get the original source container (the render subtree root of CRT).
+     * Used during runtime hierarchy migration to add child objects to source rather than outputContainer,
+     * ensuring child objects are included in the offscreen render texture.
      */
     getSourceContainer(): PIXI.Container {
         return this.source

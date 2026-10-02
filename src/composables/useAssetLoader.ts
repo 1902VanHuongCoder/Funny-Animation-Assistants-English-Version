@@ -10,14 +10,14 @@ import { useSoundStore } from '@/stores/soundStore'
 import type { SymbolMaterial, SymbolObject } from '@/types/sceneObject'
 import type { SceneSetup, ScriptBlock } from '@/types/screenplay'
 
-// 全局纹理缓存 (模块级单例，此时共享于所有组件)
+// Global texture cache (module-level singleton, shared across all components)
 const textureCache = new Map<string, PIXI.Texture>()
 const pendingAssetLoads = new Map<string, Promise<void>>()
-// 全局音频缓存 (Set of Blob URLs)
+// Global audio cache (Set of Blob URLs)
 // const audioCache = new Set<string>()
 
 
-/** v16: 收集单个 SymbolMaterial 的所有持久化图片 URL */
+/** v16: Collect all persisted image URLs of a single SymbolMaterial */
 function collectSymbolMaterialUrls(material: SymbolMaterial, addImg: (url?: string) => void) {
     if (material.type === 'static') {
         addImg(material.url)
@@ -25,7 +25,7 @@ function collectSymbolMaterialUrls(material: SymbolMaterial, addImg: (url?: stri
         for (const frame of material.frames) {
             addImg(frame.url)
         }
-        // 静止帧
+        // Still frame
         addImg(material.url)
     }
 }
@@ -159,15 +159,15 @@ export function useAssetLoader() {
     }
 
     /**
-     * 收集场景和Block中需要加载的所有资源URL
-     * @param sceneSetup 计算好的场景上下文 (prevContext)
-     * @param currentBlock 当前正在编辑/预览的 Block (可选，用于提取动态覆盖)
+     * Collect all asset URLs that need to be loaded in the scene and Block
+     * @param sceneSetup Evaluated scene context (prevContext)
+     * @param currentBlock Block currently being edited/previewed (optional, for extracting dynamic overrides)
      */
     function collectAssets(sceneSetup: { objects: SceneSetup['objects'] } | null, currentBlock: ScriptBlock | null) {
         const imageUrls = new Set<string>()
         const audioUrls = new Set<string>()
 
-        // 辅助: 添加图片URL
+        // Helper: add image URL
         const addImg = (url?: string) => {
             if (url) imageUrls.add(url)
         }
@@ -180,15 +180,15 @@ export function useAssetLoader() {
         type SceneObjectLike = SceneSetup['objects'][number]
 
         const assetCollectors: Record<string, (obj: SceneObjectLike, ctx: CollectorContext) => void> = {
-            // character collector 已移除
+            // character collector removed
 
             prop(obj, ctx) {
-                // PT Phase 6: propId 已删除，统一使用 refId
+                // PT Phase 6: propId removed, use refId uniformly
                 const propId = obj.refId
                 const prop = propStore.getProp(propId)
                 if (prop) {
                     ctx.addImg(prop.url)
-                    // v11.52: 预加载自定义静止图片
+                    // v11.52: Preload custom still image
                     ctx.addImg(prop.stillFrameCustomUrl)
                     prop.frames?.forEach((f) => ctx.addImg(f.url))
                 }
@@ -198,7 +198,7 @@ export function useAssetLoader() {
                 const bg = backgroundStore.getBackground(obj.refId)
                 if (bg) {
                     ctx.addImg(bg.url ?? bg.backgroundImage)
-                    // v11.52: 预加载自定义静止图片
+                    // v11.52: Preload custom still image
                     ctx.addImg(bg.stillFrameCustomUrl)
                     bg.frames?.forEach((f) => ctx.addImg(f.url))
                 }
@@ -209,7 +209,7 @@ export function useAssetLoader() {
                 if (snd?.url) ctx.addAudio(snd.url)
             },
 
-            // v16: 元件素材（自包含，不依赖外部 Store）
+            // v16: Symbol assets (self-contained, does not depend on external Store)
             symbol(obj, ctx) {
                 const symbolObj = obj as unknown as SymbolObject
                 if (!symbolObj.materials) return
@@ -218,7 +218,7 @@ export function useAssetLoader() {
                 }
             },
 
-            // v18: 独立表情对象（引用 expressionStore）
+            // v18: Independent expression object (references expressionStore)
             expression(obj, ctx) {
                 const expr = expressionStore.getExpression(obj.refId)
                 if (!expr) return
@@ -227,7 +227,7 @@ export function useAssetLoader() {
             },
         }
 
-        // 1. 扫描 Scene Setup (静态状态 + 初始状态)
+        // 1. Scan Scene Setup (static state + initial state)
         if (sceneSetup) {
             const ctx: CollectorContext = {
                 addImg,
@@ -239,24 +239,24 @@ export function useAssetLoader() {
             }
         }
 
-        // 2. 扫描 Current Block Actions (动态覆盖)
-        // 专门针对 set_material 等动态指令
+        // 2. Scan Current Block Actions (dynamic overrides)
+        // Specially for dynamic instructions such as set_material
         if (currentBlock?.actions) {
 
             for (const action of currentBlock.actions) {
-                // v18 动态截获: 解析 set_material 中的 materialId (表情 refId)
+                // v18 Dynamic interception: parse materialId (expression refId) in set_material
                 if (action.type === 'set_material') {
                     const materialAction = action
                     const newMaterialId = materialAction.params?.materialId
                     if (!newMaterialId) continue
 
-                    // 判定目标对象是否为表情类型
-                    // 优先从 sceneSetup.objects 查找；
-                    // 如果目标对象是动态 spawn 的（不在 setup 中），则直接尝试 expressionStore 查询
+                    // Determine if target object is expression type
+                    // First search from sceneSetup.objects;
+                    // If target object was dynamically spawned (not in setup), query expressionStore directly
                     const targetObj = sceneSetup?.objects.find(o => o.id === materialAction.target)
                     const isExpression = targetObj?.type === 'expression'
 
-                    // 对于非 expression 类型的对象（如 symbol），setup 扫描已覆盖全部素材，无需额外处理
+                    // For non-expression types (such as symbol), setup scan already covers all materials, no extra handling needed
                     if (isExpression || !targetObj) {
                         const expr = expressionStore.getExpression(newMaterialId)
                         if (expr) {
@@ -266,7 +266,7 @@ export function useAssetLoader() {
                     }
                 }
 
-                // set_character 处理已移除
+                // set_character handling removed
                 if (action.type === 'set_audio') {
                     // Trigger audio usually uses the Audio Object, which is already scanned in Step 1.
                     // Unless we allow dynamic URL injection (unlikely in current design).
@@ -278,8 +278,8 @@ export function useAssetLoader() {
     }
 
     /**
-     * 统一加载执行器
-     * 使用 Image 对象加载图片以稳健支持 Blob URL，随后转换为 PIXI Texture
+     * Unified loader executor
+     * Uses Image object to load images for robust Blob URL support, then converts to PIXI Texture
      */
     async function loadAssets(imageUrls: Set<string>, audioUrls: Set<string>, traceLabel = 'AssetLoader.loadAssets') {
         void traceLabel
@@ -302,8 +302,8 @@ export function useAssetLoader() {
         const imagesToLoad = Array.from(uncachedImageUrls)
         const audiosToLoad = Array.from(audioUrls)
 
-        // 1. 并行加载所有 Blob 到本地存储 (IndexedDB/Cache) 并获取 Blob URL
-        // 这一步确保 blob: 协议的 URL 是有效的
+        // 1. Concurrently load all Blobs to local storage (IndexedDB/Cache) and get Blob URLs
+        // This step ensures blob: protocol URLs are valid
         const validImageUrls = new Map<string, string>() // Original -> BlobURL
 
         await Promise.all(imagesToLoad.map(async (url) => {
@@ -318,8 +318,8 @@ export function useAssetLoader() {
             }
         }))
 
-        // 2. 并行创建 PIXI Textures
-        // 使用 Image 标签方式，避开 PIXI loader 对 blob 的潜在解析问题
+        // 2. Concurrently create PIXI Textures
+        // Use Image tag method to bypass potential Blob parsing issues in PIXI loader
         const texturePromises = Array.from(validImageUrls.entries()).map(async ([originalUrl, blobUrl]) => {
             // Fast path: Check cache
             if (textureCache.has(blobUrl)) return
@@ -347,13 +347,12 @@ export function useAssetLoader() {
             }
         })
 
-        // 3. 并行加载 Audio
+        // 3. Concurrently load Audio
         const audioPromises = audiosToLoad.map(async (url) => {
             try {
                 await loadAudioUrl(url)
-                // AudioKit 的 load 是 lazy 的吗？这里可能需要 explicit decode 如果是 WebAudio
-                // ActionPreviewDialog 使用 audioKit.load(blobUrl). 
-                // 这里我们只负责 ensure blob available.
+                // AudioKit load is lazy. ActionPreviewDialog uses audioKit.load(blobUrl).
+                // Here we only ensure the blob is available.
             } catch (e) {
                 console.warn('[AssetLoader] Audio Fetch Failed:', url)
             }
@@ -373,8 +372,8 @@ export function useAssetLoader() {
     }
 
     /**
-     * 获取缓存的纹理
-     * 在 CharacterSprite 或其他渲染组件中使用此方法获取同步纹理
+     * Get cached texture
+     * Use this method in CharacterSprite or other rendering components to get synchronous textures
      */
     function getTexture(url: string): PIXI.Texture {
         if (!url) return PIXI.Texture.EMPTY

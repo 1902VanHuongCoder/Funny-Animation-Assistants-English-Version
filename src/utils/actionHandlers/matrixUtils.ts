@@ -1,9 +1,9 @@
 /**
- * 全局坐标 ↔ 本地坐标转换工具
- * v17: 为全局坐标方案提供统一的坐标系转换函数
+ * Global Coordinates ↔ Local Coordinates Conversion Utilities
+ * v17: Provides unified coordinate transformation functions for global coordinate schemes
  *
- * 矩阵工具函数（resolveWorldMatrix / invertMatrix / decomposeMatrix / buildTransformMatrix）
- * 定义在 SetParentHandler.ts 中并 export，本模块在此基础上封装高层转换接口。
+ * Matrix utility functions (resolveWorldMatrix / invertMatrix / decomposeMatrix / buildTransformMatrix)
+ * are defined and exported in SetParentHandler.ts; this module encapsulates high-level conversion interfaces on top.
  */
 
 import {
@@ -14,22 +14,22 @@ import {
 import type { WriteableState } from './types'
 
 /**
- * 将全局坐标转换为 state 当前 parent 下的本地坐标
+ * Convert global coordinates to local coordinates under the state's current parent
  *
- * - state.parentId 为空时：全局 = 本地，直接返回原值
- * - state.parentId 有值时：通过 parent 链世界矩阵的逆矩阵转换
+ * - When state.parentId is empty: global = local, return original values directly
+ * - When state.parentId has value: transform via inverse matrix of parent chain world matrix
  *
- * @param globalParams 全局坐标参数（部分属性可选）
- * @param state 目标对象的当前运行时状态（需包含 parentId）
- * @param getObjectState 查询对象状态的回调
- * @returns 转换后的本地坐标参数
+ * @param globalParams Global coordinate parameters (some properties optional)
+ * @param state Target object's current runtime state (must contain parentId)
+ * @param getObjectState Callback to query object state
+ * @returns Converted local coordinate parameters
  */
 export function globalToLocal(
     globalParams: { x?: number; y?: number; scaleX?: number; scaleY?: number; rotation?: number },
     state: WriteableState,
     getObjectState?: (id: string) => WriteableState | undefined
 ): { x?: number; y?: number; scaleX?: number; scaleY?: number; rotation?: number } {
-    // Fast path: 无 parent → 全局坐标 = 本地坐标
+    // Fast path: No parent -> global coordinates = local coordinates
     if (!state.parentId || !getObjectState) {
         return globalParams
     }
@@ -42,8 +42,8 @@ export function globalToLocal(
     const parentWorldMatrix = resolveWorldMatrix(parentState, getObjectState)
     const invParent = invertMatrix(parentWorldMatrix)
 
-    // 关键修复：对缺失的 globalParams，使用 state 当前本地值的全局等价值作为 fallback
-    // 避免将全局参数与本地参数混入同一矩阵
+    // Key fix: For missing globalParams, use global equivalent of state's current local value as fallback
+    // Avoid mixing global parameters and local parameters into the same matrix
     const currentWorldMatrix = resolveWorldMatrix(state, getObjectState)
     const currentGlobal = decomposeMatrixForState(currentWorldMatrix, state)
 
@@ -63,7 +63,7 @@ export function globalToLocal(
     const localMatrix = multiplyMatrix(invParent, globalMatrix)
     const local = decomposeMatrixForState(localMatrix, state)
 
-    // 仅返回 globalParams 中明确提供的属性
+    // Only return properties explicitly provided in globalParams
     const result: { x?: number; y?: number; scaleX?: number; scaleY?: number; rotation?: number } = {}
     if (globalParams.x !== undefined) result.x = local.x
     if (globalParams.y !== undefined) result.y = local.y
@@ -74,11 +74,11 @@ export function globalToLocal(
 }
 
 /**
- * 将 state 的本地坐标解析为全局坐标
+ * Resolve state's local coordinates to global coordinates
  *
- * @param state 包含本地坐标的对象状态
- * @param getObjectState 查询对象状态的回调
- * @returns 全局坐标的几何属性
+ * @param state Object state containing local coordinates
+ * @param getObjectState Callback to query object state
+ * @returns Geometric properties in global coordinates
  */
 export function localToGlobal(
     state: WriteableState,
@@ -98,11 +98,11 @@ export function localToGlobal(
     return decomposeMatrixForState(worldMatrix, state)
 }
 
-// ==================== 内部矩阵工具 ====================
-// multiplyMatrix 和 invertMatrix 在 SetParentHandler 中未 export
-// 为避免修改 SetParentHandler 的导出列表，此处复制实现
+// ==================== Internal Matrix Utilities ====================
+// multiplyMatrix and invertMatrix are not exported from SetParentHandler
+// Copied implementation here to avoid modifying SetParentHandler exports
 
-/** 2D 仿射变换矩阵 */
+/** 2D Affine Transformation Matrix */
 interface Transform2D {
     a: number
     b: number

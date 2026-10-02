@@ -1,13 +1,13 @@
 /**
- * 视频导出文件大小预估工具
+ * Video export file size estimation utility
  */
 
 /**
- * 预估文件大小（字节）
- * @param durationMs 视频时长（毫秒）
- * @param videoBitrate 视频码率（bps）
- * @param audioBitrate 音频码率（bps）
- * @returns 预估文件大小（字节）
+ * Estimate file size (bytes)
+ * @param durationMs Video duration (ms)
+ * @param videoBitrate Video bitrate (bps)
+ * @param audioBitrate Audio bitrate (bps)
+ * @returns Estimated file size (bytes)
  */
 export function estimateFileSize(
     durationMs: number,
@@ -16,26 +16,26 @@ export function estimateFileSize(
 ): number {
     const durationSec = durationMs / 1000
 
-    // VBR 模式下，实际码率通常是目标码率的 60-80%
-    // 对于动画内容（静态画面多），使用 70% 作为预估系数
-    // 这样预估会偏保守，实际文件通常会比预估小，用户体验更好
+    // Under VBR mode, actual bitrate is usually 60-80% of target bitrate
+    // For animated content (many static frames), 70% is used as estimation factor
+    // Conservative estimation means actual files are smaller, providing better user experience
     const effectiveVideoBitrate = videoBitrate * 0.7
 
-    // 音频也使用 VBR，实际约为目标的 90%
+    // Audio also uses VBR, actual is roughly 90% of target
     const effectiveAudioBitrate = audioBitrate * 0.9
 
-    // 文件大小 = (有效视频码率 + 有效音频码率) × 时长 / 8
-    // 除以 8 是因为码率单位是 bits per second，需要转换为 bytes
+    // File size = (effective video bitrate + effective audio bitrate) * duration / 8
+    // Divided by 8 because bitrate is in bits per second, converting to bytes
     const sizeBytes = ((effectiveVideoBitrate + effectiveAudioBitrate) * durationSec) / 8
 
-    // 添加 5% 的容器开销（MP4 header、metadata 等）
+    // Add 5% container overhead (MP4 header, metadata, etc.)
     return Math.ceil(sizeBytes * 1.05)
 }
 
 /**
- * 格式化文件大小为可读字符串
- * @param bytes 文件大小（字节）
- * @returns 格式化后的字符串（如 "45.2 MB"）
+ * Format file size into human-readable string
+ * @param bytes File size (bytes)
+ * @returns Formatted string (e.g. "45.2 MB")
  */
 export function formatFileSize(bytes: number): string {
     if (bytes === 0) return '0 B'
@@ -48,9 +48,9 @@ export function formatFileSize(bytes: number): string {
 }
 
 /**
- * 格式化时长为可读字符串
- * @param ms 时长（毫秒）
- * @returns 格式化后的字符串（如 "2:35"）
+ * Format duration into human-readable string
+ * @param ms Duration (ms)
+ * @returns Formatted string (e.g. "2:35")
  */
 export function formatDuration(ms: number): string {
     const totalSeconds = Math.floor(ms / 1000)

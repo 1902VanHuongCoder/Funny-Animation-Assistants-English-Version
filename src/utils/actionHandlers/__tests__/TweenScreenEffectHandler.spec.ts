@@ -1,7 +1,7 @@
 /**
- * TweenScreenEffectHandler 单元测试 (Phase 1)
- * 注意: Handler 直接操作 state.params（消除 flat state 中间层）
- * coverOpacity 已删除，覆盖不透明度统一由 SceneObject.alpha 控制
+ * TweenScreenEffectHandler unit test (Phase 1)
+ * Note: Handler directly operates on state.params (eliminating flat state intermediate layer)
+ * coverOpacity deleted, overlay opacity is uniformly controlled by SceneObject.alpha
  */
 
 import { describe, expect, it } from 'vitest'
@@ -41,14 +41,14 @@ describe('TweenScreenEffectHandler', () => {
         }
     }
 
-    describe('applyToState (瞬时应用目标值)', () => {
-        it('设置 openRatio 目标值', () => {
+    describe('applyToState (instantaneously applies target values)', () => {
+        it('sets openRatio target value', () => {
             const state = createInitialState()
             TweenScreenEffectHandler.applyToState(state, createAction({ openRatio: 0.2 }))
             expect(state.params!.openRatio).toBe(0.2)
         })
 
-        it('设置多个目标值', () => {
+        it('sets multiple target values', () => {
             const state = createInitialState()
             TweenScreenEffectHandler.applyToState(state, createAction({
                 openRatio: 0.5,
@@ -59,26 +59,26 @@ describe('TweenScreenEffectHandler', () => {
         })
     })
 
-    describe('interpolate (线性插值)', () => {
-        it('progress=0 返回起始状态', () => {
+    describe('interpolate (linear interpolation)', () => {
+        it('returns initial state at progress=0', () => {
             const state = createInitialState()
             const startState = createInitialState()
             const action = createAction({ openRatio: 0 })
 
             TweenScreenEffectHandler.interpolate!(state, action, 0, startState)
-            expect(state.params!.openRatio).toBe(1.0) // 起始值
+            expect(state.params!.openRatio).toBe(1.0) // Start value
         })
 
-        it('progress=1 返回目标状态', () => {
+        it('returns target state at progress=1', () => {
             const state = createInitialState()
             const startState = createInitialState()
             const action = createAction({ openRatio: 0 })
 
             TweenScreenEffectHandler.interpolate!(state, action, 1, startState)
-            expect(state.params!.openRatio).toBe(0) // 目标值
+            expect(state.params!.openRatio).toBe(0) // Target value
         })
 
-        it('progress=0.5 返回中间值', () => {
+        it('returns intermediate value at progress=0.5', () => {
             const state = createInitialState()
             const startState = createInitialState()
             const action = createAction({ openRatio: 0 })
@@ -87,7 +87,7 @@ describe('TweenScreenEffectHandler', () => {
             expect(state.params!.openRatio).toBeCloseTo(0.5) // (1.0 + 0) / 2
         })
 
-        it('feather 插值', () => {
+        it('interpolates feather', () => {
             const state = createInitialState()
             const startState = createInitialState()
             const action = createAction({ feather: 100 })
@@ -96,7 +96,7 @@ describe('TweenScreenEffectHandler', () => {
             expect(state.params!.feather).toBeCloseTo(50) // (0 + 100) / 2
         })
 
-        it('多参数同时插值', () => {
+        it('interpolates multiple parameters simultaneously', () => {
             const state = createInitialState()
             const startState = createInitialState()
             const action = createAction({
@@ -109,54 +109,54 @@ describe('TweenScreenEffectHandler', () => {
             expect(state.params!.feather).toBeCloseTo(50)
         })
 
-        it('部分参数只插值指定字段', () => {
+        it('only interpolates specified fields for partial parameters', () => {
             const state = createInitialState()
             const startState = createInitialState()
             const action = createAction({ openRatio: 0 })
 
             TweenScreenEffectHandler.interpolate!(state, action, 0.5, startState)
             expect(state.params!.openRatio).toBeCloseTo(0.5)
-            // 未指定的字段不变
+            // Unspecified fields remain unchanged
             expect(state.params!.feather).toBe(0)
         })
 
-        it('非数值型参数在 progress < 1 时不切换', () => {
+        it('does not switch non-numeric parameters when progress < 1', () => {
             const state = createInitialState()
             const startState = createInitialState()
             const action = createAction({ baseColor: '#ff0000' })
 
             TweenScreenEffectHandler.interpolate!(state, action, 0.5, startState)
-            expect(state.params!.baseColor).toBe('#000000') // 未切换
+            expect(state.params!.baseColor).toBe('#000000') // Not switched
         })
 
-        it('非数值型参数在 progress >= 1 时切换', () => {
+        it('switches non-numeric parameters when progress >= 1', () => {
             const state = createInitialState()
             const startState = createInitialState()
             const action = createAction({ baseColor: '#ff0000' })
 
             TweenScreenEffectHandler.interpolate!(state, action, 1, startState)
-            expect(state.params!.baseColor).toBe('#ff0000') // 已切换
+            expect(state.params!.baseColor).toBe('#ff0000') // Switched
         })
     })
 
     describe('getTargetState', () => {
-        it('与 applyToState 行为一致', () => {
+        it('matches applyToState behavior', () => {
             const state = createInitialState()
             TweenScreenEffectHandler.getTargetState!(state, createAction({ openRatio: 0.3 }))
             expect(state.params!.openRatio).toBe(0.3)
         })
     })
 
-    describe('Handler 元数据', () => {
-        it('类型为 tween_screen_effect', () => {
+    describe('Handler metadata', () => {
+        it('type is tween_screen_effect', () => {
             expect(TweenScreenEffectHandler.type).toBe('tween_screen_effect')
         })
 
-        it('不是 Point Action', () => {
+        it('is not Point Action', () => {
             expect(TweenScreenEffectHandler.isPointAction).toBe(false)
         })
 
-        it('是 Duration Action', () => {
+        it('is Duration Action', () => {
             expect(TweenScreenEffectHandler.isDurationAction).toBe(true)
         })
     })

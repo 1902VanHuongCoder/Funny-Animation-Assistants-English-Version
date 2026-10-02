@@ -1,13 +1,13 @@
 /**
- * ScenePreviewDialog V7 数据结构适配测试
+ * ScenePreviewDialog V7 Data Structure Adaptation Tests
  * 
- * 测试场景预览对话框对 V7 State-Centric 角色模型的支持
+ * Tests ScenePreviewDialog support for V7 State-Centric character model
  * 
- * 测试层级:
- * 1. 资源预加载测试 - 验证 V7 结构资源收集
- * 2. 角色渲染测试 - 验证 refId/pose/expression/layerPreset
- * 3. 状态评估测试 - 验证 Block 间状态累积
- * 4. 多 Block 播放测试 - 验证连续播放状态流转
+ * Test levels:
+ * 1. Asset preload test - verify V7 structure resource collection
+ * 2. Character render test - verify refId/pose/expression/layerPreset
+ * 3. State evaluation test - verify state accumulation across Blocks
+ * 4. Multi-Block playback test - verify sequential playback state flow
  */
 
 import fs from 'fs'
@@ -228,18 +228,18 @@ describe('ScenePreviewDialog V7 Rendering Tests', () => {
     })
 
     // =========================================================================
-    // 1. 资源预加载测试
+    // 1. Asset preload tests
     // =========================================================================
     describe('Resource Preloading', () => {
 
-        // TC-SPD-PRELOAD-01: V7 角色资源收集
+        // TC-SPD-PRELOAD-01: V7 character asset collection
         it('TC-SPD-PRELOAD-01: V7 character assets should be collected from all states', () => {
-            // characterStore 已移除，跳过 character state 遍历
+            // characterStore removed, skip character state traversal
             console.log('TC-SPD-PRELOAD-01: Skipped (characterStore removed)')
             expect(true).toBe(true)
         })
 
-        // TC-SPD-PRELOAD-02: 表情资源预加载
+        // TC-SPD-PRELOAD-02: Expression asset preloading
         it('TC-SPD-PRELOAD-02: Expression assets should be collected', () => {
             console.log('TC-SPD-PRELOAD-02: Skipped (characterStore removed)')
             expect(true).toBe(true)
@@ -252,11 +252,11 @@ describe('ScenePreviewDialog V7 Rendering Tests', () => {
     })
 
     // =========================================================================
-    // 2. 角色渲染测试
+    // 2. Character rendering tests
     // =========================================================================
     describe('Character Rendering', () => {
 
-        // TC-SPD-RENDER-01: refId 角色查找
+        // TC-SPD-RENDER-01: refId character lookup
         it('TC-SPD-RENDER-01: Character should be found by refId', () => {
             if (!testScene?.setup?.objects) {
                 console.log('TC-SPD-RENDER-01: No scene setup available, skipping')
@@ -269,12 +269,12 @@ describe('ScenePreviewDialog V7 Rendering Tests', () => {
                 return
             }
 
-            // 验证 refId 字段存在
+            // Verify refId field exists
             expect(charObject.refId).toBeDefined()
             console.log(`TC-SPD-RENDER-01: Character object refId: ${charObject.refId}`)
         })
 
-        // TC-SPD-RENDER-02: 初始姿态设置
+        // TC-SPD-RENDER-02: Initial pose configuration
         it('TC-SPD-RENDER-02: Initial pose should be applied correctly', () => {
             if (!testScene?.setup?.objects) {
                 console.log('TC-SPD-RENDER-02: No scene setup available, skipping')
@@ -295,14 +295,14 @@ describe('ScenePreviewDialog V7 Rendering Tests', () => {
             expect(typeof initialPose).toBe('string')
         })
 
-        // TC-SPD-RENDER-03: 表情映射到 partAssetOverrides
+        // TC-SPD-RENDER-03: Expression mapping to partAssetOverrides
         it('TC-SPD-RENDER-03: Expression should map to partAssetOverrides', () => {
-            // characterStore 已移除，跳过表情映射测试
+            // characterStore removed, skip expression mapping test
             console.log('TC-SPD-RENDER-03: Skipped (characterStore removed)')
             expect(true).toBe(true)
         })
 
-        // TC-SPD-RENDER-04: 层级预设应用
+        // TC-SPD-RENDER-04: Layer preset application
         it('TC-SPD-RENDER-04: Layer preset should be applied', () => {
             if (!testScene?.setup?.objects) {
                 console.log('TC-SPD-RENDER-04: No scene setup available, skipping')
@@ -315,19 +315,19 @@ describe('ScenePreviewDialog V7 Rendering Tests', () => {
                 return
             }
 
-            // 验证 layerPresetId 字段
+            // Verify layerPresetId field
             const layerPresetId = charObject.layerPresetId ||
                 charObject.initialState?.layerPresetId
 
             console.log(`TC-SPD-RENDER-04: Layer preset ID: ${layerPresetId || '(default)'}`)
 
-            // layerPresetId 是可选的
+            // layerPresetId is optional
             if (layerPresetId) {
                 expect(typeof layerPresetId).toBe('string')
             }
         })
 
-        // TC-SPD-RENDER-05: 部件覆盖应用
+        // TC-SPD-RENDER-05: Part override application
         it('TC-SPD-RENDER-05: Part asset overrides should be applied', () => {
             if (!testScene?.setup?.objects) {
                 console.log('TC-SPD-RENDER-05: No scene setup available, skipping')
@@ -340,14 +340,14 @@ describe('ScenePreviewDialog V7 Rendering Tests', () => {
                 return
             }
 
-            // PT 重构: 顶层字段优先，initialState 回退
+            // PT refactor: top-level fields take precedence, initialState fallback
             const overrides = charObject.partAssetOverrides ?? charObject.initialState?.partAssetOverrides ?? {}
             const overrideCount = Object.keys(overrides).length
 
             console.log(`TC-SPD-RENDER-05: Part asset overrides count: ${overrideCount}`)
 
             if (overrideCount > 0) {
-                // 验证覆盖值类型
+                // Verify override value types
                 for (const [partId, assetId] of Object.entries(overrides)) {
                     expect(typeof partId).toBe('string')
                     expect(typeof assetId).toBe('string')
@@ -358,11 +358,11 @@ describe('ScenePreviewDialog V7 Rendering Tests', () => {
     })
 
     // =========================================================================
-    // 3. 状态评估测试
+    // 3. State evaluation tests
     // =========================================================================
     describe('State Evaluation', () => {
 
-        // TC-SPD-STATE-01: Block 间状态累积
+        // TC-SPD-STATE-01: State accumulation across Blocks
         it('TC-SPD-STATE-01: State should accumulate across blocks', () => {
             if (!testScene?.script || testScene.script.length < 2) {
                 console.log('TC-SPD-STATE-01: Need at least 2 blocks, skipping')
@@ -375,7 +375,7 @@ describe('ScenePreviewDialog V7 Rendering Tests', () => {
                 return
             }
 
-            // 模拟初始状态
+            // Simulate initial state
             const initialState = {
                 id: charObject.id, type: charObject.type, name: charObject.name ?? '', refId: charObject.refId ?? '',
                 width: charObject.width ?? 0, height: charObject.height ?? 0,
@@ -394,12 +394,12 @@ describe('ScenePreviewDialog V7 Rendering Tests', () => {
 
             console.log(`TC-SPD-STATE-01: Initial state - x: ${initialState.x}, y: ${initialState.y}`)
 
-            // 获取第一个 block 的 actions
+            // Get actions of first block
             const block1 = testScene.script[0]
             const block1Actions = (block1).actions || []
             const block1Duration = (block1).ttsConfig?.duration || 1000
 
-            // 如果有 actions，计算最终状态
+            // If actions exist, compute final state
             const targetActions = block1Actions.filter((a: any) =>
                 a.target === charObject.id &&
                 (a.type === 'tween_transform' || a.type === 'set_transform')
@@ -422,14 +422,14 @@ describe('ScenePreviewDialog V7 Rendering Tests', () => {
             }
         })
 
-        // TC-SPD-STATE-02: set_character 动作
+        // TC-SPD-STATE-02: set_character action
         it('TC-SPD-STATE-02: set_character action should update pose/expression', () => {
             if (!testScene?.script) {
                 console.log('TC-SPD-STATE-02: No script available, skipping')
                 return
             }
 
-            // 在所有 blocks 中查找 set_character 动作
+            // Look for set_character action in all blocks
             let setCharacterAction = null
             for (const block of testScene.script) {
                 const actions = (block).actions || []
@@ -439,24 +439,24 @@ describe('ScenePreviewDialog V7 Rendering Tests', () => {
 
             if (!setCharacterAction) {
                 console.log('TC-SPD-STATE-02: No set_character action found')
-                // 验证结构正确性
+                // Verify structural correctness
                 expect(true).toBe(true)
                 return
             }
 
             console.log(`TC-SPD-STATE-02: Found set_character action for target: ${setCharacterAction.target}`)
 
-            // 验证 action 参数
+            // Verify action parameters
             const params = setCharacterAction.params || {}
             console.log(`TC-SPD-STATE-02: Params - pose: ${params.pose}, expression: ${params.expression}`)
 
-            // pose 或 expression 至少有一个
+            // At least one of pose or expression must be present
             expect(params.pose || params.expression).toBeDefined()
         })
 
-        // TC-SPD-STATE-03: 层级预设运行时更新
+        // TC-SPD-STATE-03: Layer preset runtime update
         it('TC-SPD-STATE-03: Runtime layerPresetId update', () => {
-            // 验证 evaluateObjectState 返回的状态包含 layerPresetId
+            // Verify state returned by evaluateObjectState contains layerPresetId
             const mockState = {
                 id: 'mock', type: 'prop', name: 'mock', refId: 'mock_ref',
                 width: 0, height: 0,
@@ -475,11 +475,11 @@ describe('ScenePreviewDialog V7 Rendering Tests', () => {
     })
 
     // =========================================================================
-    // 4. 多 Block 播放测试
+    // 4. Multi-Block playback tests
     // =========================================================================
     describe('Multi-Block Playback', () => {
 
-        // TC-SPD-MULTI-01: 连续 Block 状态流转
+        // TC-SPD-MULTI-01: Sequential Block state transition
         it('TC-SPD-MULTI-01: Sequential block state flow', () => {
             if (!testScene?.script || testScene.script.length < 2) {
                 console.log('TC-SPD-MULTI-01: Need at least 2 blocks, skipping')
@@ -489,7 +489,7 @@ describe('ScenePreviewDialog V7 Rendering Tests', () => {
             const blocks = testScene.script
             console.log(`TC-SPD-MULTI-01: Scene has ${blocks.length} blocks`)
 
-            // 验证每个 block 有正确的时间信息
+            // Verify each block has correct timing info
             let hasTimeInfo = true
             for (const block of blocks) {
                 const ttsConfig = (block).ttsConfig
@@ -503,9 +503,9 @@ describe('ScenePreviewDialog V7 Rendering Tests', () => {
             expect(blocks.length).toBeGreaterThanOrEqual(2)
         })
 
-        // TC-SPD-MULTI-02: 表情覆盖持久性
+        // TC-SPD-MULTI-02: Expression override persistence
         it('TC-SPD-MULTI-02: Expression override persistence', () => {
-            // 验证表情在 ObjectStateSnapshot 中正确传递
+            // Verify expression passes correctly in ObjectStateSnapshot
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const block1EndState = {
                 id: 'mock', type: 'prop', name: 'mock', refId: 'mock_ref',
@@ -525,14 +525,14 @@ describe('ScenePreviewDialog V7 Rendering Tests', () => {
             console.log('TC-SPD-MULTI-02: Expression persists across blocks')
         })
 
-        // TC-SPD-MULTI-03: 相机跟随角色
+        // TC-SPD-MULTI-03: Camera follow character
         it('TC-SPD-MULTI-03: Camera follow character', () => {
             if (!testScene?.script) {
                 console.log('TC-SPD-MULTI-03: No script available, skipping')
                 return
             }
 
-            // 查找 camera_follow 动作
+            // Find camera_follow action
             let cameraFollowAction = null
             for (const block of testScene.script) {
                 const actions = (block).actions || []
@@ -550,7 +550,7 @@ describe('ScenePreviewDialog V7 Rendering Tests', () => {
 
             console.log(`TC-SPD-MULTI-03: Found camera_follow targeting: ${cameraFollowAction.params?.followTarget}`)
 
-            // 验证跟随目标存在
+            // Verify follow target exists
             const followTarget = cameraFollowAction.params?.followTarget
             if (followTarget) {
                 const targetObj = testScene.setup?.objects?.find((o: any) => o.id === followTarget)
@@ -559,7 +559,7 @@ describe('ScenePreviewDialog V7 Rendering Tests', () => {
             }
         })
 
-        // TC-SPD-MULTI-04: Block 时间线构建
+        // TC-SPD-MULTI-04: Block timeline construction
         it('TC-SPD-MULTI-04: Block timeline construction', () => {
             if (!testScene?.script || testScene.script.length === 0) {
                 console.log('TC-SPD-MULTI-04: No script available, skipping')
@@ -590,14 +590,14 @@ describe('ScenePreviewDialog V7 Rendering Tests', () => {
             expect(accumulatedTime).toBeGreaterThan(0)
         })
 
-        // TC-SPD-MULTI-05: 对象状态快照
+        // TC-SPD-MULTI-05: Object state snapshot
         it('TC-SPD-MULTI-05: Object state snapshot at block start', () => {
             if (!testScene?.setup?.objects || testScene.setup.objects.length === 0) {
                 console.log('TC-SPD-MULTI-05: No objects in scene, skipping')
                 return
             }
 
-            // 模拟状态快照创建
+            // Simulate state snapshot creation
             const stateSnapshot = new Map<string, SceneObject>()
 
             for (const obj of testScene.setup.objects) {

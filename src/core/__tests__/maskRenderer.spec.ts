@@ -1,14 +1,14 @@
 /**
  * @vitest-environment happy-dom
  *
- * maskRenderer 单元测试（Clip-Mask Phase 1）
+ * maskRenderer Unit Tests (Clip-Mask Phase 1)
  *
- * 覆盖 5 个核心场景：
- * 1. 索引升序的稳定先到先得：同 target 被两个 mask 同时申领时，objects 数组中索引较小的获胜。
- * 2. 重复调用幂等：连续 applyAllMasks 不应累计 Graphics / claims。
- * 3. composite 层级下矩阵正确：target 处于嵌套容器（offset+scale）时，graphics.worldTransform === maskContainer.worldTransform。
- * 4. 相机 zoom 下矩阵正确：stage 整体缩放后，几何裁切位置依然对齐。
- * 5. 冲突 warn：先到先得后续 mask 触发 console.warn。
+ * Covers 5 core scenarios:
+ * 1. Stable first-come-first-served in ascending index: when same target claimed by two masks, smaller index in objects array wins.
+ * 2. Idempotent repeated invocations: consecutive applyAllMasks should not accumulate Graphics / claims.
+ * 3. Matrix correct under composite hierarchy: when target is in nested container (offset+scale), graphics.worldTransform === maskContainer.worldTransform.
+ * 4. Matrix correct under camera zoom: after stage overall scaling, geometric clipping positions remain aligned.
+ * 5. Conflict warning: subsequent masks trigger console.warn.
  */
 
 import * as PIXI from 'pixi.js'
@@ -22,8 +22,8 @@ import {
 
 import type { MaskObject, SceneObject } from '@/types/sceneObject'
 
-// happy-dom 没有 canvas 2d context；PIXI.Graphics 构造期间会读取 Texture.WHITE，
-// 后者会创建 16×16 canvas 并 fillRect。这里直接将 WHITE 重定向到 EMPTY 以绕过。
+// happy-dom has no canvas 2d context; PIXI.Graphics construction reads Texture.WHITE,
+// which creates a 16x16 canvas and calls fillRect. Redirect WHITE to EMPTY here to bypass.
 beforeAll(() => {
     Object.defineProperty(PIXI.Texture, 'WHITE', {
         get() { return PIXI.Texture.EMPTY },
@@ -89,8 +89,8 @@ interface RootSetup {
 }
 
 /**
- * 在 root 下创建 target 容器（位置 = obj.x/y），并创建 mask 容器（位置 = mask.x/y）。
- * 返回容器映射。
+ * Creates target container under root (position = obj.x/y) and mask container (position = mask.x/y).
+ * Returns container mapping.
  */
 function makeScene(
     objects: SceneObject[],
@@ -117,9 +117,9 @@ function getContainerFn(map: Map<string, PIXI.Container>) {
 }
 
 /**
- * 手动驱动 PIXI Transform 计算 worldTransform。
- * PIXI 的 Container.updateTransform() 假定容器有父节点；测试中根节点 parent=null 会报错。
- * 这里递归计算 worldTransform = parentWorld × localTransform。
+ * Manually drive PIXI Transform to compute worldTransform.
+ * PIXI Container.updateTransform() assumes container has a parent; in tests root parent=null would throw.
+ * Recursively computes worldTransform = parentWorld * localTransform.
  */
 function pumpWorldTransforms(root: PIXI.Container, parentWorld: PIXI.Matrix = PIXI.Matrix.IDENTITY): void {
     root.transform.updateLocalTransform()
@@ -195,7 +195,7 @@ describe('maskRenderer.applyAllMasks', () => {
     })
 
     it('produces graphics whose worldTransform equals mask worldTransform under composite parent', () => {
-        // 模拟 composite：target 处于 root 之下的嵌套容器（offset 100,50, scale 0.5）
+        // Simulate composite: target in nested container under root (offset 100,50, scale 0.5)
         const compositeRoot = new PIXI.Container()
         compositeRoot.position.set(100, 50)
         compositeRoot.scale.set(0.5, 0.5)
@@ -291,7 +291,7 @@ describe('maskRenderer.applyAllMasks', () => {
         expect(containers.get('t1')!.filters).toBeNull()
         expect(containers.get('t1')!.parent).toBe(res.wrappers.get('t1'))
 
-        // 让 mask 不可见 → 下一帧应释放
+        // Make mask invisible -> should release on next frame
         ;(mask as SceneObject).visible = false
         applyAllMasks(objects, getContainerFn(containers), res)
         expect(res.claims.size).toBe(0)

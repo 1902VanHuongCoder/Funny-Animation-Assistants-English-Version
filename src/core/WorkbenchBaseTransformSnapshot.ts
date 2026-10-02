@@ -1,25 +1,25 @@
 /**
  * WorkbenchBaseTransformSnapshot
  *
- * 动画工作台预览路径所需的「容器基准姿态快照」工具函数。
+ * Utility functions for "container base posture snapshot" required by animation workbench preview path.
  *
- * 职责：
- * - capture：读取 PIXI.Container 当前的 position / scale / rotation / alpha / pivot / localBounds，
- *   封装成可序列化的 ContainerBaseState。
- * - apply：把快照写回容器（只还原几何量，不触碰 filters / AnimatedSprite 帧）。
+ * Responsibilities:
+ * - capture: reads position / scale / rotation / alpha / pivot / localBounds of PIXI.Container,
+ *   encapsulating into serializable ContainerBaseState.
+ * - apply: writes snapshot back to container (restores only geometric properties, without touching filters / AnimatedSprite frames).
  *
- * 设计要点：
- * - 纯函数、无副作用（除了显式写入容器）、无外部状态依赖，便于单元测试。
- * - 快照中的 pivot 必须被还原——切换到空动画时，若不恢复 pivot，
- *   容器会残留上一条轨道的 track.pivot 值，导致对象整体偏移。
- * - filter 清理与 AnimatedSprite 还帧属于业务侧状态（per-key filter bundle、asset loader），
- *   由调用方在 capture/apply 前后自行处理，不在本模块责任范围内。
+ * Design points:
+ * - Pure functions, side-effect free (except explicit container writes), no external state dependency, easy to unit test.
+ * - Pivot in snapshot must be restored — when switching to an empty animation, if pivot is not restored,
+ *   the container retains track.pivot of previous track, causing the object to shift.
+ * - Filter cleanup and AnimatedSprite frame resets are business-side state (per-key filter bundle, asset loader),
+ *   handled by the caller before/after capture/apply, and outside this module's scope.
  */
 
 import type * as PIXI from 'pixi.js'
 
 export interface ContainerBaseState {
-    /** 对象 ID（TARGET_SELF 时为 null） */
+    /** Object ID (null when TARGET_SELF) */
     objectId: string | null
     position: { x: number; y: number }
     scale: { x: number; y: number }
@@ -30,10 +30,10 @@ export interface ContainerBaseState {
 }
 
 /**
- * 从容器当前状态读取并返回一份独立的基准快照。
+ * Reads from container's current state and returns an independent base snapshot.
  *
- * 返回对象的所有字段都是新的 plain object/number，后续对容器的改动不会影响快照。
- * localBounds 通过 `container.getLocalBounds()` 计算（PIXI 内部带缓存，多次调用代价低）。
+ * All fields in returned object are newly created plain objects/numbers; subsequent changes to container will not affect snapshot.
+ * localBounds is calculated via `container.getLocalBounds()` (PIXI has internal caching, multiple calls are low cost).
  */
 export function captureContainerBaseState(
     container: PIXI.Container,
@@ -57,11 +57,11 @@ export function captureContainerBaseState(
 }
 
 /**
- * 把快照中的几何量写回容器。
+ * Writes geometric properties from snapshot back to container.
  *
- * 只还原 position / scale / rotation / alpha / pivot。
- * 不处理 filters、不触碰 AnimatedSprite 当前帧——这两项是业务侧状态，
- * 调用方若需要恢复，请在调用本函数前/后自行处理。
+ * Restores only position / scale / rotation / alpha / pivot.
+ * Does not handle filters, does not touch AnimatedSprite current frames — these two are business-side state;
+ * if caller needs restoration, please handle before/after calling this function.
  */
 export function applyContainerBaseTransform(
     container: PIXI.Container,

@@ -1,9 +1,9 @@
 /**
- * SetTransformHandler 单元测试
- * v9.3 更新：仅测试几何属性 (x, y, scaleX, scaleY, rotation) 和透明度 (alpha)
+ * SetTransformHandler unit test
+ * v9.3 update: Only tests geometric properties (x, y, scaleX, scaleY, rotation) and opacity (alpha)
  * 
- * 注意：visible/flipX/zIndex 已移至 SetVisualHandler
- *       spawned 已移至 SetLifecycleHandler
+ * Note: visible/flipX/zIndex have been moved to SetVisualHandler
+ *       spawned has been moved to SetLifecycleHandler
  */
 
 import { describe, expect, it } from 'vitest'
@@ -15,7 +15,7 @@ import { SetTransformHandler } from '../handlers/SetTransformHandler'
 import type { ActionHandlerContext, WriteableState } from '../types'
 
 describe('SetTransformHandler', () => {
-    // 创建初始状态
+    // Create initial state
     function createInitialState(): WriteableState {
         return {
             x: 100,
@@ -30,8 +30,8 @@ describe('SetTransformHandler', () => {
         }
     }
 
-    describe('透明度属性', () => {
-        it('应用 alpha 属性', () => {
+    describe('Opacity properties', () => {
+        it('applies alpha property', () => {
             const state = createInitialState()
             const action: SetTransformAction = {
                 id: 'action_1',
@@ -45,14 +45,14 @@ describe('SetTransformHandler', () => {
             SetTransformHandler.applyToState(state, action)
 
             expect(state.alpha).toBe(0.5)
-            // 其他属性不变
+            // Other properties remain unchanged
             expect(state.x).toBe(100)
             expect(state.y).toBe(100)
         })
     })
 
-    describe('几何属性', () => {
-        it('应用 x, y 位置变换', () => {
+    describe('Geometric properties', () => {
+        it('applies x, y position transforms', () => {
             const state = createInitialState()
             const action: SetTransformAction = {
                 id: 'action_1',
@@ -67,12 +67,12 @@ describe('SetTransformHandler', () => {
 
             expect(state.x).toBe(500)
             expect(state.y).toBe(300)
-            // 其他属性不变
+            // Other properties remain unchanged
             expect(state.scaleX).toBe(1)
             expect(state.scaleY).toBe(1)
         })
 
-        it('应用 scaleX, scaleY 缩放变换', () => {
+        it('applies scaleX, scaleY scaling transforms', () => {
             const state = createInitialState()
             const action: SetTransformAction = {
                 id: 'action_1',
@@ -89,7 +89,7 @@ describe('SetTransformHandler', () => {
             expect(state.scaleY).toBe(1.5)
         })
 
-        it('应用 rotation 旋转变换', () => {
+        it('applies rotation transform', () => {
             const state = createInitialState()
             const action: SetTransformAction = {
                 id: 'action_1',
@@ -105,7 +105,7 @@ describe('SetTransformHandler', () => {
             expect(state.rotation).toBe(45)
         })
 
-        it('有 parent 时 rotation 仍按局部值应用', () => {
+        it('applies rotation using local values even when parent exists', () => {
             const state: WriteableState = {
                 ...createInitialState(),
                 id: 'child',
@@ -138,7 +138,7 @@ describe('SetTransformHandler', () => {
             expect(state.rotation).toBe(Math.PI / 2)
         })
 
-        it('同时应用多个几何属性', () => {
+        it('applies multiple geometric properties simultaneously', () => {
             const state = createInitialState()
             const action: SetTransformAction = {
                 id: 'action_1',
@@ -164,7 +164,7 @@ describe('SetTransformHandler', () => {
             expect(state.rotation).toBe(90)
         })
 
-        it('混合应用几何和透明度属性', () => {
+        it('mixes geometric and opacity properties', () => {
             const state = createInitialState()
             const action: SetTransformAction = {
                 id: 'action_1',
@@ -187,8 +187,8 @@ describe('SetTransformHandler', () => {
         })
     })
 
-    describe('边界情况', () => {
-        it('空 params 不修改状态', () => {
+    describe('Edge cases', () => {
+        it('does not modify state when params is empty', () => {
             const state = createInitialState()
             const action: SetTransformAction = {
                 id: 'action_1',
@@ -206,7 +206,7 @@ describe('SetTransformHandler', () => {
             expect(state.alpha).toBe(1)
         })
 
-        it('只设置 x 不影响 y', () => {
+        it('setting only x does not affect y', () => {
             const state = createInitialState()
             const action: SetTransformAction = {
                 id: 'action_1',
@@ -220,10 +220,10 @@ describe('SetTransformHandler', () => {
             SetTransformHandler.applyToState(state, action)
 
             expect(state.x).toBe(999)
-            expect(state.y).toBe(100) // 原值不变
+            expect(state.y).toBe(100) // Original value unchanged
         })
 
-        it('处理负值坐标', () => {
+        it('handles negative coordinates', () => {
             const state = createInitialState()
             const action: SetTransformAction = {
                 id: 'action_1',
@@ -240,9 +240,9 @@ describe('SetTransformHandler', () => {
             expect(state.y).toBe(-50)
         })
 
-        it('处理 0 值旋转', () => {
+        it('handles 0 value rotation', () => {
             const state = createInitialState()
-            state.rotation = 45 // 先设置非 0 值
+            state.rotation = 45 // Set non-zero value first
             const action: SetTransformAction = {
                 id: 'action_1',
                 type: 'set_transform',
@@ -257,7 +257,7 @@ describe('SetTransformHandler', () => {
             expect(state.rotation).toBe(0)
         })
 
-        it('仅修改变换点时执行运行时位置补偿，而不要求 action 显式提供 x/y', () => {
+        it('performs runtime position compensation when only changing transform origin, without requiring explicit x/y in action', () => {
             const state = createInitialState()
             state.rotation = Math.PI / 4
 
@@ -281,7 +281,7 @@ describe('SetTransformHandler', () => {
             expect(state.y).toBeCloseTo(107.0710678, 5)
         })
 
-        it('显式提供 x/y 时不重复执行变换点补偿', () => {
+        it('does not double compensate transform origin when explicit x/y are provided', () => {
             const state = createInitialState()
             state.rotation = Math.PI / 4
 
@@ -307,7 +307,7 @@ describe('SetTransformHandler', () => {
             expect(state.transformOriginY).toBe(0)
         })
 
-        it('同时修改变换点和 rotation 时不执行位置补偿', () => {
+        it('does not perform position compensation when changing transform origin and rotation simultaneously', () => {
             const state = createInitialState()
             state.rotation = Math.PI / 4
 
@@ -333,7 +333,7 @@ describe('SetTransformHandler', () => {
             expect(state.transformOriginY).toBe(0)
         })
 
-        it('同时修改变换点和 scale 时不执行位置补偿', () => {
+        it('does not perform position compensation when changing transform origin and scale simultaneously', () => {
             const state = createInitialState()
             state.rotation = Math.PI / 4
 
@@ -361,7 +361,7 @@ describe('SetTransformHandler', () => {
             expect(state.transformOriginY).toBe(0)
         })
 
-        it('同时设置 x/y、rotation、scale 和变换点时，所有字段都应生效', () => {
+        it('applies all fields when simultaneously setting x/y, rotation, scale, and transform origin', () => {
             const state = createInitialState()
 
             const action: SetTransformAction = {
@@ -392,7 +392,7 @@ describe('SetTransformHandler', () => {
             expect(state.transformOriginY).toBe(-5)
         })
 
-        it('同一 action 同时设置全局 x/y 和 rotation 时，位置按新的局部旋转求值', () => {
+        it('evaluates position using the new local rotation when the same action sets global x/y and rotation simultaneously', () => {
             const parent: WriteableState = {
                 id: 'parent',
                 type: 'composite',
@@ -444,16 +444,16 @@ describe('SetTransformHandler', () => {
         })
     })
 
-    describe('Handler 元数据', () => {
-        it('类型为 set_transform', () => {
+    describe('Handler metadata', () => {
+        it('type is set_transform', () => {
             expect(SetTransformHandler.type).toBe('set_transform')
         })
 
-        it('是 Point Action', () => {
+        it('is Point Action', () => {
             expect(SetTransformHandler.isPointAction).toBe(true)
         })
 
-        it('不是 Duration Action', () => {
+        it('is not Duration Action', () => {
             expect(SetTransformHandler.isDurationAction).toBe(false)
         })
     })

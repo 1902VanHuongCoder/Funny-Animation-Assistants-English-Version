@@ -1,6 +1,6 @@
 /**
- * Action Handler 注册表
- * v8.6 P2: 统一 Action 处理逻辑
+ * Action Handler Registry
+ * v8.6 P2: Unified Action handling logic
  */
 
 import type { Action } from '@/types/screenplay'
@@ -8,33 +8,33 @@ import type { Action } from '@/types/screenplay'
 import type { ActionHandler, ActionType } from './types'
 
 /**
- * Handler 注册表
+ * Handler registry
  */
 const handlerRegistry = new Map<ActionType, ActionHandler>()
 
 /**
- * 注册 Handler
+ * Register Handler
  */
 export function registerHandler<T extends Action>(handler: ActionHandler<T>): void {
     handlerRegistry.set(handler.type as ActionType, handler as ActionHandler)
 }
 
 /**
- * 获取 Handler
+ * Get Handler
  */
 export function getHandler(type: ActionType): ActionHandler | undefined {
     return handlerRegistry.get(type)
 }
 
 /**
- * 获取所有已注册的 Handler
+ * Get all registered Handlers
  */
 export function getAllHandlers(): ActionHandler[] {
     return Array.from(handlerRegistry.values())
 }
 
 /**
- * 判断 Action 是否为瞬时动作
+ * Determine whether Action is a point action (instantaneous)
  */
 export function isPointAction(action: Action): boolean {
     const handler = getHandler(action.type as ActionType)
@@ -42,7 +42,7 @@ export function isPointAction(action: Action): boolean {
 }
 
 /**
- * 判断 Action 是否为持续动作
+ * Determine whether Action is a duration action
  */
 export function isDurationAction(action: Action): boolean {
     const handler = getHandler(action.type as ActionType)
@@ -50,14 +50,14 @@ export function isDurationAction(action: Action): boolean {
 }
 
 /**
- * 判断 Action 是否影响目标对象
+ * Determine whether Action affects the target object
  */
 export function isActionForTarget(action: Action, targetId: string): boolean {
     return action.target === targetId
 }
 
 /**
- * 判断 Action 是否为相机动作
+ * Determine whether Action is a camera action
  */
 export function isCameraAction(action: Action): boolean {
     const cameraTypes: ActionType[] = ['camera_cut', 'camera_move', 'camera_shake', 'camera_follow']
@@ -65,8 +65,8 @@ export function isCameraAction(action: Action): boolean {
 }
 
 /**
- * 判断 Action 是否影响对象状态
- * 通过 Handler 注册表的 affectsObjectState 元数据判断，消除硬编码 type 枚举。
+ * Determine whether Action affects object state
+ * Determined via the affectsObjectState metadata in the Handler registry, eliminating hardcoded type enums.
  */
 export function isObjectStateAction(action: Action): boolean {
     const handler = getHandler(action.type as ActionType)

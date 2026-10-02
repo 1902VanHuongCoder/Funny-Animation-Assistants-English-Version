@@ -1,6 +1,6 @@
 /**
  * Ghost Mode Calculator Tests
- * 测试 calculateSlotStates 函数的正确性
+ * Test calculateSlotStates function correctness
  */
 
 import { describe, expect, it } from 'vitest'
@@ -53,7 +53,7 @@ function createMockScene(objects: any[] = [], camera?: any): SceneContainer {
                 compositeMode: o.compositeMode,
                 transformOriginX: o.transformOriginX,
                 transformOriginY: o.transformOriginY,
-                // PT 重构: 同时设置顶层字段和 initialState（兼容旧数据）
+                // PT refactor: set both top-level fields and initialState (legacy data compatibility)
                 initialState: o.initialState,
                 pose: o.pose ?? o.initialState?.pose,
                 expression: o.expression ?? o.expression,
@@ -71,7 +71,7 @@ function createMockBlock(actions: Action[] = []): DialogueBlock {
         id: 'block_1',
         type: 'dialogue',
         instanceId: 'char_1',
-        text: '测试文本',
+        text: 'Test Text',
         actions,
         ttsConfig: {
             duration: 3000,
@@ -103,7 +103,7 @@ describe('calculateSlotStates', () => {
     describe('TC-GM-01: Point Action Ghost', () => {
         it('should not show ghost for alpha-only set_transform action', () => {
             const scene = createMockScene([
-                // PT 重构: 顶层字段优先
+                // PT refactor: top-level fields take precedence
                 { id: 'char_A', type: 'prop', x: 100, y: 200, pose: 'stand' }
             ])
 
@@ -403,7 +403,7 @@ describe('calculateSlotStates', () => {
         })
     })
 
-    // ==================== v8.4 新增: Action 创建后同步测试 ====================
+    // ==================== v8.4: Sync test after action creation ====================
 
     describe('TC-GM-60: Action Creation Sync (tween_transform)', () => {
         it('should correctly calculate Real state after tween_transform position action', () => {
@@ -411,7 +411,7 @@ describe('calculateSlotStates', () => {
                 { id: 'char_A', type: 'prop', x: 50, y: 100 }
             ])
 
-            // 模拟用户拖动后创建的 tween_transform action
+            // Simulate tween_transform action created after user drag
             const tweenAction: TweenTransformAction = {
                 id: 'action_drag',
                 type: 'tween_transform',
@@ -433,9 +433,9 @@ describe('calculateSlotStates', () => {
             const objResult = result.objects.get('char_A')
             expect(objResult).toBeDefined()
             expect(objResult!.ghost).not.toBeNull()
-            expect(objResult!.ghost!.x).toBe(50) // 原位置
+            expect(objResult!.ghost!.x).toBe(50) // Original position
             expect(objResult!.ghost!.y).toBe(100)
-            expect(objResult!.real.x).toBe(300) // 新位置 (Action 目标)
+            expect(objResult!.real.x).toBe(300) // New position (Action target)
             expect(objResult!.real.y).toBe(250)
         })
 
@@ -463,9 +463,9 @@ describe('calculateSlotStates', () => {
             const result = calculateSlotStates(scene, block, 2)
 
             const objResult = result.objects.get('char_A')
-            expect(objResult!.ghost!.scaleX).toBe(1) // 原缩放
+            expect(objResult!.ghost!.scaleX).toBe(1) // Original scale
             expect(objResult!.ghost!.scaleY).toBe(1)
-            expect(objResult!.real.scaleX).toBe(2) // 新缩放
+            expect(objResult!.real.scaleX).toBe(2) // New scale
             expect(objResult!.real.scaleY).toBe(1.5)
         })
     })
@@ -494,12 +494,12 @@ describe('calculateSlotStates', () => {
 
             const objResult = result.objects.get('char_A')
             expect(objResult!.ghost).toBeNull()
-            expect(objResult!.real.alpha).toBe(0.5) // 新透明度
+            expect(objResult!.real.alpha).toBe(0.5) // New opacity
         })
 
         it('should correctly calculate Real state without ghost after set_character expression change', () => {
             const scene = createMockScene([
-                // PT 重构: 顶层字段优先
+                // PT refactor: top-level fields take precedence
                 { id: 'char_A', type: 'prop', x: 100, y: 100, expression: 'neutral' }
             ])
 
@@ -521,7 +521,7 @@ describe('calculateSlotStates', () => {
 
             const objResult = result.objects.get('char_A')
             expect(objResult!.ghost).toBeNull()
-            expect((objResult!.real as unknown as Record<string, unknown>)['alpha']).toBe(0.8) // 新透明度
+            expect((objResult!.real as unknown as Record<string, unknown>)['alpha']).toBe(0.8) // New opacity
         })
     })
 
@@ -531,7 +531,7 @@ describe('calculateSlotStates', () => {
                 { id: 'char_A', type: 'prop', x: 100, y: 100, alpha: 1, rotation: 0 }
             ])
 
-            // 位置 Action
+            // Position Action
             const moveAction: TweenTransformAction = {
                 id: 'action_move',
                 type: 'tween_transform',
@@ -542,7 +542,7 @@ describe('calculateSlotStates', () => {
                 params: { x: 500, y: 300 }
             }
 
-            // 缩放 Action
+            // Scale Action
             const scaleAction: TweenTransformAction = {
                 id: 'action_scale',
                 type: 'tween_transform',
@@ -553,7 +553,7 @@ describe('calculateSlotStates', () => {
                 params: { scaleX: 2, scaleY: 2 }
             }
 
-            // 透明度 Action (set_transform)
+            // Opacity Action (set_transform)
             const alphaAction: Action = {
                 id: 'action_alpha',
                 type: 'set_transform',
@@ -571,13 +571,13 @@ describe('calculateSlotStates', () => {
             const objResult = result.objects.get('char_A')
             expect(objResult).toBeDefined()
 
-            // Ghost 应保持原始值
+            // Ghost should maintain original values
             expect(objResult!.ghost!.x).toBe(100)
             expect(objResult!.ghost!.y).toBe(100)
             expect(objResult!.ghost!.scaleX).toBe(1)
             expect(objResult!.ghost!.alpha).toBe(1)
 
-            // Real 应应用所有 Action 的目标
+            // Real should apply targets of all Actions
             expect(objResult!.real.x).toBe(500)
             expect(objResult!.real.y).toBe(300)
             expect(objResult!.real.scaleX).toBe(2)

@@ -1,14 +1,14 @@
-﻿/**
- * Action 杩愯鏃舵眰鍊煎櫒
- * 鐢ㄤ簬鍦ㄦ瘡涓€甯ф覆鏌撳惊鐜腑锛岃绠楀嚭褰撳墠鏃堕棿鐐逛笅姣忎釜瀵硅薄鐨勬渶缁堝睘鎬х姸鎬?
+/**
+ * Action Runtime Evaluator
+ * Used during every frame render cycle to calculate final property state of each object at current time point.
  * 
- * v6.3 鏇存柊锛?
- * - 绮剧畝 Action 绫诲瀷锛宻et_transform 浠呭寘鍚瑙夊睘鎬?(alpha/visible/flipX/zIndex)
- * - tween_transform 浠呭寘鍚嚑浣曞睘鎬?(x/y/scaleX/scaleY/rotation)
+ * v6.3 updates:
+ * - Streamline Action types; set_transform contains visual properties only (alpha/visible/flipX/zIndex)
+ * - tween_transform contains geometric properties only (x/y/scaleX/scaleY/rotation)
  * 
- * v6.5 鏇存柊锛?
- * - 鏂板 RuntimeCameraState 鎺ュ彛
- * - 鏂板 evaluateCameraState() 鍑芥暟鐢ㄤ簬璁＄畻鐩告満鐘舵€?
+ * v6.5 updates:
+ * - Added RuntimeCameraState interface
+ * - Added evaluateCameraState() function for camera state evaluation
  */
 
 import type { SceneObject, ScreenEffectObject } from '@/types/sceneObject'
@@ -19,18 +19,18 @@ import { sortActionsForEvaluation } from '@/utils/actionOrder'
 import { sortCameraActionsForEvaluation } from '@/utils/cameraActionRules'
 
 /**
- * 杩愯鏃剁浉鏈虹姸鎬?(v6.5)
- * 鐢ㄤ簬 ActionPreviewDialog 涓殑鐩告満鍙樻崲璁＄畻
+ * Runtime camera state (v6.5)
+ * Used for camera transform calculation in ActionPreviewDialog
  */
 export interface RuntimeCameraState {
-  // 鐩告満浣嶇疆 (鐢诲竷鍧愭爣)
+  // Camera position (canvas coordinates)
   x: number
   y: number
 
-  // 缂╂斁绾у埆 (1 = 姝ｅ父, >1 = 鏀惧ぇ, <1 = 缂╁皬)
+  // Zoom level (1 = normal, >1 = zoom in, <1 = zoom out)
   zoom: number
 
-  // 闇囧姩鍋忕Щ (涓存椂鏁堟灉)
+  // Shake offset (temporary effect)
   shakeOffsetX: number
   shakeOffsetY: number
 }
@@ -42,7 +42,7 @@ function getFollowTargetCenter(
   return visualCenters?.get(followTarget)
 }
 
-// 缂撳姩鍑芥暟搴?
+// Easing functions library
 const EasingFunctions: Record<string, (t: number) => number> = {
   linear: (t) => t,
   easeInQuad: (t) => t * t,
@@ -54,8 +54,9 @@ const EasingFunctions: Record<string, (t: number) => number> = {
 }
 
 /**
- * 璁＄畻鍔ㄤ綔鐨勭粷瀵规椂闂磋寖鍥?(ms)
- * v6.2: 鍩轰簬 slotIndex + slotSpan 鐨勬Ы浣嶆椂闂磋绠?
+/**
+ * Calculates absolute time range for an action (ms)
+ * v6.2: Slot time calculation based on slotIndex + slotSpan
  */
 function getActionTimeRange(
   action: Action,
@@ -72,7 +73,7 @@ function getActionTimeRange(
   if (slot) {
     start = slot.startTime
 
-    // 鎸佺画鍔ㄤ綔锛氭牴鎹?slotSpan 璁＄畻鏃堕暱
+    // Duration action: calculate duration based on slotSpan
     if (action.category === 'duration') {
       const span = (action as { slotSpan?: number }).slotSpan ?? 1
       for (let i = 0; i < span; i++) {
@@ -86,19 +87,21 @@ function getActionTimeRange(
 }
 
 /**
- * 绾挎€ф彃鍊?
+/**
+ * Linear interpolation
  */
 function lerp(start: number, end: number, t: number): number {
   return start + (end - start) * t
 }
 
 /**
- * 鏍稿績锛氳瘎浼板崟涓璞″湪鐗瑰畾鏃堕棿鐐圭殑鐘舵€?
- * @param startState Block寮€濮嬫椂鐨勫垵濮嬬姸鎬?(setup + prevReplay)
- * @param actions 褰撳墠Block鍐呯殑鍔ㄤ綔鍒楄〃 (宸茬瓫閫夊嚭閽堝璇ュ璞＄殑鍔ㄤ綔)
- * @param currentTime 褰撳墠鎾斁鏃堕棿 (ms)
- * @param totalDuration Block鎬绘椂闀?(ms)
- * @param slots 杩愯鏃舵Ы浣嶅垪琛紙鐢ㄤ簬璁＄畻鍔ㄤ綔鏃堕棿鑼冨洿锛?
+/**
+ * Core: Evaluates state of a single object at a specific time point
+ * @param startState Initial state at Block start (setup + prevReplay)
+ * @param actions Action list within current Block (filtered for this object)
+ * @param currentTime Current playback time (ms)
+ * @param totalDuration Total Block duration (ms)
+ * @param slots Runtime slots list (used to calculate action time ranges)
  */
 export function evaluateObjectState(
   startState: SceneObject,
@@ -110,11 +113,11 @@ export function evaluateObjectState(
   context?: ActionHandlerContext
 ): SceneObject {
 
-  // 1. 鍏嬮殕鍒濆鐘舵€?
+  // 1. Clone initial state
   const baseState = { ...startState } as SceneObject & Record<string, unknown>
   const finalState = { ...startState } as SceneObject & Record<string, unknown>
 
-  // 鐢婚潰鐗规晥锛氭繁鎷疯礉 params 閬垮厤 baseState/finalState 鍏变韩寮曠敤
+  // Screen effect: deep clone params to avoid baseState/finalState reference sharing
   if (startState.type === 'screen_effect') {
     const p = (startState as unknown as ScreenEffectObject).params
     if (p) {
@@ -123,9 +126,9 @@ export function evaluateObjectState(
     }
   }
 
-  // 2. 鎸夋Ы浣嶇储寮曟帓搴忓姩浣?
-  // v17: 鍚?slotIndex 涓?Point Action 鎺掑湪 Duration Action 鍓嶉潰锛堜笌 evaluateObjectStateBySlot 淇濇寔涓€鑷达級
-  // 纭繚 set_transform 鍏堝簲鐢紙璁剧疆 transformOrigin 绛夛級锛宼ween_transform 鍚庡熀浜庢璧峰鐘舵€佽繘琛屾彃鍊?
+  // 2. Sort actions by slot index
+  // v17: Point Actions precede Duration Actions within same slotIndex (consistent with evaluateObjectStateBySlot)
+  // Ensures set_transform applies first (sets transformOrigin, etc.), and tween_transform interpolates based on that initial state
   const sortedActions = sortActionsForEvaluation(actions)
 
   for (const action of sortedActions) {
@@ -203,12 +206,13 @@ export function evaluateObjectState(
 }
 
 /**
- * 鏍稿績锛氬熀浜?Slot 璇勪及鍗曚釜瀵硅薄鐨勭姸鎬?(Target State Mode)
- * 涓撶敤浜庡満鏅紪杈戦〉闈?(Action Mode)锛屼笉渚濊禆姣绾ф椂闂达紝鏃犳彃鍊?
- * @param startState Block寮€濮嬫椂鐨勫垵濮嬬姸鎬?
- * @param actions 褰撳墠Block鍐呯殑鍔ㄤ綔鍒楄〃
- * @param currentSlotIndex 褰撳墠妲戒綅绱㈠紩
- * @param slots 杩愯鏃舵Ы浣嶅垪琛?
+/**
+ * Core: Evaluates state of a single object based on Slot (Target State Mode)
+ * Dedicated to Scene Editor (Action Mode); does not rely on millisecond time, no interpolation
+ * @param startState Initial state at Block start
+ * @param actions Action list within current Block
+ * @param currentSlotIndex Currently selected slot index
+ * @param slots Runtime slots list
  */
 export function evaluateObjectStateBySlot(
   startState: SceneObject,
@@ -218,10 +222,10 @@ export function evaluateObjectStateBySlot(
   context?: ActionHandlerContext
 ): SceneObject {
 
-  // 1. 鍏嬮殕鍒濆鐘舵€?
+  // 1. Clone initial state
   const finalState = { ...startState } as SceneObject & Record<string, unknown>
 
-  // 鐢婚潰鐗规晥锛氭繁鎷疯礉 params 閬垮厤鍏变韩寮曠敤
+  // Screen effect: deep clone params to avoid baseState/finalState reference sharing
   if (startState.type === 'screen_effect') {
     const p = (startState as unknown as ScreenEffectObject).params
     if (p) {
@@ -229,9 +233,9 @@ export function evaluateObjectStateBySlot(
     }
   }
 
-  // 2. 鎸夋Ы浣嶇储寮曟帓搴忓姩浣?
-  // v14.1: 鍚?slotIndex 涓?Point Action 鎺掑湪 Duration Action 鍓嶉潰
-  // 纭繚 set_transform 鍏堝簲鐢紝tween_transform 鍚庤鐩栵紙鏈€缁堜互 tween 涓哄噯锛?
+  // 2. Sort actions by slot index
+  // v14.1: Point Actions precede Duration Actions within same slotIndex
+  // Ensures set_transform applies first, overwritten by tween_transform (tween takes precedence as final state)
   const sortedActions = sortActionsForEvaluation(actions)
 
   for (const action of sortedActions) {
@@ -239,7 +243,7 @@ export function evaluateObjectStateBySlot(
       continue
     }
 
-    // 只应用当前 Slot 之前已经开始生效的动作状态
+  // Only apply action states that have already taken effect before current Slot
     if (action.category === 'point') {
       applyPointAction(finalState, action, context)
     } else {
@@ -251,8 +255,9 @@ export function evaluateObjectStateBySlot(
 }
 
 /**
- * 鏍稿績锛氬熀浜?Slot 璇勪及鐩告満鐘舵€?(Target State Mode)
- * 涓撶敤浜庡満鏅紪杈戦〉闈?(Action Mode)锛屼笉渚濊禆姣绾ф椂闂达紝鏃犳彃鍊?
+/**
+ * Core: Evaluates camera state based on Slot (Target State Mode)
+ * Dedicated to Scene Editor (Action Mode); does not rely on millisecond time, no interpolation
  */
 export function evaluateCameraStateBySlot(
   defaultState: RuntimeCameraState,
@@ -263,7 +268,7 @@ export function evaluateCameraStateBySlot(
   lastFollowPosition?: { x: number, y: number } | null,
 ): RuntimeCameraState {
 
-  // 1. 绛涢€夌浉鏈哄姩浣?
+  // 1. Filter camera actions
   const cameraActions = actions.filter(a => a.target === 'camera')
 
   // console.log('[Camera Debug] evaluateCameraStateBySlot called:')
@@ -276,22 +281,22 @@ export function evaluateCameraStateBySlot(
     return { ...defaultState, shakeOffsetX: 0, shakeOffsetY: 0 }
   }
 
-  // 2. 鍒濆鐘舵€?
+  // 2. Initial state
   const finalState: RuntimeCameraState = { ...defaultState, shakeOffsetX: 0, shakeOffsetY: 0 }
 
-  // 3. 鎸夋Ы浣嶇储寮曟帓搴?
+  // 3. Sort by slot index
   const sortedActions = sortCameraActionsForEvaluation(cameraActions)
 
   for (const action of sortedActions) {
-    // v8.3: 鎭㈠ Slot 闄愬埗锛屼娇鐩告満鏄剧ず褰撳墠 slot 鍓嶇殑绱Н鐘舵€?
+  // v8.3: Restore Slot boundary, showing cumulative state before current slot for camera
     if (action.slotIndex > _currentSlotIndex) {
       // console.log('[Camera Debug]   Skipping action at slotIndex', action.slotIndex, '> currentSlotIndex', _currentSlotIndex)
       continue
     }
     // console.log('[Camera Debug]   Applying action at slotIndex', action.slotIndex, 'type:', action.type)
 
-    // 5. 搴旂敤鍔ㄤ綔鏁堟灉
-    // 鐬椂鍔ㄤ綔
+  // 5. Apply action effects
+    // Point action
     if (action.type === 'camera_cut') {
       if (action.params.x !== undefined) finalState.x = action.params.x
       if (action.params.y !== undefined) finalState.y = action.params.y
@@ -299,7 +304,7 @@ export function evaluateCameraStateBySlot(
       continue
     }
 
-    // 鎸佺画鍔ㄤ綔 (鐩存帴搴旂敤鏈€缁堢姸鎬?
+    // Duration action (directly apply final state)
     if (action.type === 'camera_move') {
       const params = action.params
       if (params.x !== undefined) finalState.x = params.x
@@ -323,8 +328,8 @@ export function evaluateCameraStateBySlot(
         finalY = lastFollowPosition.y
       }
 
-      // v7.21: 杈圭晫绾︽潫 - 淇閬撳叿瀵硅薄璺熼殢鏃剁浉鏈鸿秴鍑虹敾甯冪殑闂
-      // 杈圭晫绾︽潫搴旇鍩轰簬鐩告満鑷韩鐨勫昂瀵?鑰屼笉鏄洰鏍囧璞＄殑灏哄
+      // v7.21: Bounds constraint - fixes camera exceeding canvas bounds when following prop objects
+      // Bounds constraint should be based on camera's own dimensions rather than target object's dimensions
       if (params.constrainBounds) {
         const targetZoom = params.zoom ?? finalState.zoom
         const cameraWidth = CAMERA_BASE_WIDTH / targetZoom
@@ -332,7 +337,7 @@ export function evaluateCameraStateBySlot(
         const halfW = cameraWidth / 2
         const halfH = cameraHeight / 2
 
-        // 纭繚鐩告満涓績鐐瑰湪鐢诲竷鑼冨洿鍐?浣跨浉鏈烘涓嶄細瓒呭嚭鐢诲竷杈圭晫
+      // Ensure camera center point stays within canvas bounds so camera frame does not exceed boundaries
         finalX = Math.max(halfW, Math.min(CANVAS_WIDTH - halfW, finalX))
         finalY = Math.max(halfH, Math.min(CANVAS_HEIGHT - halfH, finalY))
       }
@@ -343,15 +348,16 @@ export function evaluateCameraStateBySlot(
         finalState.zoom = params.zoom
       }
     }
-    // camera_shake 鍦ㄧ紪杈戞ā寮忎笅閫氬父蹇界暐锛屽洜涓哄畠闇€瑕佹椂闂撮┍鍔ㄧ殑闇囧姩鏁堟灉
+  // camera_shake is usually ignored in edit mode because it requires time-driven shake animation
   }
 
   return finalState
 }
 
 /**
- * 璇勪及瀵硅薄鐨勭洰鏍囩姸鎬?(v7.9)
- * 璁＄畻濡傛灉鎵€鏈夋鍦ㄨ繘琛岀殑鍔ㄤ綔绔嬪嵆瀹屾垚锛屽璞＄殑鏈€缁堢姸鎬?
+/**
+ * Evaluates target state of an object (v7.9)
+ * Calculates final state of object if all ongoing actions were completed immediately
  */
 export function evaluateObjectTargetState(
   currentState: SceneObject,
@@ -362,9 +368,9 @@ export function evaluateObjectTargetState(
   currentSlotIndex = -1
 ): SceneObject | null {
 
-  // 1. 绛涢€夊嚭褰撳墠姝ｅ湪鎵ц鐨?DurationAction
+  // 1. Filter out DurationActions currently in progress
   const activeActions = actions.filter(action => {
-    // 蹇呴』鏄寔缁姩浣?
+  // Must be duration action
     if (action.category !== 'duration') return false
 
     // v7.16: Slot logic
@@ -383,20 +389,21 @@ export function evaluateObjectTargetState(
     return null
   }
 
-  // 2. 鍩轰簬褰撳墠鐘舵€侊紝搴旂敤鎵€鏈夋鍦ㄨ繘琛岀殑鍔ㄤ綔鐨勬渶缁堟晥鏋?
+  // 2. Based on current state, apply final effects of all ongoing actions
   const targetState = { ...currentState } as SceneObject & Record<string, unknown>
 
-  // 鎸夋Ы浣嶆帓搴忥紝纭繚瑕嗙洊椤哄簭姝ｇ‘
+  // Sort by slot to ensure correct override order
   activeActions.sort((a, b) => a.slotIndex - b.slotIndex)
 
-  // v7.10: 娣峰悎澶勭悊 Point Action 鍜?Duration Action
-  // 鍘熷垯锛?
-  // 1. Point Action 搴旇鍦?Duration Action 涔嬪墠琚鏌ュ拰搴旂敤 (濡傛灉瀹冧滑閮藉湪鍚屼竴涓?Slot)
-  //    鍥犱负 Point Action 閫氬父鏄灛鏃剁殑鐘舵€佸彉鏇达紙濡傝缃垵濮嬩綅缃€佸垏鎹㈣〃鎯咃級锛岃€?Duration Action 鏄熀浜庤繖涓垵濮嬬姸鎬佽繘琛岀殑娓愬彉銆?
-  //    濡傛灉 Duration Action 鐢熸晥锛屽畠鐨勬渶缁堢姸鎬佸簲璇ヨ鐩?Point Action 鐨勮缃紙閽堝鐩稿悓灞炴€э級銆?
-  // 2. Preroll Slot 鐨?Duration Action 涔熼渶瑕佽澶勭悊銆?
+  // v7.10: Mixed handling of Point Action and Duration Action
+  // Principles:
+  // 1. Point Action should be checked and applied before Duration Action (if in same Slot)
+  //    Because Point Action is usually an instantaneous state change (initial position, expression switch),
+  //    while Duration Action is a gradual tween based on this initial state.
+  //    If Duration Action is active, its final state should override Point Action settings (for identical properties).
+  // 2. Duration Actions in Preroll Slots must also be processed.
 
-  // 鏀堕泦褰撳墠 Slot 鐨?Point Actions
+  // Collect Point Actions for current Slot
   const currentSlotPointActions = actions.filter(action => {
     if (action.category !== 'point') return false
 
@@ -406,15 +413,15 @@ export function evaluateObjectTargetState(
     }
 
     const { start } = getActionTimeRange(action, slots)
-    return start >= currentTime // 绠€鍗曞垽瀹氾細灞炰簬褰撳墠鏃堕棿绐楀彛涔嬪悗锛堝惈锛?
+      return start >= currentTime // Simple determination: belongs after current time window (inclusive)
   })
 
-  // 鍚堝苟鍒楄〃骞舵寜 slotIndex 鎺掑簭锛屽鏋?slotIndex 鐩稿悓锛岃 Point Action 鎺掑湪 Duration Action 鍓嶉潰
+  // Merge lists and sort by slotIndex; if slotIndex is identical, Point Action precedes Duration Action
   const allTargetActions = [...activeActions, ...currentSlotPointActions].sort((a, b) => {
     if (a.slotIndex !== b.slotIndex) {
       return a.slotIndex - b.slotIndex
     }
-    // slotIndex 鐩稿悓锛孭oint Action 浼樺厛
+    // Same slotIndex: Point Action takes precedence
     const aIsPoint = a.category === 'point'
     const bIsPoint = b.category === 'point'
     if (aIsPoint && !bIsPoint) return -1
@@ -424,10 +431,10 @@ export function evaluateObjectTargetState(
 
   for (const action of allTargetActions) {
     if (action.category === 'point') {
-      // 搴旂敤鐬椂鍔ㄤ綔
+    // Point action
       applyPointAction(targetState, action)
     } else {
-      // 搴旂敤鎸佺画鍔ㄤ綔鏈€缁堢姸鎬?
+      // Apply duration action final state
       applyDurationActionFinal(targetState, action as DurationAction)
     }
   }
@@ -435,7 +442,7 @@ export function evaluateObjectTargetState(
   return targetState
 }
 
-// 鐢诲竷鍜岀浉鏈哄父閲忥紙浠庣粺涓€甯搁噺鏂囦欢瀵煎叆锛?
+// Canvas and camera constants (imported from unified constants file)
 import {
   CAMERA_BASE_HEIGHT,
   CAMERA_BASE_WIDTH,
@@ -444,14 +451,15 @@ import {
 } from '@/constants/canvas'
 
 /**
- * 璁＄畻鐩告満鍦ㄧ壒瀹氭椂闂寸偣鐨勭姸鎬?(v6.6)
- * @param defaultState 鐩告満榛樿鐘舵€?
- * @param actions 褰撳墠Block鍐呯殑鎵€鏈夊姩浣滃垪琛?
- * @param currentTime 褰撳墠鎾斁鏃堕棿 (ms)
- * @param totalDuration Block鎬绘椂闀?(ms)
- * @param slots 杩愯鏃舵Ы浣嶅垪琛?
- * @param visualCenters 瀵硅薄瑙嗚涓績浣嶇疆鏄犲皠锛堢敤浜庤窡闅忓姩浣滆绠楋級
- * @param lastFollowPosition 涓婁竴娆¤窡闅忎綅缃紙鐢ㄤ簬鐩爣娑堝け鏃朵繚鎸佷綅缃級
+/**
+ * Evaluates camera state at a specific time point (v6.6)
+ * @param defaultState Camera default state
+ * @param actions All actions within current Block
+ * @param currentTime Current playback time (ms)
+ * @param totalDuration Total Block duration (ms)
+ * @param slots Runtime slots list
+ * @param visualCenters Visual centers mapping of objects (used for follow calculations)
+ * @param lastFollowPosition Last follow position (used to maintain position when target disappears)
  */
 export function evaluateCameraState(
   defaultState: RuntimeCameraState,
@@ -465,18 +473,18 @@ export function evaluateCameraState(
   previousFrameState?: RuntimeCameraState | null,
   currentSlotIndex = -1 // v7.16
 ): RuntimeCameraState {
-  // 绛涢€夌浉鏈哄姩浣?
+  // Filter camera actions
   const cameraActions = actions.filter(a => a.target === 'camera')
 
   if (cameraActions.length === 0) {
     return { ...defaultState, shakeOffsetX: 0, shakeOffsetY: 0 }
   }
 
-  // 鍒濆鐘舵€?
+  // Initial state
   const baseState: RuntimeCameraState = { ...defaultState, shakeOffsetX: 0, shakeOffsetY: 0 }
   const finalState: RuntimeCameraState = { ...defaultState, shakeOffsetX: 0, shakeOffsetY: 0 }
 
-  // 鎸夋Ы浣嶇储寮曟帓搴?
+  // Sort by slot index
   const sortedActions = sortCameraActionsForEvaluation(cameraActions)
 
   for (const action of sortedActions) {
@@ -514,10 +522,10 @@ export function evaluateCameraState(
 
     if (!isStarted) continue
 
-    // 鐬椂鍔ㄤ綔 (camera_cut)
+    // Point action (camera_cut)
     if (action.category === 'point' || duration === 0) {
       if (action.type === 'camera_cut') {
-        // v6.6: 娣诲姞 undefined 妫€鏌ワ紝淇濈暀鍘熸湁鍊?
+    // v6.6: Add undefined check to preserve original value
         if (action.params.x !== undefined) {
           baseState.x = action.params.x
           finalState.x = action.params.x
@@ -534,9 +542,9 @@ export function evaluateCameraState(
       continue
     }
 
-    // 鎸佺画鍔ㄤ綔
+    // Duration action
     if (isFinished) {
-      // 鍔ㄤ綔宸插畬鎴?
+      // Action completed
       if (action.type === 'camera_move') {
         const params = action.params
         if (params.x !== undefined) baseState.x = params.x
@@ -546,7 +554,7 @@ export function evaluateCameraState(
         finalState.y = baseState.y
         finalState.zoom = baseState.zoom
       } else if (action.type === 'camera_follow') {
-        // v6.7: camera_follow 瀹屾垚鍚庯紝鐩告満鍋滅暀鍦ㄦ渶鍚庝綅缃紙涓嶅啀璺熼殢锛?
+      // v6.7: After camera_follow completes, camera remains at last position (no longer follows)
         const params = action.params
         const followTarget = params.followTarget
         const offsetX = params.offsetX ?? 0
@@ -555,7 +563,7 @@ export function evaluateCameraState(
         let finalX = baseState.x
         let finalY = baseState.y
 
-        // 浼樺厛浣跨敤褰撳墠鎻愪緵鐨勮瑙変腑蹇冭绠楁渶鍚庝綅缃?
+      // Prefer currently provided visual centers to compute final position
         const targetCenter = getFollowTargetCenter(followTarget, visualCenters)
         if (targetCenter) {
           finalX = targetCenter.x + offsetX
@@ -565,8 +573,8 @@ export function evaluateCameraState(
           finalY = lastFollowPosition.y
         }
 
-        // v7.21: 杈圭晫绾︽潫 - 淇閬撳叿瀵硅薄璺熼殢鏃剁浉鏈鸿秴鍑虹敾甯冪殑闂
-        // 杈圭晫绾︽潫搴旇鍩轰簬鐩告満鑷韩鐨勫昂瀵?鑰屼笉鏄洰鏍囧璞＄殑灏哄
+      // v7.21: Bounds constraint - fixes camera exceeding canvas bounds when following prop objects
+      // Bounds constraint should be based on camera's own dimensions rather than target object's dimensions
         if (params.constrainBounds) {
           const targetZoom = params.zoom ?? baseState.zoom
           const cameraWidth = CAMERA_BASE_WIDTH / targetZoom
@@ -574,7 +582,7 @@ export function evaluateCameraState(
           const halfW = cameraWidth / 2
           const halfH = cameraHeight / 2
 
-          // 纭繚鐩告満涓績鐐瑰湪鐢诲竷鑼冨洿鍐?浣跨浉鏈烘涓嶄細瓒呭嚭鐢诲竷杈圭晫
+      // Ensure camera center point stays within canvas bounds so camera frame does not exceed boundaries
           finalX = Math.max(halfW, Math.min(CANVAS_WIDTH - halfW, finalX))
           finalY = Math.max(halfH, Math.min(CANVAS_HEIGHT - halfH, finalY))
         }
@@ -584,15 +592,15 @@ export function evaluateCameraState(
         finalState.x = finalX
         finalState.y = finalY
 
-        // zoom 淇濇寔鏈€鍚庤缃殑鍊?
+      // zoom retains last configured value
         if (params.zoom !== undefined) {
           baseState.zoom = params.zoom
           finalState.zoom = params.zoom
         }
       }
-      // camera_shake 瀹屾垚鍚庝笉褰卞搷鍩虹鐘舵€?
+      // camera_shake does not affect base state after completion
     } else {
-      // 鍔ㄤ綔杩涜涓?
+      // Action in progress
       let progress = (currentTime - start) / duration
       progress = Math.min(1, Math.max(0, progress))
 
@@ -613,22 +621,22 @@ export function evaluateCameraState(
           finalState.zoom = lerp(baseState.zoom, params.zoom, easedProgress)
         }
       } else if (action.type === 'camera_shake') {
-        // 闇囧姩鏁堟灉璁＄畻
+      // Camera shake calculation
         const shakeAction = action as unknown as { params: { intensity?: number, frequency?: number, decay?: boolean } }
         const params = shakeAction.params
         let intensity = params.intensity ?? 10
         const frequency = params.frequency ?? 30
 
-        // 琛板噺鏁堟灉
+      // Decay factor
         if (params.decay) {
           intensity *= (1 - easedProgress)
         }
 
-        // 鍩轰簬鏃堕棿鍜岄鐜囪绠楅渿鍔ㄥ亸绉伙紙浣跨敤姝ｅ鸡娉級
+      // Calculate shake offset based on time and frequency (using sine waves)
         const elapsed = currentTime - start
         const phase = (elapsed / 1000) * frequency * Math.PI * 2
 
-        // 浣跨敤澶氫釜姝ｅ鸡娉㈠彔鍔犱骇鐢熸洿鑷劧鐨勯渿鍔ㄦ晥鏋?
+      // Superimpose multiple sine waves for more natural camera shake effect
         finalState.shakeOffsetX = intensity * (
           Math.sin(phase) * 0.6 +
           Math.sin(phase * 1.7) * 0.3 +
@@ -640,49 +648,49 @@ export function evaluateCameraState(
           Math.cos(phase * 2.1) * 0.1
         )
       } else if (action.type === 'camera_follow' && visualCenters) {
-        // 璺熼殢鍔ㄤ綔璁＄畻 (v6.6, v15: smooth entry + 鑷姩鎺ㄦ媺)
+      // Camera follow calculation (v6.6, v15: smooth entry + auto dolly zoom)
         const followAction = action as unknown as { params: { followTarget: string, damping?: number, offsetX?: number, offsetY?: number, zoom?: number, smoothEntry?: boolean, smoothEntryDuration?: number, autoZoom?: boolean, autoZoomRange?: number, autoZoomCycles?: number, constrainBounds?: boolean } }
         const params = followAction.params
         const followTarget = params.followTarget
         const offsetX = params.offsetX ?? 0
-        const offsetY = params.offsetY ?? -50  // 榛樿鍋忕Щ锛岃浜虹墿绋嶅井鍋忎笅
+      const offsetY = params.offsetY ?? -50  // Default offset, slightly lower character
         const damping = Math.max(0, params.damping ?? 0)
-        const targetZoom = params.zoom  // 鍙€夌殑 zoom 鍙傛暟
-        const smoothEntry = params.smoothEntry ?? false  // v15: 榛樿涓嶅惎鐢ㄥ钩婊戝叆鍦?
-        const smoothEntryDuration = params.smoothEntryDuration ?? 300  // v15: 榛樿 300ms
-        const constrainBounds = params.constrainBounds ?? false  // v6.9: 杈圭晫绾︽潫
+      const targetZoom = params.zoom  // Optional zoom parameter
+      const smoothEntry = params.smoothEntry ?? false  // v15: Default disabled smooth entry
+      const smoothEntryDuration = params.smoothEntryDuration ?? 300  // v15: Default 300ms
+      const constrainBounds = params.constrainBounds ?? false  // v6.9: Bounds constraint
 
-        // v6.6: 鑾峰彇璺熼殢鐩爣鐨勮瑙変腑蹇冧綅缃?
+      // v6.6: Get target object visual center position
         const targetCenter = getFollowTargetCenter(followTarget, visualCenters)
 
-        // 璁＄畻鐩爣浣嶇疆
+      // Calculate target position
         let targetX: number
         let targetY: number
 
         if (targetCenter) {
-          // 鐩爣鍙锛岀洿鎺ヤ娇鐢ㄨ瑙変腑蹇冧綅缃?
+      // Target visible: use visual center position directly
           targetX = targetCenter.x + offsetX
           targetY = targetCenter.y + offsetY
         } else if (lastFollowPosition) {
-          // 鐩爣涓嶅彲瑙侊紝淇濇寔鏈€鍚庝綅缃?
+      // Target invisible: maintain last position
           targetX = lastFollowPosition.x
           targetY = lastFollowPosition.y
         } else {
-          // 娌℃湁鐩爣淇℃伅锛屼繚鎸佸綋鍓嶇浉鏈轰綅缃?
+      // No target information: maintain current camera position
           targetX = baseState.x
           targetY = baseState.y
         }
 
-        // v15: 骞虫粦鍏ュ満 vs 鐬棿鍒囨崲
+      // v15: Smooth entry vs instant switch
         let newX: number
         let newY: number
         let newZoom = baseState.zoom
         const elapsed = currentTime - start
 
         if (smoothEntry && elapsed < smoothEntryDuration) {
-          // 骞虫粦鍏ュ満锛氫粠 baseState 浣嶇疆鎻掑€煎埌鐩爣浣嶇疆
+      // Smooth entry: interpolate from baseState position to target position
           const entryProgress = Math.min(1, elapsed / smoothEntryDuration)
-          // easeOutCubic: 蹇€熸帴杩戠洰鏍囷紝灏鹃儴鍑忛€?
+      // easeOutCubic: quickly approach target, decelerate near end
           const eased = 1 - Math.pow(1 - entryProgress, 3)
           newX = lerp(baseState.x, targetX, eased)
           newY = lerp(baseState.y, targetY, eased)
@@ -690,7 +698,7 @@ export function evaluateCameraState(
             newZoom = lerp(baseState.zoom, targetZoom, eased)
           }
         } else {
-          // damping 闇€瑕佷互涓婁竴甯х浉鏈虹姸鎬佷负璧风偣锛屽惁鍒欐瘡甯ч兘浼氫粠鍧楄捣濮嬬姸鎬侀噸鏂版彃鍊?
+      // damping requires previous frame camera state as start point; otherwise each frame re-interpolates from block start
           if (damping > 0) {
             const factor = Math.min(1, Math.max(0, frameDeltaMs / damping))
             const dampingStartX = previousFrameState?.x ?? finalState.x
@@ -712,7 +720,7 @@ export function evaluateCameraState(
           }
         }
 
-        // v15: 鑷姩鎺ㄦ媺锛堟寮︽尝缂╂斁鎸崱锛?
+      // v15: Auto dolly zoom (sine wave scale oscillation)
         const baseZoomBeforeAutoZoom = newZoom
         if (params.autoZoom && baseZoomBeforeAutoZoom > 0) {
           const range = params.autoZoomRange ?? 5
@@ -726,16 +734,16 @@ export function evaluateCameraState(
           }
         }
 
-        // v7.21: 杈圭晫绾︽潫 - 淇閬撳叿瀵硅薄璺熼殢鏃剁浉鏈鸿秴鍑虹敾甯冪殑闂
-        // 杈圭晫绾︽潫搴旇鍩轰簬鐩告満鑷韩鐨勫昂瀵?鑰屼笉鏄洰鏍囧璞＄殑灏哄
+      // v7.21: Bounds constraint - fixes camera exceeding canvas bounds when following prop objects
+      // Bounds constraint should be based on camera's own dimensions rather than target object's dimensions
         if (constrainBounds) {
-          // 鏍规嵁 zoom 璁＄畻鐩告満瀹為檯灏哄
+          // Calculate camera actual dimensions based on zoom
           const cameraWidth = CAMERA_BASE_WIDTH / newZoom
           const cameraHeight = CAMERA_BASE_HEIGHT / newZoom
           const halfW = cameraWidth / 2
           const halfH = cameraHeight / 2
 
-          // 纭繚鐩告満涓績鐐瑰湪鐢诲竷鑼冨洿鍐?浣跨浉鏈烘涓嶄細瓒呭嚭鐢诲竷杈圭晫
+      // Ensure camera center point stays within canvas bounds so camera frame does not exceed boundaries
           newX = Math.max(halfW, Math.min(CANVAS_WIDTH - halfW, newX))
           newY = Math.max(halfH, Math.min(CANVAS_HEIGHT - halfH, newY))
         }
@@ -743,8 +751,8 @@ export function evaluateCameraState(
         finalState.x = newX
         finalState.y = newY
         finalState.zoom = newZoom
-        // v15: 鍚屾鏇存柊 baseState锛岀‘淇濆悗缁姩浣滐紙濡傜浜屼釜 camera_follow 鐨?smooth entry锛?
-        // 浠庡綋鍓嶈窡闅忎綅缃紑濮嬭繃娓★紝鑰岄潪浠庤窡闅忓姩浣滃紑濮嬪墠鐨勪綅缃?
+      // v15: Synchronize baseState update to ensure subsequent actions (like smooth entry of second camera_follow)
+      // transition from current follow position rather than from position prior to follow action
         baseState.x = newX
         baseState.y = newY
         baseState.zoom = newZoom
@@ -756,8 +764,9 @@ export function evaluateCameraState(
 }
 
 /**
- * 璇勪及鐩告満鐨勭洰鏍囩姸鎬?(v7.9)
- * 璁＄畻濡傛灉鎵€鏈夋鍦ㄨ繘琛岀殑鍔ㄤ綔绔嬪嵆瀹屾垚锛岀浉鏈虹殑鏈€缁堢姸鎬?
+/**
+ * Evaluates target state of camera (v7.9)
+ * Calculates final state of camera if all ongoing actions were completed immediately
  */
 export function evaluateCameraTargetState(
   currentState: RuntimeCameraState,
@@ -770,7 +779,7 @@ export function evaluateCameraTargetState(
   currentSlotIndex = -1 // v7.16
 ): RuntimeCameraState | null {
 
-  // 1. 绛涢€夊嚭褰撳墠姝ｅ湪鎵ц鐨?DurationAction (閽堝鐩告満)
+  // 1. Filter out DurationActions currently in progress
   const activeActions = actions.filter(action => {
     if (action.target !== 'camera') return false
     if (action.category !== 'duration') return false
@@ -792,7 +801,7 @@ export function evaluateCameraTargetState(
     return null
   }
 
-  // 2. 璁＄畻鐩爣鐘舵€?
+  // 2. Calculate target state
   const targetState: RuntimeCameraState = { ...currentState, shakeOffsetX: 0, shakeOffsetY: 0 }
 
   activeActions.sort((a, b) => a.slotIndex - b.slotIndex)
@@ -805,7 +814,7 @@ export function evaluateCameraTargetState(
       if (params.y !== undefined) targetState.y = params.y
       if (params.zoom !== undefined) targetState.zoom = params.zoom
     } else if (action.type === 'camera_follow') {
-      // camera_follow 鐨勭洰鏍囩姸鎬佽绠楅€昏緫
+    // Camera follow target state calculation logic
       const followAction = action as unknown as { params: { followTarget: string, damping?: number, offsetX?: number, offsetY?: number, zoom?: number, constrainBounds?: boolean } }
       const params = followAction.params
       const followTarget = params.followTarget
@@ -815,11 +824,11 @@ export function evaluateCameraTargetState(
       let finalX = targetState.x
       let finalY = targetState.y
 
-      // 浣跨敤褰撳墠鐨?visualCenters (鍋囪鐩爣鏈韩鐨勪綅缃湪鍔ㄤ綔缁撴潫鏃跺彲鑳戒篃浼氬彉锛屼絾杩欓噷鍙兘鍙栧埌褰撳墠鐨勫弬鑰冪偣)
-      // 涓ユ牸鏉ヨ锛宑amera_follow 鐨勭洰鏍囦綅缃緷璧栦簬鐩爣瀵硅薄鐨勪綅缃€?
-      // 濡傛灉鐩爣瀵硅薄涔熷湪绉诲姩锛岄偅涔堢浉鏈哄姩浣滅粨鏉熸椂鐨勭洰鏍囦綅缃叾瀹炴槸 (鐩爣瀵硅薄鐨勬渶缁堜綅缃?+ offset)銆?
-      // 浣嗚繖閲屼负浜嗙畝鍖栵紝鎴戜滑鍏堜娇鐢ㄥ綋鍓嶄紶鍏ョ殑 visualCenters (瀹冨彲鑳芥槸褰撳墠甯х殑浣嶇疆锛屼篃鍙兘鏄紶鍏ョ殑鐩爣浣嶇疆)
-      // 鏇村ソ鐨勫仛娉曟槸鍦ㄨ皟鐢ㄦ鍑芥暟鍓嶏紝鍏堣绠楀ソ鎵€鏈夊璞＄殑 TargetState锛屽苟浣滀负 visualCenters 浼犲叆銆?
+    // Use current visualCenters (assuming target object's own position may also change when action finishes, but only current reference point is accessible here)
+    // Strictly speaking, target position of camera_follow depends on target object's position.
+    // If target object is also moving, then target position when camera action ends is actually (target object final position + offset).
+    // For simplicity here, we use the incoming visualCenters (which may be current frame position or target position passed in).
+    // A better approach is to compute TargetState for all objects before calling this function, and pass that in as visualCenters.
       const targetCenter = getFollowTargetCenter(followTarget, visualCenters)
       if (targetCenter) {
         finalX = targetCenter.x + offsetX
@@ -829,8 +838,8 @@ export function evaluateCameraTargetState(
         finalY = lastFollowPosition.y
       }
 
-      // v7.21: 杈圭晫绾︽潫 - 淇閬撳叿瀵硅薄璺熼殢鏃剁浉鏈鸿秴鍑虹敾甯冪殑闂
-      // 杈圭晫绾︽潫搴旇鍩轰簬鐩告満鑷韩鐨勫昂瀵?鑰屼笉鏄洰鏍囧璞＄殑灏哄
+      // v7.21: Bounds constraint - fixes camera exceeding canvas bounds when following prop objects
+      // Bounds constraint should be based on camera's own dimensions rather than target object's dimensions
       if (params.constrainBounds) {
         const targetZoom = params.zoom ?? targetState.zoom
         const cameraWidth = CAMERA_BASE_WIDTH / targetZoom
@@ -838,7 +847,7 @@ export function evaluateCameraTargetState(
         const halfW = cameraWidth / 2
         const halfH = cameraHeight / 2
 
-        // 纭繚鐩告満涓績鐐瑰湪鐢诲竷鑼冨洿鍐?浣跨浉鏈烘涓嶄細瓒呭嚭鐢诲竷杈圭晫
+      // Ensure camera center point stays within canvas bounds so camera frame does not exceed boundaries
         finalX = Math.max(halfW, Math.min(CANVAS_WIDTH - halfW, finalX))
         finalY = Math.max(halfH, Math.min(CANVAS_HEIGHT - halfH, finalY))
       }
@@ -849,17 +858,17 @@ export function evaluateCameraTargetState(
         targetState.zoom = params.zoom
       }
     }
-    // camera_shake 娌℃湁鏄庣‘鐨勨€滅洰鏍囩姸鎬佲€濇蹇碉紝閫氬父褰掗浂鎴栧拷鐣?
+    // camera_shake has no explicit "target state" concept; normally reset to zero or ignored
   }
 
   return targetState
 }
 
 /**
- * 搴旂敤鐬椂鍔ㄤ綔 (v6.3)
- * v8.6 P2: 浣跨敤 Handler Registry 缁熶竴澶勭悊
- * set_transform: 瑙嗚灞炴€?(alpha, visible, flipX, zIndex)
- * set_character: 瑙嗚灞炴€?+ 瑙掕壊鐘舵€?(pose, expression)
+ * Apply point action (v6.3)
+ * v8.6 P2: Unified handling via Handler Registry
+ * set_transform: Visual properties (alpha, visible, flipX, zIndex)
+ * set_character: Visual properties + character state (pose, expression)
  */
 function applyPointAction(state: WriteableState, action: Action, context?: ActionHandlerContext) {
   const handler = getHandler(action.type as ActionType)
@@ -869,18 +878,18 @@ function applyPointAction(state: WriteableState, action: Action, context?: Actio
 }
 
 /**
- * 搴旂敤鎸佺画鍔ㄤ綔鐨勬渶缁堝€硷紙鍔ㄤ綔缁撴潫鍚庯級(v6.3)
- * v17: 缁熶竴濮旀墭缁?Handler锛坱ween_transform 闇€瑕?context 鐢ㄤ簬鍏ㄥ眬鈫掓湰鍦板潗鏍囪浆鎹級
+ * Apply duration action final value (after action ends) (v6.3)
+ * v17: Unified delegation to Handler (tween_transform requires context for global -> local coordinate conversion)
  */
 function applyDurationActionFinal(state: WriteableState, action: DurationAction, context?: ActionHandlerContext) {
   if (action.type === 'camera_move') {
-    // 鐩告満鍔ㄤ綔锛氱洿鎺ヨ祴鍊硷紙鏃犲潗鏍囩郴杞崲闇€姹傦級
+    // Camera action: direct assignment (no coordinate system conversion required)
     const params = action.params
     if (params.x !== undefined) state.x = params.x
     if (params.y !== undefined) state.y = params.y
     if (params.zoom !== undefined) state.zoom = params.zoom
   } else {
-    // tween_transform / tween_screen_effect 绛夛細缁熶竴濮旀墭缁?Handler
+    // tween_transform / tween_screen_effect etc: unified delegation to Handler
     const handler = getHandler(action.type as ActionType)
     if (handler) {
       handler.applyToState(state, action, context)
@@ -889,8 +898,8 @@ function applyDurationActionFinal(state: WriteableState, action: DurationAction,
 }
 
 /**
- * 搴旂敤鎸佺画鍔ㄤ綔鐨勬彃鍊硷紙鍔ㄤ綔杩涜涓級(v6.3)
- * v17: 缁熶竴濮旀墭缁?Handler锛坱ween_transform 闇€瑕?context 鐢ㄤ簬鍏ㄥ眬绌洪棿鎻掑€硷級
+ * Apply duration action interpolation (action in progress) (v6.3)
+ * v17: Unified delegation to Handler (tween_transform requires context for global space interpolation)
  */
 function applyDurationActionTween(
   finalState: WriteableState,
@@ -900,7 +909,7 @@ function applyDurationActionTween(
   context?: ActionHandlerContext
 ) {
   if (action.type === 'camera_move') {
-    // 鐩告満杩愰暅锛氱洿鎺?lerp锛堟棤鍧愭爣绯昏浆鎹㈤渶姹傦級
+  // Camera move: direct lerp (no coordinate system conversion required)
     const moveAction = action as unknown as { params: { x?: number, y?: number, zoom?: number } }
     const params = moveAction.params
     if (params.x !== undefined) {
@@ -914,7 +923,7 @@ function applyDurationActionTween(
     }
   }
   else if (action.type === 'camera_shake') {
-    // 鐩告満鎶栧姩锛氶殢鏈哄亸绉?
+  // Camera shake: random offset
     const shakeAction = action as unknown as { params: { intensity: number, decay?: boolean } }
     const params = shakeAction.params
     let intensity = params.intensity
@@ -926,7 +935,7 @@ function applyDurationActionTween(
     finalState.shakeOffsetY = Math.sin(angle) * intensity * (Math.random() * 0.5 + 0.5)
   }
   else {
-    // tween_transform / tween_screen_effect 绛夛細缁熶竴濮旀墭缁?Handler 鐨?interpolate
+  // tween_transform / tween_screen_effect etc: unified delegation to Handler's interpolate
     const handler = getHandler(action.type as ActionType)
     if (handler?.interpolate) {
       handler.interpolate(

@@ -1,10 +1,10 @@
 /**
  * TransformPivotCompensation
  *
- * 当 transform 轨道的 pivot（变换点）发生变化时，逐关键帧补偿 (x, y) 位移，
- * 保证每个关键帧时刻的图像中心视觉位置不跳。
+ * When the pivot (transform origin) of a transform track changes, compensates (x, y) displacement
+ * keyframe by keyframe to ensure the visual center position of the image does not jump at any keyframe.
  *
- * 公式（与 useSceneRenderer 非委托 setup 分支的 store.x/y 补偿等价）：
+ * Formula (equivalent to store.x/y compensation in useSceneRenderer non-delegated setup branch):
  *     Δorigin = newPivot - oldPivot
  *     sx = baseObj.scaleX * baseFlipSign * kf.scaleX * kfFlipFactor
  *     sy = baseObj.scaleY * kf.scaleY
@@ -12,7 +12,7 @@
  *     adjustX = Δorigin.x * (sx * cos(rot) − baseFlipSign) − Δorigin.y * sy * sin(rot)
  *     adjustY = Δorigin.x * sx * sin(rot)             + Δorigin.y * (sy * cos(rot) − 1)
  *
- * 设计为纯函数、无副作用（直接修改传入 track 的 keyframes.x/y），方便单元测试。
+ * Designed as a pure function without side effects (modifies input track keyframes.x/y in place) for easy unit testing.
  */
 
 import type { TransformKeyframe, TransformTrack } from '@/types/animation'
@@ -30,13 +30,13 @@ export interface Vec2 {
 }
 
 /**
- * 对 track 的每个关键帧应用 pivot 改变的位置补偿。
+ * Apply pivot change position compensation to every keyframe of the track.
  *
- * @param track     transform 轨道（原地修改 keyframes.x/y）
- * @param baseObj   目标对象的基准姿态（动画挂载时刻的 rotation/scale/flipX）
- * @param oldPivot  旧 pivot（local 像素）
- * @param newPivot  新 pivot（local 像素）
- * @returns         实际产生补偿的关键帧数量（Δ 小于阈值时返回 0）
+ * @param track     Transform track (modifies keyframes.x/y in place)
+ * @param baseObj   Base posture of target object (rotation/scale/flipX at time of animation mounting)
+ * @param oldPivot  Old pivot (local pixels)
+ * @param newPivot  New pivot (local pixels)
+ * @returns         Number of keyframes actually compensated (returns 0 when Δ is less than threshold)
  */
 export function compensateTrackKeyframesForPivotChange(
     track: TransformTrack,

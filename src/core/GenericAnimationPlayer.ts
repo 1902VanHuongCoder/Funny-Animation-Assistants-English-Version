@@ -1,11 +1,11 @@
 /**
  * GenericAnimationPlayer
- * 通用动画播放器，适用于道具、背景等简单对象
+ * Generic animation player, suitable for simple objects like props, backgrounds, etc.
  * 
- * 与 CharacterSprite 的区别：
- * - 不支持 Part 级别的动画（无多部位组装）
- * - 直接应用到单个 PIXI.Container
- * - 更轻量级，复用核心 AnimationPlayer 逻辑
+ * Differences from CharacterSprite:
+ * - Does not support Part-level animation (no multi-part assembly)
+ * - Directly applied to a single PIXI.Container
+ * - More lightweight, reuses core AnimationPlayer logic
  */
 
 import * as PIXI from 'pixi.js'
@@ -27,30 +27,30 @@ import { createRibbonEffect, type RibbonEffect } from './effects/RibbonEffect'
 import { createWaveEffect, type WaveEffect } from './effects/WaveEffect'
 
 /**
- * v18: 跨对象 Player 解析器（委托模式用）
- * 根据对象 ID 获取对应的 GenericAnimationPlayer
+ * v18: Cross-object Player resolver (for delegation mode)
+ * Retrieves corresponding GenericAnimationPlayer according to object ID
  */
 export type PlayerResolver = (objectId: string) => GenericAnimationPlayer | null
 
 export interface GenericAnimationPlayerConfig {
     target: PIXI.Container
-    /** 动画所属对象的 ID */
+    /** ID of the object owning the animation */
     ownerObjectId?: string
-    /** v18: 跨对象 Player 查找回调（委托模式用） */
+    /** v18: Cross-object Player lookup callback (for delegation mode) */
     playerResolver?: PlayerResolver
 
-    /** v11.52: 对象类型（用于自动从 Store 获取静止帧配置） */
+    /** v11.52: Object type (for automatically retrieving still frame config from Store) */
     objectType?: 'prop' | 'background'
-    /** v11.52: 对象 ID（用于自动从 Store 获取静止帧配置） */
+    /** v11.52: Object ID (for automatically retrieving still frame config from Store) */
     objectId?: string
-    /** v11.52: 纹理获取器（用于自定义静止图片恢复） */
+    /** v11.52: Texture getter (for custom still image restoration) */
     textureGetter?: TextureGetter
-    /** v11.52: 静止帧配置（可选，会被 objectType+objectId 自动覆盖） */
+    /** v11.52: Still frame config (optional, automatically overridden by objectType+objectId) */
     stillFrameConfig?: StillFrameConfig
     frameSequencePlayback?: 'auto' | 'named_only' | 'disabled'
-    /** v11.60: 是否启用离屏合成模式（用于多部件角色整体变换） */
+    /** v11.60: Whether offscreen composite mode is enabled (for whole-body transform of multi-part characters) */
     compositeMode?: boolean
-    /** v11.60: PIXI 渲染器引用（compositeMode 需要） */
+    /** v11.60: PIXI renderer reference (required by compositeMode) */
     renderer?: PIXI.Renderer
 }
 
@@ -61,7 +61,7 @@ export class GenericAnimationPlayer {
     private waveEffect: WaveEffect
     private ribbonEffect: RibbonEffect
 
-    // 基准变换（用于 Base + Delta 模式）
+    // Base transform (for Base + Delta mode)
     private baseX = 0
     private baseY = 0
     private baseScaleX = 1
@@ -69,39 +69,39 @@ export class GenericAnimationPlayer {
     private baseRotation = 0
     private baseAlpha = 1
 
-    // 对象边界尺寸和起点（用于 pivot 位置补偿）
+    // Object bounds dimension and origin (for pivot position compensation)
     private objectWidth = 0
     private objectHeight = 0
     private objectBoundsX = 0
     private objectBoundsY = 0
 
-    // v19: 动画位置增量（含 pivot 补偿），供 propagateUnionAnimations 读取
+    // v19: Animation position delta (including pivot compensation), read by propagateUnionAnimations
     private lastDeltaX = 0
     private lastDeltaY = 0
 
-    // Filter 缓存
+    // Filter cache
     private glowFilter: GlowFilter | null = null
     private motionBlurFilter: MotionBlurFilter | null = null
 
-    // v11.52: 静止帧配置（用于停止动画时恢复）
+    // v11.52: Still frame config (used to restore when stopping animation)
     private stillFrameIndex = 0
     private stillFrameConfig: StillFrameConfig | null = null
     private textureGetter: TextureGetter | null = null
 
-    // v11.52: 对象标识（用于从 Store 获取配置）
+    // v11.52: Object identification (used to retrieve config from Store)
     private objectType: 'prop' | 'background' | null = null
     private objectId: string | null = null
     private frameSequencePlayback: 'auto' | 'named_only' | 'disabled' = 'auto'
 
-    // v18: 跨对象委托模式
-    // @ts-expect-error TS6133: 保留用于调试和日志
+    // v18: Cross-object delegation mode
+    // @ts-expect-error TS6133: Retained for debugging and logging
     private ownerObjectId: string | null = null
     private playerResolver: PlayerResolver | null = null
-    /** 已委托的动画跟踪：animName → Map<targetPlayerId, delegatedAnimName> */
+    /** Track delegated animations: animName → Map<targetPlayerId, delegatedAnimName> */
     private delegatedAnimations = new Map<string, Map<string, string>>()
 
 
-    // v11.60: 离屏合成模式支持
+    // v11.60: Offscreen composite mode support
     private compositeTarget: CompositeRenderTarget | null = null
     private compositeMode = false
 
@@ -116,14 +116,14 @@ export class GenericAnimationPlayer {
         this.frameSequencePlayback = config.frameSequencePlayback ?? 'auto'
         this.compositeMode = config.compositeMode ?? false
 
-        // 优先使用传入的 stillFrameConfig，否则从 Store 自动获取
+        // Prefer passed-in stillFrameConfig, otherwise auto-fetch from Store
         if (config.stillFrameConfig) {
             this.stillFrameConfig = config.stillFrameConfig
             if (config.stillFrameConfig.stillFrameIndex !== undefined) {
                 this.stillFrameIndex = config.stillFrameConfig.stillFrameIndex
             }
         } else if (config.objectType && config.objectId) {
-            // 自动从 Store 获取
+            // Auto-fetch from Store
             this.loadStillFrameConfigFromStore()
         }
 
@@ -132,13 +132,13 @@ export class GenericAnimationPlayer {
         this.ribbonEffect = createRibbonEffect()
         this.cacheBaseTransform()
 
-        // v11.60: 初始化离屏合成目标
+        // v11.60: Initialize offscreen composite target
         if (this.compositeMode && config.renderer) {
             this.compositeTarget = new CompositeRenderTarget({
                 source: this.target,
                 renderer: config.renderer
             })
-            // 启用离屏模式
+            // Enable offscreen mode
             this.compositeTarget.enable()
         }
     }
@@ -161,9 +161,9 @@ export class GenericAnimationPlayer {
     }
 
     /**
-     * 解析素材源 FPS
-     * 当 track.fps 未定义时，从 AnimatedSprite 当前 animationSpeed 读取
-     * animationSpeed 由 sprite 创建代码根据素材实时 FPS 设置（如 expression.speakingFps）
+     * Resolve material source FPS
+     * When track.fps is undefined, read from AnimatedSprite's current animationSpeed
+     * animationSpeed is set by sprite creation code based on material real-time FPS (e.g. expression.speakingFps)
      */
     private resolveSourceFps(): number {
         const sprite = this.findAnimatedSprite()
@@ -205,7 +205,7 @@ export class GenericAnimationPlayer {
     }
 
     /**
-     * 缓存基准变换
+     * Cache base transform
      */
     cacheBaseTransform(): void {
         const t = this.getBaseTransformTarget()
@@ -217,7 +217,7 @@ export class GenericAnimationPlayer {
         this.baseRotation = t.rotation
         this.baseAlpha = t.alpha
 
-        // v21: 统一使用 getLocalBounds 测量对象边界
+        // v21: Consistently use getLocalBounds to measure object bounds
         try {
             const bounds = this.target.getLocalBounds()
             if (bounds.width > 0 && bounds.height > 0) {
@@ -227,16 +227,16 @@ export class GenericAnimationPlayer {
                 this.objectBoundsY = bounds.y
             }
         } catch {
-            // getLocalBounds 可能在容器没有子元素时抛出异常，忽略
+            // getLocalBounds may throw exception if container has no children, ignore
         }
     }
 
     /**
-     * 设置对象边界尺寸和起点坐标（用于 pivot 位置补偿计算）
-     * 由 ScenePlayer / FrameCapture 在 measureObjects() 后调用
+     * Set object bounds dimensions and start coordinates (used for pivot position compensation calculation)
+     * Called by ScenePlayer / FrameCapture after measureObjects()
      *
-     * @param boundsX 边界的局部坐标起点 X，可选（用于 composite 等 PIXI pivot 不在 bounds 中心的情况）
-     * @param boundsY 边界的局部坐标起点 Y，可选
+     * @param boundsX Local coordinate start X of bounds, optional (for cases like composite where PIXI pivot is not at bounds center)
+     * @param boundsY Local coordinate start Y of bounds, optional
      */
     setObjectBounds(width: number, height: number, boundsX?: number, boundsY?: number): void {
         this.objectWidth = width
@@ -246,26 +246,26 @@ export class GenericAnimationPlayer {
     }
 
     /**
-     * v19: 获取当前动画帧的位置增量（含 pivot 补偿）
-     * propagateUnionAnimations 使用此增量将动画驱动的位移传播到 union 子对象
+     * v19: Get position delta of current animation frame (including pivot compensation)
+     * propagateUnionAnimations uses this delta to propagate animation-driven displacement to union children
      */
     getAnimationPositionDelta(): { x: number; y: number } {
         return { x: this.lastDeltaX, y: this.lastDeltaY }
     }
 
     /**
-     * 每帧更新
-     * @param deltaTime 距上一帧的时间 (ms)
+     * Update per frame
+     * @param deltaTime Elapsed time since last frame (ms)
      */
     update(deltaTime: number): void {
         if (!this.isContainerUsable(this.getBaseTransformTarget())) return
 
-        // 1. 更新特效管理器的时间
+        // 1. Update effect manager time
         this.effectManager.update(deltaTime)
         this.waveEffect.update(deltaTime)
         this.ribbonEffect.update(deltaTime)
 
-        // 2. 收集所有播放器输出
+        // 2. Collect all player outputs
         const outputs: AnimationOutput[] = []
         for (const player of this.players.values()) {
             const output = player.update(deltaTime)
@@ -274,18 +274,18 @@ export class GenericAnimationPlayer {
             }
         }
 
-        // 3. 合并并应用输出
+        // 3. Merge and apply outputs
         if (outputs.length > 0) {
             this.applyOutputs(outputs)
         }
 
-        // 4. 更新 Wave 特效
+        // 4. Update Wave effects
         this.syncFrameSequenceSpriteState()
         this.waveEffect.updateAllEffects()
-        // v12.0: 更新 Ribbon 特效
+        // v12.0: Update Ribbon effect
         this.ribbonEffect.updateAllEffects()
 
-        // 5. v11.60: 离屏模式下更新 RenderTexture
+        // 5. v11.60: Update RenderTexture in offscreen mode
         if (this.compositeTarget) {
             this.compositeTarget.updateRenderTexture()
         }
@@ -299,14 +299,14 @@ export class GenericAnimationPlayer {
     }
 
     /**
-     * 播放动画
-     * v11.52: 帧动画直接使用 AnimatedSprite.play()
-     * v11.60: 添加 setOnLoop 和 setOnStop 回调，支持果冻特效循环
+     * Play animation
+     * v11.52: Frame animation directly uses AnimatedSprite.play()
+     * v11.60: Add setOnLoop and setOnStop callbacks, supporting jelly effect loop
      */
     playAnimation(name: string, definition: AnimationDefinition, params?: AnimationPlayParams): void {
-        // v21: 延迟边界测量（解决创建时序问题）
-        // 创建 Player 时子容器可能尚未就绪，bounds 为 0。
-        // 播放时子容器已全部就绪，重新测量。
+        // v21: Deferred bounds measurement (resolves creation timing issue)
+        // Child containers might not be ready when creating Player, bounds are 0.
+        // When playing, all child containers are ready, re-measure.
         if (this.objectWidth === 0 && this.objectHeight === 0) {
             try {
                 const bounds = this.target.getLocalBounds()
@@ -317,24 +317,24 @@ export class GenericAnimationPlayer {
                     this.objectBoundsY = bounds.y
                 }
             } catch {
-                // 容器没有子元素时 getLocalBounds 可能异常，忽略
+                // getLocalBounds may throw if container has no children, ignore
             }
         }
 
-        // v18: 委托模式——将跨对象轨道委托给子对象的 Player
+        // v18: Delegation mode — delegate cross-object tracks to child object's Player
         if (definition.type === 'track' && this.playerResolver) {
             const { selfTracks, crossGroups } = this.splitTracksByTarget(definition.tracks)
 
-            // 委托跨对象轨道
+            // Delegate cross-object tracks
             if (crossGroups.size > 0) {
                 const delegationMap = new Map<string, string>()
                 for (const [targetId, tracks] of crossGroups) {
                     const targetPlayer = this.playerResolver(targetId)
                     if (!targetPlayer) {
-                        console.warn(`[GenericAnimationPlayer] 委托目标 ${targetId} 不存在，动画 "${name}" 中该目标的轨道已跳过`)
+                        console.warn(`[GenericAnimationPlayer] Delegation target ${targetId} does not exist, track for this target in animation "${name}" was skipped`)
                         continue
                     }
-                    // 构造子 definition：移除 targetObjectId，让子 Player 走 self-transform 路径
+                    // Construct sub definition: remove targetObjectId, letting child Player take self-transform path
                     const subDef = {
                         ...definition,
                         tracks: tracks.map(t => {
@@ -348,9 +348,9 @@ export class GenericAnimationPlayer {
                 }
                 this.delegatedAnimations.set(name, delegationMap)
 
-                // 无自身轨道时跳过自身播放
+                // Skip self playback when there are no self tracks
                 if (selfTracks.length === 0) return
-                // 重建 definition 仅含自身轨道
+                // Reconstruct definition with only self tracks
                 definition = {
                     ...definition,
                     tracks: selfTracks
@@ -392,16 +392,16 @@ export class GenericAnimationPlayer {
 
         player.play(definition, playParams)
 
-        // v11.52: 直接启动 frame_sequence 轨道的 AnimatedSprite
+        // v11.52: Directly start AnimatedSprite for frame_sequence tracks
         this.startFrameSequenceAnimations(definition, playParams.loop ?? true)
     }
 
     /**
-     * 停止动画
-     * v11.52: 同时停止帧动画
+     * Stop animation
+     * v11.52: Concurrently stop frame animation
      */
     stopAnimation(name: string): void {
-        // v18: 停止委托的子动画
+        // v18: Stop delegated child animations
         this.stopDelegatedAnimations(name)
 
         const player = this.players.get(name)
@@ -411,22 +411,22 @@ export class GenericAnimationPlayer {
 
         player.stop()
 
-        // v11.52: 停止帧动画
+        // v11.52: Stop frame animation
         this.stopFrameSequenceAnimations()
 
-        // v18: 清理特效（ribbon/wave/glow/motion_blur 等非 effectManager 管理的特效）
+        // v18: Clean up effects (ribbon/wave/glow/motion_blur and other effects not managed by effectManager)
         this.effectManager.clear()
         this.removeAllFilters()
 
-        // 恢复基准变换
+        // Restore base transform
         this.restoreBaseTransform()
     }
 
     /**
-     * 停止所有动画
+     * Stop all animations
      */
     stopAllAnimations(): void {
-        // v18: 停止所有委托的子动画
+        // v18: Stop all delegated child animations
         for (const animName of this.delegatedAnimations.keys()) {
             this.stopDelegatedAnimations(animName)
         }
@@ -437,16 +437,16 @@ export class GenericAnimationPlayer {
         }
         this.players.clear()
 
-        // 清理特效
+        // Clean up effects
         this.effectManager.clear()
         this.removeAllFilters()
 
-        // 恢复基准变换
+        // Restore base transform
         this.restoreBaseTransform()
     }
 
     /**
-     * v18: 停止指定动画的所有委托
+     * v18: Stop all delegations of a specific animation
      */
     private stopDelegatedAnimations(name: string): void {
         const delegations = this.delegatedAnimations.get(name)
@@ -461,7 +461,7 @@ export class GenericAnimationPlayer {
     }
 
     /**
-     * 恢复基准变换
+     * Restore base transform
      */
     private restoreBaseTransform(): void {
         const t = this.getBaseTransformTarget()
@@ -472,7 +472,7 @@ export class GenericAnimationPlayer {
         t.scale.y = this.baseScaleY
         t.rotation = this.baseRotation
         t.alpha = this.baseAlpha
-        // v19: 重置动画增量
+        // v19: Reset animation delta
         this.lastDeltaX = 0
         this.lastDeltaY = 0
 
@@ -493,10 +493,10 @@ export class GenericAnimationPlayer {
     }
 
     /**
-     * 合并并应用动画输出
-     * v18: 委托模式下所有输出均为 self-target，无需跨对象分发
-     * v24: 合成逻辑（transform 累加 / visibility 相乘 / effect 数值 delta）
-     *      抽取到共享模块 AnimationComposition，与动画编辑工作台预览复用。
+     * Merge and apply animation outputs
+     * v18: Under delegation mode all outputs are self-target, no cross-object distribution needed
+     * v24: Composition logic (transform accumulation / visibility multiplication / effect numerical delta)
+     *      extracted to shared module AnimationComposition, reused with animation editor workbench preview.
      */
     private applyOutputs(outputs: AnimationOutput[]): void {
         const compositionCtx: CompositionContext = {
@@ -511,8 +511,8 @@ export class GenericAnimationPlayer {
             pivotY: this.target.pivot.y,
         }
 
-        // 先应用所有特效（安装/更新滤镜、启动粒子等 stateful 资源），再取 numeric deltas。
-        // 与旧实现一致：applyEffect 在 evaluateDynamicEffectDeltas 之前调用。
+        // First apply all effects (install/update filters, launch particles, etc. stateful resources), then get numeric deltas.
+        // Consistent with legacy implementation: applyEffect is called prior to evaluateDynamicEffectDeltas.
         for (const output of outputs) {
             for (const e of output.effects) {
                 this.applyEffect(e)
@@ -532,8 +532,8 @@ export class GenericAnimationPlayer {
         const scaleMultY = composed.scaleMultY
         const alphaProduct = composed.alphaProduct
 
-        // ── 应用变换 ──
-        // v19: 缓存动画位置增量（含 pivot 补偿），供 propagateUnionAnimations 使用
+        // ── Apply transforms ──
+        // v19: Cache animation position delta (including pivot compensation), used by propagateUnionAnimations
         this.lastDeltaX = deltaX
         this.lastDeltaY = deltaY
 
@@ -565,7 +565,7 @@ export class GenericAnimationPlayer {
     }
 
     /**
-     * v18: 按 targetObjectId 拆分轨道
+     * v18: Split tracks by targetObjectId
      */
     private splitTracksByTarget(tracks: AnimationTrack[]) {
         const selfTracks: AnimationTrack[] = []
@@ -583,16 +583,16 @@ export class GenericAnimationPlayer {
         return { selfTracks, crossGroups }
     }
 
-    // ===== v11.52: 帧动画直接播放支持 =====
+    // ===== v11.52: Direct playback support for frame animation =====
 
     /**
-     * 查找容器中的 AnimatedSprite
-     * v18: 接受容器参数，支持跨对象查找
+     * Find AnimatedSprite in container
+     * v18: Accepts container parameter, supporting cross-object search
      */
     private findAnimatedSpriteInContainer(container: PIXI.Container): PIXI.AnimatedSprite | null {
         if (this.frameSequencePlayback === 'disabled') return null
 
-        // 1. 尝试按名称查找
+        // 1. Try finding by name
         const names = ['prop_animation', 'bg_animation', 'symbol_animation', 'expression_animation', 'animation']
         for (const name of names) {
             const child = container.getChildByName(name)
@@ -603,7 +603,7 @@ export class GenericAnimationPlayer {
 
         if (this.frameSequencePlayback === 'named_only') return null
 
-        // 2. Fallback: 查找第一个 AnimatedSprite
+        // 2. Fallback: Find first AnimatedSprite
         for (const child of container.children) {
             if (child instanceof PIXI.AnimatedSprite) {
                 return child
@@ -614,15 +614,15 @@ export class GenericAnimationPlayer {
     }
 
     /**
-     * 向后兼容：在自身容器中查找 AnimatedSprite
+     * Backward compatibility: Find AnimatedSprite in own container
      */
     private findAnimatedSprite(): PIXI.AnimatedSprite | null {
         return this.findAnimatedSpriteInContainer(this.target)
     }
 
     /**
-     * v11.52: 直接启动 frame_sequence 轨道的 AnimatedSprite 帧动画
-     * v18: 委托模式下，跨对象帧动画已由子 Player 处理，此处仅处理自身
+     * v11.52: Directly start AnimatedSprite frame animation for frame_sequence tracks
+     * v18: In delegation mode, cross-object frame animation is handled by child Player; here only self is handled
      */
     private startFrameSequenceAnimations(_definition: AnimationDefinition, loop: boolean): void {
         const animatedSprite = this.findAnimatedSprite()
@@ -637,7 +637,7 @@ export class GenericAnimationPlayer {
     }
 
     /**
-     * v11.52: 停止帧动画并恢复静止帧
+     * v11.52: Stop frame animation and restore still frame
      */
     private stopFrameSequenceAnimations(): void {
         const animatedSprite = this.findAnimatedSprite()
@@ -648,7 +648,7 @@ export class GenericAnimationPlayer {
     }
 
     /**
-     * 停止 AnimatedSprite 并恢复静止帧
+     * Stop AnimatedSprite and restore still frame
      */
     private stopAndRestoreAnimatedSprite(animatedSprite: PIXI.AnimatedSprite): void {
         animatedSprite.stop()
@@ -663,8 +663,8 @@ export class GenericAnimationPlayer {
     }
 
     /**
-     * v11.52: 设置静止帧配置
-     * 用于道具/背景在渲染时配置静止帧
+     * v11.52: Set still frame config
+     * Used for props/backgrounds to configure still frame during render
      */
     setStillFrameConfig(config: StillFrameConfig, textureGetter?: TextureGetter): void {
         this.stillFrameConfig = config
@@ -677,21 +677,21 @@ export class GenericAnimationPlayer {
     }
 
     /**
-     * v11.52: 设置静止帧索引（简化版本）
+     * v11.52: Set still frame index (simplified version)
      */
     setStillFrameIndex(index: number): void {
         this.stillFrameIndex = index
     }
 
     /**
-     * v11.52: 从 Store 加载静止帧配置
-     * 根据 objectType 自动从 propStore 或 backgroundStore 获取
+     * v11.52: Load still frame config from Store
+     * Automatically retrieves from propStore or backgroundStore according to objectType
      */
     private loadStillFrameConfigFromStore(): void {
         if (!this.objectType || !this.objectId) return
 
         if (this.objectType === 'prop') {
-            // 延迟导入避免循环依赖
+            // Lazy import to avoid circular dependency
             void import('@/stores/propStore').then(({ usePropStore }) => {
                 const propStore = usePropStore()
                 const prop = propStore.getProp(this.objectId!)
@@ -725,7 +725,7 @@ export class GenericAnimationPlayer {
     }
 
     /**
-     * 应用特效
+     * Apply effect
      */
     private applyEffect(effect: EffectTrackOutput): void {
         const effectType = effect.effectType
@@ -741,7 +741,7 @@ export class GenericAnimationPlayer {
                 this.motionBlurFilter = null
             }
             if (effectType === 'wave') {
-                // v12.1: 添加 isContainerUsable 检查，防止容器已销毁时访问 position
+                // v12.1: Add isContainerUsable check to prevent accessing position when container is destroyed
                 if (this.isContainerUsable(this.target)) {
                     this.waveEffect.removeEffect('_root', this.target)
                 }
@@ -753,7 +753,7 @@ export class GenericAnimationPlayer {
                 }
             }
             if (effectType === 'ribbon') {
-                // v12.1: 添加 isContainerUsable 检查
+                // v12.1: Add isContainerUsable check
                 if (this.isContainerUsable(this.target)) {
                     this.ribbonEffect.removeEffect('_root', this.target)
                 }
@@ -777,11 +777,11 @@ export class GenericAnimationPlayer {
                 this.applyMotionBlurEffect(params)
                 break
             case 'wave':
-                // Wave 使用 WaveEffect 服务
+                // Wave uses WaveEffect service
                 this.applyWaveEffect(params)
                 break
             case 'ribbon':
-                // Ribbon 使用 RibbonEffect 服务（头部固定，尾部飘动）
+                // Ribbon uses RibbonEffect service (fixed head, floating tail)
                 this.applyRibbonEffect(params)
                 break
             case 'breathe':
@@ -791,7 +791,7 @@ export class GenericAnimationPlayer {
             case 'jelly':
             case 'petrify':
             case 'shatter':
-                // 这些特效通过 DynamicEffectManager 计算增量，在 applyOutputs 里合并到 Transform
+                // These effects calculate deltas via DynamicEffectManager, merged into Transform in applyOutputs
                 break
         }
     }
@@ -805,10 +805,10 @@ export class GenericAnimationPlayer {
             return null
         }
 
-        // v11.70: jelly/squash 使用进度驱动模式，直接使用预计算的结果
-        // 不再通过 effectManager 计算，避免绝对时间依赖
+        // v11.70: jelly/squash uses progress-driven mode, directly using precalculated results
+        // No longer calculated through effectManager, avoiding absolute time dependency
         if (effectType === 'jelly' || effectType === 'squash') {
-            // 使用 EffectTrackOutput 中的预计算结果
+            // Use precalculated result in EffectTrackOutput
             if (effect.deltaScaleX !== undefined || effect.deltaScaleY !== undefined) {
                 return {
                     deltaScaleX: effect.deltaScaleX,
@@ -819,7 +819,7 @@ export class GenericAnimationPlayer {
                     deltaAlpha: undefined as number | undefined
                 }
             }
-            // Fallback: 如果没有预计算结果，使用 effectManager（兼容旧逻辑）
+            // Fallback: If no precalculated result, use effectManager (backward compatibility)
             const effectId = `dyn_${effectType}`
             this.effectManager.addEffect(effectId, params)
             return this.effectManager.evaluate(effectId)
@@ -839,7 +839,7 @@ export class GenericAnimationPlayer {
     }
 
     /**
-     * 应用 Glow 特效
+     * Apply Glow effect
      */
     private applyGlowEffect(params: Record<string, unknown>): void {
         const rawColor = params['color'] as string | number | undefined
@@ -865,7 +865,7 @@ export class GenericAnimationPlayer {
     }
 
     /**
-     * 应用 MotionBlur 特效
+     * Apply MotionBlur effect
      */
     private applyMotionBlurEffect(params: Record<string, unknown>): void {
         const velocityX = params['velocityX'] as number | undefined
@@ -895,22 +895,22 @@ export class GenericAnimationPlayer {
     }
 
     /**
-     * 应用 Wave 特效
-     * v11.60: 离屏模式下直接使用 compositeSprite
+     * Apply Wave effect
+     * v11.60: Use compositeSprite directly in offscreen mode
      */
     private applyWaveEffect(params: Record<string, unknown>): void {
         const speed = params['speed'] as number ?? 1.0
         const amplitude = params['amplitude'] as number ?? 10
         const frequency = params['frequency'] as number ?? 1.0
 
-        // v11.60: 离屏模式下，Wave 应用到 compositeSprite
+        // v11.60: In offscreen mode, Wave is applied to compositeSprite
         if (this.compositeTarget) {
             this.compositeTarget.updateRenderTexture()
             const compositeSprite = this.compositeTarget.getCompositeSprite()
             const outputContainer = this.compositeTarget.getOutputContainer()
             this.waveEffect.applyEffect('_composite', compositeSprite, outputContainer, { speed, amplitude, frequency })
         } else {
-            // 非离屏模式：查找第一个 Sprite 子对象
+            // Non-offscreen mode: Find first Sprite child
             const sprite = this.findSprite()
             if (!sprite) return
             this.waveEffect.applyEffect('_root', sprite, this.target, { speed, amplitude, frequency })
@@ -918,8 +918,8 @@ export class GenericAnimationPlayer {
     }
 
     /**
-     * 应用 Ribbon 特效（飘带）
-     * 头部几乎不动，尾部大幅度飘动
+     * Apply Ribbon effect (streamer)
+     * Head stays nearly still while tail floats significantly
      */
     private applyRibbonEffect(params: Record<string, unknown>): void {
         const speed = params['speed'] as number ?? 1.0
@@ -941,7 +941,7 @@ export class GenericAnimationPlayer {
     }
 
     /**
-     * 查找容器中的 Sprite
+     * Find Sprite in container
      */
     private findSprite(): PIXI.Sprite | null {
         for (const child of this.target.children) {
@@ -953,7 +953,7 @@ export class GenericAnimationPlayer {
     }
 
     /**
-     * 添加 Filter
+     * Add Filter
      */
     private addFilter(filter: PIXI.Filter): void {
         const target = this.getFilterTarget()
@@ -963,7 +963,7 @@ export class GenericAnimationPlayer {
     }
 
     /**
-     * 移除所有 Filters
+     * Remove all Filters
      */
     private removeAllFilters(): void {
         if (this.glowFilter) {
@@ -975,7 +975,7 @@ export class GenericAnimationPlayer {
             this.motionBlurFilter = null
         }
 
-        // 清理 Wave
+        // Clean up Wave
         if (this.isContainerUsable(this.target)) {
             this.waveEffect.removeEffect('_root', this.target)
             this.ribbonEffect.removeEffect('_root', this.target)
@@ -990,7 +990,7 @@ export class GenericAnimationPlayer {
     }
 
     /**
-     * 移除单个 Filter
+     * Remove single Filter
      */
     private removeFilter(filter: PIXI.Filter): void {
         const target = this.getFilterTarget()
@@ -1006,7 +1006,7 @@ export class GenericAnimationPlayer {
     }
 
     /**
-     * 检查是否有任何动画正在播放
+     * Check if any animation is playing
      */
     hasPlayingAnimations(): boolean {
         for (const player of this.players.values()) {
@@ -1016,14 +1016,14 @@ export class GenericAnimationPlayer {
     }
 
     /**
-     * 销毁
+     * Destroy
      */
     destroy(): void {
         this.stopAllAnimations()
         this.players.clear()
         this.effectManager.clear()
 
-        // v11.60: 销毁离屏合成目标
+        // v11.60: Destroy offscreen composite target
         if (this.compositeTarget) {
             this.compositeTarget.destroy()
             this.compositeTarget = null
@@ -1031,9 +1031,9 @@ export class GenericAnimationPlayer {
     }
 
     /**
-     * v11.60: 获取输出容器
-     * 离屏模式下返回 CompositeRenderTarget 的输出容器
-     * 非离屏模式下返回原始目标容器
+     * v11.60: Get output container
+     * In offscreen mode, returns output container of CompositeRenderTarget
+     * In non-offscreen mode, returns original target container
      */
     getOutputContainer(): PIXI.Container {
         if (this.compositeTarget) {
@@ -1050,7 +1050,7 @@ export class GenericAnimationPlayer {
     }
 
     /**
-     * v11.60: 检查是否启用了离屏合成模式
+     * v11.60: Check if offscreen composite mode is enabled
      */
     isCompositeMode(): boolean {
         return this.compositeMode && this.compositeTarget !== null
@@ -1058,14 +1058,14 @@ export class GenericAnimationPlayer {
 }
 
 /**
- * 创建 GenericAnimationPlayer 的工厂函数
- * @param targetOrConfig Container 或完整配置对象
+ * Factory function to create GenericAnimationPlayer
+ * @param targetOrConfig Container or complete configuration object
  */
 export function createGenericAnimationPlayer(
     targetOrConfig: PIXI.Container | GenericAnimationPlayerConfig
 ): GenericAnimationPlayer {
     if (targetOrConfig instanceof PIXI.Container) {
-        // 兼容旧方式：只传入 Container
+        // Backward compatibility: Only Container passed in
         return new GenericAnimationPlayer({ target: targetOrConfig })
     }
     return new GenericAnimationPlayer(targetOrConfig)

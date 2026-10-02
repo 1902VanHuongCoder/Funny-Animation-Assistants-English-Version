@@ -1,16 +1,16 @@
 /**
- * 文件工具函数
+ * File utility functions
  */
 
 /**
- * 将 File 对象转换为 Blob URL
+ * Convert File object to Blob URL
  */
 export function fileToBlob(file: File): string {
   return URL.createObjectURL(file)
 }
 
 /**
- * 从 Blob URL 加载图片
+ * Load image from Blob URL
  */
 export async function loadImageFromBlob(blobUrl: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {

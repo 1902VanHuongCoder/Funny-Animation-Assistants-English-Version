@@ -1,7 +1,7 @@
 /**
- * Prop 序列化器
+ * Prop serializer
  *
- * 从 sceneObjectStore.toSetupObject / fromSetupObject 的 prop case 提取。
+ * Extracted from sceneObjectStore.toSetupObject / fromSetupObject prop case.
  */
 
 import { usePropStore } from '@/stores/propStore'
@@ -12,13 +12,13 @@ import { registerTypeSerializer } from './index'
 
 const propSerializer: TypeSerializer = {
     serializeFields(_obj: SceneObject, _base: Record<string, unknown>): void {
-        // v16: animations/initialAnimations 已统一在 toSetupObject base 处理
+        // v16: animations/initialAnimations handled uniformly in toSetupObject base
     },
 
     deserialize(objData: SceneObject, ctx: DeserializeContext): void {
         const propStore = usePropStore()
         const propAsset = propStore.getProp(objData.refId)
-        const propName = propAsset?.name ?? '未知'
+        const propName = propAsset?.name ?? 'Unknown'
 
         const propObj = ctx.createPropObject(
             objData.refId,

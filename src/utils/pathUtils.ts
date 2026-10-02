@@ -1,19 +1,19 @@
 /**
- * 路径计算工具函数
- * 用于从 File System Access API 的文件句柄计算相对路径
+ * Path calculation utility functions
+ * Used to calculate relative paths from File System Access API file handles
  */
 
 /**
- * 通过遍历目录句柄计算文件的相对路径
- * @param projectHandle 项目根目录句柄
- * @param fileHandle 目标文件句柄
- * @returns 相对于项目根目录的路径（使用 / 作为分隔符）
+ * Calculate relative path of file by traversing directory handle
+ * @param projectHandle Project root directory handle
+ * @param fileHandle Target file handle
+ * @returns Path relative to project root (using / as separator)
  */
 export async function getRelativePath(
   projectHandle: FileSystemDirectoryHandle,
   fileHandle: FileSystemFileHandle
 ): Promise<string> {
-  // 使用深度优先搜索，从项目根目录开始向下查找文件
+  // Use depth-first search starting from project root to find file
   async function findFile(
     dirHandle: FileSystemDirectoryHandle,
     targetName: string,
@@ -23,16 +23,16 @@ export async function getRelativePath(
     try {
       for await (const entry of dirHandle.values()) {
         if (entry.name === targetName && entry.kind === targetKind) {
-          // 检查是否是同一个文件/目录
+          // Check if same file/directory
           if (entry.kind === 'file') {
             const file1 = await (entry).getFile()
             const file2 = await (fileHandle.getFile())
-            // 通过比较名称和大小来确认是否是同一个文件
+            // Confirm same file by comparing name and size
             if (file1.name === file2.name && file1.size === file2.size) {
               return true
             }
           } else {
-            // 对于目录，只比较名称
+            // For directories, compare name only
             return true
           }
         }
@@ -57,7 +57,7 @@ export async function getRelativePath(
     return false
   }
   
-  // 从项目根目录开始查找
+  // Search from project root
   const searchPath: string[] = []
   const found = await findFile(
     projectHandle,
@@ -72,21 +72,18 @@ export async function getRelativePath(
     return fileHandle.name
   }
   
-  // 如果找不到，尝试另一种方法：通过比较文件句柄
-  // 这种方法更可靠，但需要遍历整个目录树
+  // If not found, try fallback: compare file handles by traversing directory tree
   return await getRelativePathByComparison(projectHandle, fileHandle)
 }
 
 /**
- * 通过比较文件句柄来获取相对路径（备用方法）
- * 这个方法会遍历整个目录树，但更可靠
+ * Get relative path by comparing file handles (fallback method)
+ * Traverses entire directory tree
  */
 async function getRelativePathByComparison(
   projectHandle: FileSystemDirectoryHandle,
   fileHandle: FileSystemFileHandle
 ): Promise<string> {
-  // const path: string[] = [] // Unused
-  
   async function searchDirectory(
     dirHandle: FileSystemDirectoryHandle,
     currentPath: string[]
@@ -95,14 +92,14 @@ async function getRelativePathByComparison(
       for await (const entry of dirHandle.values()) {
         if (entry.kind === 'file') {
           const fileEntry = entry
-          // 尝试比较文件句柄
+          // Attempt file handle comparison
           try {
-            // 如果名称相同，尝试读取文件来确认
+            // If names match, verify by reading file
             if (fileEntry.name === fileHandle.name) {
               const file1 = await fileEntry.getFile()
               const file2 = await fileHandle.getFile()
               if (file1.size === file2.size && file1.name === file2.name) {
-                // 可能是同一个文件，构建路径
+                // Probable match, construct path
                 if (currentPath.length > 0) {
                   return currentPath.join('/') + '/' + fileHandle.name
                 }
@@ -110,7 +107,7 @@ async function getRelativePathByComparison(
               }
             }
           } catch (error) {
-            // 忽略错误，继续搜索
+            // Ignore error and continue searching
           }
         } else if (entry.kind === 'directory') {
           const newPath = [...currentPath, entry.name]
@@ -134,30 +131,29 @@ async function getRelativePathByComparison(
     return result
   }
   
-  // 如果还是找不到，返回文件名（至少可以工作）
+  // Fallback if not found: return filename directly
   console.warn('[PathUtils] Could not find file in project directory, returning filename only')
   return fileHandle.name
 }
 
 /**
- * 规范化路径（统一使用 / 作为分隔符）
- * @param path 路径字符串
- * @returns 规范化后的路径
+ * Normalize path (uses / as separator)
+ * @param path Path string
+ * @returns Normalized path
  */
 export function normalizePath(path: string): string {
   return path.replace(/\\/g, '/')
 }
 
 /**
- * 连接路径片段
- * @param parts 路径片段数组
- * @returns 连接后的路径
+ * Join path segments
+ * @param parts Array of path segments
+ * @returns Joined path
  */
 export function joinPath(...parts: string[]): string {
   return parts
     .filter(p => p.length > 0)
     .map(p => normalizePath(p))
     .join('/')
-    .replace(/\/+/g, '/') // 移除重复的斜杠
+    .replace(/\/+/g, '/') // Remove duplicate slashes
 }
-

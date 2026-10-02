@@ -1,23 +1,23 @@
 /**
- * UUID 工具函数
- * 提供统一的 ID 生成策略
+ * UUID utility functions
+ * Provides unified ID generation strategies
  */
 
 /**
- * 生成唯一 ID
- * 优先使用 crypto.randomUUID()（如果可用），否则使用时间戳 + 随机数
+ * Generate unique ID
+ * Prefers crypto.randomUUID() (if available), otherwise uses timestamp + random numbers
  * 
- * @param prefix 可选的前缀（用于标识 ID 类型）
- * @returns 唯一 ID 字符串
+ * @param prefix Optional prefix (used to identify ID type)
+ * @returns Unique ID string
  */
 export function generateId(prefix?: string): string {
-  // 优先使用浏览器原生 UUID API（如果可用）
+  // Prefer browser native UUID API (if available)
   if (typeof crypto !== 'undefined' && crypto.randomUUID) {
     const uuid = crypto.randomUUID()
     return prefix ? `${prefix}_${uuid}` : uuid
   }
 
-  // 降级方案：时间戳 + 随机数
+  // Fallback: timestamp + random numbers
   const timestamp = Date.now()
   const random = Math.random().toString(36).substring(2, 11)
   const id = `${timestamp}_${random}`
@@ -25,8 +25,8 @@ export function generateId(prefix?: string): string {
 }
 
 /**
- * 生成简短 ID（用于显示）
- * 格式：prefix_随机字符串（8位）
+ * Generate short ID (for display)
+ * Format: prefix_randomString (8 chars)
  */
 export function generateShortId(prefix: string): string {
   const random = Math.random().toString(36).substring(2, 10)

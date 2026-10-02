@@ -1,7 +1,7 @@
 /**
- * Audio 序列化器
+ * Audio serializer
  *
- * 从 sceneObjectStore.toSetupObject / fromSetupObject 的 audio case 提取。
+ * Extracted from sceneObjectStore.toSetupObject / fromSetupObject audio case.
  */
 
 import type { AudioObject, SceneObject } from '@/types/sceneObject'
@@ -31,7 +31,7 @@ const audioSerializer: TypeSerializer = {
         }
         const audioObj = ctx.createAudioObject(
             objData.refId,
-            objData.name ?? objData.alias ?? '音效',
+            objData.name ?? objData.alias ?? 'Audio',
             {
                 volume: audioData.volume ?? 1.0,
                 loop: audioData.loop ?? false,
@@ -43,7 +43,7 @@ const audioSerializer: TypeSerializer = {
             objData.alias ?? '',
         )
 
-        // 恢复持久化属性（与 propSerializer/backgroundSerializer 保持一致）
+        // Restore persisted properties (consistent with propSerializer/backgroundSerializer)
         ctx.updateObject(audioObj.id, {
             spawned: objData.spawned ?? true,
             parentId: objData.parentId,

@@ -1,16 +1,16 @@
 /**
  * AnimationComposition
  *
- * 共享的多轨道输出合成逻辑，供正式运行时播放器 (GenericAnimationPlayer)
- * 以及动画编辑工作台 (AnimationWorkbench) 复用，避免两边实现分叉。
+ * Shared multi-track output composition logic, reused by both runtime player (GenericAnimationPlayer)
+ * and animation workbench (AnimationWorkbench), avoiding implementation divergence.
  *
- * 合成规则（与原 GenericAnimationPlayer.applyOutputs 一致）：
- * - Transform: 位移/旋转累加，缩放相乘；支持每条轨道自己的 pivot 补偿
- * - Visibility: alpha 相乘
- * - Effect (numeric deltas): 位移/旋转累加，(1 + deltaScale) 相乘，(1 + deltaAlpha) 相乘
+ * Composition rules (consistent with GenericAnimationPlayer.applyOutputs):
+ * - Transform: translation/rotation accumulated additively, scale multiplied; supports per-track pivot compensation
+ * - Visibility: alpha multiplied
+ * - Effect (numeric deltas): translation/rotation accumulated additively, (1 + deltaScale) multiplied, (1 + deltaAlpha) multiplied
  *
- * 注意：Effect 的滤镜/粒子/特效状态（glow/motionBlur/wave/ribbon/…）是
- * stateful 资源，由调用方按自己的缓存策略负责安装与清理，不在此处处理。
+ * Note: Effect filters/particles/special effects state (glow/motionBlur/wave/ribbon/...) are
+ * stateful resources, managed and cleaned up by callers according to their own caching strategy, not handled here.
  */
 
 import type * as PIXI from 'pixi.js'
@@ -22,7 +22,7 @@ import type {
     VisibilityTrackOutput,
 } from '@/types/animation'
 
-/** 单个目标对象上多条轨道合成后的最终变换增量 */
+/** Final composed transform delta across multiple tracks on a single target object */
 export interface ComposedTransform {
     deltaX: number
     deltaY: number
@@ -32,22 +32,22 @@ export interface ComposedTransform {
     alphaProduct: number
 }
 
-/** 合成时的上下文（基准变换 + 对象包围盒 + PIXI pivot） */
+/** Composition context (base transform + object bounding box + PIXI pivot) */
 export interface CompositionContext {
     baseRotation: number
     baseScaleX: number
     baseScaleY: number
-    /** 对象包围盒：用于 pivot 百分比换算到局部坐标 */
+    /** Object bounding box: used for converting pivot percentages to local coordinates */
     objectBoundsX: number
     objectBoundsY: number
     objectWidth: number
     objectHeight: number
-    /** PIXI 容器当前的 pivot（rotation/scale 真实旋转中心） */
+    /** Current pivot of PIXI container (true rotation center for rotation/scale) */
     pivotX: number
     pivotY: number
 }
 
-/** 创建一个空的累加器（单位元） */
+/** Create an empty accumulator (identity element) */
 export function createEmptyComposedTransform(): ComposedTransform {
     return {
         deltaX: 0,
@@ -60,9 +60,9 @@ export function createEmptyComposedTransform(): ComposedTransform {
 }
 
 /**
- * 累加一条 Transform 轨道的输出。
- * 完整复制 GenericAnimationPlayer.applyOutputs 中 transform 分支的逻辑，
- * 包含 flipX 合并到 sx、pivot 位置补偿。
+ * Accumulate the output of a Transform track.
+ * Mirrors the logic of transform branch in GenericAnimationPlayer.applyOutputs,
+ * including merging flipX into sx, and pivot position compensation.
  */
 export function accumulateTransformOutput(
     acc: ComposedTransform,
@@ -76,8 +76,8 @@ export function accumulateTransformOutput(
 
     const pivot = t.pivot
     if (pivot) {
-        // pivot 补偿：pivot 为对象本地坐标系像素值（与 container.pivot 同坐标系）
-        // 相对 PIXI pivot 的偏移 dx/dy
+        // Pivot compensation: pivot is local coordinate pixel value of object (same coordinate space as container.pivot)
+        // Offset dx/dy relative to PIXI pivot
         const dx = pivot.x - ctx.pivotX
         const dy = pivot.y - ctx.pivotY
 
@@ -105,7 +105,7 @@ export function accumulateTransformOutput(
     acc.scaleMultY *= sy
 }
 
-/** 累加一条 Visibility 轨道输出 */
+/** Accumulate a Visibility track output */
 export function accumulateVisibilityOutput(
     acc: ComposedTransform,
     v: VisibilityTrackOutput,
@@ -113,7 +113,7 @@ export function accumulateVisibilityOutput(
     acc.alphaProduct *= v.alpha ?? 1
 }
 
-/** 特效 numeric delta（与 DynamicEffectManager.EffectOutput / EffectTrackOutput 的数值字段兼容） */
+/** Effect numeric delta (compatible with numeric fields of DynamicEffectManager.EffectOutput / EffectTrackOutput) */
 export interface EffectNumericDelta {
     deltaX?: number | undefined
     deltaY?: number | undefined
@@ -123,7 +123,7 @@ export interface EffectNumericDelta {
     deltaAlpha?: number | undefined
 }
 
-/** 累加一条 Effect 轨道的 numeric delta（不处理滤镜） */
+/** Accumulate numeric delta of an Effect track (does not handle filters) */
 export function accumulateEffectDelta(
     acc: ComposedTransform,
     d: EffectNumericDelta | null | undefined,
@@ -138,14 +138,14 @@ export function accumulateEffectDelta(
 }
 
 /**
- * 合成多条 AnimationOutput 到单个 ComposedTransform。
+ * Compose multiple AnimationOutputs into a single ComposedTransform.
  *
- * @param outputs 各条轨道的 AnimationOutput（通常每条轨道一个）
- * @param ctx    合成上下文
- * @param evaluateEffect 供调用方自定义：把一条 EffectTrackOutput 转换为 numeric delta。
- *               - 正式播放器：走 effectManager + jelly/squash 预计算分支
- *               - 工作台：走 DynamicEffectManager.calculateWithProgress（已预算好 delta）
- *               传入 undefined 表示本次合成不累加 effect deltas（仅 transform + visibility）。
+ * @param outputs AnimationOutput for each track (usually one per track)
+ * @param ctx     Composition context
+ * @param evaluateEffect Caller-provided callback: converts an EffectTrackOutput to numeric delta.
+ *               - Runtime player: uses effectManager + jelly/squash precomputed branch
+ *               - Workbench: uses DynamicEffectManager.calculateWithProgress (precomputed deltas)
+ *               Passing undefined skips accumulating effect deltas (transform + visibility only).
  */
 export function composeAnimationOutputs(
     outputs: AnimationOutput[],
@@ -171,7 +171,7 @@ export function composeAnimationOutputs(
     return acc
 }
 
-/** 基础姿态（用于写回 container） */
+/** Base posture state (for writing back to container) */
 export interface BaseTransformState {
     x: number
     y: number
@@ -182,8 +182,8 @@ export interface BaseTransformState {
 }
 
 /**
- * 将合成后的变换一次性写回 container。
- * 等价于 GenericAnimationPlayer.applyOutputs 末尾的写入代码。
+ * Write composed transform back to container in one batch.
+ * Equivalent to write-back code at the end of GenericAnimationPlayer.applyOutputs.
  */
 export function applyComposedTransformToContainer(
     container: PIXI.Container,

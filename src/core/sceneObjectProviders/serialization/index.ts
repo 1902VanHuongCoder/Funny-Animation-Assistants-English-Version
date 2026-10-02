@@ -1,12 +1,12 @@
 /**
- * 场景对象序列化 Provider 注册中心 — TypeSerializer Registry
+ * Scene object serialization Provider registry — TypeSerializer Registry
  *
- * P1: 用注册替代 sceneObjectStore 中 toSetupObject / fromSetupObject 的 switch(obj.type)。
- * 新增对象类型只需调用 registerTypeSerializer() 注册序列化器。
+ * P1: Replaces switch(obj.type) in toSetupObject / fromSetupObject of sceneObjectStore with a registry pattern.
+ * Adding a new object type only requires registering a serializer via registerTypeSerializer().
  *
- * 设计原则：
- * - 公共基类字段（id/refId/type/x/y/scale...）由 toSetupObject 统一处理
- * - TypeSerializer 只负责**子类型特化字段**的序列化/反序列化
+ * Design principles:
+ * - Common base class fields (id/refId/type/x/y/scale...) handled uniformly by toSetupObject
+ * - TypeSerializer is only responsible for **subtype-specialized fields** serialization/deserialization
  */
 
 import type { SceneObjectType } from '@/types/sceneObject'
@@ -16,35 +16,34 @@ import type { SceneObjectType } from '@/types/sceneObject'
 // ============================================================================
 
 /**
- * 类型序列化器接口
+ * Type serializer interface
  *
- * 每种 SceneObjectType 注册一个实现。
+ * One implementation registered for each SceneObjectType.
  */
 export interface TypeSerializer {
     /**
-     * 序列化：将子类型特化字段写入 base DTO
+     * Serialization: writes subtype-specialized fields into base DTO
      *
-     * @param obj    运行时 SceneObject（已按 type 缩窄）
-     * @param base   公共字段已填充的 DTO 对象，此方法在其上追加特化字段
+     * @param obj    Runtime SceneObject (narrowed by type)
+     * @param base   DTO object with common fields populated, this method appends specialized fields
      */
     serializeFields(obj: import('@/types/sceneObject').SceneObject, base: Record<string, unknown>): void
 
     /**
-     * 反序列化：从持久化数据创建运行时 SceneObject 并注入 Store
+     * Deserialization: creates runtime SceneObject from persisted data and injects into Store
      *
-     * @param objData  持久化 DTO 数据
-     * @param ctx      反序列化上下文（Store 操作函数注入）
+     * @param objData  Persisted DTO data
+     * @param ctx      Deserialization context (Store operation functions injected)
      */
     deserialize(objData: import('@/types/sceneObject').SceneObject, ctx: DeserializeContext): void
 }
 
 /**
- * 反序列化上下文
+ * Deserialization context
  *
- * 将 sceneObjectStore 内部函数注入给序列化器，避免循环依赖。
+ * Injects sceneObjectStore internal functions to serializers, avoiding circular dependencies.
  */
 export interface DeserializeContext {
-    // createCharacterObject 已移除
     createBackgroundObject: (
         backgroundId: string,
         name: string,
@@ -96,9 +95,9 @@ export interface DeserializeContext {
         compositeMode?: 'entity' | 'union',
     ) => import('@/types/sceneObject').SceneObject
     /**
-     * Clip-Mask Phase 1：创建蒙版对象。
-     * 反序列化时由 maskSerializer 调用；初始 targetIds 传空数组，
-     * 真实 targetIds 通过 `pendingMaskTargets` 在所有对象就绪后由 finalize 步骤回填并裁决独占冲突。
+     * Clip-Mask Phase 1: Create mask object.
+     * Called by maskSerializer during deserialization; initial targetIds passes empty array,
+     * real targetIds backfilled and exclusive conflicts resolved during finalize step via `pendingMaskTargets`.
      */
     createMaskObject: (
         name: string,
@@ -112,9 +111,9 @@ export interface DeserializeContext {
         customAlias?: string,
     ) => import('@/types/sceneObject').MaskObject
     /**
-     * Clip-Mask Phase 1：暂存反序列化阶段读取的 targetIds（key 为 mask id）。
-     * 所有对象 deserialize 完成后，调用 `finalizeMaskTargets()` 回填并清理：
-     * 死引用 / 非法目标类型 / mask→mask 嵌套 / 同 target 多 mask 冲突。
+     * Clip-Mask Phase 1: Staging targetIds read during deserialization (key is mask id).
+     * After all objects deserialize, `finalizeMaskTargets()` is called to backfill and clean up:
+     * dead references / invalid target types / mask->mask nesting / multi-mask conflicts on same target.
      */
     pendingMaskTargets: Map<string, string[]>
     createTextObject: (
@@ -155,21 +154,21 @@ export interface DeserializeContext {
 const serializerRegistry = new Map<SceneObjectType, TypeSerializer>()
 
 /**
- * 注册一个对象类型的序列化器
+ * Register a serializer for an object type
  */
 export function registerTypeSerializer(type: SceneObjectType, serializer: TypeSerializer): void {
     serializerRegistry.set(type, serializer)
 }
 
 /**
- * 获取已注册的序列化器
+ * Get registered serializer
  */
 export function getTypeSerializer(type: SceneObjectType): TypeSerializer | undefined {
     return serializerRegistry.get(type)
 }
 
 /**
- * 清空注册表（仅测试使用）
+ * Clear registry (for testing only)
  */
 export function clearSerializerRegistry(): void {
     serializerRegistry.clear()

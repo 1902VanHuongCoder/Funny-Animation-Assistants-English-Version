@@ -14,7 +14,6 @@ import { audioKit } from '@/utils/WebAudioKit'
 import type { VideoExportProgress } from './types'
 
 /**
- * 资源预加载器
  * Resource Preloader for Video Export
  * Adapts V7 State-Centric model by using useAssetLoader for asset collection
  */
@@ -35,7 +34,6 @@ export class ResourcePreloader {
 
     private get loadAudioUrl() { return this.assetAudio.loadAudioUrl }
     private get getAudioUrl() { return this.assetAudio.getAudioUrl }
-    // private get loadImageUrl() { return this.assetImage.loadImageUrl }
     private get getImageUrl() { return this.assetImage.getImageUrl }
 
     // Resource tracking
@@ -58,27 +56,27 @@ export class ResourcePreloader {
     }
 
     /**
-     * 执行完整的资源预加载
+     * Execute full resource preloading
      */
     async preloadAll(): Promise<Episode> {
         const scenes = this.episodeCopy.scenes || []
         if (scenes.length === 0) {
-            throw new Error('剧本没有场景')
+            throw new Error('Screenplay has no scenes')
         }
 
-        this.updateProgress('preparing', '开始分析剧本资源...', 0)
+        this.updateProgress('preparing', 'Analyzing screenplay resources...', 0)
 
-        // 初始化时间线数据
+        // Initialize timeline data
         this.sceneDurations = new Array(scenes.length).fill(0) as number[]
         this.sceneStartTimes = new Array(scenes.length).fill(0) as number[]
 
         try {
             const totalScenes = scenes.length
 
-            // 初始化 AudioKit
+            // Initialize AudioKit
             await audioKit.init()
 
-            // 预加载每个场景
+            // Preload each scene
             for (let i = 0; i < totalScenes; i++) {
                 const scene = scenes[i]!
                 const sceneProgressBase = (i / totalScenes) * 80
@@ -86,38 +84,38 @@ export class ResourcePreloader {
 
                 this.updateProgress(
                     'preparing',
-                    `场景 ${i + 1}/${totalScenes}: ${scene.title || '未命名'}`,
+                    `Scene ${i + 1}/${totalScenes}: ${scene.title || 'Untitled'}`,
                     sceneProgressBase
                 )
 
                 const originalScene = this.episode.scenes[i]!
                 await this.preloadSceneTTS(scene, originalScene, i)
-                this.updateProgress('preparing', `场景 ${i + 1}: TTS 完成`, sceneProgressBase + sceneProgressStep * 0.4)
+                this.updateProgress('preparing', `Scene ${i + 1}: TTS completed`, sceneProgressBase + sceneProgressStep * 0.4)
 
                 this.calculateSceneDuration(scene, i)
 
                 await this.preloadSceneImages(scene)
-                this.updateProgress('preparing', `场景 ${i + 1}: 图片加载完成`, sceneProgressBase + sceneProgressStep * 0.7)
+                this.updateProgress('preparing', `Scene ${i + 1}: Image loading completed`, sceneProgressBase + sceneProgressStep * 0.7)
 
                 await this.preloadSceneAudio(scene)
-                this.updateProgress('preparing', `场景 ${i + 1}: 完成`, sceneProgressBase + sceneProgressStep)
+                this.updateProgress('preparing', `Scene ${i + 1}: Completed`, sceneProgressBase + sceneProgressStep)
             }
 
-            this.updateProgress('preparing', '正在预加载配乐...', 85)
+            this.updateProgress('preparing', 'Preloading soundtrack...', 85)
             await this.preloadGlobalBGM()
 
             this.recalculateGlobalTimeline()
-            this.updateProgress('preparing', '资源准备完成', 100)
+            this.updateProgress('preparing', 'Resource preparation completed', 100)
 
             return this.episodeCopy
         } catch (error) {
-            console.error('[ResourcePreloader] 资源预加载失败:', error)
+            console.error('[ResourcePreloader] Resource preloading failed:', error)
             throw error
         }
     }
 
     /**
-     * 预加载场景的 TTS
+     * Preload scene TTS
      */
     private async preloadSceneTTS(scene: SceneContainer, originalScene: SceneContainer, _sceneIndex: number): Promise<void> {
         if (!scene.script) return
@@ -136,7 +134,7 @@ export class ResourcePreloader {
             } else {
                 const audioFileExists = await this.projectStore.checkTTSAudioExists(existingConfig.audioPath)
                 if (!audioFileExists) {
-                    console.log('[ResourcePreloader] TTS 音频文件不存在，需要重新生成:', existingConfig.audioPath)
+                    console.log('[ResourcePreloader] TTS audio file does not exist, regenerating:', existingConfig.audioPath)
                     needRegenerate = true
                 }
 
@@ -178,7 +176,7 @@ export class ResourcePreloader {
                         const duration = result.duration ?? await ttsClient.estimateDuration(text, speed)
 
                         if (!result.audioBase64) {
-                            throw new Error('TTS生成结果缺少Base64数据，无法保存')
+                            throw new Error('TTS generation result missing Base64 data, cannot save')
                         }
 
                         const cacheKey = `${text}_${numericVoiceId}_${speed}`
@@ -201,10 +199,10 @@ export class ResourcePreloader {
                         block.ttsConfig = JSON.parse(JSON.stringify(ttsConfig)) as TTSConfig
                     }
                 } catch (e) {
-                    console.error('[ResourcePreloader] TTS生成错误:', e)
+                    console.error('[ResourcePreloader] TTS generation error:', e)
                     const error = e as Error & { errorCode?: string }
                     if (error.errorCode === 'TTS_PROVIDER_NOT_CONFIGURED') {
-                        const ttsError = new Error('本地 TTS Provider 尚未配置。请先为台词导入本地音频，或配置本地 TTS Provider。')
+                        const ttsError = new Error('Local TTS Provider not configured. Please import local audio for lines first or configure local TTS Provider.')
                         ; (ttsError as Error & { code?: string }).code = 'TTS_PROVIDER_NOT_CONFIGURED'
                         throw ttsError
                     }
@@ -257,12 +255,12 @@ export class ResourcePreloader {
         try {
             await this.projectStore.ensureTTSTiming(audioPath, audioBuffer)
         } catch (error) {
-            console.warn('[ResourcePreloader] TTS timing 生成失败，继续导出:', error)
+            console.warn('[ResourcePreloader] Failed to generate TTS timing, continuing export:', error)
         }
     }
 
     /**
-     * 预加载场景图片
+     * Preload scene images
      * V7 Adaptation using useAssetLoader
      */
     private async preloadSceneImages(scene: SceneContainer): Promise<void> {
@@ -295,7 +293,7 @@ export class ResourcePreloader {
     }
 
     /**
-     * 预加载场景音频（SFX）
+     * Preload scene audio (SFX)
      */
     private async preloadSceneAudio(scene: SceneContainer): Promise<void> {
         const audioPaths = new Set<string>()
@@ -318,7 +316,7 @@ export class ResourcePreloader {
                             this.loadedAudioUrls.add(blobUrl)
                         }
                     } catch (e) {
-                        console.warn(`[ResourcePreloader] 音频加载失败: ${path}`, e)
+                        console.warn(`[ResourcePreloader] Failed to load audio: ${path}`, e)
                     }
                 })
             )
@@ -326,7 +324,7 @@ export class ResourcePreloader {
     }
 
     /**
-     * 预加载全局 BGM
+     * Preload global BGM
      */
     private async preloadGlobalBGM(): Promise<void> {
         const tracks = this.episode.bgmTracks || []
@@ -344,7 +342,7 @@ export class ResourcePreloader {
                             this.loadedAudioUrls.add(blobUrl)
                         }
                     } catch (e) {
-                        console.warn(`[ResourcePreloader] BGM加载失败: ${asset.url}`, e)
+                        console.warn(`[ResourcePreloader] Failed to load BGM: ${asset.url}`, e)
                     }
                 }
             }
@@ -352,7 +350,7 @@ export class ResourcePreloader {
     }
 
     /**
-     * 计算场景时长
+     * Calculate scene duration
      */
     private calculateSceneDuration(scene: SceneContainer, index: number): void {
         let duration = 0
@@ -375,7 +373,7 @@ export class ResourcePreloader {
     }
 
     /**
-     * 重新计算全局时间线
+     * Recalculate global timeline
      */
     private recalculateGlobalTimeline(): void {
         let accumulatedTime = 0
@@ -387,25 +385,21 @@ export class ResourcePreloader {
     }
 
     /**
-     * 获取语音ID
+     * Get voice ID
      */
     private getVoiceId(scene: SceneContainer, block: ScriptBlock): string | number {
         return resolveVoiceId(block, scene.setup.objects, this.projectStore.actors, this.projectStore.narrator)
     }
 
     /**
-     * 获取语速配置
+     * Get voice speed config
      */
     private getVoiceSpeed(scene: SceneContainer, block: ScriptBlock): number {
         return resolveVoiceSpeed(block, scene.setup.objects, this.projectStore.actors, this.projectStore.narrator)
     }
 
     /**
-     * 获取音量配置
-     */
-
-    /**
-     * 更新进度
+     * Update progress
      */
     private updateProgress(
         stage: 'preparing' | 'encoding' | 'muxing',
@@ -426,7 +420,7 @@ export class ResourcePreloader {
     }
 
     /**
-     * 清理资源
+     * Clean up resources
      */
     cleanup(): void {
         this.generatedBlobUrls.forEach(url => URL.revokeObjectURL(url))

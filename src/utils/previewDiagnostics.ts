@@ -25,13 +25,13 @@ export interface BoundsLike {
 }
 
 /**
- * 诊断预览 renderChain 是否覆盖了根级可渲染对象。
+ * Diagnose whether the preview renderChain covers root-level renderable objects.
  *
- * 规则：
- * - camera/audio/light 不参与渲染链
- * - 根级 union composite 自身不应出现在 renderChain（其子对象展开）
- * - 根级 entity composite 应出现在 renderChain
- * - 其他根级可渲染对象应出现在 renderChain
+ * Rules:
+ * - camera/audio/light do not participate in render chains
+ * - Root-level union composite itself should not appear in renderChain (its child objects are flattened)
+ * - Root-level entity composite should appear in renderChain
+ * - Other root-level renderable objects should appear in renderChain
  */
 export function diagnosePreviewRenderChain(
   objects: readonly SceneObject[],
@@ -56,7 +56,7 @@ export function diagnosePreviewRenderChain(
 }
 
 /**
- * 仅用于调试输出：汇总根级对象关键可见性字段。
+ * Used for debug output only: summarize key visibility fields of root-level objects.
  */
 export function collectRootVisibilitySnapshot(objects: readonly SceneObject[]): Record<string, unknown>[] {
   return objects
@@ -76,8 +76,8 @@ export function collectRootVisibilitySnapshot(objects: readonly SceneObject[]): 
 }
 
 /**
- * 选择预览 fitContent 使用的边界：
- * 优先 contentLayer（真实内容），无效时回退 stage。
+ * Select bounds used by preview fitContent:
+ * Prefers contentLayer (actual content), falls back to stage when invalid.
  */
 export function choosePreviewFitBounds(
   contentLayerBounds: BoundsLike | null | undefined,

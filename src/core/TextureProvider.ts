@@ -1,28 +1,28 @@
 /**
- * 纹理提供者接口
- * 抽象不同引擎（编辑器/预览/导出）的纹理获取方式差异
+ * Texture provider interface
+ * Abstracts differences in texture retrieval across different engines (editor / preview / export)
  */
 
 import type * as PIXI from 'pixi.js'
 
 /**
- * 统一纹理获取策略
+ * Unified texture retrieval strategy
  *
- * 各引擎实现差异：
- * - ScenePlayer: getImageUrl → PIXI.Texture.from
- * - ActionPreview: useAssetLoader().getTexture（严格模式，缺失则 throw）
- * - FrameCapture: getImageUrl → PIXI.Texture.from（严格模式，缺失则 throw）
- * - useSceneGraph: getImageUrl → PIXI.Texture.from
+ * Engine implementation differences:
+ * - ScenePlayer: getImageUrl -> PIXI.Texture.from
+ * - ActionPreview: useAssetLoader().getTexture (strict mode, throws if missing)
+ * - FrameCapture: getImageUrl -> PIXI.Texture.from (strict mode, throws if missing)
+ * - useSceneGraph: getImageUrl -> PIXI.Texture.from
  */
 export interface TextureProvider {
     /**
-     * 获取纹理对象
-     * 如实现为严格模式，缺失时应 throw Error
+     * Retrieve texture object
+     * If implemented in strict mode, throws Error when missing
      */
     getTexture(url: string): PIXI.Texture
 
     /**
-     * 将资源路径转换为可加载的 URL（通常是 blob URL）
+     * Convert asset path to a loadable URL (usually a blob URL)
      */
     getImageUrl(url: string): string
 }

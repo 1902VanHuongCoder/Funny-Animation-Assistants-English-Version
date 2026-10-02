@@ -1,13 +1,13 @@
 /**
- * 槽位工具函数 (v6.2)
- * 负责将 Block 的文本和 TTS 配置转换为 RuntimeSlot 列表
+ * Slot utility functions (v6.2)
+ * Responsible for converting Block text and TTS configuration into RuntimeSlot lists
  */
 
 import type { Action, BaseDurationAction, DisplaySlot, RuntimeSlot, ScriptBlock } from '@/types/screenplay'
 
 /**
- * 清洗字幕显示文本：只移除内部控制符，保留正常标点以避免改变语义
- * 用于预览/播放时的字幕渲染
+ * Clean subtitle display text: removes internal control characters only, preserving punctuation to avoid changing semantics
+ * Used for subtitle rendering in preview/playback
  */
 export function cleanTextForSubtitle(text: string): string {
   return text.replace(/#/g, '')
@@ -35,8 +35,8 @@ function shouldFlushDisplaySegment(buffer: string, separator: string): boolean {
 }
 
 /**
- * 构建字幕显示槽位。
- * 只显示 subtitle slot。# 仅作为隐藏控制符，不参与显示层断句或合并。
+ * Build subtitle display slots.
+ * Displays subtitle slots only. '#' acts as hidden control character without affecting display segmentation/merging.
  */
 export function buildSubtitleDisplaySlots(slots: RuntimeSlot[]): RuntimeSlot[] {
   const subtitleSlots = slots.filter(slot => slot.type === 'subtitle')
@@ -93,8 +93,8 @@ export function buildSubtitleDisplaySlots(slots: RuntimeSlot[]): RuntimeSlot[] {
 }
 
 /**
- * 获取指定 Block 局部时间应显示的字幕文本。
- * 供 ScenePlayer 和视频导出共用，避免两端字幕切分/清洗规则漂移。
+ * Get subtitle text that should be displayed at local time of specified Block.
+ * Shared between ScenePlayer and video export to avoid split/clean rule drift.
  */
 export function getSubtitleTextAtTime(block: ScriptBlock, slots: RuntimeSlot[], localTime: number): string {
   if (block.type === 'action') {
@@ -117,16 +117,16 @@ export function getSubtitleTextAtTime(block: ScriptBlock, slots: RuntimeSlot[], 
 }
 
 /**
- * 将文本切分为槽位
- * 根据标点符号将文本切分为多个分句，每个分句对应一个槽位
- * v6.10 更新：自动添加 preroll 和 postroll slot
+ * Split text into slots
+ * Splits text into multiple clauses according to punctuation, each clause corresponding to a slot
+ * v6.10: Automatically adds preroll and postroll slots
  * 
- * @param block 脚本块
- * @returns RuntimeSlot 数组
+ * @param block Script block
+ * @returns RuntimeSlot array
  */
 export function parseBlockToSlots(block: ScriptBlock): RuntimeSlot[] {
   if (block.type === 'action') {
-    // ActionBlock 默认只有一个槽位
+    // ActionBlock has only one slot by default
     return [{
       type: 'subtitle',
       index: 0,
@@ -138,34 +138,34 @@ export function parseBlockToSlots(block: ScriptBlock): RuntimeSlot[] {
 
   const text = block.text || ''
   const ttsConfig = block.ttsConfig as unknown as { duration?: number }
-  const totalDuration = ttsConfig?.duration ?? (text.length * 250) // 兆底时长: 每字250ms
+  const totalDuration = ttsConfig?.duration ?? (text.length * 250) // Baseline duration: 250ms per character
 
-  // 如果文本为空，返回空数组
+  // If text is empty, return empty array
   if (!text.trim()) {
     return []
   }
 
-  // 统一使用估算模式：按标点符号分句 + 字数比例估算
+  // Unified estimation mode: punctuation segmentation + proportional character allocation
   const subtitleSlots = splitTextToSlotsByPunctuation(text, totalDuration)
   return addPrerollPostrollEstimated(subtitleSlots, totalDuration)
 }
 
 /**
- * 为估算的字幕槽位添加 preroll 和 postroll slot
- * 预留固定时间作为 preroll/postroll
- * @param subtitleSlots 字幕槽位数组
- * @param totalDuration Block 总时长
+ * Add preroll and postroll slots to estimated subtitle slots
+ * Reserves fixed time for preroll/postroll
+ * @param subtitleSlots Subtitle slots array
+ * @param totalDuration Block total duration
  */
 function addPrerollPostrollEstimated(subtitleSlots: RuntimeSlot[], totalDuration: number): RuntimeSlot[] {
   if (subtitleSlots.length === 0) return []
 
-  // 默认 preroll/postroll 时长固定为 100ms
+  // Default fixed duration of 100ms for preroll/postroll
   const estimatedDuration = 100
 
   const result: RuntimeSlot[] = []
   let currentIndex = 0
 
-  // 1. 添加 preroll slot
+  // 1. Add preroll slot
   result.push({
     type: 'preroll',
     index: currentIndex++,
@@ -174,7 +174,7 @@ function addPrerollPostrollEstimated(subtitleSlots: RuntimeSlot[], totalDuration
     isEstimated: true
   })
 
-  // 2. 添加 subtitle slots (更新 index，调整 startTime)
+  // 2. Add subtitle slots (update index, adjust startTime)
   const availableDuration = totalDuration - estimatedDuration * 2
   const originalTotalDuration = subtitleSlots.reduce((sum, s) => sum + s.duration, 0)
   const ratio = availableDuration / originalTotalDuration
@@ -193,7 +193,7 @@ function addPrerollPostrollEstimated(subtitleSlots: RuntimeSlot[], totalDuration
     currentTime += adjustedDuration
   }
 
-  // 3. 添加 postroll slot
+  // 3. Add postroll slot
   result.push({
     type: 'postroll',
     index: currentIndex++,
@@ -206,8 +206,8 @@ function addPrerollPostrollEstimated(subtitleSlots: RuntimeSlot[], totalDuration
 }
 
 /**
- * 按标点符号分句 + 字数比例估算时长。
- * Slot 是动作时间锚点，拆分规则必须稳定：所有分句标点和静默分句符 # 都创建 Slot。
+ * Punctuation segmentation + proportional character duration estimation.
+ * Slot serves as action time anchor; split rules must be stable: all clause punctuation and silent separator # create Slots.
  */
 function splitTextToSlotsByPunctuation(text: string, totalDuration: number): RuntimeSlot[] {
   const punctuationRegex = /[，,。.！!？?…;；:：\n#]+/
@@ -223,7 +223,7 @@ function splitTextToSlotsByPunctuation(text: string, totalDuration: number): Run
     contentSegments.push(part + separator)
   }
 
-  // 如果没有有效分句，整句作为一个 Slot
+  // If no valid clauses, treat entire text as single Slot
   if (contentSegments.length === 0 && text.trim()) {
     return [{
       type: 'subtitle',
@@ -234,7 +234,7 @@ function splitTextToSlotsByPunctuation(text: string, totalDuration: number): Run
     }]
   }
 
-  // 计算每个 Slot 的时长（按字数比例分配）
+  // Calculate duration of each slot proportionally by character count
   const totalLength = contentSegments.reduce((sum, s) => sum + s.length, 0)
   let currentTime = 0
 
@@ -254,12 +254,12 @@ function splitTextToSlotsByPunctuation(text: string, totalDuration: number): Run
 }
 
 /**
- * 根据 Block 中的 Actions 计算显示用槽位
- * 处理槽位合并逻辑，将 slotSpan > 1 的 DurationAction 对应的槽位合并显示
+ * Calculate display slots based on Actions in Block
+ * Handles slot merging logic, merging display for DurationActions where slotSpan > 1
  * 
- * @param rawSlots 原始槽位列表
- * @param actions Block 中的动作列表
- * @returns DisplaySlot 数组
+ * @param rawSlots Raw slots list
+ * @param actions Actions list in Block
+ * @returns DisplaySlot array
  */
 export function calculateDisplaySlots(rawSlots: RuntimeSlot[], actions: Action[]): DisplaySlot[] {
   if (rawSlots.length === 0) return []
@@ -267,17 +267,17 @@ export function calculateDisplaySlots(rawSlots: RuntimeSlot[], actions: Action[]
   const displaySlots: DisplaySlot[] = []
   const skipIndices = new Set<number>()
 
-  // 查找所有跨槽位的 DurationAction
+  // Find all span DurationActions
   const spanActions = actions.filter(
     a => a.category === 'duration' && (a as unknown as { slotSpan: number }).slotSpan > 1
   )
 
-  // 建立槽位索引到跨度的映射
+  // Map slot index to span
   const spanMap = new Map<number, number>()
   for (const action of spanActions) {
     const span = (action as unknown as { slotSpan: number }).slotSpan ?? 1
     const currentSpan = spanMap.get(action.slotIndex) ?? 1
-    // 取最大跨度
+    // Take maximum span
     spanMap.set(action.slotIndex, Math.max(currentSpan, span))
   }
 
@@ -288,14 +288,14 @@ export function calculateDisplaySlots(rawSlots: RuntimeSlot[], actions: Action[]
     if (!slot) continue
     const span = spanMap.get(i) ?? 1
 
-    // 标记后续槽位为跳过
+    // Mark subsequent slots as skipped
     for (let k = 1; k < span; k++) {
       if (i + k < rawSlots.length) {
         skipIndices.add(i + k)
       }
     }
 
-    // 计算合并后的总时长和文本
+    // Compute merged total duration and text
     let mergedText = slot.text
     let mergedDuration = slot.duration
 
@@ -320,11 +320,11 @@ export function calculateDisplaySlots(rawSlots: RuntimeSlot[], actions: Action[]
 }
 
 /**
- * 根据槽位索引和跨度计算动作的时间信息
+ * Calculate timing information of action based on slot index and span
  * 
- * @param action 动作对象
- * @param allSlots 所有原始槽位
- * @returns 包含 startTime 和 duration 的对象，或 null（如果槽位不存在）
+ * @param action Action object
+ * @param allSlots All raw slots
+ * @returns Object containing startTime and duration, or null (if slot does not exist)
  */
 export function getActionTiming(
   action: Action,
@@ -333,7 +333,7 @@ export function getActionTiming(
   const startSlot = allSlots[action.slotIndex]
 
   if (!startSlot) {
-    // 容错：槽位不存在（可能文本已修改）
+    // Fault tolerance: slot not found (text might have changed)
     console.warn(`[slotUtils] Slot ${action.slotIndex} not found, total slots: ${allSlots.length}`)
     return null
   }
@@ -343,7 +343,7 @@ export function getActionTiming(
 
   if (action.category === 'duration') {
     const span = (action as unknown as { slotSpan: number }).slotSpan ?? 1
-    // 累加跨越的所有槽位时长
+    // Accumulate duration across all spanned slots
     for (let i = 0; i < span; i++) {
       const s = allSlots[action.slotIndex + i]
       if (s) duration += s.duration
@@ -354,39 +354,39 @@ export function getActionTiming(
 }
 
 /**
- * 判断是否为瞬时动作
+ * Check whether action is point action
  */
 export function isPointAction(action: Action): boolean {
   return action.category === 'point'
 }
 
 /**
- * 判断是否为持续动作
+ * Check whether action is duration action
  */
 export function isDurationAction(action: Action): boolean {
   return action.category === 'duration'
 }
 
 /**
- * 获取指定槽位的瞬时动作列表
+ * Get point actions for specified slot
  */
 export function getPointActionsForSlot(slotIndex: number, actions: Action[]): Action[] {
   return actions.filter(a => a.category === 'point' && a.slotIndex === slotIndex)
 }
 
 /**
- * 获取指定槽位的持续动作列表
+ * Get duration actions for specified slot
  */
 export function getDurationActionsForSlot(slotIndex: number, actions: Action[]): Action[] {
   return actions.filter(a => a.category === 'duration' && a.slotIndex === slotIndex)
 }
 
 /**
- * 验证动作的槽位索引是否有效
+ * Validate whether action slot index is valid
  * 
- * @param action 动作对象
- * @param totalSlots 总槽位数
- * @returns 是否有效
+ * @param action Action object
+ * @param totalSlots Total slot count
+ * @returns Whether valid
  */
 export function isActionSlotValid(action: Action, totalSlots: number): boolean {
   if (action.slotIndex < 0 || action.slotIndex >= totalSlots) {
@@ -395,7 +395,7 @@ export function isActionSlotValid(action: Action, totalSlots: number): boolean {
 
   if (action.category === 'duration') {
     const span = (action as unknown as { slotSpan?: number }).slotSpan ?? 1
-    // 检查跨度是否超出范围
+    // Check if span extends beyond boundary
     if (action.slotIndex + span > totalSlots) {
       return false
     }
@@ -405,21 +405,21 @@ export function isActionSlotValid(action: Action, totalSlots: number): boolean {
 }
 
 /**
- * 清理无效的动作（槽位索引超出范围的动作）
+ * Clean invalid actions (actions with slot index out of bounds)
  * 
- * @param actions 动作列表
- * @param totalSlots 总槽位数
- * @returns 过滤后的有效动作列表
+ * @param actions Actions list
+ * @param totalSlots Total slot count
+ * @returns Filtered valid actions list
  */
 export function cleanInvalidActions(actions: Action[], totalSlots: number): Action[] {
   return actions.filter(action => isActionSlotValid(action, totalSlots))
 }
 
 /**
- * 检查槽位选择是否连续
+ * Check whether slot selection is continuous
  * 
- * @param indices 选中的槽位索引数组
- * @returns 是否连续
+ * @param indices Selected slot indices array
+ * @returns Whether continuous
  */
 export function isSelectionContinuous(indices: number[]): boolean {
   if (indices.length <= 1) return true
@@ -437,7 +437,7 @@ export function isSelectionContinuous(indices: number[]): boolean {
 }
 
 /**
- * 创建新的瞬时动作
+ * Create new point action
  */
 export function createPointAction(
   type: Action['type'],
@@ -456,7 +456,7 @@ export function createPointAction(
 }
 
 /**
- * 创建新的持续动作
+ * Create new duration action
  */
 export function createDurationAction(
   type: Action['type'],
@@ -479,16 +479,16 @@ export function createDurationAction(
 }
 
 /**
- * 生成动作 ID
+ * Generate action ID
  */
 function generateActionId(): string {
   return `action_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
 }
 
-// ==================== Slot 变化时 Action 迁移 ====================
+// ==================== Action Migration on Slot Changes ====================
 
 /**
- * Slot 变化的检测结果
+ * Slot change detection result
  */
 export type SlotChange =
   | { type: 'insert'; index: number; count: number }
@@ -496,16 +496,16 @@ export type SlotChange =
   | { type: 'complex' }
 
 /**
- * Slot 插入时的 Action 迁移
+ * Action migration on slot insertion
  *
- * 三种 Case：
- * - Case 1: 起始点在插入点之前（含等于）且不跨越 → 不变
- * - Case 2: 起始点在插入点之后（严格大于）→ slotIndex += insertCount
- * - Case 3: Duration Action 起始点在插入点（含等于）或之前，span 跨越插入点 → slotSpan += insertCount
+ * Three cases:
+ * - Case 1: Start point before insertion point (inclusive) and not spanning -> unchanged
+ * - Case 2: Start point after insertion point (strictly greater) -> slotIndex += insertCount
+ * - Case 3: Duration Action start point at or before insertion point, span crosses insertion point -> slotSpan += insertCount
  *
- * @param actions  Block 中的所有 action（in-place 修改）
- * @param insertIndex 新 slot 插入的位置
- * @param insertCount 插入的 slot 数量
+ * @param actions All actions in Block (in-place modification)
+ * @param insertIndex Position where new slots are inserted
+ * @param insertCount Number of inserted slots
  */
 export function migrateActionsOnSlotInsert(
   actions: Action[],
@@ -514,35 +514,35 @@ export function migrateActionsOnSlotInsert(
 ): void {
   for (const action of actions) {
     if (action.slotIndex > insertIndex) {
-      // Case 2: 起始点在插入点之后 → 整体后移
+      // Case 2: Start point after insertion point -> shift forward
       action.slotIndex += insertCount
     } else if (action.category === 'duration') {
-      // 起始点在插入点或之前，检查 span 是否跨越插入点
+      // Start point at or before insertion point, check if span crosses insertion point
       const dAction = action as BaseDurationAction
       const span = dAction.slotSpan ?? 1
       if (action.slotIndex + span > insertIndex) {
-        // Case 3: span 跨越插入点 → 扩展 span
+        // Case 3: Span crosses insertion point -> expand span
         dAction.slotSpan = span + insertCount
       }
     }
-    // Case 1: 起始点在插入点之前（含等于）且不跨越 → 不变
+    // Case 1: Start point before insertion point and not spanning -> unchanged
   }
 }
 
 /**
- * Slot 删除时的 Action 迁移
+ * Action migration on slot deletion
  *
- * ⚠️ 核心约束：绝不删除任何 action，只做 slotIndex 和 slotSpan 的调整
+ * Core constraint: Never delete any action; only adjust slotIndex and slotSpan
  *
- * 四种 Case：
- * - Case 1: 起始点在删除区间之前 且不跨越 → 不变
- * - Case 2: 起始点在删除区间之后 → slotIndex -= deleteCount
- * - Case 3: Duration 跨越删除区间 → slotSpan 收缩（保底 1）
- * - Case 4: 起始点落在被删 slot 上 → 后移合并 + Duration span 保底 1
+ * Four cases:
+ * - Case 1: Start point before deletion interval and not spanning -> unchanged
+ * - Case 2: Start point after deletion interval -> slotIndex -= deleteCount
+ * - Case 3: Duration crosses deletion interval -> slotSpan contracts (min 1)
+ * - Case 4: Start point falls within deleted slots -> shift forward + Duration span min 1
  *
- * @param actions  Block 中的所有 action（in-place 修改）
- * @param deleteIndex 被删除 slot 的起始位置
- * @param deleteCount 被删除的 slot 数量
+ * @param actions All actions in Block (in-place modification)
+ * @param deleteIndex Start index of deleted slots
+ * @param deleteCount Number of deleted slots
  */
 export function migrateActionsOnSlotDelete(
   actions: Action[],
@@ -555,12 +555,12 @@ export function migrateActionsOnSlotDelete(
     const startIdx = action.slotIndex
 
     if (startIdx >= deleteEnd) {
-      // ── Case 2: 起始点在删除区间之后 → 前移 ──
+      // Case 2: Start point after deletion interval -> shift backward
       action.slotIndex -= deleteCount
 
     } else if (startIdx >= deleteIndex) {
-      // ── Case 4: 起始点落在被删除的 slot 上 → 后移合并 ──
-      action.slotIndex = deleteIndex // 新索引体系中 = 删除区间之后的第一个幸存 slot
+      // Case 4: Start point falls inside deleted range -> shift to first surviving slot
+      action.slotIndex = deleteIndex
 
       if (action.category === 'duration') {
         const dAction = action as BaseDurationAction
@@ -570,26 +570,26 @@ export function migrateActionsOnSlotDelete(
       }
 
     } else if (action.category === 'duration') {
-      // ── 起始点在删除区间之前，检查 span 是否跨越 ──
+      // Start point before deletion interval, check if span crosses
       const dAction = action as BaseDurationAction
       const span = dAction.slotSpan ?? 1
       const endIdx = startIdx + span // exclusive
 
       if (endIdx > deleteEnd) {
-        // Case 3a: span 完全跨越删除区间 → 收缩 span
+        // Case 3a: Span completely spans deletion interval -> contract span
         dAction.slotSpan = span - deleteCount
       } else if (endIdx > deleteIndex) {
-        // Case 3b: span 尾部落入删除区间 → 截断，最小为 1
+        // Case 3b: Span tail falls within deletion interval -> truncate, minimum 1
         dAction.slotSpan = Math.max(1, deleteIndex - startIdx)
       }
     }
-    // Case 1: Point Action 在删除区间之前 → 不变
+    // Case 1: Point Action before deletion interval -> unchanged
   }
 }
 
 /**
- * 获取 slot 的文本指纹，用于变化检测
- * preroll/postroll 使用 type，subtitle 使用 text
+ * Get text fingerprint of slot for change detection
+ * preroll/postroll uses type, subtitle uses text
  */
 function getSlotFingerprint(slot: RuntimeSlot): string {
   if (slot.type === 'preroll' || slot.type === 'postroll') {
@@ -599,19 +599,19 @@ function getSlotFingerprint(slot: RuntimeSlot): string {
 }
 
 /**
- * 基于 slot 文本内容对比，检测插入/删除变化
+ * Detect insert/delete changes based on slot text content comparison
  *
- * 使用前缀-后缀匹配算法：
- * 1. 从头部找到第一个不匹配的位置（公共前缀长度 P）
- * 2. 从尾部找到最后一个不匹配的位置（公共后缀长度 S）
- * 3. 中间的差异区间决定变化类型
+ * Uses prefix-suffix matching algorithm:
+ * 1. Find first mismatch position from head (common prefix length P)
+ * 2. Find last mismatch position from tail (common suffix length S)
+ * 3. Intermediate difference interval decides change type
  *
- * 相比双指针算法，前缀-后缀天然支持 slot 分裂（用户在文本中间插入 # 或标点）
- * 和 slot 合并（用户删除分句标点导致两个 slot 合并为一个）。
+ * Naturally supports slot splitting (# or punctuation inserted in middle)
+ * and slot merging (punctuation removed merging two slots into one).
  *
- * @param oldSlots 编辑前的 slot 列表
- * @param newSlots 编辑后的 slot 列表
- * @returns 变化描述，或 null 表示无变化
+ * @param oldSlots Slot list before editing
+ * @param newSlots Slot list after editing
+ * @returns Change description, or null if no changes
  */
 export function detectSlotTextChanges(
   oldSlots: RuntimeSlot[],
@@ -620,7 +620,7 @@ export function detectSlotTextChanges(
   const oldLen = oldSlots.length
   const newLen = newSlots.length
 
-  // 长度相同：检查内容是否完全一致
+  // Equal length: verify whether contents match identically
   if (oldLen === newLen) {
     const allMatch = oldSlots.every(
       (s, i) => getSlotFingerprint(s) === getSlotFingerprint(newSlots[i]!)
@@ -630,30 +630,30 @@ export function detectSlotTextChanges(
 
   const minLen = Math.min(oldLen, newLen)
 
-  // 从头部匹配：找到公共前缀长度
+  // Match from head: common prefix length
   let prefixLen = 0
   while (prefixLen < minLen &&
          getSlotFingerprint(oldSlots[prefixLen]!) === getSlotFingerprint(newSlots[prefixLen]!)) {
     prefixLen++
   }
 
-  // 从尾部匹配：找到公共后缀长度
+  // Match from tail: common suffix length
   let suffixLen = 0
   while (suffixLen < (minLen - prefixLen) &&
          getSlotFingerprint(oldSlots[oldLen - 1 - suffixLen]!) === getSlotFingerprint(newSlots[newLen - 1 - suffixLen]!)) {
     suffixLen++
   }
 
-  // 差异区间
+  // Divergent range
   // oldDivergent = old[prefixLen .. oldLen - suffixLen)
   // newDivergent = new[prefixLen .. newLen - suffixLen)
   const changeIndex = prefixLen
 
   if (newLen > oldLen) {
-    // 新比旧多 → 插入（含 slot 分裂场景）
+    // New has more slots -> insertion (including slot splitting)
     return { type: 'insert', index: changeIndex, count: newLen - oldLen }
   } else {
-    // 旧比新多 → 删除（含 slot 合并场景）
+    // Old has more slots -> deletion (including slot merging)
     return { type: 'delete', index: changeIndex, count: oldLen - newLen }
   }
 }

@@ -1,20 +1,20 @@
 /**
  * useSetupWorkspace.ts
  *
- * 提取自 SetupEditor.vue 的通用画布工作区逻辑。
- * 供 SetupEditor（场景编辑 Setup 模式）和 SceneTemplateEditor（模板编辑器）共享。
+ * Universal canvas workspace logic extracted from SetupEditor.vue.
+ * Shared by SetupEditor (scene editing Setup mode) and SceneTemplateEditor (template editor).
  *
- * 职责：
- * - 画布渲染管理 (useSceneRenderer)
- * - 对象操作 (选择/更新/删除/复制/Z轴)
- * - 右面板控制 (折叠/宽度拖拽/Tab切换)
- * - 素材 Picker 管理 (7 种素材添加)
- * - 成组模式 (create/addTo)
- * - 别名管理 (InstanceAliasDialog)
- * - 动画触发
- * - 全屏切换
- * - 确认对话框 / 保存确认对话框
- * - 修改状态追踪
+ * Responsibilities:
+ * - Canvas render management (useSceneRenderer)
+ * - Object operations (select/update/delete/duplicate/z-order)
+ * - Right panel control (collapse/width resize/tab switch)
+ * - Asset Picker management (7 asset addition types)
+ * - Grouping mode (create/addTo)
+ * - Alias management (InstanceAliasDialog)
+ * - Animation triggering
+ * - Fullscreen toggle
+ * - Confirmation dialog / Save confirmation dialog
+ * - Modification state tracking
  */
 
 import { computed, type Ref, ref, watch } from 'vue'
@@ -37,15 +37,15 @@ import { debugLog } from '@/utils/debugLogger'
 import { applyMeasuredDefaultSize } from '@/utils/sceneObjectDefaultSize'
 import { instantiateTemplate } from '@/utils/sceneTemplateEngine'
 
-// ===== 类型定义 =====
+// ===== Type Definitions =====
 
-/** 成组模式状态 */
+/** Grouping mode state */
 type GroupingState =
   | { mode: 'create'; pendingIds: string[] }
   | { mode: 'addTo'; compositeId: string; pendingIds: string[] }
   | null
 
-/** 成组模式对象树节点 */
+/** Grouping mode object tree node */
 export interface GroupingTreeNode {
   id: string
   name: string
@@ -56,30 +56,30 @@ export interface GroupingTreeNode {
   children: GroupingTreeNode[]
 }
 
-/** useSceneRenderer 额外参数（场景编辑器需要，模板编辑器不需要） */
+/** useSceneRenderer extra parameters (required by scene editor, not template editor) */
 export interface RendererExtras {
   episodeId?: string
   sceneId?: string
   blockId?: string | null
 }
 
-/** composable 配置 */
+/** Composable configuration */
 export interface SetupWorkspaceOptions {
-  /** 画布容器 DOM ref */
+  /** Canvas container DOM ref */
   canvasContainer: Ref<HTMLElement | undefined>
-  /** 编辑器根容器 DOM ref（用于全屏） */
+  /** Editor root container DOM ref (for fullscreen) */
   editorContainer: Ref<HTMLElement | undefined>
-  /** useSceneRenderer 额外选项 */
+  /** useSceneRenderer extra options */
   rendererExtras?: RendererExtras
-  /** 数据修改时额外回调（如 projectStore.markAsUnsaved） */
+  /** Callback when data changes (e.g. projectStore.markAsUnsaved) */
   onDataChange?: () => void
-  /** 保存数据（由消费者实现） */
+  /** Save data (implemented by consumer) */
   onSave: () => Promise<void>
-  /** 退出编辑器（由消费者实现） */
+  /** Exit editor (implemented by consumer) */
   onExit: () => void
 }
 
-// ===== Composable 实现 =====
+// ===== Composable Implementation =====
 
 export function useSetupWorkspace(options: SetupWorkspaceOptions) {
   // ----- Stores -----
@@ -88,7 +88,7 @@ export function useSetupWorkspace(options: SetupWorkspaceOptions) {
   const soundStore = useSoundStore()
   const toast = useToast()
 
-  // ===== 1. 修改状态追踪 =====
+  // ===== 1. Modification State Tracking =====
   const hasLocalChanges = ref(false)
 
   function markLocalChange() {
@@ -100,13 +100,13 @@ export function useSetupWorkspace(options: SetupWorkspaceOptions) {
     hasLocalChanges.value = false
   }
 
-  // ===== 2. 画布渲染管理 =====
+  // ===== 2. Canvas Rendering Management =====
   const renderer = ref<ReturnType<typeof useSceneRenderer> | null>(null)
 
   async function initCanvas(): Promise<void> {
     const container = options.canvasContainer.value
     if (!container) {
-      console.error('[useSetupWorkspace] 画布容器未找到')
+      console.error('[useSetupWorkspace] Canvas container not found')
       return
     }
 
@@ -124,7 +124,7 @@ export function useSetupWorkspace(options: SetupWorkspaceOptions) {
     renderer.value = rendererInstance
     await rendererInstance.initRenderer()
     
-    // 初始化穿透列表默认值（相机自动加入）
+    // Initialize pass-through list defaults (camera automatically added)
     rendererInstance.getSceneGraph().initPassThroughDefaults()
 
     setTimeout(() => {
@@ -139,7 +139,7 @@ export function useSetupWorkspace(options: SetupWorkspaceOptions) {
     }
   }
 
-  // ===== 3. 右面板控制 =====
+  // ===== 3. Right Panel Control =====
   const rightPanelCollapsed = ref(false)
   const rightPanelWidth = ref(320)
 
@@ -172,7 +172,7 @@ export function useSetupWorkspace(options: SetupWorkspaceOptions) {
     document.addEventListener('mouseup', handleMouseUp)
   }
 
-  // ===== 4. 对象操作 =====
+  // ===== 4. Object Operations =====
 
   function handleSelectObject(objectId: string | null): void {
     sceneObjectStore.selectObject(objectId)
@@ -198,25 +198,25 @@ export function useSetupWorkspace(options: SetupWorkspaceOptions) {
     const obj = sceneObjectStore.getObject(idToDelete)
     if (!obj) return
 
-    // v25: 环境光不可删除
+    // v25: Ambient light cannot be deleted
     if (obj.type === 'light' && (obj as import('@/types/sceneObject').LightObject).lightType === 'ambient') return
 
-    const alias = (obj as unknown as { alias?: string }).alias ?? obj.name ?? '该对象'
+    const alias = (obj as unknown as { alias?: string }).alias ?? obj.name ?? 'Object'
 
-    // 检测是否为 composite 且有子对象 → 三选项对话框（entity/union 统一）
+    // Check if composite with children → three-option dialog (unified for entity/union)
     const isCompositeWithChildren = obj.type === 'composite'
       && (obj as unknown as { childIds?: string[] }).childIds?.length
 
     if (isCompositeWithChildren) {
       const childCount = (obj as unknown as { childIds: string[] }).childIds.length
       confirmDialogConfig.value = {
-        title: '删除组合对象',
-        message: `确定要删除 "${alias}" 吗？该组合包含 ${childCount} 个子对象。\n\n仅删除组合：子对象冒泡到上一级\n删除组合及后代：全部删除`,
-        confirmText: '仅删除组合',
-        cancelText: '取消',
+        title: 'Delete Grouped Object',
+        message: `Are you sure you want to delete "${alias}"? This group contains ${childCount} child object(s).\n\nDelete Group Only: Child objects bubble up to parent level\nDelete Group and Descendants: Delete all`,
+        confirmText: 'Delete Group Only',
+        cancelText: 'Cancel',
         isDanger: false,
         showSecondaryConfirm: true,
-        secondaryConfirmText: '删除组合及其后代',
+        secondaryConfirmText: 'Delete Group and Descendants',
         onConfirm: () => {
           sceneObjectStore.dissolveComposite(idToDelete)
           sceneObjectStore.removeObject(idToDelete)
@@ -231,10 +231,10 @@ export function useSetupWorkspace(options: SetupWorkspaceOptions) {
       }
     } else {
       confirmDialogConfig.value = {
-        title: '删除对象',
-        message: `确定要删除 "${alias}" 吗？此操作无法撤销。`,
-        confirmText: '删除',
-        cancelText: '取消',
+        title: 'Delete Object',
+        message: `Are you sure you want to delete "${alias}"? This action cannot be undone.`,
+        confirmText: 'Delete',
+        cancelText: 'Cancel',
         isDanger: true,
         showSecondaryConfirm: false,
         secondaryConfirmText: '',
@@ -282,11 +282,11 @@ export function useSetupWorkspace(options: SetupWorkspaceOptions) {
   }
 
   function handleInitialStateUpdate(_pose?: string, _expression?: string): void {
-    // character 类型已移除，此函数不再执行任何操作
+    // character type removed, this function does nothing
     return
   }
 
-  // ===== 5. 素材 Picker 管理 =====
+  // ===== 5. Asset Picker Management =====
   const showCharacterPicker = ref(false)
   const showBackgroundPicker = ref(false)
   const showPropPicker = ref(false)
@@ -325,7 +325,7 @@ export function useSetupWorkspace(options: SetupWorkspaceOptions) {
         showTemplatePicker.value = true
         break
       case 'symbol': {
-        const symbolName = sceneObjectStore.generateUniqueAlias('元件')
+        const symbolName = sceneObjectStore.generateUniqueAlias('Symbol')
         const symbolObj = sceneObjectStore.createSymbolObject(symbolName)
         sceneObjectStore.selectObject(symbolObj.id)
         markLocalChange()
@@ -341,7 +341,7 @@ export function useSetupWorkspace(options: SetupWorkspaceOptions) {
         showLightPicker.value = true
         break
       case 'text': {
-        const textObj = sceneObjectStore.createTextObject('文本')
+        const textObj = sceneObjectStore.createTextObject('Text')
         sceneObjectStore.selectObject(textObj.id)
         markLocalChange()
         break
@@ -349,7 +349,7 @@ export function useSetupWorkspace(options: SetupWorkspaceOptions) {
       case 'mask_rectangle':
       case 'mask_ellipse': {
         const shape = type === 'mask_ellipse' ? 'ellipse' : 'rectangle'
-        const maskName = sceneObjectStore.generateUniqueAlias(shape === 'ellipse' ? '椭圆蒙版' : '矩形蒙版')
+        const maskName = sceneObjectStore.generateUniqueAlias(shape === 'ellipse' ? 'Ellipse Mask' : 'Rectangle Mask')
         const maskObj = sceneObjectStore.createMaskObject(maskName, shape)
         sceneObjectStore.selectObject(maskObj.id)
         markLocalChange()
@@ -361,7 +361,7 @@ export function useSetupWorkspace(options: SetupWorkspaceOptions) {
   function handleLightSelect(result: { lightType: 'point' | 'spot'; params?: { lightColor?: string; lightIntensity?: number; lightRadius?: number; flicker?: number; flickerSpeed?: number; directionAngle?: number; coneAngle?: number } }): void {
     const isSpot = result.lightType === 'spot'
     const p = result.params
-    const lightObj = sceneObjectStore.createLightObject(isSpot ? 'spot' : 'point', isSpot ? '聚光灯' : '点光源', {
+    const lightObj = sceneObjectStore.createLightObject(isSpot ? 'spot' : 'point', isSpot ? 'Spotlight' : 'Point Light', {
       lightColor: p?.lightColor ?? '#ffffff',
       lightIntensity: p?.lightIntensity ?? 1.0,
       lightRadius: p?.lightRadius ?? (isSpot ? 420 : 300),
@@ -390,7 +390,7 @@ export function useSetupWorkspace(options: SetupWorkspaceOptions) {
     const newObject = sceneObjectStore.createBackgroundObject(background.id, background.name)
     await applyMeasuredDefaultSize(newObject, sceneObjectStore.updateObject)
     useAnimationStore().hydrateObjectAnimations(newObject)
-    // v21: 仅 UI 创建路径自动播放帧动画（反序列化路径不触发）
+    // v21: Only UI creation path auto-plays frame animations (deserialization path does not trigger)
     sceneObjectStore.autoPopulateInitialAnimations(newObject)
     sceneObjectStore.selectObject(newObject.id)
     showBackgroundPicker.value = false
@@ -402,9 +402,9 @@ export function useSetupWorkspace(options: SetupWorkspaceOptions) {
       console.error('[useSetupWorkspace] sceneObjectStore.createPropObject is not a function.')
       return
     }
-    const newObject = sceneObjectStore.createPropObject(prop.id, prop.name ?? '未命名道具')
+    const newObject = sceneObjectStore.createPropObject(prop.id, prop.name ?? 'Untitled Prop')
     await applyMeasuredDefaultSize(newObject, sceneObjectStore.updateObject)
-    // v21: 仅 UI 创建路径自动播放帧动画（反序列化路径不触发）
+    // v21: Only UI creation path auto-plays frame animations (deserialization path does not trigger)
     sceneObjectStore.autoPopulateInitialAnimations(newObject)
     sceneObjectStore.selectObject(newObject.id)
     showPropPicker.value = false
@@ -452,8 +452,8 @@ export function useSetupWorkspace(options: SetupWorkspaceOptions) {
   }
 
   /**
-   * 设置实例化结果中顶层根对象的 alias 和 extraInfo。
-   * 无论单根还是多根（wrapper），统一找到第一个无 parentId 的对象并更新。
+   * Set alias and extraInfo of top-level root object in instantiated result.
+   * Finds first object without parentId and updates it whether single-root or multi-root (wrapper).
    */
   function setRootIdentity(objects: SceneObject[], targetName: string, extraInfo: CompositeExtraInfo): void {
     const root = objects.find(o => !o.parentId)
@@ -470,10 +470,10 @@ export function useSetupWorkspace(options: SetupWorkspaceOptions) {
       wrapperCompositeMode: 'entity',
     })
 
-    // v17: 逐个添加对象并重新生成唯一 alias（命名空间感知）
+    // v17: Add objects one by one and regenerate unique alias (namespace-aware)
     for (const obj of result.objects) {
       sceneObjectStore.addObject(obj)
-      // 添加后基于当前命名空间重新生成唯一 alias
+      // After addition, regenerate unique alias based on current namespace
       const nsRoot = sceneObjectStore.resolveNamespaceRoot(obj.id)
       const uniqueAlias = sceneObjectStore.generateUniqueAlias(obj.alias ?? obj.name, nsRoot, obj.id)
       if (uniqueAlias !== obj.alias) {
@@ -481,7 +481,7 @@ export function useSetupWorkspace(options: SetupWorkspaceOptions) {
       }
     }
 
-    // 设置顶层根对象的 alias 和 extraInfo
+    // Set alias and extraInfo of top-level root object
     setRootIdentity(result.objects, template.name, { kind: 'template', templateId: template.id })
 
     if (result.objects.length > 0 && result.objects[0]) {
@@ -495,23 +495,23 @@ export function useSetupWorkspace(options: SetupWorkspaceOptions) {
     }
   }
 
-  // v18: 表情选择
+  // v18: Expression selection
   async function handleExpressionSelect(expressionId: string): Promise<void> {
     showExpressionPicker.value = false
     const expressionStore = useExpressionStore()
     const expr = expressionStore.getExpression(expressionId)
-    const name = expr?.name ?? '表情'
+    const name = expr?.name ?? 'Expression'
     const exprObj = sceneObjectStore.createExpressionObject(expressionId, name)
     await applyMeasuredDefaultSize(exprObj, sceneObjectStore.updateObject)
     sceneObjectStore.selectObject(exprObj.id)
     markLocalChange()
   }
 
-  // v18: 组合式人物选择 — 实例化为 entity 模式的组合对象
+  // v18: Composite character selection — instantiate as composite object in entity mode
   function handleCompositeCharacterSelect(character: CompositeCharacter, displayName?: string, extraInfo?: CompositeExtraInfo): void {
     showCharacterPicker.value = false
 
-    // CompositeCharacter 和 SceneTemplate 共享 objects 结构
+    // CompositeCharacter and SceneTemplate share objects structure
     const pseudoTemplate: SceneTemplate = {
       id: character.id,
       name: character.name,
@@ -535,11 +535,11 @@ export function useSetupWorkspace(options: SetupWorkspaceOptions) {
       }
     }
 
-    // 设置顶层根对象的 alias 和 extraInfo
+    // Set alias and extraInfo of top-level root object
     const resolvedExtraInfo = extraInfo ?? { kind: 'character' as const, characterId: character.id }
     setRootIdentity(result.objects, displayName ?? character.name, resolvedExtraInfo)
 
-    // 重映射 rootCompositeId（使用 idMap 将模板对象 ID 转为场景实例 ID）
+    // Remap rootCompositeId (use idMap to convert template object ID to scene instance ID)
     if (character.rootCompositeId) {
       const remappedRoot = result.idMap.get(character.rootCompositeId)
       const rootObj = result.objects.find(o => !o.parentId)
@@ -561,23 +561,23 @@ export function useSetupWorkspace(options: SetupWorkspaceOptions) {
     }
   }
 
-  // 演员选择
+  // Actor selection
   function handleActorSelect(character: CompositeCharacter, actorName: string, actorId: string): void {
     showActorPicker.value = false
     handleCompositeCharacterSelect(character, actorName, { kind: 'actor', actorId })
   }
 
-  // ===== 6. 成组模式 =====
+  // ===== 6. Grouping Mode =====
   const groupingState = ref<GroupingState>(null)
 
   function getObjectDisplayName(objectId: string): string {
     const obj = sceneObjectStore.getObject(objectId)
     if (!obj) return objectId
-    return (obj as unknown as { alias?: string }).alias ?? obj.name ?? '未命名'
+    return (obj as unknown as { alias?: string }).alias ?? obj.name ?? 'Untitled'
   }
 
   function getCompositeDisplayName(compositeId: string | undefined): string {
-    if (!compositeId) return '未知'
+    if (!compositeId) return 'Unknown'
     return getObjectDisplayName(compositeId)
   }
 
@@ -603,13 +603,13 @@ export function useSetupWorkspace(options: SetupWorkspaceOptions) {
     if (groupingState.value.mode === 'addTo') {
       const compositeId = groupingState.value.compositeId
       if (objectId === compositeId) {
-        toast.warning('不能将组合对象自身添加为其成员')
+        toast.warning('Cannot add a grouped object to itself as a member')
         return
       }
       let current = selectedObj
       while (current.parentId) {
         if (current.parentId === compositeId) {
-          toast.warning('该对象已是此组合对象的后代，不可重复添加')
+          toast.warning('This object is already a descendant of this grouped object and cannot be added again')
           return
         }
         const parent = sceneObjectStore.getObject(current.parentId)
@@ -626,7 +626,7 @@ export function useSetupWorkspace(options: SetupWorkspaceOptions) {
         const firstObj = sceneObjectStore.getObject(pendingIds[0]!)
         const requiredParentId = firstObj?.parentId
         if (selectedObj.parentId !== requiredParentId) {
-          toast.warning('仅支持选择同级对象进行成组')
+          toast.warning('Grouping is only supported for sibling objects')
           return
         }
       }
@@ -653,8 +653,8 @@ export function useSetupWorkspace(options: SetupWorkspaceOptions) {
   }
 
   /**
-   * 按 ID 切换对象在成组待选列表中的勾选状态（供 checkbox 列表调用）。
-   * 复用 handleCanvasClickForGrouping 的校验逻辑但不依赖画布选中状态。
+   * Toggle checked state of object in grouping pending list by ID (called by checkbox list).
+   * Reuses validation logic from handleCanvasClickForGrouping without relying on canvas selection.
    */
   function handleGroupingToggleById(objectId: string): void {
     if (!groupingState.value) return
@@ -664,17 +664,17 @@ export function useSetupWorkspace(options: SetupWorkspaceOptions) {
 
     const pendingIds = groupingState.value.pendingIds
 
-    // addTo 模式校验
+    // addTo mode validation
     if (groupingState.value.mode === 'addTo') {
       const compositeId = groupingState.value.compositeId
       if (objectId === compositeId) {
-        toast.warning('不能将组合对象自身添加为其成员')
+        toast.warning('Cannot add a grouped object to itself as a member')
         return
       }
       let current = obj
       while (current.parentId) {
         if (current.parentId === compositeId) {
-          toast.warning('该对象已是此组合对象的后代，不可重复添加')
+          toast.warning('This object is already a descendant of this grouped object and cannot be added again')
           return
         }
         const parent = sceneObjectStore.getObject(current.parentId)
@@ -683,17 +683,17 @@ export function useSetupWorkspace(options: SetupWorkspaceOptions) {
       }
     }
 
-    // 切换逻辑
+    // Toggle logic
     const idx = pendingIds.indexOf(objectId)
     if (idx !== -1) {
       pendingIds.splice(idx, 1)
     } else {
-      // 同级检查
+      // Sibling check
       if (pendingIds.length > 0) {
         const firstObj = sceneObjectStore.getObject(pendingIds[0]!)
         const requiredParentId = firstObj?.parentId
         if (obj.parentId !== requiredParentId) {
-          toast.warning('仅支持选择同级对象进行成组')
+          toast.warning('Grouping is only supported for sibling objects')
           return
         }
       }
@@ -701,24 +701,24 @@ export function useSetupWorkspace(options: SetupWorkspaceOptions) {
     }
   }
 
-  /** 当前层级锁定的 parentId（由第一个 pending 对象决定） */
+  /** Currently locked parentId (determined by first pending object) */
   const lockedParentId = computed<string | undefined | null>(() => {
     if (!groupingState.value) return null
     const ids = groupingState.value.pendingIds
-    if (ids.length === 0) return null // null = 未锁定
+    if (ids.length === 0) return null // null = unlocked
     const firstObj = sceneObjectStore.getObject(ids[0]!)
-    return firstObj?.parentId // undefined = 根级
+    return firstObj?.parentId // undefined = root level
   })
 
   /**
-   * 构建成组模式下的对象树（仅非 camera 对象）。
-   * Composite 节点包含子节点列表，扁平对象为叶节点。
+   * Build object tree for grouping mode (non-camera objects only).
+   * Composite nodes contain child node lists, flat objects are leaf nodes.
    */
   const groupingEligibleObjects = computed<GroupingTreeNode[]>(() => {
     const objects = sceneObjectStore.objects
 
     function buildNode(obj: SceneObject, depth: number): GroupingTreeNode {
-      const displayName = (obj as unknown as { alias?: string }).alias ?? obj.name ?? '未命名'
+      const displayName = (obj as unknown as { alias?: string }).alias ?? obj.name ?? 'Untitled'
       const children: GroupingTreeNode[] = []
 
       if (obj.type === 'composite') {
@@ -742,18 +742,18 @@ export function useSetupWorkspace(options: SetupWorkspaceOptions) {
       }
     }
 
-    // 只取根级对象（无 parentId）
+    // Only take root level objects (no parentId)
     return objects
       .filter(o => o.type !== 'camera' && !o.parentId)
       .sort((a, b) => b.zIndex - a.zIndex)
       .map(o => buildNode(o, 0))
   })
 
-  // ===== 6b. 成组浮动栏拖动 =====
+  // ===== 6b. Grouping Floating Bar Dragging =====
   const groupingBarOffset = ref({ x: 0, y: 0 })
 
   function startDragGroupingBar(e: MouseEvent): void {
-    // 忽略按钮/checkbox 上的 mousedown
+    // Ignore mousedown on button/checkbox
     const target = e.target as HTMLElement
     if (target.tagName === 'BUTTON' || target.tagName === 'INPUT') return
 
@@ -777,13 +777,13 @@ export function useSetupWorkspace(options: SetupWorkspaceOptions) {
     document.addEventListener('mouseup', onUp)
   }
 
-  // 成组状态重置时回归默认位置
+  // Reset grouping bar position on cancel
   function handleGroupingCancel(): void {
     groupingState.value = null
     groupingBarOffset.value = { x: 0, y: 0 }
   }
 
-  // ===== 7. 别名管理 =====
+  // ===== 7. Alias Management =====
   const showAliasDialog = ref(false)
   const pendingActorData = ref<{ actorId: string; name: string; characterId: string } | null>(null)
   const pendingCanvasCenter = ref<{ x: number; y: number } | null>(null)
@@ -797,13 +797,13 @@ export function useSetupWorkspace(options: SetupWorkspaceOptions) {
       if (obj.type === 'background') {
         const bgObj = obj as unknown as { refId: string }
         const bg = backgroundStore.getBackground(bgObj.refId)
-        return bg?.name ?? obj.name ?? '背景'
+        return bg?.name ?? obj.name ?? 'Background'
       } else if (obj.type === 'audio') {
         const audioObj = obj as unknown as { refId: string }
         const sound = soundStore.getSound(audioObj.refId)
-        return sound?.name ?? obj.name ?? '音效'
+        return sound?.name ?? obj.name ?? 'Sound'
       }
-      return obj.name ?? '未命名'
+      return obj.name ?? 'Untitled'
     }
     return pendingActorData.value?.name ?? ''
   })
@@ -855,7 +855,7 @@ export function useSetupWorkspace(options: SetupWorkspaceOptions) {
   })
 
   const existingAliases = computed(() => {
-    // v17: 命名空间感知 — 基于正在编辑的对象所在的命名空间收集 alias
+    // v17: Namespace-aware — collect aliases within the namespace of the object being edited
     const nsRoot = editingAliasObjectId.value
       ? sceneObjectStore.resolveNamespaceRoot(editingAliasObjectId.value)
       : null
@@ -863,7 +863,7 @@ export function useSetupWorkspace(options: SetupWorkspaceOptions) {
   })
 
   function handleAliasConfirm(alias: string): void {
-    // 编辑模式：更新现有对象的别名
+    // Edit mode: update existing object's alias
     if (editingAliasObjectId.value) {
       const obj = sceneObjectStore.getObject(editingAliasObjectId.value)
       if (obj && obj.type !== 'camera') {
@@ -877,7 +877,7 @@ export function useSetupWorkspace(options: SetupWorkspaceOptions) {
       return
     }
 
-    // Character 创建已移除 — 此分支不再使用
+    // Character creation removed — this branch no longer used
     showAliasDialog.value = false
   }
 
@@ -898,7 +898,7 @@ export function useSetupWorkspace(options: SetupWorkspaceOptions) {
     showAliasDialog.value = true
   }
 
-  // ===== 8. 动画触发 =====
+  // ===== 8. Animation Triggering =====
 
   function handleTriggerAnim(payload: { action: 'play' | 'stop'; animName: string; loop?: boolean; speed?: number; timingMode?: AnimationTimingMode }): void {
     const selected = sceneObjectStore.getSelectedObject()
@@ -913,7 +913,7 @@ export function useSetupWorkspace(options: SetupWorkspaceOptions) {
       stopAnimation(animName: string): void
     }
 
-    // v18: 所有拥有 GenericAnimationPlayer 的对象类型都可播放动画
+    // v18: All object types possessing GenericAnimationPlayer can play animation
     const player: IAnimationPlayer | undefined = sceneGraph.getGenericAnimationPlayer(selected.id)
 
     if (!player) return
@@ -922,7 +922,7 @@ export function useSetupWorkspace(options: SetupWorkspaceOptions) {
     const resourceType = getAnimationResourceType(selected.type)
     if (!resourceType) return
 
-    // v18: composite 使用自身 id 作为 resourceId（没有 refId）
+    // v18: composite uses its own id as resourceId (no refId)
     const resourceId = selected.type === 'composite' ? selected.id : selected.refId
     if (!resourceId) return
 
@@ -939,7 +939,7 @@ export function useSetupWorkspace(options: SetupWorkspaceOptions) {
     }
   }
 
-  // ===== 9. 事件穿透列表管理 =====
+  // ===== 9. Pass-through List Management =====
   const showPassThroughTip = ref(true)
 
   function addToPassThrough(objectId: string): void {
@@ -983,7 +983,7 @@ export function useSetupWorkspace(options: SetupWorkspaceOptions) {
     return false
   }
 
-  // ===== 10. 全屏切换 =====
+  // ===== 10. Fullscreen Toggle =====
   const isFullscreen = ref(false)
 
   function toggleFullscreen(): void {
@@ -993,14 +993,14 @@ export function useSetupWorkspace(options: SetupWorkspaceOptions) {
         container.requestFullscreen().then(() => {
           isFullscreen.value = true
         }).catch((err) => {
-          console.error('[useSetupWorkspace] 进入全屏失败:', err)
+          console.error('[useSetupWorkspace] Failed to enter fullscreen:', err)
         })
       }
     } else {
       document.exitFullscreen().then(() => {
         isFullscreen.value = false
       }).catch((err) => {
-        console.error('[useSetupWorkspace] 退出全屏失败:', err)
+        console.error('[useSetupWorkspace] Failed to exit fullscreen:', err)
       })
     }
   }
@@ -1015,13 +1015,13 @@ export function useSetupWorkspace(options: SetupWorkspaceOptions) {
     }, 100)
   }
 
-  // ===== 10. 确认对话框 / 保存确认 =====
+  // ===== 10. Confirmation Dialog / Save Confirmation =====
   const showConfirmDialog = ref(false)
   const confirmDialogConfig = ref({
-    title: '确认',
+    title: 'Confirm',
     message: '',
-    confirmText: '确定',
-    cancelText: '取消',
+    confirmText: 'Confirm',
+    cancelText: 'Cancel',
     isDanger: false,
     showSecondaryConfirm: false,
     secondaryConfirmText: '',
@@ -1031,7 +1031,7 @@ export function useSetupWorkspace(options: SetupWorkspaceOptions) {
 
   const showSaveConfirmDialog = ref(false)
 
-  /** 工具栏返回按钮：有未保存修改时弹出 SaveConfirmDialog */
+  /** Toolbar return button: prompt SaveConfirmDialog when unsaved changes exist */
   function handleReturn(): void {
     if (hasLocalChanges.value) {
       showSaveConfirmDialog.value = true
@@ -1040,7 +1040,7 @@ export function useSetupWorkspace(options: SetupWorkspaceOptions) {
     }
   }
 
-  /** SaveConfirmDialog: 保存并关闭 */
+  /** SaveConfirmDialog: save and exit */
   async function handleSaveAndExit(): Promise<void> {
     showSaveConfirmDialog.value = false
     await options.onSave()
@@ -1048,13 +1048,13 @@ export function useSetupWorkspace(options: SetupWorkspaceOptions) {
     options.onExit()
   }
 
-  /** SaveConfirmDialog: 放弃修改 */
+  /** SaveConfirmDialog: discard changes */
   function handleDiscardAndExit(): void {
     showSaveConfirmDialog.value = false
     options.onExit()
   }
 
-  // ===== 11. 事件监听 =====
+  // ===== 11. Event Listeners =====
 
   function handleKeyDown(event: KeyboardEvent): void {
     const target = event.target as HTMLElement
@@ -1084,9 +1084,9 @@ export function useSetupWorkspace(options: SetupWorkspaceOptions) {
 
   // ===== 12. Watchers =====
 
-  /** 设置所有通用 Watcher。消费者在 onMounted 中数据加载完成后调用。 */
+  /** Setup all common Watchers. Called by consumer after data is loaded in onMounted. */
   function setupWatchers(): void {
-    // 对象数量变化 → 重渲染
+    // Object count changed → re-render
     watch(
       () => sceneObjectStore.objects.length,
       () => {
@@ -1096,7 +1096,7 @@ export function useSetupWorkspace(options: SetupWorkspaceOptions) {
       },
     )
 
-    // 对象属性变化 (expression, pose, visible, symbol material) → 重渲染
+    // Object property changed (expression, pose, visible, symbol material) → re-render
     watch(
       () => sceneObjectStore.objects.map(o => ({
         id: o.id,
@@ -1115,7 +1115,7 @@ export function useSetupWorkspace(options: SetupWorkspaceOptions) {
       { deep: true },
     )
 
-    // 右面板折叠 → 更新布局
+    // Right panel collapsed → update layout
     watch([rightPanelCollapsed], () => {
       setTimeout(() => {
         if (renderer.value) {
@@ -1125,7 +1125,7 @@ export function useSetupWorkspace(options: SetupWorkspaceOptions) {
       }, 300)
     })
 
-    // 右面板宽度 → 更新布局
+    // Right panel width → update layout
     watch([rightPanelWidth], () => {
       requestAnimationFrame(() => {
         if (renderer.value) {
@@ -1135,7 +1135,7 @@ export function useSetupWorkspace(options: SetupWorkspaceOptions) {
       })
     })
 
-    // 成组高亮同步
+    // Grouping highlight sync
     watch(
       () => groupingState.value?.pendingIds.slice() ?? [],
       (ids) => {
@@ -1150,26 +1150,26 @@ export function useSetupWorkspace(options: SetupWorkspaceOptions) {
   // ===== Return =====
 
   return {
-    // Stores (供模板直接使用)
+    // Stores (for template direct usage)
     sceneObjectStore,
 
-    // 画布
+    // Canvas
     renderer,
     initCanvas,
     destroyCanvas,
 
-    // 修改状态
+    // Modification state
     hasLocalChanges,
     markLocalChange,
     resetLocalChanges,
 
-    // 右面板
+    // Right panel
     rightPanelCollapsed,
     rightPanelWidth,
 
     startResizeRightPanel,
 
-    // 对象操作
+    // Object operations
     handleSelectObject,
     handleUpdateObject,
     handleDeleteObject,
@@ -1178,7 +1178,7 @@ export function useSetupWorkspace(options: SetupWorkspaceOptions) {
     handleMoveDown,
     handleInitialStateUpdate,
 
-    // 素材 Picker
+    // Asset Picker
     showCharacterPicker,
     showBackgroundPicker,
     showPropPicker,
@@ -1202,7 +1202,7 @@ export function useSetupWorkspace(options: SetupWorkspaceOptions) {
     handleCompositeCharacterSelect,
     handleActorSelect,
 
-    // 成组
+    // Grouping
     groupingState,
     getObjectDisplayName,
     getCompositeDisplayName,
@@ -1217,7 +1217,7 @@ export function useSetupWorkspace(options: SetupWorkspaceOptions) {
     groupingBarOffset,
     startDragGroupingBar,
 
-    // 别名
+    // Alias
     showAliasDialog,
     aliasDialogActorName,
     aliasDialogSuggestedAlias,
@@ -1228,10 +1228,10 @@ export function useSetupWorkspace(options: SetupWorkspaceOptions) {
     handleAliasCancel,
     handleEditAlias,
 
-    // 动画触发
+    // Animation trigger
     handleTriggerAnim,
 
-    // 穿透列表管理
+    // Pass-through list management
     showPassThroughTip,
     addToPassThrough,
     removeFromPassThrough,
@@ -1239,21 +1239,21 @@ export function useSetupWorkspace(options: SetupWorkspaceOptions) {
     getPassThroughEntries,
     isObjectPassThrough,
 
-    // 全屏
+    // Fullscreen
     isFullscreen,
     toggleFullscreen,
 
-    // 确认对话框
+    // Confirmation dialog
     showConfirmDialog,
     confirmDialogConfig,
 
-    // 保存确认
+    // Save confirmation
     showSaveConfirmDialog,
     handleReturn,
     handleSaveAndExit,
     handleDiscardAndExit,
 
-    // Watchers & 事件
+    // Watchers & events
     setupWatchers,
     setupEventListeners,
     cleanupEventListeners,

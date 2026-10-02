@@ -1,62 +1,61 @@
+// Scene object type definitions
+// Extracted from src/stores/sceneObjectStore.ts to resolve circular dependencies
 
-// 场景对象类型定义
-// 从 src/stores/sceneObjectStore.ts 提取以解决循环依赖
-
-// 场景对象类型
+// Scene object types
 export type SceneObjectType = 'background' | 'audio' | 'prop' | 'text' | 'camera' | 'light' | 'screen_effect' | 'composite' | 'symbol' | 'expression' | 'mask'
 
-// 场景对象基础接口（基类）
-// 所有子类型通过 interface extends 继承此基类
+// Scene object base interface (base class)
+// All subtypes extend this base interface
 export interface SceneObjectBase {
-  // 基础标识
+  // Basic identifiers
   id: string
   type: SceneObjectType
-  name: string             // 显示名
-  alias?: string           // v7.1: 场景内别名，除相机外所有对象都需要
-  refId: string            // 统一引用字段，指向 Asset ID（无引用的类型赋 ''）
+  name: string             // Display name
+  alias?: string           // v7.1: In-scene alias, required for all objects except camera
+  refId: string            // Unified reference field pointing to Asset ID (types with no asset ref assign '')
 
-  // 位置和尺寸（画布坐标系）
-  x: number               // X 坐标
-  y: number               // Y 坐标
-  width: number           // 宽度
-  height: number          // 高度
+  // Position and dimensions (canvas coordinate system)
+  x: number               // X coordinate
+  y: number               // Y coordinate
+  width: number           // Width
+  height: number          // Height
 
-  // 变换属性
-  scaleX: number          // X 轴缩放（默认 1.0）
-  scaleY: number          // Y 轴缩放（默认 1.0）
-  rotation: number        // 旋转角度（弧度）
-  alpha: number           // 透明度（0-1）
-  flipX: boolean          // 是否水平翻转（默认false）
+  // Transform properties
+  scaleX: number          // X-axis scale (default 1.0)
+  scaleY: number          // Y-axis scale (default 1.0)
+  rotation: number        // Rotation angle (radians)
+  alpha: number           // Opacity (0-1)
+  flipX: boolean          // Whether horizontally flipped (default false)
 
-  // 变换原点（相对于 PivotBase 的像素偏移，默认 0 = 围绕 PivotBase 旋转）
-  transformOriginX?: number   // 像素偏移，0=不偏移
-  transformOriginY?: number   // 像素偏移，0=不偏移
+  // Transform origin (pixel offset relative to PivotBase, default 0 = rotate around PivotBase)
+  transformOriginX?: number   // Pixel offset, 0 = no offset
+  transformOriginY?: number   // Pixel offset, 0 = no offset
 
-  // 层级和状态
-  zIndex: number          // 渲染层级
-  visible: boolean        // 是否可见
+  // Hierarchy and status
+  zIndex: number          // Render layer index
+  visible: boolean        // Whether visible
 
-  // 光照行为
-  receiveLighting?: boolean  // 是否受全局光照影响，默认 true（undefined = true）
-  castShadow?: boolean       // 是否投射脚底阴影，默认 false（undefined = false）
+  // Lighting behavior
+  receiveLighting?: boolean  // Whether affected by global lighting, default true (undefined = true)
+  castShadow?: boolean       // Whether to cast foot shadow, default false (undefined = false)
 
-  // v9.3: 生命周期状态
-  spawned?: boolean       // 是否已出生（动态对象 Setup 中为 false）
+  // v9.3: Lifecycle status
+  spawned?: boolean       // Whether spawned (false in Setup for dynamic objects)
 
-  // P2: 组合对象归属
-  parentId?: string       // 父组合对象 ID（无父对象时 undefined）
+  // P2: Composite object ownership
+  parentId?: string       // Parent composite object ID (undefined when no parent)
 
-  // 初始动画（角色/背景/道具共用，保留在基类）
+  // Initial animations (shared across actors/backgrounds/props, kept in base class)
   initialAnimations?: InitialAnimationItem[]
 
-  // v13.x: 动画定义（对象自身携带，随模板保存/实例化）
+  // v13.x: Animation definitions (carried by object itself, saved/instantiated with template)
   animations?: Record<string, AnimationDefinition>
 
-  // v20: 附加信息 — 标识对象的来源身份及关联数据
+  // v20: Additional info — identifies source identity and associated metadata
   extraInfo?: CompositeExtraInfo
 }
 
-/** 组合对象附加信息（鉴别式联合） */
+/** Composite object additional info (discriminated union) */
 export type CompositeExtraInfo =
   | { kind: 'actor'; actorId: string }
   | { kind: 'character'; characterId: string }
@@ -64,37 +63,33 @@ export type CompositeExtraInfo =
 
 import type { AnimationDefinition, InitialAnimationItem } from './animation'
 
-
-
-// 背景对象
+// Background object
 export interface BackgroundObject extends SceneObjectBase {
   type: 'background'
-  refId: string        // 统一引用字段 → Background.id
-  // PT Phase 6: backgroundId 已删除，统一使用 refId
+  refId: string        // Unified reference field -> Background.id
 }
 
-// 音频对象 (BGM/SFX 统一)
+// Audio object (unified BGM/SFX)
 export interface AudioObject extends SceneObjectBase {
   type: 'audio'
   refId: string        // SoundAsset ID
 
-  // 属性 (支持从 SoundAsset 继承默认值，但在此处存储覆盖值)
+  // Properties (supports inheriting default values from SoundAsset, but overrides stored here)
   volume: number       // 0-1
   loop: boolean
-  fadeIn: number       // 秒
-  fadeOut: number      // 秒
-  playbackState: 'play' | 'stop' // 默认播放状态
+  fadeIn: number       // Seconds
+  fadeOut: number      // Seconds
+  playbackState: 'play' | 'stop' // Default playback state
 }
 
-// 道具对象
-// v11.0: 移除旧的 animState，动画通过 AnimationPlayer 管理
+// Prop object
+// v11.0: Removed legacy animState, animation managed via AnimationPlayer
 export interface PropObject extends SceneObjectBase {
   type: 'prop'
-  refId: string        // 统一引用字段 → PropAsset.id
-  // PT Phase 6: propId 已删除，统一使用 refId
+  refId: string        // Unified reference field -> PropAsset.id
 }
 
-// 文本对象
+// Text object
 export interface TextObject extends SceneObjectBase {
   type: 'text'
   content: string
@@ -107,194 +102,193 @@ export interface TextObject extends SceneObjectBase {
   wordWrap: boolean
   wordWrapWidth: number
 
-  // === Phase 1: 视觉增强 ===
-  stroke?: string                   // 描边颜色(hex)，undefined=无描边
-  strokeThickness?: number          // 描边粗细(px)，默认 0
-  dropShadow?: boolean              // 投影开关，默认 false
-  dropShadowColor?: string          // 投影颜色，默认 '#000000'
-  dropShadowBlur?: number           // 投影模糊，默认 4
-  dropShadowAngle?: number          // 投影角度(弧度)，默认 Math.PI/4
-  dropShadowDistance?: number       // 投影距离，默认 4
-  lineHeight?: number               // 行高(px)，undefined=自动
-  letterSpacing?: number            // 字距(px)，默认 0
-  textBoxMode?: 'auto-width' | 'auto-height' | 'auto-size' | 'fixed'  // 默认 'auto-size'
-  writingMode?: 'horizontal' | 'vertical'  // 默认 'horizontal'
+  // === Phase 1: Visual enhancement ===
+  stroke?: string                   // Stroke color (hex), undefined = no stroke
+  strokeThickness?: number          // Stroke thickness (px), default 0
+  dropShadow?: boolean              // Drop shadow toggle, default false
+  dropShadowColor?: string          // Shadow color, default '#000000'
+  dropShadowBlur?: number           // Shadow blur, default 4
+  dropShadowAngle?: number          // Shadow angle (radians), default Math.PI/4
+  dropShadowDistance?: number       // Shadow distance, default 4
+  lineHeight?: number               // Line height (px), undefined = auto
+  letterSpacing?: number            // Letter spacing (px), default 0
+  textBoxMode?: 'auto-width' | 'auto-height' | 'auto-size' | 'fixed'  // Default 'auto-size'
+  writingMode?: 'horizontal' | 'vertical'  // Default 'horizontal'
 
-  // === Phase 2: 动画 ===
-  revealInitialState?: 'complete' | 'typewriter' // 默认显示方式，complete=完整文本，typewriter=开场打字
-  revealSpeed?: number                 // 逐字速度(chars/sec)，默认 8
-  fillType?: 'linear_gradient'          // 文字渐变开关（undefined=使用文字颜色）
-  gradientStops?: { offset: number; color: string }[]  // 渐变色标
-  gradientAngle?: number               // 渐变角度(度)
-  textBackgroundEnabled?: boolean      // 文本框背景填充开关
-  textBackgroundColor?: string         // 文本框背景颜色
-  textBackgroundAlpha?: number         // 文本框背景透明度 0~1
-  textBackgroundPaddingX?: number      // 文本框背景水平内边距
-  textBackgroundPaddingY?: number      // 文本框背景垂直内边距
-  textBackgroundRadius?: number        // 文本框背景圆角
+  // === Phase 2: Animation ===
+  revealInitialState?: 'complete' | 'typewriter' // Default display mode: complete = full text, typewriter = typewriter reveal
+  revealSpeed?: number                 // Speed (chars/sec), default 8
+  fillType?: 'linear_gradient'          // Text gradient toggle (undefined = use solid color)
+  gradientStops?: { offset: number; color: string }[]  // Gradient color stops
+  gradientAngle?: number               // Gradient angle (degrees)
+  textBackgroundEnabled?: boolean      // Text background fill toggle
+  textBackgroundColor?: string         // Text background color
+  textBackgroundAlpha?: number         // Text background opacity 0~1
+  textBackgroundPaddingX?: number      // Text background horizontal padding
+  textBackgroundPaddingY?: number      // Text background vertical padding
+  textBackgroundRadius?: number        // Text background corner radius
 }
 
-// 相机对象
+// Camera object
 export interface CameraObject extends SceneObjectBase {
   type: 'camera'
-  zoom: number  // 缩放级别，1.0 = 正常
+  zoom: number  // Zoom level, 1.0 = normal
 }
 
-// 光源对象 — 环境光 (ambient) 和点光源 (point)
-// ambient: 场景唯一，自动创建，不可删除（与 Camera 相同模式）
-// point: 可多个，带位置/半径，渲染时按强度取 top 8
+// Light object — ambient light and point light
+// ambient: Scene-unique, auto-created, non-deletable (same model as Camera)
+// point: Multiple allowed, carries position/radius, top 8 by intensity selected at render time
 export interface LightObject extends SceneObjectBase {
   type: 'light'
-  /** 光源类型 */
+  /** Light type */
   lightType: 'ambient' | 'point' | 'spot'
-  /** 光照颜色 (hex) */
+  /** Light color (hex) */
   lightColor: string
-  /** 光照强度 0~2 */
+  /** Light intensity 0~2 */
   lightIntensity: number
-  /** 光照半径（像素），仅 point 有效 */
+  /** Light radius (pixels), effective for point only */
   lightRadius: number
 
-  // === Phase 1: 简化动态参数 ===
-  /** 闪烁强度 0~1，0=无闪烁 */
+  // === Phase 1: Dynamic parameters ===
+  /** Flicker intensity 0~1, 0 = no flicker */
   flicker?: number
-  /** 闪烁速度 0~1 */
+  /** Flicker speed 0~1 */
   flickerSpeed?: number
-  /** 发光模式，默认 omni（全向）；cone 时启用方向性 */
+  /** Emission mode: default omni; cone enables directional lighting */
   directionMode?: 'omni' | 'cone'
-  /** 方向角（弧度），仅 directionMode=cone 生效 */
+  /** Direction angle (radians), effective only when directionMode=cone */
   directionAngle?: number
-  /** 扇形开角（角度制，10~360），默认 100，仅 directionMode=cone 生效 */
+  /** Sector opening angle (degrees, 10~360), default 100, effective only when directionMode=cone */
   coneAngle?: number
 }
 
-// 画面特效参数 (Phase 1: 覆盖型 + 孔洞 + 跟随)
+// Screen effect parameters (Phase 1: overlay + hole + follow)
 export interface ScreenEffectParams {
-  // --- 覆盖型通用参数 ---
-  baseColor?: string          // 覆盖颜色，默认 '#000000'
-  // 覆盖不透明度统一由 SceneObjectBase.alpha 控制，不再使用 coverOpacity
+  // --- Overlay general parameters ---
+  baseColor?: string          // Overlay color, default '#000000'
+  // Overlay opacity uniformly controlled by SceneObjectBase.alpha, coverOpacity no longer used
 
-  // --- 孔洞参数 ---
+  // --- Hole parameters ---
   holeShape?: 'circle' | 'horizontal_ellipse' | 'vertical_ellipse' | 'rectangle'
-  holeCenterX?: number        // 孔洞中心 X
-  holeCenterY?: number        // 孔洞中心 Y
-  holeWidth?: number          // 孔洞宽度
-  holeHeight?: number         // 孔洞高度
-  openRatio?: number          // 开合比例 0~1
-  feather?: number            // 边缘羽化半径 (px)
+  holeCenterX?: number        // Hole center X
+  holeCenterY?: number        // Hole center Y
+  holeWidth?: number          // Hole width
+  holeHeight?: number         // Hole height
+  openRatio?: number          // Open/close ratio 0~1
+  feather?: number            // Edge feathering radius (px)
 
-  // --- 跟随参数 ---
-  targetId?: string           // 绑定的跟随对象 ID
-  offsetX?: number            // 跟随偏移 X
-  offsetY?: number            // 跟随偏移 Y
+  // --- Follow parameters ---
+  targetId?: string           // Bound follow target object ID
+  offsetX?: number            // Follow offset X
+  offsetY?: number            // Follow offset Y
 
-  // --- 光照模式参数 ---
-  /** 光照模式：additive=叠加发光(ADD), soft=柔和照亮(SCREEN) */
+  // --- Lighting mode parameters ---
+  /** Lighting mode: additive = additive glow (ADD), soft = soft illumination (SCREEN) */
   lightMode?: 'additive' | 'soft'
-  /** 光斑颜色，默认 '#ffffff' */
+  /** Light spot color, default '#ffffff' */
   lightColor?: string
-  /** 衰减曲线，默认 'smooth' */
+  /** Falloff curve, default 'smooth' */
   lightFalloff?: 'linear' | 'quadratic' | 'smooth'
 }
 
-// 画面特效对象
+// Screen effect object
 export interface ScreenEffectObject extends SceneObjectBase {
   type: 'screen_effect'
-  effectClass: string         // 特效种类标识，如 'spotlight', 'fullscreen_cover'
-  customName?: string         // 轨道上显示的名称，如 "黑幕_1"
+  effectClass: string         // Effect class identifier, e.g. 'spotlight', 'fullscreen_cover'
+  customName?: string         // Name displayed on track, e.g. "Blackout_1"
   params: ScreenEffectParams
 }
 
-// 画面特效预设 (用于 Picker 弹窗选择结果)
+// Screen effect preset (used for Picker dialog selection result)
 export interface ScreenEffectPreset {
   effectClass: string
   name: string
   params: ScreenEffectParams
-  defaultAlpha?: number  // 覆盖不透明度，由调用端设置到 SceneObjectBase.alpha
+  defaultAlpha?: number  // Overlay opacity, set to SceneObjectBase.alpha by caller
 }
 
-// P2: 组合对象
+// P2: Composite object
 export interface CompositeObject extends SceneObjectBase {
   type: 'composite'
-  childIds: string[]      // 子对象 ID 列表（平铺存储，通过双向引用维护）
-  compositeLocked: boolean  // 锁定模式：true=点击子对象选中整体，false=可独立操作子对象
-  compositeMode: 'entity' | 'union'  // entity=实体模式（级联删除），union=联合模式（子对象冒泡）
-  /** 仅 entity：内部渲染链（有序 ID 列表）。嵌套 union 不出现，其子对象展开平铺。 */
+  childIds: string[]      // Child object ID list (flat storage, maintained via bidirectional references)
+  compositeLocked: boolean  // Lock mode: true = clicking child selects parent composite, false = children independently operable
+  compositeMode: 'entity' | 'union'  // entity = entity mode (cascading delete), union = union mode (child bubbling)
+  /** Entity only: internal render chain (ordered ID list). Nested unions do not appear; their children are flattened. */
   renderChain?: string[]
 
-  /** 场景实例级 rootComposite ID（导入人物时由 idMap 从 CompositeCharacter.rootCompositeId 重映射而来） */
+  /** Scene instance-level rootComposite ID (remapped from CompositeCharacter.rootCompositeId by idMap during character import) */
   instanceRootCompositeId?: string
 }
 
-// v16: 元件素材
+// v16: Symbol material
 export interface SymbolMaterial {
   id: string
   name: string
   type: 'static' | 'animation'
-  /** 静态图片 URL / 动画静止帧 URL（type === 'static' 时为主图，type === 'animation' 时为静止帧） */
+  /** Static image URL / Animation still frame URL (main image when type === 'static', still frame when type === 'animation') */
   url?: string
-  /** 序列帧（type === 'animation' 时使用） */
+  /** Frame sequence (used when type === 'animation') */
   frames?: { url: string }[]
-  /** 帧率（type === 'animation' 时使用） */
+  /** Framerate (used when type === 'animation') */
   fps?: number
-  /** 是否循环播放 */
+  /** Whether to loop playback */
   loop?: boolean
-  /** 静止帧来源：'frame' = 从序列帧选择，'custom' = 自定义上传 */
+  /** Still frame source: 'frame' = select from sequence frames, 'custom' = custom uploaded image */
   stillFrameSource?: 'frame' | 'custom'
-  /** 当 stillFrameSource === 'frame' 时，使用的帧索引 */
+  /** Frame index used when stillFrameSource === 'frame' */
   stillFrameIndex?: number
-
 }
 
-// v16: 元件对象 — 填补道具（单资源）和角色（多部件）之间的空白
-// 素材直接存在对象上（自包含），不依赖外部资源 Store
+// v16: Symbol object — bridges the gap between props (single asset) and actors (multiple parts)
+// Materials reside directly on object (self-contained), independent of external asset Stores
 export interface SymbolObject extends SceneObjectBase {
   type: 'symbol'
-  /** 素材列表 */
+  /** Material list */
   materials: SymbolMaterial[]
-  /** 当前显示的素材 ID */
+  /** Currently displayed material ID */
   currentMaterialId?: string
 }
 
-// v18: 独立表情对象 — 引用 expressionStore 中的表情资源
-// refId 可变，支持运行时切换不同表情（类似 SymbolObject.currentMaterialId）
+// v18: Independent expression object — references expression resource in expressionStore
+// refId is mutable, supporting runtime switching across different expressions (similar to SymbolObject.currentMaterialId)
 export interface ExpressionObject extends SceneObjectBase {
   type: 'expression'
-  refId: string  // → Expression.id (expressionStore)，可变
-  defaultRefId?: string  // → 默认表情 ID（创建时自动设置，用于恢复默认）
+  refId: string  // -> Expression.id (expressionStore), mutable
+  defaultRefId?: string  // -> Default expression ID (auto-set at creation, used to restore default)
 }
 
-// Clip-Mask Phase 1: 蒙版对象 — 独立 SceneObject，作为裁切源裁切 targetIds 列表中的目标对象
-// 详见 docs/features/clip-mask.md（v2.1）
+// Clip-Mask Phase 1: Mask object — Independent SceneObject, acts as clipping source to clip target objects in targetIds list
+// See docs/features/clip-mask.md (v2.1)
 export type MaskShape = 'rectangle' | 'ellipse'
-/** Phase 1 仅支持 inside_visible（形状内可见、形状外隐藏）。
- *  outer / outside_visible 等模式 Phase 2 引入并扩展该联合类型。 */
+/** Phase 1 only supports inside_visible (visible inside shape, hidden outside).
+ *  outer / outside_visible modes introduced in Phase 2 will extend this union type. */
 export type MaskMode = 'inside_visible'
 
 export interface MaskObject extends SceneObjectBase {
   type: 'mask'
-  refId: ''                 // mask 不引用任何 Asset，固定空串以满足基类约束
-  /** 形状类型，几何由 SceneObjectBase 的 width/height/rotation/scale 等提供 */
+  refId: ''                 // mask does not reference any Asset, fixed empty string to satisfy base class constraint
+  /** Shape type; geometry provided by SceneObjectBase width/height/rotation/scale, etc. */
   shape: MaskShape
-  /** 裁切模式（Phase 1 锁定为 'inside_visible'） */
+  /** Clipping mode (Phase 1 locked to 'inside_visible') */
   mode: MaskMode
-  /** 被该蒙版裁切的目标对象 id 列表；Phase 1 单蒙版独占——同一 id 同一时刻只能出现在一个 mask 的 targetIds 中。 */
+  /** List of target object IDs clipped by this mask; Phase 1 single mask exclusive — same ID can only appear in one mask's targetIds at a time. */
   targetIds: string[]
 }
 
-// SceneObject = 基类（多态引用，消费者通过 as SubType 在类型判断分支内访问子类型字段）
+// SceneObject = Base class (polymorphic reference; consumers access subtype fields via `as SubType` inside type check branches)
 export type SceneObject = SceneObjectBase
 
 /**
- * updateObject 的参数类型（泛型版本）。
+ * Parameter type for updateObject (generic version).
  *
- * - `SceneObjectUpdateFor<SceneObject>` — 基类属性更新
- * - `SceneObjectUpdateFor<CompositeObject>` — 包含 compositeLocked/compositeMode 等子类型字段
+ * - `SceneObjectUpdateFor<SceneObject>` — Base class property update
+ * - `SceneObjectUpdateFor<CompositeObject>` — Subtype fields including compositeLocked/compositeMode, etc.
  *
- * 每个属性显式允许 `undefined` 值，语义 = **删除该属性**（绕过 exactOptionalPropertyTypes 限制）。
+ * Each property explicitly permits `undefined`, with semantics = **delete this property** (bypasses exactOptionalPropertyTypes constraint).
  */
 export type SceneObjectUpdateFor<T extends SceneObject = SceneObject> = {
   [K in keyof T]?: T[K] | undefined
 }
 
-/** 基类属性更新（最常用场景的简写） */
+/** Base class property update (shorthand for most common usage) */
 export type SceneObjectUpdate = SceneObjectUpdateFor<SceneObject>

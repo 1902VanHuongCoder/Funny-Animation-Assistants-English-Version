@@ -1,15 +1,15 @@
 /**
  * spriteAnimationDriver.ts
  *
- * 统一的 AnimatedSprite 手动帧推进模块。
+ * Unified AnimatedSprite manual frame advancement module.
  *
- * ScenePlayer 和 FrameCapture 共享同一套逻辑：
- *  - 禁用 PIXI Ticker 自动更新（autoUpdate = false）
- *  - 由宿主每帧传入 deltaTime，手动计算帧索引并 gotoAndStop
+ * ScenePlayer and FrameCapture share the same logic:
+ *  - Disable PIXI Ticker automatic updates (autoUpdate = false)
+ *  - Host passes deltaTime every frame, manually calculating frame index and calling gotoAndStop
  *
- * 这消除了 ScenePlayer 中"出生帧 + 播放帧"同帧时的 1 帧延迟问题——
- * 因为不再依赖 PIXI Ticker 异步推进 AnimatedSprite，
- * 而是在 updateFrame() 尾部同步推进到正确帧。
+ * This eliminates the 1-frame latency in ScenePlayer when "spawn frame + play frame" coincide,
+ * because we no longer rely on PIXI Ticker asynchronously advancing AnimatedSprite,
+ * but instead advance synchronously to the correct frame at the end of updateFrame().
  */
 
 import * as PIXI from 'pixi.js'
@@ -25,16 +25,16 @@ function isDisplayObjectContainer(
 }
 
 /**
- * 递归推进容器内所有 AnimatedSprite 的帧索引
+ * Recursively advance frame index of all AnimatedSprites within a container
  *
- * 播放判定逻辑：
- *  1. _shouldPlay = true  → 明确播放（initialAnimations / set_anim 触发）
- *  2. _shouldPlay = false → 明确停止
- *  3. _shouldPlay = undefined 且 playing = true → 由其他代码触发播放
+ * Playback determination logic:
+ *  1. _shouldPlay = true  -> Explicit play (triggered by initialAnimations / set_anim)
+ *  2. _shouldPlay = false -> Explicit stop
+ *  3. _shouldPlay = undefined and playing = true -> Play triggered by other code
  *
- * @param container     待遍历的 PIXI 容器
- * @param deltaTime     距上一帧的时间差 (ms)
- * @param accumulator   WeakMap\<AnimatedSprite, number\> 用于累积时间
+ * @param container     PIXI container to traverse
+ * @param deltaTime     Time delta since previous frame (ms)
+ * @param accumulator   WeakMap<AnimatedSprite, number> used to accumulate time
  */
 export function advanceAnimatedSprites(
     container: PIXI.Container<PIXI.DisplayObject>,
@@ -76,11 +76,11 @@ export function advanceAnimatedSprites(
 }
 
 /**
- * 遍历 objectContainers Map，手动推进所有 AnimatedSprite
+ * Traverse objectContainers Map and manually advance all AnimatedSprites
  *
- * @param objectContainers  对象 ID → PIXI.Container 映射
- * @param deltaTime         距上一帧的时间差 (ms)
- * @param accumulator       WeakMap 用于累积时间
+ * @param objectContainers  Object ID -> PIXI.Container mapping
+ * @param deltaTime         Time delta since previous frame (ms)
+ * @param accumulator       WeakMap used to accumulate time
  */
 export function advanceAllObjectAnimations(
     objectContainers: Map<string, PIXI.Container<PIXI.DisplayObject>>,
@@ -88,9 +88,9 @@ export function advanceAllObjectAnimations(
     accumulator: WeakMap<PIXI.AnimatedSprite, number>,
 ): void {
     objectContainers.forEach((container) => {
-        // 跳过不可见的容器（spawned=false 的对象 container.visible=false）
-        // 防止动画在对象出生前就后台累积帧索引，
-        // 导致出生时动画已经播放到中间位置
+        // Skip invisible containers (spawned=false objects have container.visible=false)
+        // Prevents animation from accumulating frame indices in background before object spawns,
+        // which would cause animation to start mid-way upon spawning
         if (!container.visible) return
         advanceAnimatedSprites(container, deltaTime, accumulator)
     })

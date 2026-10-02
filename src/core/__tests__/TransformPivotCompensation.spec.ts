@@ -1,7 +1,7 @@
 /**
  * TransformPivotCompensation.spec.ts
  *
- * 验证：pivot 改变后，补偿公式能让"图像中心世界位置"在每个关键帧保持不变。
+ * Verification: After pivot change, compensation formula preserves "image center world position" at each keyframe.
  */
 
 import { describe, expect, it } from 'vitest'
@@ -13,19 +13,19 @@ import {
 import type { TransformTrack } from '@/types/animation'
 
 /**
- * 计算给定关键帧在"某 pivot 下"的图像中心世界位置。
- * 模拟 PIXI 容器的变换顺序：
+ * Computes image center world position for given keyframe under a specific pivot.
+ * Simulates PIXI container transform order:
  *   world = storePos + R(rot) · S(scale) · (0 − pivot) + flipSign · pivot_correction
  *
- * 为了和 useSceneRenderer 的实际实现对齐，这里使用和
- * applyTransformOriginPivot 一致的推导：
+ * To align with actual implementation in useSceneRenderer, this uses
+ * derivation consistent with applyTransformOriginPivot:
  *   container.pivot = PivotBase + origin
  *   container.position = storeX + flipSign·originX
- * 因此图像中心（PivotBase 处）的世界位置：
+ * Therefore world position of image center (at PivotBase):
  *   V = (storeX + f·origin) + R·S·(PivotBase − (PivotBase+origin))
  *     = storeX + f·origin − R·S·origin
  *
- * 补偿后 storeX' = storeX + adjust，应该让 V 恒定。
+ * After compensation storeX' = storeX + adjust, keeping V constant.
  */
 function computeCenterWorldPos(
     storeX: number,
@@ -53,7 +53,7 @@ function computeCenterWorldPos(
 }
 
 describe('TransformPivotCompensation', () => {
-    it('Δpivot 为 0 时不改动关键帧', () => {
+    it('does not modify keyframe when delta pivot is 0', () => {
         const track: TransformTrack = {
             trackType: 'transform',
             keyframes: [{ time: 0, x: 1, y: 2, rotation: 0.5 }],
@@ -70,7 +70,7 @@ describe('TransformPivotCompensation', () => {
         expect(track.keyframes[0]!.y).toBe(2)
     })
 
-    it('无旋转无缩放时补偿后中心位置恒定', () => {
+    it('center position remains constant after compensation without rotation or scale', () => {
         const track: TransformTrack = {
             trackType: 'transform',
             keyframes: [{ time: 0.5, x: 5, y: -3, rotation: 0 }],
@@ -101,7 +101,7 @@ describe('TransformPivotCompensation', () => {
         expect(afterCenter.y).toBeCloseTo(beforeCenter.y, 6)
     })
 
-    it('关键帧带旋转时补偿后中心位置恒定', () => {
+    it('center position remains constant after compensation when keyframe has rotation', () => {
         const track: TransformTrack = {
             trackType: 'transform',
             keyframes: [
@@ -132,7 +132,7 @@ describe('TransformPivotCompensation', () => {
         }
     })
 
-    it('基准对象带旋转 + 关键帧带缩放时补偿后中心位置恒定', () => {
+    it('center position remains constant when base object has rotation and keyframe has scale', () => {
         const track: TransformTrack = {
             trackType: 'transform',
             keyframes: [
@@ -165,7 +165,7 @@ describe('TransformPivotCompensation', () => {
         expect(after.y).toBeCloseTo(before.y, 6)
     })
 
-    it('基准 flipX=true 时补偿公式方向正确', () => {
+    it('compensation formula direction is correct when base flipX=true', () => {
         const track: TransformTrack = {
             trackType: 'transform',
             keyframes: [{ time: 0, x: 0, y: 0, rotation: Math.PI / 5 }],

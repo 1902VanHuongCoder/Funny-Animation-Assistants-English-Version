@@ -1,9 +1,9 @@
 /**
- * SimpleGizmo — 动画编辑器独立画布的变换控制框
+ * SimpleGizmo — Transform gizmo for the animation workbench independent canvas
  *
- * 纯 PixiJS 实现，不依赖 useSceneRenderer / useInteraction / sceneObjectStore。
- * 处理单个对象的 移动 / 旋转 / 缩放 / 锚点拖拽。
- * 所有操作结果通过事件回调输出，由 AnimationWorkbench 写入关键帧数据。
+ * Pure PixiJS implementation, independent of useSceneRenderer / useInteraction / sceneObjectStore.
+ * Handles single object translation / rotation / scaling / anchor dragging.
+ * All operation results are output via event callbacks, and written to keyframe data by AnimationWorkbench.
  */
 
 import * as PIXI from 'pixi.js'
@@ -193,7 +193,7 @@ export class SimpleGizmo extends PIXI.Container {
 
         // --- Border ---
         this.border.clear()
-        // 边框线不可见（选择框由 useSceneRenderer 绘制），保留透明 fill 用于拖拽检测
+        // Border line is invisible (selection box is drawn by useSceneRenderer), retaining transparent fill for drag detection
         this.border.lineStyle(2, COLORS.border, 0)
         this.border.moveTo(corners[0]!.x, corners[0]!.y)
         this.border.lineTo(corners[1]!.x, corners[1]!.y)
@@ -323,19 +323,19 @@ export class SimpleGizmo extends PIXI.Container {
             this.startTranslating(e)
         })
 
-        // Global move/up via window events（不依赖 PIXI 事件冒泡）
-        // 绑定到 window 确保鼠标离开 gizmo 区域后仍能持续接收事件，
-        // 解决拖拽/旋转/缩放时鼠标移出画布导致交互中断的问题
+        // Global move/up via window events (does not rely on PIXI event bubbling)
+        // Bound to window to ensure pointer events continue to be received even after cursor leaves gizmo area,
+        // solving issue where cursor leaving canvas during drag/rotate/scale caused interaction interruption
         this._onWindowPointerMove = (e: PointerEvent) => {
             if (this.state.type === 'idle' || !this.target) return
-            // 将 window PointerEvent 转换为 PIXI 坐标
+            // Convert window PointerEvent to PIXI coordinates
             const canvas = this.canvasEl
             if (!canvas) return
             const rect = canvas.getBoundingClientRect()
-            // CSS 像素坐标（autoDensity: true 时 PIXI event.global 也是 CSS 像素）
+            // CSS pixel coordinates (when autoDensity: true, PIXI event.global is also CSS pixels)
             const x = e.clientX - rect.left
             const y = e.clientY - rect.top
-            // 构造 FederatedPointerEvent 兼容的 global 对象
+            // Construct FederatedPointerEvent compatible global object
             const fakeEvent = {
                 global: { x, y, clone: () => ({ x, y }) },
                 shiftKey: e.shiftKey,
@@ -451,9 +451,9 @@ export class SimpleGizmo extends PIXI.Container {
                 const pivotG = this.state.pivotGlobal
                 const currentAngle = Math.atan2(mouse.y - pivotG.y, mouse.x - pivotG.x)
 
-                // 连续累计每一步的最短弧增量，支持单次拖拽超过 180° 甚至整圈旋转
+                // Continuously accumulate shortest arc delta of each step, supporting single drag > 180 deg or full rotations
                 let frameDelta = currentAngle - this.state.lastAngle
-                // 归一化到 [-π, π]，处理 atan2 在 ±π 边界的跳变
+                // Normalize to [-pi, pi], handling atan2 discontinuity at +/-pi boundary
                 while (frameDelta > Math.PI) frameDelta -= Math.PI * 2
                 while (frameDelta < -Math.PI) frameDelta += Math.PI * 2
                 this.state.lastAngle = currentAngle

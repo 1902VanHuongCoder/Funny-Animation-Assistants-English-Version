@@ -1,16 +1,16 @@
 /**
- * 预制动画模板实例化器 (v3 — 名称寻址版)
+ * Preset animation template instantiator (v3 — Name-addressed edition)
  *
- * 将 targetName（alias 或 name） 寻址的 PresetAnimationTemplate
- * 转换为 UUID 寻址的 TrackAnimationDefinition。
+ * Converts PresetAnimationTemplate addressed by targetName (alias or name)
+ * into TrackAnimationDefinition addressed by UUID.
  *
- * 寻址优先级：
- *   1. alias 精确匹配
- *   2. name 精确匹配
- *   3. 未命中 → missing
- *   4. 多命中 → ambiguous
+ * Addressing priority:
+ *   1. alias exact match
+ *   2. name exact match
+ *   3. No hit -> missing
+ *   4. Multiple hits -> ambiguous
  *
- * 作用域：角色根复合子树内（不跨角色）
+ * Scope: Within character root composite subtree (does not cross characters)
  */
 
 import { nanoid } from 'nanoid'
@@ -27,12 +27,12 @@ import type {
 } from '@/types/presetAnimation'
 import type { SceneObject } from '@/types/sceneObject'
 
-// ===== 类型定义 =====
+// ===== Type Definitions =====
 
 export interface ResolveResult {
   status: 'unique' | 'missing' | 'ambiguous'
   objectId?: string
-  /** ambiguous 时的候选对象 ID 列表 */
+  /** Candidate object ID list when ambiguous */
   candidates?: string[]
 }
 
@@ -67,11 +67,11 @@ export interface InstantiationResult {
   diagnostics: InstantiationDiagnostics
 }
 
-// ===== 子树收集 =====
+// ===== Subtree Collection =====
 
 /**
- * 从根复合对象出发，按 parentId / childIds 关系收集整棵子树的对象 ID。
- * 遇到循环引用时安全跳出。
+ * Traverses from root composite object and collects all object IDs in subtree based on parentId / childIds.
+ * Safely breaks on circular references.
  */
 export function collectSubtreeIds(
   rootCompositeId: string,
@@ -95,11 +95,11 @@ export function collectSubtreeIds(
   return visited
 }
 
-// ===== 名称寻址 =====
+// ===== Name Addressing =====
 
 /**
- * 在角色根子树内按名称查找目标对象
- * 优先级：alias 精确匹配 → name 精确匹配
+ * Finds target object by name within character root subtree
+ * Priority: alias exact match -> name exact match
  */
 export function resolveTargetByName(
   name: string,
@@ -109,7 +109,7 @@ export function resolveTargetByName(
   if (!name) return { status: 'missing' }
   const subtreeIds = collectSubtreeIds(rootCompositeId, sceneObjects)
 
-  // Pass 1: alias 精确匹配
+  // Pass 1: alias exact match
   const aliasMatches: string[] = []
   for (const id of subtreeIds) {
     const obj = sceneObjects.get(id)
@@ -118,7 +118,7 @@ export function resolveTargetByName(
   if (aliasMatches.length === 1) return { status: 'unique', objectId: aliasMatches[0]! }
   if (aliasMatches.length > 1) return { status: 'ambiguous', candidates: aliasMatches }
 
-  // Pass 2: name 精确匹配
+  // Pass 2: name exact match
   const nameMatches: string[] = []
   for (const id of subtreeIds) {
     const obj = sceneObjects.get(id)
@@ -130,12 +130,12 @@ export function resolveTargetByName(
   return { status: 'missing' }
 }
 
-// ===== 诊断 =====
+// ===== Diagnostics =====
 
 /**
- * 检查模板是否可应用于指定角色根对象
+ * Checks whether template can be applied to specified character root object
  *
- * 返回完整诊断结果：哪些目标唯一命中、哪些缺失、哪些歧义
+ * Returns full diagnostics: unique matches, missing, and ambiguous targets
  */
 export function canApplyPreset(
   template: PresetAnimationTemplate,
@@ -150,7 +150,7 @@ export function canApplyPreset(
   }
 
   for (const target of template.expectedTargets) {
-    // 手动 override 优先
+    // Manual override takes precedence
     const overrideId = overrides?.[target.key]
     if (overrideId) {
       if (sceneObjects.has(overrideId)) {
@@ -161,7 +161,7 @@ export function canApplyPreset(
         })
         continue
       }
-      // override 指向不存在的对象：按 missing 处理
+      // Override points to non-existent object: treat as missing
     }
 
     const result = resolveTargetWithFallback(target, rootCompositeId, sceneObjects)
@@ -172,13 +172,13 @@ export function canApplyPreset(
 }
 
 /**
- * 按推荐名 + fallbackNames 顺序依次尝试解析目标。
+ * Attempts to resolve target by recommendedName + fallbackNames in sequential order.
  *
- * 规则：
- *   - unique 命中 → 立即返回
- *   - ambiguous 命中 → 立即返回（歧义是终态，不应被后续 fallback 掩盖）
- *   - missing → 继续尝试下一个候选
- * 若所有候选均 missing，返回 missing。
+ * Rules:
+ *   - unique hit -> return immediately
+ *   - ambiguous hit -> return immediately (ambiguity is final state, not masked by subsequent fallbacks)
+ *   - missing -> try next candidate
+ * If all candidates are missing, return missing.
  */
 function resolveTargetWithFallback(
   target: ExpectedTarget,
@@ -223,21 +223,21 @@ function addDiagnosticEntry(
   }
 }
 
-/** 诊断是否可以直接应用（无阻塞 missing / ambiguous） */
+/** Determines if diagnostics allow immediate application (no blocking missing / ambiguous) */
 export function isDiagnosticsApplicable(diagnostics: InstantiationDiagnostics): boolean {
   const blockingMissing = diagnostics.missing.filter(m => !m.optional)
   return blockingMissing.length === 0 && diagnostics.ambiguous.length === 0
 }
 
-// ===== 实例化 =====
+// ===== Instantiation =====
 
 /**
- * 实例化预制动画模板
+ * Instantiates preset animation template
  *
- * @param template 预制动画模板（名称寻址）
- * @param rootCompositeId 角色根复合对象 ID
- * @param sceneObjects 场景对象 Map（用于名称解析）
- * @param overrides 手动指定的 targetKey → objectId 覆盖（处理 missing / ambiguous）
+ * @param template Preset animation template (name-addressed)
+ * @param rootCompositeId Character root composite object ID
+ * @param sceneObjects Scene object Map (used for name resolution)
+ * @param overrides Manually specified targetKey -> objectId overrides (resolves missing / ambiguous)
  */
 export function instantiatePresetAnimation(
   template: PresetAnimationTemplate,
@@ -247,7 +247,7 @@ export function instantiatePresetAnimation(
 ): InstantiationResult {
   const diagnostics = canApplyPreset(template, rootCompositeId, sceneObjects, overrides)
 
-  // 构建 targetKey → objectId 解析表
+  // Build targetKey -> objectId resolution map
   const keyToObjectId = new Map<string, string>()
   for (const entry of diagnostics.unique) {
     keyToObjectId.set(entry.targetKey, entry.objectId)
@@ -256,10 +256,10 @@ export function instantiatePresetAnimation(
   const now = Date.now()
   const allTracks: AnimationTrack[] = []
 
-  // 遍历模板的 targetTracks，将 targetKey → UUID
+  // Traverse template targetTracks, converting targetKey -> UUID
   for (const group of template.targetTracks) {
     const objectId = keyToObjectId.get(group.targetKey)
-    if (!objectId) continue // missing / ambiguous 的目标 → 跳过其轨道
+    if (!objectId) continue // missing / ambiguous targets -> skip tracks
 
     for (const templateTrack of group.tracks) {
       const track: AnimationTrack = {
@@ -288,13 +288,13 @@ export function instantiatePresetAnimation(
 }
 
 /**
- * 反向采集：从现有的 TrackAnimationDefinition 生成 ExpectedTargets
+ * Reverse extraction: generates ExpectedTargets from existing TrackAnimationDefinition
  *
- * 用于 "保存为预定义动作" 向导：
- * 扫描动画所有 tracks 的 targetObjectId，读取对应对象的 alias（回退 name），
- * 汇总为 expectedTargets + targetTracks。
+ * Used for "Save as preset action" wizard:
+ * Scans targetObjectId of all animation tracks, reads corresponding object's alias (fallback to name),
+ * and aggregates into expectedTargets + targetTracks.
  *
- * @returns 采集结果，若任何轨道的 targetObjectId 未找到对应对象，返回 error
+ * @returns Extraction result, or error if any track's targetObjectId cannot be found
  */
 export function extractPresetTargetsFromAnimation(
   animation: TrackAnimationDefinition,
@@ -312,12 +312,12 @@ export function extractPresetTargetsFromAnimation(
   for (const track of animation.tracks) {
     const targetId = track.targetObjectId
     if (!targetId || targetId === '_self') {
-      warnings.push(`轨道 "${track.displayName ?? track.trackType}" 的目标为 _self 或未设置，无法导出`)
+      warnings.push(`Track "${track.displayName ?? track.trackType}" has target _self or unset, cannot export`)
       continue
     }
     const obj = sceneObjects.get(targetId)
     if (!obj) {
-      warnings.push(`轨道 "${track.displayName ?? track.trackType}" 的目标对象 ${targetId} 不存在`)
+      warnings.push(`Track "${track.displayName ?? track.trackType}" target object ${targetId} does not exist`)
       continue
     }
 
@@ -326,7 +326,7 @@ export function extractPresetTargetsFromAnimation(
       const aliasName = obj.alias?.trim()
       const recommendedName = aliasName && aliasName.length > 0 ? aliasName : obj.name
       if (recommendedName.trim() === '') {
-        warnings.push(`对象 ${targetId} 缺少 alias 和 name，无法作为推荐名`)
+        warnings.push(`Object ${targetId} lacks alias and name, cannot serve as recommended name`)
         continue
       }
       key = `target_${targetsByKey.size + 1}`
@@ -335,7 +335,7 @@ export function extractPresetTargetsFromAnimation(
       tracksByKey.set(key, [])
     }
 
-    // 从 track 中剥离 targetObjectId 以匹配模板格式
+    // Strip targetObjectId from track to match template format
     const { targetObjectId: _omit, ...rest } = track as AnimationTrack & { targetObjectId?: string }
     void _omit
     tracksByKey.get(key)!.push(rest as DistributiveOmit<AnimationTrack, 'targetObjectId'>)

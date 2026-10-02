@@ -1,15 +1,15 @@
 /**
- * SetMaskHandler 单元测试 — Clip-Mask Phase 1 (D5)
+ * SetMaskHandler unit test — Clip-Mask Phase 1 (D5)
  *
- * 覆盖：
+ * Covers:
  * - metadata
- * - 部分更新（targetIds / shape / width / height）
- * - 未提供字段保持不变
- * - targetIds 整段替换（深拷贝，外部突变隔离）
- * - 空数组语义（释放所有 target）
+ * - partial updates (targetIds / shape / width / height)
+ * - omitted fields remain unchanged
+ * - targetIds whole-array replacement (deep copy, isolated from external mutation)
+ * - empty array semantics (release all targets)
  *
- * 注意：跨 mask 独占冲突由 sceneStateCalculator 的 mask post-pass 解决，
- *       不在此 Handler 单测范围（见 actionEvaluator-mask.spec.ts）。
+ * Note: Cross-mask exclusive conflicts are resolved by sceneStateCalculator's mask post-pass,
+ *       outside the scope of this Handler unit test (see actionEvaluator-mask.spec.ts).
  */
 
 import { describe, expect, it } from 'vitest'

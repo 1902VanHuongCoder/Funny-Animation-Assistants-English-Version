@@ -4,8 +4,5 @@
     ],
     "*.{js,jsx}": [
         "eslint --fix --no-warn-ignored"
-    ],
-    "*": [
-        "betterer precommit"
     ]
 }

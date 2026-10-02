@@ -1,16 +1,16 @@
-import { ArrayBufferTarget,Muxer } from 'mp4-muxer'
+import { ArrayBufferTarget, Muxer } from 'mp4-muxer'
 
 import type { VideoExportConfig } from './types'
 
 /**
- * MP4 封装器封装类
+ * MP4 muxer wrapper class
  */
 export class MP4MuxerWrapper {
     private muxer: Muxer<ArrayBufferTarget> | null = null
     private target: ArrayBufferTarget | null = null
 
     /**
-     * 初始化 Muxer
+     * Initialize Muxer
      */
     initialize(config: VideoExportConfig): void {
         this.target = new ArrayBufferTarget()
@@ -27,13 +27,13 @@ export class MP4MuxerWrapper {
                 numberOfChannels: 2,
                 sampleRate: config.audioSampleRate,
             },
-            fastStart: 'in-memory', // 启用快速启动模式
-            firstTimestampBehavior: 'offset', // 自动处理时间戳偏移
+            fastStart: 'in-memory', // Enable fast start mode
+            firstTimestampBehavior: 'offset', // Automatically handle timestamp offset
         })
     }
 
     /**
-     * 添加视频块
+     * Add video chunk
      */
     addVideoChunk(chunk: EncodedVideoChunk, meta?: EncodedVideoChunkMetadata): void {
         if (!this.muxer) {
@@ -44,7 +44,7 @@ export class MP4MuxerWrapper {
     }
 
     /**
-     * 添加音频块
+     * Add audio chunk
      */
     addAudioChunk(chunk: EncodedAudioChunk, meta?: EncodedAudioChunkMetadata): void {
         if (!this.muxer) {
@@ -55,7 +55,7 @@ export class MP4MuxerWrapper {
     }
 
     /**
-     * 完成封装并返回 Blob
+     * Finalize muxing and return Blob
      */
     finalize(): Blob {
         if (!this.muxer || !this.target) {
@@ -70,7 +70,7 @@ export class MP4MuxerWrapper {
     }
 
     /**
-     * 清理资源
+     * Clean up resources
      */
     destroy(): void {
         this.muxer = null

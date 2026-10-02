@@ -1,6 +1,6 @@
 /**
- * 状态工具函数 (v6.2)
- * 用于计算对象运行时状态和状态差异比较
+ * State utility functions (v6.2)
+ * Computes runtime object states and state difference comparisons
  */
 
 import type { SceneObject } from '@/stores/sceneObjectStore'
@@ -9,19 +9,19 @@ import type { Action, SceneSetup } from '@/types/screenplay'
 import { evaluateObjectState } from './actionEvaluator'
 
 
-// Phase 4e: 消除 SubtypeSnapshotBuilder registry，直接使用 SceneObject
+// Phase 4e: Eliminated SubtypeSnapshotBuilder registry, use SceneObject directly
 
 /**
- * 统一构建对象状态快照（Phase 4e 简化）
- * 现在直接返回 SceneObject 的浅克隆，不再拉平子类型字段
- * @deprecated Phase 4e 后应直接使用 { ...obj }
+ * Unified object state snapshot builder (Phase 4e simplification)
+ * Returns a shallow clone of SceneObject without flattening subtype fields
+ * @deprecated Use { ...obj } directly after Phase 4e
  */
 export function buildObjectStateSnapshot(obj: SceneObject): SceneObject {
   return { ...obj }
 }
 
 /**
- * 状态差异
+ * State difference
  */
 export interface StateDiff {
   transform?: Partial<{
@@ -38,7 +38,7 @@ export interface StateDiff {
 }
 
 /**
- * 从场景对象获取运行时状态
+ * Get runtime state from scene object
  */
 export function getObjectRuntimeState(obj: SceneObject | null | undefined): SceneObject | null {
   if (!obj) return null
@@ -46,8 +46,8 @@ export function getObjectRuntimeState(obj: SceneObject | null | undefined): Scen
 }
 
 /**
- * 对比两个状态，返回差异
- * 只返回发生变化的属性
+ * Compare two states and return difference
+ * Returns only changed properties
  */
 export function compareObjectState(
   baseline: SceneObject,
@@ -69,7 +69,7 @@ export function compareObjectState(
   }
 
 
-  // 可见性对比
+  // Visibility comparison
   if (baseline.visible !== current.visible) {
     diff.active = { visible: current.visible }
   }
@@ -78,7 +78,7 @@ export function compareObjectState(
 }
 
 /**
- * 检查状态差异是否为空
+ * Check whether state difference is empty
  */
 export function isStateDiffEmpty(diff: StateDiff): boolean {
   const hasTransform = diff.transform && Object.keys(diff.transform).length > 0
@@ -88,13 +88,13 @@ export function isStateDiffEmpty(diff: StateDiff): boolean {
 }
 
 /**
- * 根据更新的属性确定动作类型 (v6.3)
- * - set_transform: 视觉属性 (alpha/visible/flipX/zIndex)
+ * Determine action type based on updated properties (v6.3)
+ * - set_transform: visual properties (alpha/visible/flipX/zIndex)
  */
 export function getActionTypeFromUpdates(updates: Partial<SceneObject>): 'set_transform' | null {
   const keys = Object.keys(updates)
 
-  // 视觉属性 (v6.3: 仅 alpha, visible, flipX, zIndex)
+  // Visual properties (v6.3: alpha, visible, flipX, zIndex only)
   const visualKeys = ['alpha', 'visible', 'flipX', 'zIndex']
   const hasVisualKey = keys.some(k => visualKeys.includes(k))
   if (hasVisualKey) {
@@ -105,8 +105,8 @@ export function getActionTypeFromUpdates(updates: Partial<SceneObject>): 'set_tr
 }
 
 /**
- * v7.0: 从场景对象获取目标标识符（用于 Action.target）
- * 对于角色对象，返回其运行时对象ID（即 SceneObject.id）
+ * v7.0: Get target identifier from scene object (used for Action.target)
+ * For character objects, returns its runtime object ID (SceneObject.id)
  */
 export function getTargetAliasFromObject(obj: SceneObject): string | null {
   if (!obj) return null
@@ -115,12 +115,12 @@ export function getTargetAliasFromObject(obj: SceneObject): string | null {
     return 'camera'
   }
 
-  // 所有类型返回对象ID
+  // All types return object ID
   return obj.id
 }
 
 /**
- * 从更新对象中提取变换参数（用于 set_transform 动作）
+ * Extract transform parameters from update object (used for set_transform action)
  */
 export function extractTransformParams(updates: Partial<SceneObject>): Record<string, number> | null {
   const params: Record<string, number> = {}
@@ -138,15 +138,15 @@ export function extractTransformParams(updates: Partial<SceneObject>): Record<st
 
 
 /**
- * 从 SceneSetup 中获取对象的初始状态
- * 用于 Action Mode 下计算对象在指定时刻的运行时状态
+ * Get initial state of object from SceneSetup
+ * Used in Action Mode to compute runtime object state at specified time
  */
 export function getStartStateFromSetup(
   setup: SceneSetup,
   _obj: SceneObject,
   targetAlias: string
 ): SceneObject | null {
-  // 相机对象特殊处理 - 构造伪 SceneObject
+  // Camera special handling - construct pseudo SceneObject
   if (targetAlias === 'camera') {
     return {
       id: 'camera',
@@ -164,11 +164,11 @@ export function getStartStateFromSetup(
     } as SceneObject
   }
 
-  // v7.0: 直接通过ID查找对应的 setup 对象
+  // v7.0: Look up corresponding setup object directly by ID
   let setupObj: SceneObject | null = null
 
   for (const setupObject of setup.objects) {
-    // v7.0: target 现在是实例ID
+    // v7.0: target is now instance ID
     if (setupObject.id === targetAlias) {
       setupObj = setupObject
       break
@@ -181,14 +181,14 @@ export function getStartStateFromSetup(
 }
 
 /**
- * 计算对象在指定 slot 开始时刻的运行时状态
- * @param setup 前置状态（block 开始前的状态）
- * @param obj 当前选中的场景对象
- * @param targetAlias 对象的目标别名（用于匹配 Action）
- * @param actions 当前 block 的所有动作
- * @param slotStartTime slot 的开始时间（毫秒）
- * @param totalDuration block 的总时长（毫秒）
- * @param slots 运行时槽位列表
+ * Compute runtime state of object at start of specified slot
+ * @param setup Previous state (state before block starts)
+ * @param obj Currently selected scene object
+ * @param targetAlias Target alias of object (for matching Actions)
+ * @param actions All actions of current block
+ * @param slotStartTime Slot start time (ms)
+ * @param totalDuration Total block duration (ms)
+ * @param slots Runtime slot list
  */
 export function computeObjectStateAtSlot(
   setup: SceneSetup,
@@ -199,14 +199,14 @@ export function computeObjectStateAtSlot(
   totalDuration: number,
   slots?: import('@/types/screenplay').RuntimeSlot[]
 ): SceneObject | null {
-  // 获取初始状态（传入 obj 以便将来扩展支持其他对象类型）
+  // Get start state (pass obj for future extension)
   const startState = getStartStateFromSetup(setup, obj, targetAlias)
   if (!startState) return null
 
-  // 过滤出针对该对象的动作
+  // Filter actions targeting this object
   const objectActions = actions.filter(a => a.target === targetAlias)
 
-  // 使用 evaluateObjectState 计算在 slotStartTime 时刻的状态
+  // Use evaluateObjectState to compute state at slotStartTime
   return evaluateObjectState(
     startState,
     objectActions,

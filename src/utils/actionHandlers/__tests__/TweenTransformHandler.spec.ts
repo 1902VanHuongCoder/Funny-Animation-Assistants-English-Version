@@ -6,7 +6,7 @@ import { TweenTransformHandler } from '../handlers/TweenTransformHandler'
 import type { ActionHandlerContext, WriteableState } from '../types'
 
 describe('TweenTransformHandler', () => {
-    it('父子同时旋转时，子对象 rotation tween 应按局部值插值，不受父对象当前旋转影响', () => {
+    it('interpolates child rotation tween using local values when parent and child rotate simultaneously, unaffected by parent current rotation', () => {
         const parentCurrent: WriteableState = {
             id: 'parent',
             x: 0,

@@ -1,39 +1,40 @@
 /**
- * LightingFilter — GPU 全局光照滤镜
+ * LightingFilter — GPU Global Lighting Filter
  *
- * 基于 PIXI.Filter 的自定义 fragment shader，对场景整体施加环境光 + 点光源效果。
- * 支持最多 MAX_LIGHTS 个点光源，每个光源有独立的位置、颜色、强度和半径。
+ * Custom fragment shader based on PIXI.Filter, applying ambient light + point light effects to the scene.
+ * Supports up to MAX_LIGHTS point lights, each with independent position, color, intensity, and radius.
  *
- * v25.6: UV 空间坐标系（修复嵌套 filter 偏移问题）
- * - CPU 侧将光源坐标归一化到当前输出帧的局部 UV 空间 (0..1)
- * - Shader 侧通过 outputFrame/inputSize 还原出真实输入纹理中的 UV 采样范围
- * - 距离计算仍用 vInputSize 还原到像素尺度，保证衰减/半径正确
- * - 完全绕过 PIXI v7 FilterSystem 在处理嵌套 filter（GlowFilter）时
- *   内部修改 outputFrame.xy 导致 filterArea.zw 帧间漂移的问题
+ * v25.6: UV space coordinate system (fixes nested filter offset issue)
+ * - CPU side normalizes light coordinates to output frame local UV space (0..1)
+ * - Shader side restores true UV sampling range in input texture via outputFrame/inputSize
+ * - Distance calculation still restores to pixel scale via vInputSize to ensure correct attenuation/radius
+ * - Completely bypasses PIXI v7 FilterSystem frame-to-frame drift of filterArea.zw
+ *   caused by internal modifications to outputFrame.xy when handling nested filters (GlowFilter)
  *
- * 核心公式（恢复 + 加法光晕混合模型）：
- *   ① ambientBase = 原始颜色 × 环境光（暗场压暗）
- *   ② recovered  = mix(ambientBase, 原始颜色, recover)（纹理感知恢复）
- *   ③ glow       = Σ(光源颜色 × 几何衰减) × glowStrength（纹理无关加法光晕）
- *   ④ 最终颜色    = recovered + glow
+ * Core formula (recovery + additive glow hybrid model):
+ *   ① ambientBase = originalColor * ambientLight (dark field darkening)
+ *   ② recovered  = mix(ambientBase, originalColor, recover) (texture-aware recovery)
+ *   ③ glow       = Σ(lightColor * geometricAttenuation) * glowStrength (texture-independent additive glow)
+ *   ④ finalColor = recovered + glow
  *
- * 光晕项确保光池形状由纯几何衰减决定，不被底层纹理颜色/亮度牵引。
+ * The glow term ensures the light pool shape is determined by pure geometric attenuation,
+ * independent of underlying texture color/brightness.
  */
 import * as PIXI from 'pixi.js'
 
 const MAX_LIGHTS = 8
 
 export interface LightSourceData {
-  x: number       // 输出帧局部 UV 空间 (0..1)
-  y: number       // 输出帧局部 UV 空间 (0..1)
-  radius: number  // 输出帧局部 UV 空间（相对 outputFrame.height 归一化）
+  x: number       // Output frame local UV space (0..1)
+  y: number       // Output frame local UV space (0..1)
+  radius: number  // Output frame local UV space (normalized relative to outputFrame.height)
   color: [number, number, number]  // RGB 0~1
   intensity: number
-  // Phase 3: 方向性
+  // Phase 3: Directionality
   directionMode: number       // 0=omni, 1=cone
-  directionAngle: number      // 朝向角（弧度）
-  coneHalfCos: number         // cos(coneAngle/2 * π/180)，CPU 预计算
-  softness: number            // 边缘柔化带宽度（固定 0.35）
+  directionAngle: number      // Heading angle (radians)
+  coneHalfCos: number         // cos(coneAngle/2 * PI/180), precomputed on CPU
+  softness: number            // Edge softness band width (fixed 0.35)
 }
 
 export interface AmbientLightData {
@@ -60,7 +61,7 @@ const LIGHTING_FRAGMENT_SHADER = `
   uniform float uLightRadius[MAX_LIGHTS];
   uniform float uLightIntensity[MAX_LIGHTS];
   uniform int uLightCount;
-  // Phase 3: 方向性 uniform
+  // Phase 3: Directionality uniforms
   uniform int uLightDirMode[MAX_LIGHTS];
   uniform float uLightDirAngle[MAX_LIGHTS];
   uniform float uLightConeHalfCos[MAX_LIGHTS];
@@ -86,11 +87,11 @@ const LIGHTING_FRAGMENT_SHADER = `
 
     float exemptAlpha = 0.0;
     if (uHasExemptMask == 1) {
-      // exempt mask 是按 filterArea / outputFrame 的完整局部区域渲染出来的，
-      // 不能直接用输入纹理 UV(vTextureCoord) 采样。
-      // 在 ScenePlayer 中 vTextureCoordScale 往往接近 1，所以问题不明显；
-      // 但 FrameCapture 的离屏链路里 vTextureCoordScale 可能明显小于 1，
-      // 直接采样会把 mask 取到错误区域，表现为 receiveLighting=false 对象的遮罩整体偏移。
+      // exempt mask is rendered based on the complete local area of filterArea / outputFrame,
+      // and cannot be sampled directly using input texture UV (vTextureCoord).
+      // In ScenePlayer, vTextureCoordScale is often close to 1, so the issue is not obvious;
+      // however in FrameCapture offscreen pipeline vTextureCoordScale can be significantly less than 1,
+      // and direct sampling would sample the mask in the wrong area, causing the mask of receiveLighting=false objects to shift.
       vec2 exemptUv = vec2(
         vTextureCoordScale.x > 0.0 ? vTextureCoord.x / vTextureCoordScale.x : 0.0,
         vTextureCoordScale.y > 0.0 ? vTextureCoord.y / vTextureCoordScale.y : 0.0
@@ -98,17 +99,17 @@ const LIGHTING_FRAGMENT_SHADER = `
       exemptAlpha = texture2D(uExemptMask, exemptUv).a;
     }
 
-    // 环境暗场：先用环境光压暗场景，再由点光局部恢复原图亮度。
-    // 这样亮区视觉中心更多由光场本身决定，而不是被底图纹理牵着走。
+    // Ambient dark field: first darken scene with ambient light, then locally recover original image brightness with point lights.
+    // This allows the visual center of bright areas to be determined by the light field itself, rather than pulled by background textures.
     vec3 ambientBase = color.rgb * uAmbientColor * uAmbientIntensity;
     float totalRecoverLight = 0.0;
     vec3 totalGlowTint = vec3(0.0);
     vec3 totalSurfaceTint = vec3(0.0);
     
-    // v25.6: UV 空间距离计算（绕过 PIXI filterArea.zw 偏移漂移）
-    // CPU 侧传入的是“输出帧局部 UV”(0..1)。
-    // Shader 再乘以 vTextureCoordScale，把它投到当前输入纹理的真实 UV 空间，
-    // 这样无论输入纹理是 720P / 1080P / 2K / 4K，都与 vTextureCoord 使用同一基准。
+    // v25.6: UV space distance calculation (bypasses PIXI filterArea.zw offset drift)
+    // CPU side passes "output frame local UV" (0..1).
+    // Shader multiplies by vTextureCoordScale to project into the true UV space of the current input texture,
+    // so whether the input texture is 720P / 1080P / 2K / 4K, it shares the same reference frame as vTextureCoord.
     for (int i = 0; i < MAX_LIGHTS; i++) {
       if (i >= uLightCount) break;
       
@@ -116,17 +117,17 @@ const LIGHTING_FRAGMENT_SHADER = `
       vec2 uvLight = vec2(uLightPosX[i], uLightPosY[i]) * vTextureCoordScale;
       vec3 lightColor = vec3(uLightColorR[i], uLightColorG[i], uLightColorB[i]);
       
-      // UV 空间差值，乘以 vInputSize 还原到像素距离
+      // UV space delta, multiplied by vInputSize to restore to pixel distance
       vec2 delta = (uvPos - uvLight) * vInputSize;
       float dist = length(delta);
-      // 半径由输出帧局部 UV 还原到输出帧像素，再与 delta 处于同一像素尺度
+      // Radius restored from output frame local UV to output frame pixels, on the same pixel scale as delta
       float radius = uLightRadius[i] * vOutputFrameSize.y;
       
-      // 柔光衰减
+      // Soft light attenuation
       float innerRadius = radius * uLightInnerRatio;
       float attenuation = 1.0 - smoothstep(innerRadius, radius, dist);
 
-      // Phase 3: 方向性衰减（仅 cone 模式）
+      // Phase 3: Directional attenuation (cone mode only)
       if (uLightDirMode[i] == 1 && dist > 0.001) {
         vec2 dir = normalize(delta);
         vec2 forward = vec2(cos(uLightDirAngle[i]), sin(uLightDirAngle[i]));
@@ -195,7 +196,7 @@ const LIGHTING_VERTEX_SHADER = `
 `
 
 export class LightingFilter extends PIXI.Filter {
-  // 预分配 TypedArray 实例成员，避免每帧 GC
+  // Pre-allocated TypedArray instance members to avoid per-frame GC
   private readonly _posX = new Float32Array(MAX_LIGHTS)
   private readonly _posY = new Float32Array(MAX_LIGHTS)
   private readonly _colorR = new Float32Array(MAX_LIGHTS)
@@ -217,13 +218,13 @@ export class LightingFilter extends PIXI.Filter {
       uLightRadius: new Float32Array(MAX_LIGHTS),
       uLightIntensity: new Float32Array(MAX_LIGHTS),
       uLightCount: 0,
-      // Phase 3: 方向性 uniform 初始化
+      // Phase 3: Directionality uniforms initialization
       uLightDirMode: new Int32Array(MAX_LIGHTS),
       uLightDirAngle: new Float32Array(MAX_LIGHTS),
       uLightConeHalfCos: new Float32Array(MAX_LIGHTS),
       uLightSoftness: new Float32Array(MAX_LIGHTS),
       uAmbientColor: [1.0, 1.0, 1.0],
-      uAmbientIntensity: 1.0,  // 默认全亮 = 无光照效果
+      uAmbientIntensity: 1.0,  // Default full bright = no lighting effect
       uLightRecoverStrength: 1.0,
       uLightTintStrength: 0.08,
       uLightGlowStrength: 0.18,
@@ -234,30 +235,30 @@ export class LightingFilter extends PIXI.Filter {
       uHasExemptMask: 0,
     })
     ;(this as PIXI.Filter & { legacy?: boolean }).legacy = true
-    // v25.5: 必须 autoFit=false + padding=0。
-    // 当 autoFit=true 时，PIXI v7 的 FilterSystem 会根据容器层级的 worldTransform
-    // 和嵌套 filter（如子对象上的 GlowFilter）的 bounds 内部微调 outputFrame 偏移，
-    // 导致 shader 中 filterArea.zw（outputFrame.xy）帧间漂移，
-    // 使光源的 screenPos 计算偏移 → 光圈视觉上跟随浮动动画对象晃动。
-    // filterArea 已由调用方显式设置（精确覆盖画布/视口区域），无需 PIXI 再调整。
+    // v25.5: Must use autoFit=false + padding=0.
+    // When autoFit=true, PIXI v7's FilterSystem fine-tunes outputFrame offsets internally
+    // based on container hierarchy worldTransform and nested filter bounds (e.g. GlowFilter on child objects),
+    // causing filterArea.zw (outputFrame.xy) in shader to drift frame-to-frame,
+    // shifting light screenPos calculation -> light visual circle shakes following floating animated objects.
+    // filterArea is explicitly set by caller (accurately covering canvas/viewport area), no PIXI adjustment needed.
     this.autoFit = false
     this.padding = 0
   }
 
   /**
-   * 从聚合后的光源数据更新 shader uniforms
+   * Update shader uniforms from aggregated light source data
    */
   updateFromSceneObjects(
     lights: LightSourceData[],
     ambient: AmbientLightData,
   ): void {
-    // 环境光
+    // Ambient light
     this.uniforms['uAmbientColor'] = ambient.color
     this.uniforms['uAmbientIntensity'] = ambient.intensity
 
-    // 点光源 — 使用 filter/screen 像素空间
+    // Point lights — using filter/screen pixel space
     const count = Math.min(lights.length, MAX_LIGHTS)
-    // 复用预分配的 TypedArray（避免每帧 GC）
+    // Reuse pre-allocated TypedArray (avoid per-frame GC)
     const posX = this._posX; posX.fill(0)
     const posY = this._posY; posY.fill(0)
     const colorR = this._colorR; colorR.fill(0)
@@ -279,7 +280,7 @@ export class LightingFilter extends PIXI.Filter {
       colorB[i] = l.color[2]
       radius[i] = l.radius
       intensity[i] = l.intensity
-      // Phase 3: 方向性
+      // Phase 3: Directionality
       dirMode[i] = l.directionMode
       dirAngle[i] = l.directionAngle
       coneHalfCos[i] = l.coneHalfCos
@@ -293,7 +294,7 @@ export class LightingFilter extends PIXI.Filter {
     this.uniforms['uLightRadius'] = radius
     this.uniforms['uLightIntensity'] = intensity
     this.uniforms['uLightCount'] = count
-    // Phase 3: 方向性 uniform
+    // Phase 3: Directionality uniforms
     this.uniforms['uLightDirMode'] = dirMode
     this.uniforms['uLightDirAngle'] = dirAngle
     this.uniforms['uLightConeHalfCos'] = coneHalfCos
@@ -305,7 +306,7 @@ export class LightingFilter extends PIXI.Filter {
     this.uniforms['uHasExemptMask'] = mask ? 1 : 0
   }
 
-  /** 检查是否为默认状态（全亮白色、无点光源）— 此时无需挂载 filter */
+  /** Check if default state (full bright white, no point lights) — filter does not need to be attached */
   isNoop(): boolean {
     const ambientColor = this.uniforms['uAmbientColor'] as number[] | undefined
     const isWhiteAmbient = ambientColor
@@ -318,9 +319,9 @@ export class LightingFilter extends PIXI.Filter {
 }
 
 /**
- * 将 hex 颜色字符串转换为 RGB 0~1 数组
- * @param hex '#rrggbb' 格式
- * @returns [r, g, b] 每个分量 0~1
+ * Convert hex color string to RGB 0~1 array
+ * @param hex '#rrggbb' format
+ * @returns [r, g, b] with each component in 0~1
  */
 export function hexToRgbArray(hex: string): [number, number, number] {
   const h = hex.replace('#', '')

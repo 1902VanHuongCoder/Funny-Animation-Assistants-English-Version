@@ -1,12 +1,12 @@
 /**
- * TC-SPD-RESOURCE-AUDIT: 场景资源使用与预加载完整性审计
+ * TC-SPD-RESOURCE-AUDIT: Scene Asset Usage and Preload Integrity Audit
  * 
- * 验证层级:
- * 1. Setup 静态资源 - 角色初始状态、道具、背景
- * 2. Block 动态资源 - set_character/set_expression 动态切换
- * 3. 预加载验证 - 所有使用的资源是否都被收集
+ * Verification levels:
+ * 1. Setup static assets - character initial state, props, backgrounds
+ * 2. Block dynamic assets - set_character/set_expression dynamic switching
+ * 3. Preload verification - whether all used assets are collected
  * 
- * 该测试套件设计用于验证 ScenePreviewDialog 资源预加载的完整性
+ * This test suite validates ScenePreviewDialog asset preloading integrity
  */
 
 import nodeFs from 'fs'
@@ -55,8 +55,8 @@ describe('TC-SPD-RESOURCE-AUDIT: Resource Usage and Preload Verification', () =>
     }
 
     /**
-     * AUDIT-01: Setup 静态资源清单
-     * 列出 Setup 中每个对象使用的资源
+     * AUDIT-01: Setup Static Asset Inventory
+     * Lists assets used by each object in Setup
      */
     it('AUDIT-01: Catalog all resources used in Scene Setup', () => {
         if (!ensureProjectData()) return
@@ -109,7 +109,7 @@ describe('TC-SPD-RESOURCE-AUDIT: Resource Usage and Preload Verification', () =>
             }
         }
 
-        // 输出报告
+        // Output report
         console.log('\n--- Characters ---')
         setupResources.characters.forEach(c => {
             console.log(`  [${c.id.substring(0, 20)}...] ${c.name}: Pose=${c.pose}, Expr=${c.expression || 'none'}, Images=${c.imageCount}`)
@@ -130,7 +130,7 @@ describe('TC-SPD-RESOURCE-AUDIT: Resource Usage and Preload Verification', () =>
             console.log(`  [${a.id.substring(0, 20)}...] refId=${a.refId}`)
         })
 
-        // 验证
+        // Verify
         const totalObjects = setupResources.characters.length +
             setupResources.props.length +
             setupResources.backgrounds.length +
@@ -140,8 +140,8 @@ describe('TC-SPD-RESOURCE-AUDIT: Resource Usage and Preload Verification', () =>
     })
 
     /**
-     * AUDIT-02: Block 动态资源清单
-     * 分析每个 Block 中 Actions 引用的额外资源
+     * AUDIT-02: Block Dynamic Asset Inventory
+     * Analyzes additional assets referenced by Actions in each Block
      */
     it('AUDIT-02: Catalog all resources used in Block Actions', () => {
         if (!ensureProjectData()) return
@@ -178,7 +178,7 @@ describe('TC-SPD-RESOURCE-AUDIT: Resource Usage and Preload Verification', () =>
                         let additionalImages = 0
                         const params = action.params || {}
 
-                        // Expression 切换
+                        // Expression switch
                         if (params.expression) {
                             const expr = expressionStore.getExpression(params.expression)
                             if (expr?.defaultFrame?.url) additionalImages++
@@ -204,7 +204,7 @@ describe('TC-SPD-RESOURCE-AUDIT: Resource Usage and Preload Verification', () =>
             })
         })
 
-        // 输出报告
+        // Output report
         let totalDynamicActions = 0
         let totalAdditionalImages = 0
 
@@ -227,15 +227,15 @@ describe('TC-SPD-RESOURCE-AUDIT: Resource Usage and Preload Verification', () =>
         console.log(`Total Dynamic Actions (set_character): ${totalDynamicActions}`)
         console.log(`Total Additional Images from Actions: ${totalAdditionalImages}`)
 
-        // 这个测试主要是信息收集，只验证基本结构
+        // Information gathering test, verifies basic structure only
         expect(blockResources.length).toBe(scene.script.length)
     })
 
     /**
-     * AUDIT-03: 预加载完整性验证
-     * 比较 collectAssets 收集的资源与实际使用的资源
+     * AUDIT-03: Preload Integrity Verification
+     * Compares assets collected by collectAssets with actually used assets
      * 
-     * 这个测试验证了当前 ScenePreviewDialog 的预加载策略是否完整
+     * Validates whether current ScenePreviewDialog preload strategy is complete
      */
     it('AUDIT-03: Verify preload completeness (setup-only vs full scan)', () => {
         if (!ensureProjectData()) return
@@ -248,11 +248,11 @@ describe('TC-SPD-RESOURCE-AUDIT: Resource Usage and Preload Verification', () =>
 
         const { collectAssets } = useAssetLoader()
 
-        // 1. 只传 setup (当前 ScenePreviewDialog 的做法)
+        // 1. Pass setup only (current ScenePreviewDialog practice)
         const { imageUrls: setupOnlyUrls } = collectAssets(scene.setup, null)
         console.log(`\n[Strategy 1] Setup only: ${setupOnlyUrls.size} images collected`)
 
-        // 2. 传 setup + 每个 block (完整扫描)
+        // 2. Pass setup + each block (full scan)
         const allBlockUrls = new Set<string>()
         scene.script.forEach((block: ScriptBlock) => {
             const { imageUrls } = collectAssets(scene.setup, block)
@@ -260,7 +260,7 @@ describe('TC-SPD-RESOURCE-AUDIT: Resource Usage and Preload Verification', () =>
         })
         console.log(`[Strategy 2] Setup + all blocks: ${allBlockUrls.size} images collected`)
 
-        // 3. 比较差异
+        // 3. Compare diff
         const missingInSetupOnly = new Set<string>()
         allBlockUrls.forEach(url => {
             if (!setupOnlyUrls.has(url)) {
@@ -272,7 +272,7 @@ describe('TC-SPD-RESOURCE-AUDIT: Resource Usage and Preload Verification', () =>
             console.log(`\n⚠️  MISSING ${missingInSetupOnly.size} images when only scanning setup:`)
             let count = 0
             missingInSetupOnly.forEach(url => {
-                if (count < 5) { // 只显示前5个
+                if (count < 5) { // Show first 5 only
                     console.log(`  - ${url.substring(0, 60)}...`)
                 }
                 count++
@@ -281,17 +281,17 @@ describe('TC-SPD-RESOURCE-AUDIT: Resource Usage and Preload Verification', () =>
                 console.log(`  ... and ${count - 5} more`)
             }
 
-            // 如果有缺失，这是一个需要关注的问题
+            // If missing, this requires attention
             console.log(`\n💡 RECOMMENDATION: ScenePreviewDialog should scan all blocks for complete preloading`)
         } else {
             console.log(`\n✅ All resources covered by setup-only scan`)
             console.log(`   (This means all dynamic resources are already covered by character state traversal)`)
         }
 
-        // 验证基本功能正常
+        // Verify basic functionality works normally
         expect(setupOnlyUrls.size).toBeGreaterThan(0)
 
-        // 记录覆盖率
+        // Record coverage rate
         const coverageRate = allBlockUrls.size > 0
             ? ((allBlockUrls.size - missingInSetupOnly.size) / allBlockUrls.size * 100).toFixed(1)
             : '100'
@@ -299,8 +299,8 @@ describe('TC-SPD-RESOURCE-AUDIT: Resource Usage and Preload Verification', () =>
     })
 
     /**
-     * AUDIT-04: 完整预加载场景资源收集
-     * 演示推荐的完整资源收集方法
+     * AUDIT-04: Complete Preload Scene Asset Collection
+     * Demonstrates recommended full asset collection method
      */
     it('AUDIT-04: Full scene resource collection (recommended approach)', () => {
         if (!ensureProjectData()) return
@@ -311,7 +311,7 @@ describe('TC-SPD-RESOURCE-AUDIT: Resource Usage and Preload Verification', () =>
 
         const { collectAssets } = useAssetLoader()
 
-        // 推荐做法：遍历所有 Blocks 收集资源
+        // Recommended: traverse all Blocks to collect assets
         const fullImageUrls = new Set<string>()
         const fullAudioUrls = new Set<string>()
 
@@ -332,13 +332,13 @@ describe('TC-SPD-RESOURCE-AUDIT: Resource Usage and Preload Verification', () =>
         console.log(`Total unique audio: ${fullAudioUrls.size}`)
         console.log(`Total blocks scanned: ${scene.script.length}`)
 
-        // 验证完整收集结果
+        // Verify complete collection results
         expect(fullImageUrls.size).toBeGreaterThanOrEqual(setupImages.size)
     })
 
     /**
-     * AUDIT-05: 表情资源覆盖验证
-     * 专门验证表情资源是否被正确收集 (针对 V7 数据结构)
+     * AUDIT-05: Expression Asset Coverage Verification
+     * Specifically verifies expression asset collection (for V7 data structure)
      */
     it('AUDIT-05: Expression resource coverage verification', () => {
         if (!ensureProjectData()) return
@@ -349,13 +349,13 @@ describe('TC-SPD-RESOURCE-AUDIT: Resource Usage and Preload Verification', () =>
 
         console.log('\n========== EXPRESSION RESOURCE AUDIT ==========')
 
-        // 收集所有可能用到的表情ID
+        // Collect all potentially used expression IDs
         const usedExpressionIds = new Set<string>()
 
-        // 1. Setup 中的表情
-        // character type 已移除，Setup 中不再收集对象的表情
+        // 1. Expressions in Setup
+        // character type removed, Setup no longer collects object expressions
 
-        // 2. Block Actions 中的表情
+        // 2. Expressions in Block Actions
         for (const block of scene.script) {
             if ((block as any).actions) {
                 for (const action of (block as any).actions) {
@@ -368,7 +368,7 @@ describe('TC-SPD-RESOURCE-AUDIT: Resource Usage and Preload Verification', () =>
 
         console.log(`\nTotal expressions referenced: ${usedExpressionIds.size}`)
 
-        // 验证每个表情是否可解析
+        // Verify each expression can be resolved
         let resolvableCount = 0
         let unresolvableCount = 0
 
@@ -385,7 +385,7 @@ describe('TC-SPD-RESOURCE-AUDIT: Resource Usage and Preload Verification', () =>
 
         console.log(`\nResolvable: ${resolvableCount}, Unresolvable: ${unresolvableCount}`)
 
-        // 验证：所有引用的表情都应该可解析
+        // Verify: all referenced expressions should resolve
         if (usedExpressionIds.size > 0) {
             expect(unresolvableCount).toBe(0)
         }

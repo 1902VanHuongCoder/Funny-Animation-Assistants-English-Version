@@ -1,9 +1,9 @@
 /**
- * config.json 导入类型定义
- * 场景模板导入使用的树形结构节点类型
+ * config.json import type definitions
+ * Tree structure node types used for scene template import
  */
 
-/** config.json 中的帧信息 */
+/** Frame information in config.json */
 export interface ExportFrame {
   frame: number
   keyframe: number
@@ -13,7 +13,7 @@ export interface ExportFrame {
   subIndex?: number
 }
 
-/** config.json 中的注册点信息 */
+/** Registration point information in config.json */
 export interface ExportRegistrationPoint {
   parentX: number
   parentY: number
@@ -21,7 +21,7 @@ export interface ExportRegistrationPoint {
   localY: number
 }
 
-/** config.json 中的变换信息 */
+/** Transform information in config.json */
 export interface ExportInstanceTransform {
   width: number
   height: number
@@ -31,7 +31,7 @@ export interface ExportInstanceTransform {
   rotation: number
 }
 
-/** config.json 中的部件信息 */
+/** Part information in config.json */
 export interface ExportPart {
   partName: string
   instanceName?: string
@@ -46,14 +46,14 @@ export interface ExportPart {
   alpha?: number
 }
 
-/** config.json 根结构 */
+/** Root structure of config.json */
 export interface ExportConfig {
   character: string
   exportLevel: number
   parts: ExportPart[]
 }
 
-/** config.json 叶节点（symbol） */
+/** Leaf node in config.json (symbol) */
 export interface ConfigSymbolNode {
   name: string
   type: 'symbol'
@@ -65,7 +65,7 @@ export interface ConfigSymbolNode {
   alpha?: number
 }
 
-/** config.json 容器节点（composite） */
+/** Container node in config.json (composite) */
 export interface ConfigCompositeNode {
   name: string
   type: 'composite'
@@ -75,10 +75,10 @@ export interface ConfigCompositeNode {
   alpha?: number
 }
 
-/** config.json 根节点（带 version） */
+/** Root node in config.json (with version) */
 export interface ConfigRoot extends ConfigCompositeNode {
   version: string
 }
 
-/** config.json 树节点（联合类型） */
+/** Tree node in config.json (union type) */
 export type ConfigNode = ConfigSymbolNode | ConfigCompositeNode

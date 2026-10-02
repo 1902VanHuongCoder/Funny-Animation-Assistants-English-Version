@@ -1,8 +1,8 @@
 /**
- * sceneStateCalculator 模块测试
- * 覆盖 PrevContext 计算、set_lifecycle spawned 跨 Block 累积
+ * sceneStateCalculator module tests
+ * Covers PrevContext calculation and set_lifecycle spawned accumulation across blocks
  * 
- * @version v9.3 - 验证 set_lifecycle action 的 spawned 属性正确累积
+ * @version v9.3 - Verify spawned property of set_lifecycle action accumulates correctly
  */
 
 import { describe, expect, it } from 'vitest'
@@ -28,7 +28,7 @@ import {
 import { buildTransformMatrix, resolveWorldMatrix } from '../actionHandlers/handlers/SetParentHandler'
 import type { WriteableState } from '../actionHandlers/types'
 
-// ==================== 测试辅助函数 ====================
+// ==================== Test Helper Functions ====================
 
 function reparentOperation(objectIds: string[], parentId: string | null) {
     return { id: `op_reparent_${objectIds.join('_')}`, kind: 'reparent' as const, objectIds, parentId }
@@ -96,7 +96,7 @@ function createMockScene(setup: SceneSetup, blocks: ScriptBlock[]): SceneContain
     } as unknown as SceneContainer
 }
 
-// ==================== applyBlockActionsToState 测试 ====================
+// ==================== applyBlockActionsToState Tests ====================
 
 describe('applyBlockActionsToState', () => {
     it('applies completed tween_transform after punctuation-based runtime slot splitting', () => {
@@ -115,7 +115,7 @@ describe('applyBlockActionsToState', () => {
                     params: { x: 300, y: 400 }
                 }
             ]),
-            text: '徐小满进入棚中，看着冒烟的灶台和收拾妥当的空地，一脸羡慕。',
+            text: 'Xu Xiaoman enters the shed, looking at the smoking stove and tidied clearing, with pure envy.',
             ttsConfig: { duration: 6372 },
         } as unknown as ScriptBlock
 
@@ -128,11 +128,11 @@ describe('applyBlockActionsToState', () => {
 
     describe('set_lifecycle action', () => {
         it('applies spawned=false to object state', () => {
-            // Setup: 创建一个 spawned=true 的动态对象
+            // Setup: Create a dynamic object with spawned=true
             const obj = createMockCharacterObject('obj_1', true)
             const prevState = createMockSetup([obj])
 
-            // Block 1: 包含 set_lifecycle spawned=false 的 action
+            // Block 1: Contains set_lifecycle action with spawned=false
             const block = createMockBlock('block_1', [
                 {
                     id: 'action_1',
@@ -146,18 +146,18 @@ describe('applyBlockActionsToState', () => {
 
             const result = applyBlockActionsToState(toRuntimeSnapshot(prevState), block)
 
-            // 验证: spawned 应该变为 false
+            // Verification: spawned should become false
             const resultObj = result.objects.find(o => o.id === 'obj_1')
             expect(resultObj).toBeDefined()
             expect(resultObj!.spawned).toBe(false)
         })
 
         it('applies spawned=true to object state', () => {
-            // Setup: 创建一个 spawned=false 的动态对象
+            // Setup: Create a dynamic object with spawned=false
             const obj = createMockCharacterObject('obj_1', false)
             const prevState = createMockSetup([obj])
 
-            // Block: 包含 set_lifecycle spawned=true 的 action
+            // Block: Contains set_lifecycle action with spawned=true
             const block = createMockBlock('block_1', [
                 {
                     id: 'action_1',
@@ -171,19 +171,19 @@ describe('applyBlockActionsToState', () => {
 
             const result = applyBlockActionsToState(toRuntimeSnapshot(prevState), block)
 
-            // 验证: spawned 应该变为 true
+            // Verification: spawned should become true
             const resultObj = result.objects.find(o => o.id === 'obj_1')
             expect(resultObj).toBeDefined()
             expect(resultObj!.spawned).toBe(true)
         })
 
         it('does not modify other objects', () => {
-            // Setup: 创建两个对象
+            // Setup: Create two objects
             const obj1 = createMockCharacterObject('obj_1', true)
             const obj2 = createMockCharacterObject('obj_2', true)
             const prevState = createMockSetup([obj1, obj2])
 
-            // Block: 只对 obj_1 执行 set_lifecycle
+            // Block: Only execute set_lifecycle on obj_1
             const block = createMockBlock('block_1', [
                 {
                     id: 'action_1',
@@ -197,7 +197,7 @@ describe('applyBlockActionsToState', () => {
 
             const result = applyBlockActionsToState(toRuntimeSnapshot(prevState), block)
 
-            // 验证: obj_1 spawned=false, obj_2 不受影响
+            // Verification: obj_1 spawned=false, obj_2 is unaffected
             expect(result.objects.find(o => o.id === 'obj_1')!.spawned).toBe(false)
             expect(result.objects.find(o => o.id === 'obj_2')!.spawned).toBe(true)
         })
@@ -225,7 +225,7 @@ describe('applyBlockActionsToState', () => {
                 id: 'group_1',
                 refId: '',
                 type: 'composite',
-                name: '组合',
+                name: 'composite_group',
                 x: 100,
                 y: 0,
                 width: 0,
@@ -294,7 +294,7 @@ describe('applyBlockActionsToState', () => {
                 id: 'group_1',
                 refId: '',
                 type: 'composite',
-                name: '组合',
+                name: 'composite_group',
                 x: 100,
                 y: 0,
                 width: 0,
@@ -339,7 +339,7 @@ describe('applyBlockActionsToState', () => {
                 id: 'composite_1',
                 refId: '',
                 type: 'composite',
-                name: '组合',
+                name: 'composite_group',
                 x: 100,
                 y: 0,
                 width: 0,
@@ -404,7 +404,7 @@ describe('applyBlockActionsToState', () => {
                 id: 'group_1',
                 refId: '',
                 type: 'composite',
-                name: '组合',
+                name: 'composite_group',
                 x: 100,
                 y: 50,
                 width: 0,
@@ -478,7 +478,7 @@ describe('applyBlockActionsToState', () => {
                 id: 'composite_1',
                 refId: '',
                 type: 'composite',
-                name: '组合',
+                name: 'composite_group',
                 x: 100,
                 y: 0,
                 width: 0,
@@ -646,16 +646,16 @@ describe('applyBlockActionsToState', () => {
     })
 })
 
-// ==================== calculatePrevContext 测试 ====================
+// ==================== calculatePrevContext Tests ====================
 
 describe('calculatePrevContext', () => {
-    describe('set_lifecycle spawned 跨 Block 累积', () => {
-        it('TC-SPAWNED-01: Block1 中设置 spawned=false，Block2 的 prevContext 应为 false', () => {
-            // Setup: 动态对象初始 spawned=true（已出生）
+    describe('set_lifecycle spawned accumulation across blocks', () => {
+        it('TC-SPAWNED-01: setting spawned=false in Block1 should result in spawned=false in Block2 prevContext', () => {
+            // Setup: Dynamic object initial spawned=true (already spawned)
             const obj = createMockCharacterObject('dynamic_char', true)
             const setup = createMockSetup([obj])
 
-            // Block 1: 包含 set_lifecycle spawned=false（使对象退场）
+            // Block 1: Contains set_lifecycle spawned=false (despawns object)
             const block1 = createMockBlock('block_1', [
                 {
                     id: 'action_despawn',
@@ -667,27 +667,27 @@ describe('calculatePrevContext', () => {
                 } as SetLifecycleAction
             ])
 
-            // Block 2: 无 action
+            // Block 2: No actions
             const block2 = createMockBlock('block_2', [])
 
-            // 创建场景
+            // Create scene
             const scene = createMockScene(setup, [block1, block2])
 
-            // 计算 Block 2 的 prevContext
+            // Calculate prevContext for Block 2
             const prevContext = calculatePrevContext(scene, 'block_2')
 
-            // 验证: dynamic_char 的 spawned 应该已经被设为 false
+            // Verification: dynamic_char spawned should already be false
             const resultObj = prevContext.objects.find(o => o.id === 'dynamic_char')
             expect(resultObj).toBeDefined()
             expect(resultObj!.spawned).toBe(false)
         })
 
-        it('TC-SPAWNED-02: Block1 中设置 spawned=true，Block2 的 prevContext 应为 true', () => {
-            // Setup: 动态对象初始 spawned=false（未出生）
+        it('TC-SPAWNED-02: setting spawned=true in Block1 should result in spawned=true in Block2 prevContext', () => {
+            // Setup: Dynamic object initial spawned=false (not yet spawned)
             const obj = createMockCharacterObject('dynamic_char', false)
             const setup = createMockSetup([obj])
 
-            // Block 1: 包含 set_lifecycle spawned=true（使对象出生）
+            // Block 1: Contains set_lifecycle spawned=true (spawns object)
             const block1 = createMockBlock('block_1', [
                 {
                     id: 'action_spawn',
@@ -699,27 +699,27 @@ describe('calculatePrevContext', () => {
                 } as SetLifecycleAction
             ])
 
-            // Block 2: 无 action
+            // Block 2: No actions
             const block2 = createMockBlock('block_2', [])
 
-            // 创建场景
+            // Create scene
             const scene = createMockScene(setup, [block1, block2])
 
-            // 计算 Block 2 的 prevContext
+            // Calculate prevContext for Block 2
             const prevContext = calculatePrevContext(scene, 'block_2')
 
-            // 验证: dynamic_char 的 spawned 应该已经被设为 true
+            // Verification: dynamic_char spawned should already be true
             const resultObj = prevContext.objects.find(o => o.id === 'dynamic_char')
             expect(resultObj).toBeDefined()
             expect(resultObj!.spawned).toBe(true)
         })
 
-        it('TC-SPAWNED-03: 多 Block 累积测试', () => {
-            // Setup: 动态对象初始 spawned=false
+        it('TC-SPAWNED-03: Multi-block accumulation test', () => {
+            // Setup: Dynamic object initial spawned=false
             const obj = createMockCharacterObject('dynamic_char', false)
             const setup = createMockSetup([obj])
 
-            // Block 1: spawned=true（出生）
+            // Block 1: spawned=true (spawn)
             const block1 = createMockBlock('block_1', [
                 {
                     id: 'action_spawn',
@@ -731,7 +731,7 @@ describe('calculatePrevContext', () => {
                 } as SetLifecycleAction
             ])
 
-            // Block 2: spawned=false（退场）
+            // Block 2: spawned=false (despawn)
             const block2 = createMockBlock('block_2', [
                 {
                     id: 'action_despawn',
@@ -743,29 +743,29 @@ describe('calculatePrevContext', () => {
                 } as SetLifecycleAction
             ])
 
-            // Block 3: 无 action
+            // Block 3: No actions
             const block3 = createMockBlock('block_3', [])
 
-            // 创建场景
+            // Create scene
             const scene = createMockScene(setup, [block1, block2, block3])
 
-            // 验证各 Block 的 prevContext
+            // Verify prevContext of each block
             const prevContext1 = calculatePrevContext(scene, 'block_1')
-            expect(prevContext1.objects.find(o => o.id === 'dynamic_char')!.spawned).toBe(false) // 初始状态
+            expect(prevContext1.objects.find(o => o.id === 'dynamic_char')!.spawned).toBe(false) // Initial state
 
             const prevContext2 = calculatePrevContext(scene, 'block_2')
-            expect(prevContext2.objects.find(o => o.id === 'dynamic_char')!.spawned).toBe(true) // Block1 出生后
+            expect(prevContext2.objects.find(o => o.id === 'dynamic_char')!.spawned).toBe(true) // After Block1 spawn
 
             const prevContext3 = calculatePrevContext(scene, 'block_3')
-            expect(prevContext3.objects.find(o => o.id === 'dynamic_char')!.spawned).toBe(false) // Block2 退场后
+            expect(prevContext3.objects.find(o => o.id === 'dynamic_char')!.spawned).toBe(false) // After Block2 despawn
         })
 
         it('TC-SPAWNED-04: autoDespawnOnBlockEnd=true (default) causes auto despawn after block end', () => {
-            // Setup: 动态对象初始 spawned=false
+            // Setup: Dynamic object initial spawned=false
             const obj = createMockCharacterObject('dynamic_char', false)
             const setup = createMockSetup([obj])
 
-            // Block 1: spawned=true，不设置 autoDespawnOnBlockEnd（默认 true）
+            // Block 1: spawned=true, without autoDespawnOnBlockEnd (default true)
             const block1 = createMockBlock('block_1', [
                 {
                     id: 'action_spawn',
@@ -777,12 +777,12 @@ describe('calculatePrevContext', () => {
                 } as SetLifecycleAction
             ])
 
-            // Block 2: 无 action
+            // Block 2: No actions
             const block2 = createMockBlock('block_2', [])
 
             const scene = createMockScene(setup, [block1, block2])
 
-            // Block 2 的 prevContext 中对象应已自动消亡
+            // Object in Block 2 prevContext should be automatically despawned
             const prevContext = calculatePrevContext(scene, 'block_2')
             expect(prevContext.objects.find(o => o.id === 'dynamic_char')!.spawned).toBe(false)
         })
@@ -806,7 +806,7 @@ describe('calculatePrevContext', () => {
             const block2 = createMockBlock('block_2', [])
             const scene = createMockScene(setup, [block1, block2])
 
-            // Block 2 的 prevContext 中对象应继续存活
+            // Object in Block 2 prevContext should continue to survive
             const prevContext = calculatePrevContext(scene, 'block_2')
             expect(prevContext.objects.find(o => o.id === 'dynamic_char')!.spawned).toBe(true)
         })
@@ -838,7 +838,7 @@ describe('calculatePrevContext', () => {
             const block2 = createMockBlock('block_2', [])
             const scene = createMockScene(setup, [block1, block2])
 
-            // 手动消亡已存在，对象应为 false
+            // Manual despawn already exists, object should be false
             const prevContext = calculatePrevContext(scene, 'block_2')
             expect(prevContext.objects.find(o => o.id === 'dynamic_char')!.spawned).toBe(false)
         })
@@ -1105,20 +1105,20 @@ describe('calculateSlotStates', () => {
     })
 })
 
-// ==================== calculateSlotStates 测试 ====================
+// ==================== calculateSlotStates Tests ====================
 
 
 describe('calculateSlotStates', () => {
-    describe('spawned=false 对象处理', () => {
-        it('TC-SLOT-01: prevContext 中 spawned=false 的对象，其 real 状态应保持 spawned=false', () => {
-            // 这个测试验证：当 Block1 中对象被设为 spawned=false 后，
-            // Block2 的 calculateSlotStates 返回的 real 状态中该对象的 spawned 应为 false
+    describe('spawned=false object handling', () => {
+        it('TC-SLOT-01: object with spawned=false in prevContext should maintain real state spawned=false', () => {
+            // This test verifies: when an object is set to spawned=false in Block1,
+            // Block2 calculateSlotStates returned real state should have spawned=false for this object
 
-            // Setup: 动态对象初始 spawned=true
+            // Setup: Dynamic object initially spawned=true
             const obj = createMockCharacterObject('dynamic_char', true)
             const setup = createMockSetup([obj])
 
-            // Block 1: 设置 spawned=false
+            // Block 1: Set spawned=false
             const block1 = createMockBlock('block_1', [
                 {
                     id: 'action_despawn',
@@ -1130,27 +1130,27 @@ describe('calculateSlotStates', () => {
                 } as SetLifecycleAction
             ])
 
-            // Block 2: 无 action
+            // Block 2: No actions
             const block2 = createMockBlock('block_2', [])
 
-            // 创建场景
+            // Create scene
             const scene = createMockScene(setup, [block1, block2])
 
-            // 计算 Block 2, Slot 0 的状态
+            // Calculate state of Block 2, Slot 0
             const slotStates = calculateSlotStates(scene, block2, 0)
 
-            // 验证: dynamic_char 的 real 状态应该 spawned=false
+            // Verification: dynamic_char real state should be spawned=false
             const objState = slotStates.objects.get('dynamic_char')
             expect(objState).toBeDefined()
             expect(objState!.real.spawned).toBe(false)
         })
 
-        it('TC-SLOT-02: prevContext 中 spawned=true 的对象，其 real 状态应保持 spawned=true', () => {
-            // Setup: 动态对象初始 spawned=false
+        it('TC-SLOT-02: object with spawned=true in prevContext should maintain real state spawned=true', () => {
+            // Setup: Dynamic object initial spawned=false
             const obj = createMockCharacterObject('dynamic_char', false)
             const setup = createMockSetup([obj])
 
-            // Block 1: 设置 spawned=true
+            // Block 1: Set spawned=true
             const block1 = createMockBlock('block_1', [
                 {
                     id: 'action_spawn',
@@ -1162,16 +1162,16 @@ describe('calculateSlotStates', () => {
                 } as SetLifecycleAction
             ])
 
-            // Block 2: 无 action
+            // Block 2: No actions
             const block2 = createMockBlock('block_2', [])
 
-            // 创建场景
+            // Create scene
             const scene = createMockScene(setup, [block1, block2])
 
-            // 计算 Block 2, Slot 0 的状态
+            // Calculate state of Block 2, Slot 0
             const slotStates = calculateSlotStates(scene, block2, 0)
 
-            // 验证: dynamic_char 的 real 状态应该 spawned=true
+            // Verification: dynamic_char real state should be spawned=true
             const objState = slotStates.objects.get('dynamic_char')
             expect(objState).toBeDefined()
             expect(objState!.real.spawned).toBe(true)
@@ -1179,10 +1179,10 @@ describe('calculateSlotStates', () => {
     })
 })
 
-// ==================== Composite Auto-Despawn 测试 ====================
+// ==================== Composite Auto-Despawn Tests ====================
 
 describe('composite auto-despawn child handling', () => {
-    // 辅助函数：创建组合对象
+    // Helper function: create composite object
     function createMockCompositeObject(
         id: string,
         childIds: string[],
@@ -1226,14 +1226,14 @@ describe('composite auto-despawn child handling', () => {
         } as unknown as SceneObject
     }
 
-    it('TC-AUTODESPAWN-COMPOSITE-OWN: own 模式组合对象自动消亡时，子对象 spawned 应级联为 false', () => {
-        // Setup: 组合对象和子对象都初始为 spawned=false
+    it('TC-AUTODESPAWN-COMPOSITE-OWN: own mode composite auto-despawn should cascade spawned=false to children', () => {
+        // Setup: Composite and children initially spawned=false
         const child1 = createMockPropObject('child_1', false, 'composite_1')
         const child2 = createMockPropObject('child_2', false, 'composite_1')
         const composite = createMockCompositeObject('composite_1', ['child_1', 'child_2'], 'entity', false)
         const setup = createMockSetup([composite, child1, child2])
 
-        // Block 1: 组合对象出生（autoDespawnOnBlockEnd 默认 true）
+        // Block 1: Composite spawns (autoDespawnOnBlockEnd defaults to true)
         const block1 = createMockBlock('block_1', [
             {
                 id: 'action_spawn_composite',
@@ -1243,7 +1243,7 @@ describe('composite auto-despawn child handling', () => {
                 slotIndex: 0,
                 params: { spawned: true }
             } as SetLifecycleAction,
-            // 子对象也出生（autoDespawnOnBlockEnd=false，让它们不被自身的自动消亡影响）
+            // Children also spawn (autoDespawnOnBlockEnd=false so they are not affected by own autoDespawn)
             {
                 id: 'action_spawn_child1',
                 type: 'set_lifecycle',
@@ -1265,21 +1265,21 @@ describe('composite auto-despawn child handling', () => {
         const block2 = createMockBlock('block_2', [])
         const scene = createMockScene(setup, [block1, block2])
 
-        // Block 2 的 prevContext 中，组合对象自动消亡，子对象应级联消亡
+        // In Block 2 prevContext, composite auto-despawns and children should cascade despawn
         const prevContext = calculatePrevContext(scene, 'block_2')
         expect(prevContext.objects.find(o => o.id === 'composite_1')!.spawned).toBe(false)
         expect(prevContext.objects.find(o => o.id === 'child_1')!.spawned).toBe(false)
         expect(prevContext.objects.find(o => o.id === 'child_2')!.spawned).toBe(false)
     })
 
-    it('TC-AUTODESPAWN-COMPOSITE-BIND: union 模式组合对象自动消亡时，不改变子对象 parentId', () => {
-        // Setup: 组合对象和子对象
+    it('TC-AUTODESPAWN-COMPOSITE-BIND: union mode composite auto-despawn should not change child parentId', () => {
+        // Setup: Composite and child objects
         const child1 = createMockPropObject('child_1', false, 'composite_1')
         const child2 = createMockPropObject('child_2', false, 'composite_1')
         const composite = createMockCompositeObject('composite_1', ['child_1', 'child_2'], 'union', false)
         const setup = createMockSetup([composite, child1, child2])
 
-        // Block 1: 组合对象出生（autoDespawnOnBlockEnd 默认 true）
+        // Block 1: Composite spawns (autoDespawnOnBlockEnd defaults to true)
         const block1 = createMockBlock('block_1', [
             {
                 id: 'action_spawn_composite',
@@ -1316,8 +1316,8 @@ describe('composite auto-despawn child handling', () => {
         expect(prevContext.objects.find(o => o.id === 'child_2')!.parentId).toBe('composite_1')
     })
 
-    it('TC-AUTODESPAWN-COMPOSITE-BIND-ALIVE: bind 模式组合对象自动消亡时，子对象 spawned 应保持存活', () => {
-        // Setup: 同上
+    it('TC-AUTODESPAWN-COMPOSITE-BIND-ALIVE: bind mode composite auto-despawn should keep children alive', () => {
+        // Setup: Same as above
         const child1 = createMockPropObject('child_1', false, 'composite_1')
         const composite = createMockCompositeObject('composite_1', ['child_1'], 'union', false)
         const setup = createMockSetup([composite, child1])
@@ -1345,7 +1345,7 @@ describe('composite auto-despawn child handling', () => {
         const scene = createMockScene(setup, [block1, block2])
 
         const prevContext = calculatePrevContext(scene, 'block_2')
-        // bind 模式：组合对象消亡，但子对象应保持存活
+        // bind mode: composite despawns, but children should stay alive
         expect(prevContext.objects.find(o => o.id === 'composite_1')!.spawned).toBe(false)
         expect(prevContext.objects.find(o => o.id === 'child_1')!.spawned).toBe(true)
     })

@@ -1,6 +1,6 @@
 /**
- * 导出适配器 (v6.0)
- * 将 Episode 结构转换为导出所需的格式
+ * Export adapter (v6.0)
+ * Converts Episode structure to formats required for export
  */
 
 import type { Episode } from '@/stores/episodeStore'
@@ -19,12 +19,12 @@ export function getBlockDurationMs(block: ScriptBlock): number {
 }
 
 /**
- * 导出时遍历所有场景和脚本块的迭代器
- * 用于视频导出系统
+ * Iterator traversing all scenes and script blocks during export
+ * Used by video export system
  */
 export function* iterateScenesForExport(episode: Episode) {
   for (const scene of episode.scenes) {
-    // 重置场景状态（应用 scene.setup）
+    // Reset scene state (apply scene.setup)
     yield {
       type: 'scene_setup' as const,
       sceneId: scene.id,
@@ -32,7 +32,7 @@ export function* iterateScenesForExport(episode: Episode) {
       setup: scene.setup
     }
 
-    // 遍历场景中的所有脚本块
+    // Traverse all script blocks in scene
     for (const block of scene.script) {
       yield {
         type: 'script_block' as const,
@@ -46,8 +46,8 @@ export function* iterateScenesForExport(episode: Episode) {
 }
 
 /**
- * 计算导出总时长（秒）
- * 遍历所有场景和脚本块，累加 TTS 时长和动作时长
+ * Calculate total export duration (ms)
+ * Traverses all scenes and script blocks, accumulating TTS duration and action duration
  */
 export function calculateExportDuration(episode: Episode): number {
   let totalDuration = 0
@@ -62,7 +62,7 @@ export function calculateExportDuration(episode: Episode): number {
 }
 
 /**
- * 获取导出时需要的所有资源 ID
+ * Get all asset IDs required during export
  */
 export function getExportAssetIds(episode: Episode, _actors: ActorConfig[]): {
   backgrounds: string[]
@@ -73,7 +73,7 @@ export function getExportAssetIds(episode: Episode, _actors: ActorConfig[]): {
 
 
   for (const scene of episode.scenes) {
-    // 从 setup 中收集资源
+    // Collect assets from setup
     for (const obj of scene.setup.objects) {
       if (obj.type === 'background' && obj.refId) {
         // Unify to use refId for background as well (v6.0 standard)
@@ -83,10 +83,10 @@ export function getExportAssetIds(episode: Episode, _actors: ActorConfig[]): {
       }
     }
 
-    // v7.0: 从脚本块中收集资源（通过 instanceId 查找实例，获取其关联的角色）
+    // v7.0: Collect assets from script blocks (look up instance via instanceId to get associated character)
     for (const block of scene.script) {
       if (block.type === 'dialogue') {
-        // Character instance lookup removed — character type已删除
+        // Character instance lookup removed — character type deleted
       }
     }
   }
@@ -98,30 +98,30 @@ export function getExportAssetIds(episode: Episode, _actors: ActorConfig[]): {
 }
 
 /**
- * 导出时的场景状态快照
+ * Scene state snapshot during export
  */
 export interface ExportSceneSnapshot {
   sceneId: string
   sceneTitle: string
   setup: SceneContainer['setup']
-  currentTime: number // 场景开始时间（秒）
+  currentTime: number // Scene start time (seconds)
 }
 
 /**
- * 导出时的脚本块执行信息
+ * Script block execution info during export
  */
 export interface ExportBlockExecution {
   sceneId: string
   blockId: string
   blockType: ScriptBlock['type']
-  startTime: number // 块开始时间（秒）
-  duration: number // 块时长（秒）
-  actions: Action[] // 块中的动作列表
+  startTime: number // Block start time (seconds)
+  duration: number // Block duration (seconds)
+  actions: Action[] // Action list in block
 }
 
 /**
- * 生成导出时间线
- * 返回按时间顺序排列的场景快照和脚本块执行信息
+ * Generate export timeline
+ * Returns chronologically ordered scene snapshots and script block execution info
  */
 export function generateExportTimeline(episode: Episode): {
   snapshots: ExportSceneSnapshot[]
@@ -132,7 +132,7 @@ export function generateExportTimeline(episode: Episode): {
   let currentTime = 0
 
   for (const scene of episode.scenes) {
-    // 场景快照（在场景开始时）
+    // Scene snapshot (at start of scene)
     snapshots.push({
       sceneId: scene.id,
       sceneTitle: scene.title,
@@ -140,7 +140,7 @@ export function generateExportTimeline(episode: Episode): {
       currentTime
     })
 
-    // 遍历场景中的所有脚本块
+    // Traverse all script blocks in scene
     for (const block of scene.script) {
       const blockDuration = getBlockDurationMs(block)
 
@@ -159,4 +159,3 @@ export function generateExportTimeline(episode: Episode): {
 
   return { snapshots, executions }
 }
-

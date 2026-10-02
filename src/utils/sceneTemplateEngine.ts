@@ -1,41 +1,41 @@
 /**
- * 场景模板引擎
- * v17: 多根平坦列表 — 快照（画布 → 模板）与实例化（模板 → 画布）
+ * Scene template engine
+ * v17: Multi-root flat list — Snapshot (Canvas -> Template) and Instantiation (Template -> Canvas)
  */
 
 import type { CompositeObject, MaskObject, SceneObject, ScreenEffectObject } from '@/types/sceneObject'
 import type { SceneTemplate } from '@/types/sceneTemplate'
 
 /**
- * 生成唯一 ID（与 Store 中的 ID 生成规则一致）
+ * Generate unique ID (consistent with Store ID generation rules)
  */
 function generateObjectId(): string {
     return `obj_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
 }
 
 /**
- * 深克隆场景对象，移除运行时字段和架构内部状态
+ * Deep clones scene object, removing runtime fields and internal architecture state
  *
- * 清除规则：
- * - `_` 前缀字段：PIXI 运行时状态（如 _runtimeUrl）
- * - `spawned`：双层架构内部标记（Setup/Action 生命周期状态），
- *   模板是自包含的可复用对象集合，所有对象天然"存活"，
- *   此字段不应泄漏到模板数据中。
+ * Cleanup rules:
+ * - `_` prefix fields: PIXI runtime state (e.g. _runtimeUrl)
+ * - `spawned`: Internal dual-layer architecture flag (Setup/Action lifecycle state).
+ *   Templates are self-contained reusable object collections, all objects inherently "alive".
+ *   This field must not leak into template data.
  */
 function cloneObjectClean(obj: SceneObject): SceneObject {
-    // 使用 JSON 序列化实现深克隆（自动跳过 undefined 值，兼容 exactOptionalPropertyTypes）
+    // Deep clone via JSON serialization (skips undefined values, compatible with exactOptionalPropertyTypes)
     const raw = JSON.parse(JSON.stringify(obj)) as Record<string, unknown>
-    // 移除运行时字段
+    // Remove runtime fields
     for (const key of Object.keys(raw)) {
         if (key.startsWith('_')) {
             delete raw[key]
         }
     }
-    // 移除架构内部状态
+    // Remove internal architecture state
     delete raw['spawned']
 
-    // v19 修复：强制规范组合对象的锁定状态
-    // 若入库或反序列化时携带了未被剔除的 compositeLocked: false，会污染再次引入的实例化状态
+    // v19 fix: normalize composite locked state
+    // Prevents leftover compositeLocked: false from contaminating instantiated state
     if (raw['type'] === 'composite') {
         raw['compositeLocked'] = true
     }
@@ -44,11 +44,11 @@ function cloneObjectClean(obj: SceneObject): SceneObject {
 }
 
 /**
- * 递归收集组合对象的所有子对象（含嵌套组合）
+ * Recursively collects all child objects of composite (including nested composites)
  *
- * @param rootId 根组合对象 ID
- * @param allObjects 当前场景的所有对象
- * @returns 按拓扑顺序排列的子对象数组（父对象在前）
+ * @param rootId Root composite object ID
+ * @param allObjects All objects in current scene
+ * @returns Array of child objects in topological order (parent first)
  */
 function collectChildObjects(rootId: string, allObjects: SceneObject[]): SceneObject[] {
     const result: SceneObject[] = []
@@ -67,7 +67,7 @@ function collectChildObjects(rootId: string, allObjects: SceneObject[]): SceneOb
             if (!child) continue
 
             result.push(child)
-            // 递归嵌套组合
+            // Recursively collect nested composites
             if (child.type === 'composite') {
                 collect(child.id)
             }
@@ -79,16 +79,16 @@ function collectChildObjects(rootId: string, allObjects: SceneObject[]): SceneOb
 }
 
 /**
- * v17: 重映射对象上动画定义中的 objectId 引用
- * - track 类型：各轨道的 targetObjectId
- * '_self' 保持不变，具体 UUID 通过 idMap 重映射
+ * v17: Remap objectId references in animation definitions on object
+ * - track type: targetObjectId on each track
+ * '_self' remains unchanged; UUIDs remapped via idMap
  */
 function remapAnimationObjectIds(obj: SceneObject, idMap: Map<string, string>): void {
     const animations = obj.animations
     if (!animations) return
     for (const anim of Object.values(animations)) {
         if (anim.type === 'track') {
-            // v19 Fix: track 动画中的 targetObjectId 也需要重映射
+            // v19 Fix: targetObjectId in track animation also needs remapping
             for (const track of anim.tracks) {
                 if (track.targetObjectId && track.targetObjectId !== '_self' && idMap.has(track.targetObjectId)) {
                     (track as { targetObjectId: string }).targetObjectId = idMap.get(track.targetObjectId)!
@@ -123,7 +123,7 @@ function remapSceneObjectInternalRefs(obj: SceneObject, idMap: Map<string, strin
 }
 
 /**
- * 计算对象集合的几何包围盒中心
+ * Calculates geometric bounding box center of object collection
  */
 function computeBoundingBoxCenter(objects: SceneObject[]): { cx: number; cy: number } {
     if (objects.length === 0) return { cx: 0, cy: 0 }
@@ -134,7 +134,7 @@ function computeBoundingBoxCenter(objects: SceneObject[]): { cx: number; cy: num
     let maxY = -Infinity
 
     for (const obj of objects) {
-        // 使用视觉边界：中心点 ± 半宽/半高（考虑缩放）
+        // Use visual bounds: center point +/- half-width/half-height (accounting for scale)
         const halfW = (obj.width * Math.abs(obj.scaleX ?? 1)) / 2
         const halfH = (obj.height * Math.abs(obj.scaleY ?? 1)) / 2
         const left = obj.x - halfW
@@ -150,19 +150,20 @@ function computeBoundingBoxCenter(objects: SceneObject[]): { cx: number; cy: num
     return { cx: (minX + maxX) / 2, cy: (minY + maxY) / 2 }
 }
 
-// ===== 快照（保存为模板）=====
+// ===== Snapshot (Save as Template) =====
 
 /**
- * 从场景中的选中对象创建场景模板快照
+ * Creates scene template snapshot from selected objects in scene
  *
- * v17: 支持多根 — 接收多个顶层对象，递归收集子对象，去重合并为平坦列表。
- * 坐标以包围盒中心归零。
+ * v17: Supports multi-root — receives multiple top-level objects, recursively collects children,
+ * deduplicates and merges into flat list. Coordinates zeroed relative to bounding box center.
  *
- * @param selectedObjects 选中的顶层对象列表
- * @param allSceneObjects 当前场景的所有对象（用于递归收集 composite 子对象）
- * @param name 模板名称
- * @param tags 标签列表
- * @returns 场景模板
+ * @param selectedObjects List of selected top-level objects
+ * @param allSceneObjects All objects in current scene (for recursively collecting composite children)
+ * @param name Template name
+ * @param tags Tag list
+ * @param renderChain Optional scene-level render chain
+ * @returns Scene template
  */
 export function snapshotToTemplate(
     selectedObjects: SceneObject[],
@@ -171,7 +172,7 @@ export function snapshotToTemplate(
     tags?: string[],
     renderChain?: string[],
 ): SceneTemplate {
-    // 1. 收集所有需要包含的对象（选中对象 + 递归子对象），去重
+    // 1. Collect all objects to include (selected + recursive children), deduplicated
     const collectedIds = new Set<string>()
     const allCollected: SceneObject[] = []
 
@@ -180,7 +181,7 @@ export function snapshotToTemplate(
         collectedIds.add(obj.id)
         allCollected.push(obj)
 
-        // 递归收集 composite/symbol 子对象
+        // Recursively collect composite/symbol child objects
         if (obj.type === 'composite') {
             const children = collectChildObjects(obj.id, allSceneObjects)
             for (const child of children) {
@@ -192,11 +193,11 @@ export function snapshotToTemplate(
         }
     }
 
-    // 2. 深克隆所有对象
+    // 2. Deep clone all objects
     const clonedObjects = allCollected.map(obj => cloneObjectClean(obj))
 
-    // 3. 坐标标准化：以**顶层对象**的包围盒中心归零
-    // 关键：composite 子对象使用局部坐标（相对于父对象），不参与包围盒计算，也不做偏移
+    // 3. Normalize coordinates: zeroed against bounding box center of **top-level objects**
+    // Composite children use local coordinates (relative to parent), do not participate in bounds calculation or offset
     const selectedIds = new Set(selectedObjects.map(o => o.id))
     const topLevelCloned = clonedObjects.filter(o => selectedIds.has(o.id))
     const { cx, cy } = computeBoundingBoxCenter(topLevelCloned)
@@ -205,15 +206,14 @@ export function snapshotToTemplate(
         obj.y -= cy
     }
 
-    // 4. 清除顶层对象的 parentId（模板是独立的可复用单元）
+    // 4. Clear parentId of top-level objects (templates are independent reusable units)
     for (const obj of clonedObjects) {
         if (selectedIds.has(obj.id)) {
-            // 如果被保存的对象是某个 composite 的子对象，其 parentId 不应泄漏到模板中
             delete (obj as unknown as Record<string, unknown>)['parentId']
         }
     }
 
-    // 5. 生成模板 ID
+    // 5. Generate template ID
     const templateId = `stpl_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
 
     const result: SceneTemplate = {
@@ -224,7 +224,7 @@ export function snapshotToTemplate(
         editorAnchor: { x: cx, y: cy },
     }
 
-    // v19: 保存场景级渲染链（从调用方传入）
+    // v19: Save scene-level render chain (passed from caller)
     if (renderChain && renderChain.length > 0) {
         const templateObjIds = new Set(clonedObjects.map(o => o.id))
         const filteredChain = renderChain.filter(id => templateObjIds.has(id))
@@ -240,15 +240,16 @@ export function snapshotToTemplate(
 }
 
 /**
- * 从画布对象集合构建模板（整体快照）
+ * Builds template from canvas object collection (overall snapshot)
  *
- * v17: 无需自动包装 composite，直接将所有顶层对象保存为模板。
+ * v17: Directly saves all top-level objects as template without auto-wrapping composite.
  *
- * @param objects 画布上的对象（已排除 camera）
- * @param allObjects 所有场景对象（包括 camera，用于 composite 子对象递归）
- * @param name 模板名称
- * @param tags 标签列表
- * @returns 场景模板
+ * @param objects Objects on canvas (camera excluded)
+ * @param allObjects All scene objects (including camera, for composite child recursion)
+ * @param name Template name
+ * @param tags Tag list
+ * @param renderChain Scene render chain
+ * @returns Scene template
  */
 export function buildTemplateFromObjects(
     objects: SceneObject[],
@@ -257,7 +258,7 @@ export function buildTemplateFromObjects(
     tags?: string[],
     renderChain?: string[],
 ): SceneTemplate {
-    // 空模板
+    // Empty template
     if (objects.length === 0) {
         const templateId = `stpl_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
         const result: SceneTemplate = {
@@ -272,78 +273,77 @@ export function buildTemplateFromObjects(
         return result
     }
 
-    // 找出顶层对象（没有 parentId 或 parentId 指向的对象不在列表中）
+    // Find top-level objects (no parentId, or parentId points outside list)
     const objectIds = new Set(objects.map(o => o.id))
     const topLevelObjects = objects.filter(o => !o.parentId || !objectIds.has(o.parentId))
 
-    // 直接使用 snapshotToTemplate —— 不再自动包装 composite
+    // Directly use snapshotToTemplate without auto-wrapping composite
     return snapshotToTemplate(topLevelObjects, allObjects, name, tags, renderChain)
 }
 
-// ===== 实例化（从模板创建对象）=====
+// ===== Instantiation (Create Objects from Template) =====
 
-/** 实例化结果 */
+/** Instantiation result */
 export interface InstantiateResult {
-    /** 按拓扑顺序排列的对象数组（先根后子） */
+    /** Objects array in topological order (root first, children next) */
     objects: SceneObject[]
-    /** 缺失的资源 refId 列表（依赖校验未通过） */
+    /** Missing asset refId list (dependency validation failures) */
     missingRefs: string[]
-    /** v19: 重映射后的场景级渲染链（仅当不装 wrapper 时有效） */
+    /** v19: Remapped scene-level render chain (valid when wrapper is not applied) */
     renderChain?: string[]
-    /** 模板对象 ID → 场景实例对象 ID 的映射表 */
+    /** Template object ID -> scene instance object ID mapping table */
     idMap: Map<string, string>
 }
 
 /**
- * 检查 refId 引用的资源是否存在
+ * Checks whether asset referenced by refId exists
  *
- * @param refId 资源引用 ID
- * @param type 对象类型
- * @param resourceChecker 资源存在性检查函数
- * @returns 资源是否存在
+ * @param type Object type
+ * @param refId Asset reference ID
+ * @returns Whether asset exists
  */
 type ResourceChecker = (type: string, refId: string) => boolean
 
 /**
- * 从场景模板实例化场景对象
+ * Instantiates scene objects from scene template
  *
- * v17: 遍历 template.objects 平坦列表，为每个对象生成新 ID 并重映射引用。
- * 当 autoWrapComposite 为 true 且顶层对象 > 1 时，自动创建 union composite 包装。
+ * v17: Traverses template.objects flat list, generates new ID for each object, and remaps references.
+ * When autoWrapComposite is true and top-level objects > 1, creates entity composite wrapper automatically.
  *
- * @param template 场景模板
- * @param dropX 放置目标 X 坐标
- * @param dropY 放置目标 Y 坐标
- * @param options 实例化选项
- * @returns 实例化结果
+ * @param template Scene template
+ * @param dropX Drop target X coordinate
+ * @param dropY Drop target Y coordinate
+ * @param options Instantiation options
+ * @returns Instantiation result
  */
 export function instantiateTemplate(
     template: SceneTemplate,
     dropX: number,
     dropY: number,
     options?: {
-        /** 资源存在性检查函数（不提供则跳过校验） */
+        /** Asset existence checker function (skips validation if omitted) */
         resourceChecker?: ResourceChecker
-        /** 多根模板是否自动包装 union composite（默认 true） */
+        /** Whether multi-root template automatically wraps composite (default true) */
         autoWrapComposite?: boolean
-        /** 外围包装组合对象的模式（默认 'union'） */
+        /** Outer wrapper composite mode (default 'union') */
         wrapperCompositeMode?: 'union' | 'entity'
     },
 ): InstantiateResult {
     const resourceChecker = options?.resourceChecker
     const autoWrapComposite = options?.autoWrapComposite ?? true
 
-    // 空模板
+    // Empty template
     if (template.objects.length === 0) {
         return { objects: [], missingRefs: [], idMap: new Map() }
     }
 
-    // 1. ID 重映射表：旧 ID → 新 ID
+    // 1. ID remapping table: old ID -> new ID
     const idMap = new Map<string, string>()
     for (const obj of template.objects) {
         idMap.set(obj.id, generateObjectId())
     }
 
-    // 2. 深克隆并重映射
+    // 2. Deep clone and remap
     const objects: SceneObject[] = []
     const missingRefs: string[] = []
 
@@ -351,39 +351,39 @@ export function instantiateTemplate(
         const cloned = cloneObjectClean(obj)
         const newId = idMap.get(obj.id)
         if (!newId) {
-            throw new Error(`[sceneTemplateEngine] 内部错误：对象 ${obj.id} 未在 ID 映射表中`)
+            throw new Error(`[sceneTemplateEngine] Internal error: object ${obj.id} not found in ID mapping table`)
         }
         cloned.id = newId
 
-        // 坐标还原：只对顶层对象（无 parentId）应用放置点偏移
-        // composite 子对象使用局部坐标，不应叠加 dropX/dropY
+        // Coordinate restoration: apply drop offset to top-level objects (no parentId) only
+        // Composite children use local coordinates, should not add dropX/dropY
         if (!cloned.parentId) {
             cloned.x += dropX
             cloned.y += dropY
         }
 
-        // 重映射 parentId
+        // Remap parentId
         if (cloned.parentId) {
             cloned.parentId = idMap.get(cloned.parentId) ?? cloned.parentId
         }
 
-        // 重映射 childIds 和 renderChain（如果是 Composite）
+        // Remap childIds and renderChain (for Composite)
         if (cloned.type === 'composite') {
             const comp = cloned as CompositeObject
             comp.childIds = comp.childIds.map(oldId => idMap.get(oldId) ?? oldId)
-            // v19: entity 的 renderChain 也需要重映射
+            // v19: entity renderChain also needs remapping
             if (comp.renderChain) {
                 comp.renderChain = comp.renderChain.map(oldId => idMap.get(oldId) ?? oldId)
             }
         }
 
-        // v17: 重映射动画定义中的 objectId
+        // v17: Remap objectId in animation definitions
         remapAnimationObjectIds(cloned, idMap)
 
-        // v26: 重映射对象字段中指向模板内部对象的引用
+        // v26: Remap object fields referencing internal template objects
         remapSceneObjectInternalRefs(cloned, idMap)
 
-        // 依赖校验
+        // Dependency validation
         if (resourceChecker && cloned.refId) {
             if (!resourceChecker(cloned.type, cloned.refId)) {
                 missingRefs.push(cloned.refId)
@@ -393,7 +393,7 @@ export function instantiateTemplate(
         objects.push(cloned)
     }
 
-    // v19: 重映射模板的场景级 renderChain
+    // v19: Remap scene-level renderChain of template
     let remappedRenderChain: string[] | undefined
     if (template.renderChain && template.renderChain.length > 0) {
         remappedRenderChain = template.renderChain
@@ -401,7 +401,7 @@ export function instantiateTemplate(
             .filter((id): id is string => id !== undefined)
     }
 
-    // 3. 自动包装：顶层对象 > 1 时 或 单根为 union composite 时 创建 entity composite 包装
+    // 3. Auto wrapping: create entity composite wrapper when top-level objects > 1 or single root is union composite
     if (autoWrapComposite) {
         const topLevelObjects = objects.filter(o => !o.parentId)
         const singleUnionRoot = topLevelObjects.length === 1
@@ -427,24 +427,24 @@ export function instantiateTemplate(
                 zIndex: 0,
                 childIds: topLevelObjects.map(o => o.id),
                 compositeLocked: true,
-                // 包裹层固定为 entity 模式（确保生命周期级联）
+                // Wrapper layer fixed to entity mode (ensures lifecycle cascade)
                 compositeMode: 'entity',
             }
 
-            // v19: entity wrapper 设置 renderChain（从模板的场景级 renderChain 转换而来）
+            // v19: entity wrapper sets renderChain (converted from template scene-level renderChain)
             if (remappedRenderChain && remappedRenderChain.length > 0) {
                 wrapperComposite.renderChain = remappedRenderChain
             }
 
-            // 设置所有顶层对象的 parentId，并转换为局部坐标
-            // composite 的 scale=1, rotation=0，简化为减去 composite 位置
+            // Set parentId for all top-level objects and convert to local coordinates
+            // Composite scale=1, rotation=0, simplifies to subtracting composite position
             for (const obj of topLevelObjects) {
                 obj.parentId = wrapperComposite.id
                 obj.x -= wrapperComposite.x
                 obj.y -= wrapperComposite.y
             }
 
-            // 将 wrapper 插到首位（先根后子的拓扑顺序）
+            // Prepend wrapper to head (topological order: root first, children after)
             objects.unshift(wrapperComposite)
         }
     }
@@ -457,11 +457,11 @@ export function instantiateTemplate(
 }
 
 /**
- * 生成别名（避免重名）
+ * Generate unique alias (avoids duplicate naming)
  *
- * @param baseName 基础名称
- * @param existingAliases 已有的别名列表
- * @returns 唯一的别名
+ * @param baseName Base name
+ * @param existingAliases List of existing aliases
+ * @returns Unique alias
  */
 export function generateUniqueAlias(baseName: string, existingAliases: string[]): string {
     if (!existingAliases.includes(baseName)) return baseName
@@ -474,23 +474,23 @@ export function generateUniqueAlias(baseName: string, existingAliases: string[])
     return `${baseName}_${Date.now()}`
 }
 
-// ===== 缩略图生成 =====
+// ===== Thumbnail Generation =====
 
 /**
- * v16: 从 PIXI 渲染器生成模板缩略图
+ * v16: Generates template thumbnail from PIXI renderer
  *
- * @param pixiApp PIXI.Application 实例
- * @param maxSize 缩略图最大尺寸（默认 256px）
- * @returns base64 data URL（image/png）
+ * @param pixiApp PIXI.Application instance
+ * @param maxSize Maximum thumbnail size (default 256px)
+ * @returns base64 data URL (image/png)
  */
 export function generateTemplateThumbnail(
     pixiApp: { renderer: { extract: { canvas: (target: unknown) => HTMLCanvasElement } }; stage: unknown },
     maxSize = 256,
 ): string {
-    // 从 PIXI stage 截取画面
+    // Extract canvas from PIXI stage
     const canvas = pixiApp.renderer.extract.canvas(pixiApp.stage)
 
-    // 缩放到指定最大尺寸
+    // Scale to max size
     const thumbCanvas = document.createElement('canvas')
     const scale = Math.min(maxSize / canvas.width, maxSize / canvas.height, 1)
     thumbCanvas.width = Math.round(canvas.width * scale)
@@ -498,7 +498,7 @@ export function generateTemplateThumbnail(
 
     const ctx = thumbCanvas.getContext('2d')
     if (!ctx) {
-        throw new Error('[sceneTemplateEngine] 无法创建 2D Canvas Context')
+        throw new Error('[sceneTemplateEngine] Failed to create 2D Canvas Context')
     }
     ctx.drawImage(canvas, 0, 0, thumbCanvas.width, thumbCanvas.height)
 

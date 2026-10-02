@@ -1,9 +1,9 @@
 /**
- * Composite 序列化器
+ * Composite serializer
  *
- * P2: 组合对象的序列化/反序列化。
- * 特化字段：childIds, compositeMode
- * 注意：compositeLocked 是 UI-only 属性，不参与序列化（默认 true）
+ * P2: Serialization/deserialization of composite objects.
+ * Specialized fields: childIds, compositeMode
+ * Note: compositeLocked is UI-only property, not serialized (default true)
  */
 
 import type { CompositeObject, SceneObject } from '@/types/sceneObject'
@@ -15,9 +15,9 @@ const compositeSerializer: TypeSerializer = {
     serializeFields(obj: SceneObject, base: Record<string, unknown>): void {
         const composite = obj as CompositeObject
         base['childIds'] = composite.childIds ?? []
-        // compositeLocked 是 UI-only 属性，不保存到项目文件
+        // compositeLocked is UI-only property, not saved to project file
         base['compositeMode'] = composite.compositeMode ?? 'entity'
-        // renderChain 仅 entity 模式序列化
+        // renderChain serialized for entity mode only
         if (composite.compositeMode === 'entity' && composite.renderChain) {
             base['renderChain'] = composite.renderChain
         }
@@ -26,7 +26,7 @@ const compositeSerializer: TypeSerializer = {
     deserialize(objData: SceneObject, ctx: DeserializeContext): void {
         const composite = objData as CompositeObject
         const compositeObj = ctx.createCompositeObject(
-            objData.name ?? '组合对象',
+            objData.name ?? 'Composite Object',
             composite.childIds ?? [],
             objData.id,
             objData.alias ?? '',
@@ -47,11 +47,11 @@ const compositeSerializer: TypeSerializer = {
             transformOriginX: objData.transformOriginX,
             transformOriginY: objData.transformOriginY,
             parentId: objData.parentId,
-            compositeLocked: true, // UI-only，始终默认 true
+            compositeLocked: true, // UI-only, always defaults to true
             compositeMode: composite.compositeMode ?? 'entity',
         })
 
-        // renderChain 仅在持久化数据存在时恢复（避免 undefined 删除占位空数组）
+        // renderChain restored only when persisted data exists (avoiding undefined deleting placeholder array)
         if (composite.renderChain) {
             ctx.updateObject<CompositeObject>(compositeObj.id, {
                 renderChain: composite.renderChain,

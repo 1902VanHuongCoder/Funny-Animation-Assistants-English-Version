@@ -1,8 +1,8 @@
 /**
  * GenericAnimationPlayerPivot.spec.ts
  * 
- * 测试 GenericAnimationPlayer 的 pivot 位置补偿功能
- * 确保围绕自定义锚点的缩放/旋转时，位置被正确补偿
+ * Tests GenericAnimationPlayer pivot position compensation
+ * Ensures position is correctly compensated during scaling/rotation around custom pivot
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -130,7 +130,7 @@ function makeAnimationOutput(transforms: TransformTrackOutput[]): AnimationOutpu
     }
 }
 
-describe('GenericAnimationPlayer - Pivot 位置补偿', () => {
+describe('GenericAnimationPlayer - Pivot Position Compensation', () => {
     let target: ReturnType<typeof mockContainer>
     let player: GenericAnimationPlayer
 
@@ -155,7 +155,7 @@ describe('GenericAnimationPlayer - Pivot 位置补偿', () => {
     })
 
     describe('setObjectBounds', () => {
-        it('应该缓存对象尺寸', () => {
+        it('should cache object dimensions', () => {
             player.setObjectBounds(200, 300)
             // Verify by playing an animation with pivot and checking position compensation
             // The bounds should be stored internally
@@ -163,8 +163,8 @@ describe('GenericAnimationPlayer - Pivot 位置补偿', () => {
         })
     })
 
-    describe('中心 pivot (100, 200) — 与 container.pivot 相同', () => {
-        it('缩放时不应有位置补偿', () => {
+    describe('Center pivot (100, 200) - identical to container.pivot', () => {
+        it('should not compensate position during scaling', () => {
             player.setObjectBounds(200, 400)
 
             // Create a player with injectable outputs
@@ -180,7 +180,7 @@ describe('GenericAnimationPlayer - Pivot 位置补偿', () => {
             const internalPlayers = (player as unknown as { players: Map<string, { _setTestOutput: (o: AnimationOutput | null) => void }> }).players
             const internalPlayer = internalPlayers.get('test')!
             internalPlayer._setTestOutput(makeAnimationOutput([
-                // pixel pivot == container.pivot → dx=dy=0 → 无补偿
+                // pixel pivot == container.pivot -> dx=dy=0 -> no compensation
                 makeTransformOutput({ scaleX: 2, scaleY: 2, pivot: { x: 100, y: 200 } })
             ]))
 
@@ -193,8 +193,8 @@ describe('GenericAnimationPlayer - Pivot 位置补偿', () => {
         })
     })
 
-    describe('底部 pivot (100, 400)', () => {
-        it('scaleY=2 时应从底部向上生长', () => {
+    describe('Bottom pivot (100, 400)', () => {
+        it('should grow upward from bottom when scaleY=2', () => {
             player.setObjectBounds(200, 400)
 
             const animDef: AnimationDefinition = {
@@ -208,7 +208,7 @@ describe('GenericAnimationPlayer - Pivot 位置补偿', () => {
             const internalPlayers = (player as unknown as { players: Map<string, { _setTestOutput: (o: AnimationOutput | null) => void }> }).players
             const internalPlayer = internalPlayers.get('test')!
             internalPlayer._setTestOutput(makeAnimationOutput([
-                // pivel pivot 在容器底部 y=400，与中心 (y=200) 的偏移 dy=200
+                // pixel pivot at container bottom y=400, offset dy=200 from center (y=200)
                 makeTransformOutput({ scaleY: 2, pivot: { x: 100, y: 400 } })
             ]))
 
@@ -224,8 +224,8 @@ describe('GenericAnimationPlayer - Pivot 位置补偿', () => {
         })
     })
 
-    describe('左上 pivot (0, 0)', () => {
-        it('scaleX=2 scaleY=2 时应向右下方生长', () => {
+    describe('Top-left pivot (0, 0)', () => {
+        it('should grow toward bottom-right when scaleX=2 scaleY=2', () => {
             player.setObjectBounds(200, 400)
 
             const animDef: AnimationDefinition = {
@@ -256,8 +256,8 @@ describe('GenericAnimationPlayer - Pivot 位置补偿', () => {
         })
     })
 
-    describe('无 pivot', () => {
-        it('应保持原有行为（无位置补偿）', () => {
+    describe('No pivot', () => {
+        it('should preserve original behavior (no position compensation)', () => {
             player.setObjectBounds(200, 400)
 
             const animDef: AnimationDefinition = {
@@ -285,8 +285,8 @@ describe('GenericAnimationPlayer - Pivot 位置补偿', () => {
         })
     })
 
-    describe('两条不同 pivot 的 transform 轨道', () => {
-        it('各自独立补偿后正确累加', () => {
+    describe('Two transform tracks with different pivots', () => {
+        it('accumulates correctly after independent compensation', () => {
             player.setObjectBounds(200, 400)
 
             const animDef: AnimationDefinition = {
@@ -300,8 +300,8 @@ describe('GenericAnimationPlayer - Pivot 位置补偿', () => {
             const internalPlayers = (player as unknown as { players: Map<string, { _setTestOutput: (o: AnimationOutput | null) => void }> }).players
             const internalPlayer = internalPlayers.get('test')!
 
-            // Track 1: pivot 在底部 (100, 400), scaleY=2
-            // Track 2: pivot 在中心 (100, 200), scaleX=1.5
+            // Track 1: pivot at bottom (100, 400), scaleY=2
+            // Track 2: pivot at center (100, 200), scaleX=1.5
             internalPlayer._setTestOutput(makeAnimationOutput([
                 makeTransformOutput({ scaleY: 2, pivot: { x: 100, y: 400 } }),
                 makeTransformOutput({ scaleX: 1.5, pivot: { x: 100, y: 200 } }),
@@ -320,9 +320,9 @@ describe('GenericAnimationPlayer - Pivot 位置补偿', () => {
         })
     })
 
-    describe('无 objectBounds 时', () => {
-        it('基于像素 pivot 仍然应用位置补偿（不再依赖 bounds）', () => {
-            // 不调用 setObjectBounds → 像素语义下无影响
+    describe('When objectBounds is absent', () => {
+        it('still applies position compensation based on pixel pivot (no longer depends on bounds)', () => {
+            // Does not call setObjectBounds -> no effect under pixel semantics
 
             const animDef: AnimationDefinition = {
                 type: 'track',
@@ -335,7 +335,7 @@ describe('GenericAnimationPlayer - Pivot 位置补偿', () => {
             const internalPlayers = (player as unknown as { players: Map<string, { _setTestOutput: (o: AnimationOutput | null) => void }> }).players
             const internalPlayer = internalPlayers.get('test')!
             internalPlayer._setTestOutput(makeAnimationOutput([
-                // 像素 pivot (100, 400)：与 container.pivot (100, 200) 偏移 dy=200
+                // Pixel pivot (100, 400): offset dy=200 from container.pivot (100, 200)
                 makeTransformOutput({ scaleY: 2, pivot: { x: 100, y: 400 }, x: 5, y: 10 })
             ]))
 

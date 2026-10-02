@@ -1,17 +1,17 @@
 /**
- * 统一场景对象渲染器
+ * Unified Scene Object Renderer
  *
- * 提取 4 引擎（useSceneGraph、ScenePlayer、ActionPreviewDialog、FrameCapture）
- * 的共享渲染逻辑，消除重复代码。
+ * Extracts shared rendering logic across 4 engines (useSceneGraph, ScenePlayer, ActionPreviewDialog, FrameCapture),
+ * eliminating duplicated code.
  *
- * 职责：
- * 1. 从 SceneObject 创建 PIXI 容器（道具/背景/角色）
- * 2. 应用运行时状态到已有容器（applyObjectState）
+ * Responsibilities:
+ * 1. Create PIXI containers from SceneObject (props/backgrounds/characters)
+ * 2. Apply runtime state to existing containers (applyObjectState)
  *
- * 不负责：
- * - GenericAnimationPlayer 创建（依赖各引擎的 renderer 实例）
- * - 交互层逻辑（拖拽、选中高亮 — 编辑器特有）
- * - 音频对象（无 PIXI 渲染内容）
+ * Non-responsibilities:
+ * - GenericAnimationPlayer creation (depends on each engine's renderer instance)
+ * - Interaction layer logic (dragging, selection highlighting — editor specific)
+ * - Audio objects (no PIXI rendering content)
  */
 
 import * as PIXI from 'pixi.js'
@@ -33,14 +33,14 @@ import type { TextureProvider } from './TextureProvider'
 // Types
 // ============================================================================
 
-/** Store 引用集合 */
+/** Store references collection */
 export interface RenderStores {
     propStore: ReturnType<typeof usePropStore>
     backgroundStore: ReturnType<typeof useBackgroundStore>
     expressionStore: ReturnType<typeof useExpressionStore>
 }
 
-/** 对象尺寸与 pivot 信息 */
+/** Object dimensions and pivot information */
 export interface ObjectDimensions {
     width: number
     height: number
@@ -51,17 +51,18 @@ export interface ObjectDimensions {
 }
 
 /**
- * 对象状态宿主接口
+ * Object state host interface
  *
- * applyObjectState 依赖引擎特有的缓存（objectDimensions）。
- * 各引擎通过实现此接口将这些缓存桥接给统一渲染器，避免 SceneObjectRenderer 直接持有引擎状态。
+ * applyObjectState depends on engine-specific caching (objectDimensions).
+ * Engines bridge these caches to the unified renderer by implementing this interface,
+ * avoiding SceneObjectRenderer directly holding engine state.
  */
 export interface ObjectStateHost {
-    /** 获取对象尺寸缓存 */
+    /** Get object dimensions cache */
     getObjectDimensions(objectId: string): ObjectDimensions | undefined
-    /** 设置对象尺寸缓存 */
+    /** Set object dimensions cache */
     setObjectDimensions(objectId: string, dims: ObjectDimensions): void
-    /** 检查对象是否正在被交互（拖拽/缩放/旋转），如果是则跳过 transform 写入以避免竞态覆盖 */
+    /** Check if object is currently being interacted with (drag/scale/rotate); if so, skip writing transforms to avoid race-condition overwrite */
     isInteractionLocked?(objectId: string): boolean
 }
 
@@ -105,12 +106,12 @@ export class SceneObjectRenderer {
     }
 
     // --------------------------------------------------------------------------
-    // Prop 渲染
+    // Prop Rendering
     // --------------------------------------------------------------------------
 
     /**
-     * 创建道具 PIXI 容器
-     * 支持静态道具和帧动画道具
+     * Create prop PIXI container
+     * Supports static props and frame animation props
      */
     createPropContainer(obj: SceneObject): PIXI.Container {
         const propData = this.stores.propStore.getProp(obj.refId)
@@ -122,7 +123,7 @@ export class SceneObjectRenderer {
         container.name = obj.id
         container.zIndex = obj.zIndex ?? 0
 
-        // 1. 静态道具
+        // 1. Static prop
         if (propData.type === 'static' && propData.url) {
             const imageUrl = this.textureProvider.getImageUrl(propData.url)
             if (imageUrl) {
@@ -133,7 +134,7 @@ export class SceneObjectRenderer {
                 container.addChild(sprite)
             }
         }
-        // 2. 帧动画道具
+        // 2. Frame animation prop
         else if (propData.type === 'animation' && propData.frames && propData.frames.length > 0) {
             const textures: PIXI.Texture[] = []
             for (const frame of propData.frames) {
@@ -147,8 +148,8 @@ export class SceneObjectRenderer {
                 animatedSprite.name = 'prop_animation'
                 animatedSprite.anchor.set(0.5)
                 animatedSprite.animationSpeed = (propData.fps ?? 25) / 60
-                animatedSprite.autoUpdate = false  // 手动推进，消除出生帧延迟
-                // 使用配置的静止帧
+                animatedSprite.autoUpdate = false  // Manually advance to eliminate spawn frame latency
+                // Use configured still frame
                 restoreAnimatedSpriteStillFrame(animatedSprite, {
                     stillFrameSource: propData.stillFrameSource,
                     stillFrameIndex: propData.stillFrameIndex,
@@ -163,12 +164,12 @@ export class SceneObjectRenderer {
     }
 
     // --------------------------------------------------------------------------
-    // Symbol 渲染 (v16)
+    // Symbol Rendering (v16)
     // --------------------------------------------------------------------------
 
     /**
-     * 创建元件 PIXI 容器
-     * 根据 currentMaterialId 加载对应素材的纹理
+     * Create symbol PIXI container
+     * Loads corresponding material texture according to currentMaterialId
      */
     createSymbolContainer(obj: SceneObject): PIXI.Container {
         const symbolObj = obj as SymbolObject
@@ -182,25 +183,25 @@ export class SceneObjectRenderer {
             : symbolObj.materials[0]
 
         if (!material) {
-            // 无素材时绘制占位符，确保画布上可见、可交互
+            // Draw placeholder when there is no material, ensuring visible and interactive on canvas
             const PLACEHOLDER_SIZE = 200
             const halfSize = PLACEHOLDER_SIZE / 2
 
             const graphics = new PIXI.Graphics()
             graphics.name = 'symbol_placeholder'
 
-            // 半透明圆角矩形背景
+            // Translucent rounded rectangle background
             graphics.beginFill(0x3a3a4a, 0.85)
             graphics.drawRoundedRect(-halfSize, -halfSize, PLACEHOLDER_SIZE, PLACEHOLDER_SIZE, 16)
             graphics.endFill()
 
-            // 虚线边框效果
+            // Dashed border effect
             graphics.lineStyle(3, 0x7a7a9a, 0.8)
             graphics.drawRoundedRect(-halfSize, -halfSize, PLACEHOLDER_SIZE, PLACEHOLDER_SIZE, 16)
 
             container.addChild(graphics)
 
-            // 齿轮图标
+            // Gear icon
             const iconText = new PIXI.Text('🔧', {
                 fontSize: 48,
                 fill: 0xcccccc,
@@ -209,8 +210,8 @@ export class SceneObjectRenderer {
             iconText.position.set(0, -20)
             container.addChild(iconText)
 
-            // "元件" 标签
-            const labelText = new PIXI.Text(symbolObj.alias ?? symbolObj.name ?? '元件', {
+            // "Symbol" label
+            const labelText = new PIXI.Text(symbolObj.alias ?? symbolObj.name ?? 'Symbol', {
                 fontFamily: 'Arial, sans-serif',
                 fontSize: 18,
                 fill: 0xaaaaaa,
@@ -244,9 +245,9 @@ export class SceneObjectRenderer {
                 animatedSprite.anchor.set(0.5)
                 animatedSprite.animationSpeed = (material.fps ?? 12) / 60
                 animatedSprite.loop = material.loop ?? true
-                animatedSprite.autoUpdate = false  // 手动推进，消除出生帧延迟
+                animatedSprite.autoUpdate = false  // Manually advance to eliminate spawn frame latency
 
-                // v16: 使用配置的静止帧（与道具/背景一致），不自动播放
+                // v16: Use configured still frame (consistent with props/backgrounds), do not auto-play
                 restoreAnimatedSpriteStillFrame(animatedSprite, {
                     stillFrameSource: material.stillFrameSource,
                     stillFrameIndex: material.stillFrameIndex,
@@ -256,7 +257,7 @@ export class SceneObjectRenderer {
             }
         }
 
-        // v16: 记录当前渲染的素材 ID，供 applySymbolState 变更检测用
+        // v16: Record currently rendered material ID for change detection in applySymbolState
         const renderedId = material?.id ?? '__placeholder__'
             ; (container as PIXI.Container & { _renderedMaterialId?: string })._renderedMaterialId = renderedId
 
@@ -264,12 +265,12 @@ export class SceneObjectRenderer {
     }
 
     // --------------------------------------------------------------------------
-    // Text 渲染 (Text PRD Phase 0)
+    // Text Rendering (Text PRD Phase 0)
     // --------------------------------------------------------------------------
 
     /**
-     * 创建文本 PIXI 容器
-     * 根据 TextObject 所有属性构建完整的 PIXI.TextStyle
+     * Create text PIXI container
+     * Builds complete PIXI.TextStyle based on all TextObject properties
      */
     createTextContainer(obj: SceneObject): PIXI.Container {
         const textObj = obj as import('@/types/sceneObject').TextObject
@@ -279,7 +280,7 @@ export class SceneObjectRenderer {
 
         const styleOpts = this.buildTextStyleOpts(textObj)
 
-        // Phase 1: 竖排文字分支
+        // Phase 1: Vertical text branch
         if (textObj.writingMode === 'vertical') {
             const vertContainer = this.createVerticalTextLayout(textObj, styleOpts)
             vertContainer.name = 'text_vertical_group'
@@ -287,7 +288,7 @@ export class SceneObjectRenderer {
             this.syncTextBackground(container, textObj, vertContainer, textObj.textBoxMode ?? 'auto-size')
         } else {
             const style = new PIXI.TextStyle(styleOpts)
-            const normalizedContent = normalizeTextContent(textObj.content ?? '文本')
+            const normalizedContent = normalizeTextContent(textObj.content ?? 'Text')
             const text = new PIXI.Text(normalizedContent, style)
             text.name = 'text_content'
             text.anchor.set(0.5)
@@ -357,22 +358,22 @@ export class SceneObjectRenderer {
     }
 
     /**
-     * Phase 1: 创建竖排文字布局
-     * 将内容拆分为单字，沿 Y 轴排列，超过容器高度时自右向左折列。
-     * CJK 标点（。，、！？）自动旋转。
+     * Phase 1: Create vertical text layout
+     * Splits content into individual characters arranged along the Y axis, wrapping right-to-left when exceeding container height.
+     * CJK punctuation marks (。，、！？) rotate automatically.
      */
     private createVerticalTextLayout(
         textObj: import('@/types/sceneObject').TextObject,
         styleOpts: Partial<PIXI.ITextStyle>,
     ): PIXI.Container {
         const group = new PIXI.Container()
-        const content = normalizeTextContent(textObj.content ?? '文本')
+        const content = normalizeTextContent(textObj.content ?? 'Text')
         const fontSize = textObj.fontSize ?? 72
         const lineHeight = resolveTextLineHeight(textObj.fontFamily, fontSize, textObj.lineHeight).lineHeight
         const columnGap = fontSize * 1.2
-        const maxHeight = textObj.wordWrapWidth ?? 400 // 竖排时复用 wordWrapWidth 作为列高
+        const maxHeight = textObj.wordWrapWidth ?? 400 // In vertical writing, wordWrapWidth is reused as column height
 
-        // CJK 竖排标点需要旋转的字符集
+        // Character set for CJK vertical punctuation that needs rotation
         const ROTATE_PUNCTUATION = new Set('。，、！？；：（）「」『』【】〈〉《》…—')
 
         let currentX = 0
@@ -381,7 +382,7 @@ export class SceneObjectRenderer {
         for (let i = 0; i < content.length; i++) {
             const char = content[i]!
             if (char === '\n') {
-                // 换行 = 换列（向左移动）
+                // Newline = wrap column (move left)
                 currentX -= columnGap
                 currentY = 0
                 continue
@@ -392,7 +393,7 @@ export class SceneObjectRenderer {
             charText.x = currentX
             charText.y = currentY
 
-            // CJK 标点旋转
+            // Rotate CJK punctuation
             if (ROTATE_PUNCTUATION.has(char)) {
                 charText.rotation = Math.PI / 2
             }
@@ -400,7 +401,7 @@ export class SceneObjectRenderer {
             group.addChild(charText)
             currentY += lineHeight
 
-            // 列高溢出，换列
+            // Column height overflow, wrap column
             if (currentY >= maxHeight && i < content.length - 1) {
                 currentX -= columnGap
                 currentY = 0
@@ -411,12 +412,12 @@ export class SceneObjectRenderer {
     }
 
     // --------------------------------------------------------------------------
-    // Background 渲染
+    // Background Rendering
     // --------------------------------------------------------------------------
 
     /**
-     * 创建背景 PIXI 容器
-     * 支持静态背景和帧动画背景，使用 obj.width/height 控制 sprite 尺寸
+     * Create background PIXI container
+     * Supports static background and frame animation background, uses obj.width/height to control sprite size
      */
     createBackgroundContainer(obj: SceneObject): PIXI.Container {
         const background = this.stores.backgroundStore.getBackground(obj.refId)
@@ -432,7 +433,7 @@ export class SceneObjectRenderer {
 
         let spriteCreated = false
 
-        // 1. 帧动画背景
+        // 1. Frame animation background
         if (background.type === 'animation' && background.frames && background.frames.length > 0) {
             const textures: PIXI.Texture[] = []
             for (const frame of background.frames) {
@@ -448,15 +449,15 @@ export class SceneObjectRenderer {
                 animatedSprite.name = 'bg_animation'
                 animatedSprite.anchor.set(0, 0)
                 animatedSprite.animationSpeed = (background.fps ?? 25) / 60
-                animatedSprite.autoUpdate = false  // 手动推进，消除出生帧延迟
+                animatedSprite.autoUpdate = false  // Manually advance to eliminate spawn frame latency
 
-                // 使用 obj.width/height（编辑器已计算好的尺寸），无数据时回退到纹理原始尺寸
+                // Use obj.width/height (precalculated by editor), fallback to texture raw dimensions if no data
                 if (obj.width > 0 && obj.height > 0) {
                     animatedSprite.width = obj.width
                     animatedSprite.height = obj.height
                 }
 
-                // 使用配置的静止帧
+                // Use configured still frame
                 restoreAnimatedSpriteStillFrame(animatedSprite, {
                     stillFrameSource: background.stillFrameSource,
                     stillFrameIndex: background.stillFrameIndex,
@@ -468,7 +469,7 @@ export class SceneObjectRenderer {
             }
         }
 
-        // 2. 静态背景（或帧动画无帧时的回退）
+        // 2. Static background (or fallback when frame animation has no frames)
         if (!spriteCreated) {
             const bgUrl = background.url ?? background.backgroundImage
             if (!bgUrl) {
@@ -480,7 +481,7 @@ export class SceneObjectRenderer {
             sprite.name = 'background_sprite'
             sprite.anchor.set(0, 0)
 
-            // 使用 obj.width/height（编辑器已计算好的尺寸），无数据时回退到纹理原始尺寸
+            // Use obj.width/height (precalculated by editor), fallback to texture raw dimensions if no data
             if (obj.width > 0 && obj.height > 0) {
                 sprite.width = obj.width
                 sprite.height = obj.height
@@ -495,19 +496,19 @@ export class SceneObjectRenderer {
 
 
     // --------------------------------------------------------------------------
-    // 状态应用（P0 统一）
+    // State Application (P0 Unified)
     // --------------------------------------------------------------------------
 
     /**
-     * 应用运行时状态到对象容器
+     * Apply runtime state to object container
      *
-     * 统一了 ScenePlayer.applyObjectState 和 FrameCapture.applyObjectState 的四分支逻辑。
-     * character 分支通过 CharacterStateHost 回调注入引擎特有缓存。
+     * Unifies four-branch logic of ScenePlayer.applyObjectState and FrameCapture.applyObjectState.
+     * character branch injects engine-specific cache via CharacterStateHost callback.
      *
-     * composite 子对象的渲染顺序由 childIds 插入顺序决定（PIXI stable sort），
-     * 无需微偏移机制。各引擎需确保按 childIds 顺序 addChild。
+     * composite children rendering order is determined by childIds insertion order (PIXI stable sort),
+     * micro-offset mechanism not needed. Engines must ensure children are addChild-ed in childIds order.
      *
-     * @returns 对象的视觉中心位置（用于 camera_follow 计算），部分类型可能返回 null
+     * @returns Visual center position of object (for camera_follow calculation), some types may return null
      */
     applyObjectState(
         container: PIXI.Container,
@@ -535,7 +536,7 @@ export class SceneObjectRenderer {
         } else if (objSetup.type === 'text') {
             result = this.applyTextState(container, state, host.getObjectDimensions(objSetup.id))
         } else if (objSetup.type === 'mask') {
-            // Clip-Mask Phase 1：mask 容器无可视内容，仅承载 worldTransform 用于 maskRenderer 计算几何。
+            // Clip-Mask Phase 1: mask container has no visual content, only carries worldTransform for maskRenderer to compute geometry.
             result = this.applySimpleTransform(container, state, host.getObjectDimensions(objSetup.id))
         }
 
@@ -543,10 +544,10 @@ export class SceneObjectRenderer {
     }
 
     /**
-     * P2: 应用组合对象状态（composite 分支）
+     * P2: Apply composite object state (composite branch)
      *
-     * composite 容器本身只需基础变换（位置/缩放/旋转/透明度/可见性/层级），
-     * 子对象的状态由各自独立的 applyObjectState 调用处理。
+     * composite container itself only needs base transform (position/scale/rotation/alpha/visibility/zIndex),
+     * children states are handled by their own independent applyObjectState calls.
      */
     private applyCompositeState(
         container: PIXI.Container,
@@ -561,15 +562,15 @@ export class SceneObjectRenderer {
         container.visible = (state.spawned ?? true) && state.visible
         container.zIndex = state.zIndex
 
-        // v21: composite 的 pivotBase = (0, 0)，pivot 直接等于 originOffset
+        // v21: For composite, pivotBase = (0, 0), pivot directly equals originOffset
         const originX = state.transformOriginX ?? 0
         const originY = state.transformOriginY ?? 0
         container.pivot.set(originX, originY)
 
-        // v21: 位置补偿使用简单偏移（与非 composite 一致）
-        // 旧公式 posComp = originX*sx*cos - originY*sy*sin 随 rotation 变化，
-        // 导致 PIXI 世界坐标 tx=obj.x 恒成立 → 旋转围绕原点而非 pivot。
-        // 新公式 position 不随 rotation 变化 → pivot 在世界中固定 → 旋转围绕 pivot ✅
+        // v21: Position compensation uses simple offset (consistent with non-composite)
+        // Legacy formula posComp = originX*sx*cos - originY*sy*sin changed with rotation,
+        // causing PIXI world tx=obj.x to always hold -> rotation centered on origin rather than pivot.
+        // New formula position does not change with rotation -> pivot remains fixed in world -> rotation centers on pivot
         const cx = state.flipX ? -originX : originX
         const cy = originY
         const posX = state.x + cx
@@ -583,12 +584,12 @@ export class SceneObjectRenderer {
 
 
     /**
-     * Transform Origin 补偿（像素偏移方案）
+     * Transform Origin compensation (pixel offset approach)
      *
-     * transformOriginX/Y 是相对于 PivotBase 的像素偏移，默认 0 = 不偏移。
-     * 直接将像素偏移加到 pivot 上，无需 dims 乘法。
+     * transformOriginX/Y is pixel offset relative to PivotBase, default 0 = no offset.
+     * Directly add pixel offset to pivot, no dims multiplication needed.
      *
-     * @returns 位置补偿量 { cx, cy }，调用者需加到 position 上
+     * @returns Position compensation { cx, cy }, caller must add to position
      */
     private applyTransformOriginPivot(
         container: PIXI.Container,
@@ -598,15 +599,15 @@ export class SceneObjectRenderer {
         const originX = state.transformOriginX ?? 0
         const originY = state.transformOriginY ?? 0
 
-        // v18: expression 对象使用锚点定位（pivot 固定在 (0,0) = sprite.anchor 位置），
-        // 不使用 bounds 中心定位，确保切换不同表情时锚点对齐
+        // v18: expression object uses anchor positioning (pivot fixed at (0,0) = sprite.anchor position),
+        // does not use bounds center positioning, ensuring anchor alignment when switching expressions
         if (state.type === 'expression') {
             container.pivot.set(0, 0)
             return { cx: 0, cy: 0 }
         }
 
-        // 默认情况（无偏移）：将 pivot 重置到几何中心，确保无残留偏移
-        // 不能跳过 pivot 设置！否则容器可能残留其他渲染路径设置的自定义 pivot
+        // Default case (no offset): reset pivot to geometric center, ensuring no residual offset
+        // Do not skip pivot setting! Otherwise container may retain custom pivot set by other rendering paths
         if (originX === 0 && originY === 0) {
             if (dims && dims.width > 0 && dims.height > 0) {
                 const defaultPivotX = dims.pivotX ?? (dims.boundsX ?? 0) + dims.width / 2
@@ -616,29 +617,29 @@ export class SceneObjectRenderer {
             return { cx: 0, cy: 0 }
         }
 
-        // 像素偏移直接使用，在默认 pivot 基础上加偏移
+        // Apply pixel offset directly, adding offset onto default pivot
         if (dims && dims.width > 0 && dims.height > 0) {
             const defaultPivotX = dims.pivotX ?? (dims.boundsX ?? 0) + dims.width / 2
             const defaultPivotY = dims.pivotY ?? (dims.boundsY ?? 0) + dims.height / 2
             container.pivot.set(defaultPivotX + originX, defaultPivotY + originY)
         } else {
-            // 无 dims 时也应用偏移（如 composite），pivot 直接加 originX/Y
+            // Apply offset even without dims (e.g. composite), pivot directly adds originX/Y
             container.pivot.set(container.pivot.x + originX, container.pivot.y + originY)
         }
 
-        // v20: flipX 补偿方向修正
+        // v20: flipX compensation direction correction
         // PIXI worldMatrix: tx = posX - pivotX * scaleX * cos(rot) + ...
-        // 当 flipX 时 scaleX < 0，pivot 增量的影响方向与 position 补偿方向相反
-        // 必须翻转 cx 才能保持 pivot 变更时视觉位置不跳
+        // When flipX, scaleX < 0, direction of pivot increment effect is opposite to position compensation direction
+        // Must flip cx to keep visual position from jumping when pivot changes
         const flipX = state.flipX ?? false
         const cx = flipX ? -originX : originX
         return { cx, cy: originY }
     }
 
     /**
-     * 应用简单变换（prop / background / symbol 共用分支）
+     * Apply simple transform (shared branch for prop / background / symbol)
      *
-     * 两者使用完全相同的 scale → visible → pivot 位置补偿逻辑。
+     * Uses identical scale -> visible -> pivot position compensation logic.
      */
     private applySimpleTransform(
         container: PIXI.Container,
@@ -650,13 +651,13 @@ export class SceneObjectRenderer {
         container.scale.set(scaleX, scaleY)
         container.rotation = state.rotation
         container.alpha = state.alpha
-        // spawned 控制对象存在性，优先级高于 visible
+        // spawned controls object existence, higher priority than visible
         container.visible = (state.spawned ?? true) && state.visible
         container.zIndex = state.zIndex
 
-        // Transform Origin 位置补偿
-        // dims 可能为 undefined（prop/background/symbol 对象不填充 objectDimensionsCache），
-        // 此时从 container.getLocalBounds() 计算 fallback dims
+        // Transform Origin position compensation
+        // dims may be undefined (prop/background/symbol objects don't populate objectDimensionsCache),
+        // in which case calculate fallback dims from container.getLocalBounds()
         let effectiveDims = dims
         if (!effectiveDims) {
             const localBounds = container.getLocalBounds()
@@ -673,8 +674,8 @@ export class SceneObjectRenderer {
         }
         const { cx, cy } = this.applyTransformOriginPivot(container, state, effectiveDims)
 
-        // v2.0.0: 统一中心坐标 — obj.x/y 已是中心坐标，加上变换原点补偿
-        // 不使用 Math.round — 亚像素渲染避免 transform origin 旋转时的整数截断抖动
+        // v2.0.0: Unified center coordinates — obj.x/y is already center coordinate, add transform origin compensation
+        // Do not use Math.round — subpixel rendering avoids integer truncation jitter when rotating around transform origin
         const posX = state.x + cx
         const posY = state.y + cy
         container.position.set(posX, posY)
@@ -710,7 +711,7 @@ export class SceneObjectRenderer {
         const shadowY = (dims.boundsY ?? 0) + dims.height - shadowH * 0.2
 
         shadow.clear()
-        // 两层椭圆叠加，提升近地阴影的可见性，同时保留边缘过渡。
+        // Two-layer ellipse overlay to enhance near-ground shadow visibility while preserving edge transitions.
         shadow.beginFill(0x000000, 0.16)
         shadow.drawEllipse(0, shadowY, shadowW * 0.58, shadowH * 0.72)
         shadow.endFill()
@@ -721,10 +722,10 @@ export class SceneObjectRenderer {
     }
 
     /**
-     * 应用元件状态（symbol 分支）
+     * Apply symbol state (symbol branch)
      *
-     * 检测 currentMaterialId 变化，如果素材切换则重建容器内部的 sprite。
-     * 几何变换委托给 applySimpleTransform。
+     * Detects currentMaterialId change, rebuilding internal sprite if material switches.
+     * Geometric transforms are delegated to applySimpleTransform.
      */
     private applySymbolState(
         container: PIXI.Container,
@@ -739,7 +740,7 @@ export class SceneObjectRenderer {
         const currentRenderedId = extContainer._renderedMaterialId ?? '__placeholder__'
 
         if (targetMaterialId !== currentRenderedId) {
-            // 素材变更：销毁旧 children，重建新 sprite
+            // Material changed: destroy old children, rebuild new sprite
             while (container.children.length > 0) {
                 const child = container.children[0]
                 if (child) {
@@ -748,7 +749,7 @@ export class SceneObjectRenderer {
                 }
             }
 
-            // 查找目标素材（优先从 state 的 materials 查找，回退到 setup 的 materials）
+            // Find target material (prefer material from state, fallback to material from setup)
             const materials = symbolState.materials?.length > 0 ? symbolState.materials : symbolSetup.materials
             const material = targetMaterialId !== '__placeholder__'
                 ? materials?.find(m => m.id === targetMaterialId)
@@ -776,9 +777,9 @@ export class SceneObjectRenderer {
                         animatedSprite.anchor.set(0.5)
                         animatedSprite.animationSpeed = (material.fps ?? 12) / 60
                         animatedSprite.loop = material.loop ?? true
-                        animatedSprite.autoUpdate = false  // 手动推进，消除出生帧延迟
+                        animatedSprite.autoUpdate = false  // Manually advance to eliminate spawn frame latency
 
-                        // v16: 使用配置的静止帧，不自动播放（由 initialAnimations/set_anim 控制）
+                        // v16: Use configured still frame, do not auto-play (controlled by initialAnimations/set_anim)
                         restoreAnimatedSpriteStillFrame(animatedSprite, {
                             stillFrameSource: material.stillFrameSource,
                             stillFrameIndex: material.stillFrameIndex,
@@ -797,12 +798,12 @@ export class SceneObjectRenderer {
     }
 
     // --------------------------------------------------------------------------
-    // Expression 渲染 (v18)
+    // Expression Rendering (v18)
     // --------------------------------------------------------------------------
 
     /**
-     * 创建独立表情 PIXI 容器
-     * 从 expressionStore 获取表情数据，渲染为 Sprite 或 AnimatedSprite
+     * Create independent expression PIXI container
+     * Fetches expression data from expressionStore, renders as Sprite or AnimatedSprite
      */
     createExpressionContainer(obj: SceneObject): PIXI.Container {
         const container = new PIXI.Container()
@@ -815,8 +816,8 @@ export class SceneObjectRenderer {
     }
 
     /**
-     * 构建表情 sprite 并添加到容器
-     * 可复用于初始创建和 refId 变更时的重建
+     * Build expression sprite and add to container
+     * Reusable for initial creation and rebuild upon refId change
      */
     private getExpressionRenderKey(refId: string): string {
         const expression = this.stores.expressionStore.getExpression(refId)
@@ -838,25 +839,25 @@ export class SceneObjectRenderer {
     private buildExpressionSprite(container: PIXI.Container, refId: string): void {
         const expression = this.stores.expressionStore.getExpression(refId)
         if (!expression) {
-            // refId 为空或表情不存在：渲染占位符（与 Symbol 占位符一致）
+            // refId is empty or expression does not exist: render placeholder (consistent with Symbol placeholder)
             const PLACEHOLDER_SIZE = 200
             const halfSize = PLACEHOLDER_SIZE / 2
 
             const graphics = new PIXI.Graphics()
             graphics.name = 'expression_placeholder'
 
-            // 半透明圆角矩形背景
+            // Translucent rounded rectangle background
             graphics.beginFill(0x3a3a4a, 0.85)
             graphics.drawRoundedRect(-halfSize, -halfSize, PLACEHOLDER_SIZE, PLACEHOLDER_SIZE, 16)
             graphics.endFill()
 
-            // 虚线边框效果
+            // Dashed border effect
             graphics.lineStyle(3, 0x7a7a9a, 0.8)
             graphics.drawRoundedRect(-halfSize, -halfSize, PLACEHOLDER_SIZE, PLACEHOLDER_SIZE, 16)
 
             container.addChild(graphics)
 
-            // 表情图标
+            // Expression icon
             const iconText = new PIXI.Text('🎭', {
                 fontSize: 48,
                 fill: 0xcccccc,
@@ -865,8 +866,8 @@ export class SceneObjectRenderer {
             iconText.position.set(0, -20)
             container.addChild(iconText)
 
-            // "表情" 标签
-            const labelText = new PIXI.Text('表情', {
+            // "Expression" label
+            const labelText = new PIXI.Text('Expression', {
                 fontFamily: 'Arial, sans-serif',
                 fontSize: 18,
                 fill: 0xaaaaaa,
@@ -888,12 +889,12 @@ export class SceneObjectRenderer {
         const defaultScale = expression.defaultScale ?? 1
         const flipH = expression.flipHorizontal ?? false
 
-        // 判断是帧动画还是静态
+        // Check whether frame animation or static
         const speakingFrames = expression.speakingFrames ?? []
         const hasSpeakingFrames = speakingFrames.length > 0
 
         if (hasSpeakingFrames) {
-            // 帧动画表情：使用 speakingFrames 创建 AnimatedSprite
+            // Frame animation expression: use speakingFrames to create AnimatedSprite
             const textures: PIXI.Texture[] = []
             for (const frame of speakingFrames) {
                 if (frame.url) {
@@ -908,13 +909,13 @@ export class SceneObjectRenderer {
                 animatedSprite.anchor.set(anchor.x, anchor.y)
                 animatedSprite.animationSpeed = (expression.speakingFps ?? 12) / 60
                 animatedSprite.loop = expression.speakingLoop ?? true
-                animatedSprite.autoUpdate = false  // 手动推进，消除出生帧延迟
+                animatedSprite.autoUpdate = false  // Manually advance to eliminate spawn frame latency
                 animatedSprite.scale.set(
                     defaultScale * (flipH ? -1 : 1),
                     defaultScale
                 )
 
-                // 静止帧：默认显示 defaultFrame
+                // Still frame: default display defaultFrame
                 const defaultFrameUrl = expression.defaultFrame?.url
                 if (defaultFrameUrl) {
                     const stillTexture = this.textureProvider.getTexture(defaultFrameUrl)
@@ -925,7 +926,7 @@ export class SceneObjectRenderer {
                     animatedSprite.gotoAndStop(0)
                 }
 
-                // 混合模式
+                // Blend mode
                 if (expression.blendMode === 'multiply') {
                     animatedSprite.blendMode = PIXI.BLEND_MODES.MULTIPLY
                 }
@@ -933,7 +934,7 @@ export class SceneObjectRenderer {
                 container.addChild(animatedSprite)
             }
         } else {
-            // 静态表情：使用 defaultFrame
+            // Static expression: use defaultFrame
             const defaultFrameUrl = expression.defaultFrame?.url
             if (defaultFrameUrl) {
                 const texture = this.textureProvider.getTexture(defaultFrameUrl)
@@ -945,7 +946,7 @@ export class SceneObjectRenderer {
                     defaultScale
                 )
 
-                // 混合模式
+                // Blend mode
                 if (expression.blendMode === 'multiply') {
                     sprite.blendMode = PIXI.BLEND_MODES.MULTIPLY
                 }
@@ -954,16 +955,16 @@ export class SceneObjectRenderer {
             }
         }
 
-        // 记录当前渲染的 refId
+        // Record currently rendered refId
         ;(container as PIXI.Container & { _renderedRefId?: string; _expressionRenderKey?: string })._renderedRefId = refId
         ;(container as PIXI.Container & { _expressionRenderKey?: string })._expressionRenderKey = this.getExpressionRenderKey(refId)
     }
 
     /**
-     * 应用表情状态（expression 分支）
+     * Apply expression state (expression branch)
      *
-     * 检测 refId 变化，如果表情切换则重建容器内部 sprite。
-     * 几何变换委托 applySimpleTransform。
+     * Detects refId change, rebuilding internal sprite if expression switches.
+     * Geometric transforms are delegated to applySimpleTransform.
      */
     private applyExpressionState(
         container: PIXI.Container,
@@ -977,7 +978,7 @@ export class SceneObjectRenderer {
         const targetRenderKey = this.getExpressionRenderKey(targetRefId)
 
         if (targetRefId !== currentRenderedId || targetRenderKey !== extContainer._expressionRenderKey) {
-            // refId 或表情资源配置变更：销毁旧 children，重建新 sprite
+            // refId or expression resource config changed: destroy old children, rebuild new sprite
             while (container.children.length > 0) {
                 const child = container.children[0]
                 if (child) {
@@ -993,10 +994,10 @@ export class SceneObjectRenderer {
     }
 
     /**
-     * 应用画面特效状态（screen_effect 分支）
+     * Apply screen effect state (screen_effect branch)
      *
-     * Phase 4b: 直接从 SceneObject 的 params 嵌套结构读取画面特效参数，
-     * 而非从 ObjectStateSnapshot 的平铺顶层读取（消除结构断层）。
+     * Phase 4b: Directly reads screen effect parameters from SceneObject's nested params structure,
+     * rather than reading from ObjectStateSnapshot's flattened top level (eliminating structural disconnect).
      */
     private applyScreenEffectState(
         container: PIXI.Container,
@@ -1011,16 +1012,16 @@ export class SceneObjectRenderer {
         container.visible = (state.spawned !== false) && state.visible
         container.zIndex = state.zIndex
 
-        // 位置：直接赋值（不做 halfW/halfH 补偿，与 Editor 和 ScenePlayer 统一）
+        // Position: direct assignment (no halfW/halfH compensation, unified with Editor and ScenePlayer)
         container.position.set(state.x, state.y)
 
-        // 重绘 Graphics：直接使用 ScreenEffectObject.params
+        // Redraw Graphics: directly use ScreenEffectObject.params
         const screenEffectObj = state as ScreenEffectObject
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
         const graphics = container.getChildByName('screen_effect_graphics') as PIXI.Graphics | null
         if (graphics && screenEffectObj.params) {
-            // 防抖：参数未变化时跳过重绘，避免每次 render 都 remove/add 羽化 sprite
-            // 这在 Action Mode + ghost 高频更新时可显著降低显示树抖动。
+            // Debounce: skip redrawing when parameters are unchanged, avoiding remove/add feathering sprite on every render
+            // Significantly reduces display tree jitter during high-frequency Action Mode + ghost updates.
             const drawKey = `${objSetup.width}x${objSetup.height}:${JSON.stringify(screenEffectObj.params)}`
             const extContainer = container as PIXI.Container & { _screenEffectDrawKey?: string }
             if (extContainer._screenEffectDrawKey !== drawKey) {
@@ -1033,16 +1034,16 @@ export class SceneObjectRenderer {
     }
 
     /**
-     * 应用相机状态（camera 分支）
+     * Apply camera state (camera branch)
      *
-     * 相机与普通对象不同：
-     * - 不使用 scaleX/scaleY（固定为 1,1），zoom 通过重绘 Graphics 边框实现
-     * - 不旋转（rotation 固定为 0）
-     * - visible 由编辑器工具栏的 cameraEditorVisible 控制
-     * - zIndex 固定为 Z_INDEX_CAMERA_OVERLAY
+     * Camera differs from ordinary objects:
+     * - Does not use scaleX/scaleY (fixed to 1,1), zoom is achieved by redrawing Graphics border
+     * - Does not rotate (rotation fixed to 0)
+     * - visible is controlled by cameraEditorVisible in editor toolbar
+     * - zIndex is fixed to Z_INDEX_CAMERA_OVERLAY
      *
-     * 此方法与 updateActionModeObjects 中的相机内联逻辑对齐，
-     * 用于 syncContainerFromStore 路径（拖拽/缩放交互期间的即时视觉反馈）。
+     * Aligned with camera inline logic in updateActionModeObjects,
+     * used for syncContainerFromStore path (instant visual feedback during drag/zoom interaction).
      */
     private applyCameraState(
         container: PIXI.Container,
@@ -1054,7 +1055,7 @@ export class SceneObjectRenderer {
         const actionWidth = CAMERA_BASE_WIDTH / zoom
         const actionHeight = CAMERA_BASE_HEIGHT / zoom
 
-        // 重绘 camera_border 以匹配当前 zoom 下的尺寸
+        // Redraw camera_border to match dimensions under current zoom
         const graphics = container.getChildByName('camera_border') as PIXI.Graphics | undefined
         if (graphics) {
             graphics.clear()
@@ -1064,28 +1065,28 @@ export class SceneObjectRenderer {
             graphics.endFill()
         }
 
-        // pivot 居中
+        // pivot centered
         container.pivot.set(actionWidth / 2, actionHeight / 2)
 
-        // 位置
+        // Position
         container.position.set(state.x, state.y)
 
-        // 固定属性
+        // Fixed properties
         container.scale.set(1, 1)
         container.rotation = 0
         container.alpha = 1
         container.zIndex = Z_INDEX_CAMERA_OVERLAY
 
-        // 可见性由穿透列表在渲染管线层统一控制，此处使用 state 默认值
+        // Visibility controlled uniformly by penetration list in render pipeline layer, default state value used here
         container.visible = state.visible
 
         return { x: state.x, y: state.y }
     }
 
     /**
-     * 应用光源对象状态
-     * 编辑器中绘制可视化指示器（环境光=小圆圈，点光源=范围圆圈+中心点）
-     * 实际光照效果由 LightingFilter 在渲染管线层统一处理
+     * Apply light source object state
+     * Renders visual indicator in editor (ambient light = small circle, point light = range circle + center handle)
+     * Actual lighting effect is processed uniformly by LightingFilter in render pipeline layer
      */
     private applyLightState(
         container: PIXI.Container,
@@ -1099,7 +1100,7 @@ export class SceneObjectRenderer {
         const pointHandleRadius = 22
         const pointRadius = Math.max(lightState.lightRadius, pointHandleRadius + 12)
 
-        // 重绘指示器图形
+        // Redraw indicator graphics
         let graphics = container.getChildByName('light_indicator') as PIXI.Graphics | undefined
         if (!graphics) {
             graphics = new PIXI.Graphics()
@@ -1109,7 +1110,7 @@ export class SceneObjectRenderer {
         graphics.clear()
 
         if (lightState.lightType === 'ambient') {
-            // 环境光：小尺寸全局光照徽记，强调“可选中但不占画布”
+            // Ambient light: small global lighting badge, emphasizing "selectable but takes no canvas space"
             graphics.beginFill(colorNum, 0.16)
             graphics.drawCircle(0, 0, ambientHaloRadius)
             graphics.endFill()
@@ -1181,7 +1182,7 @@ export class SceneObjectRenderer {
 
             container.hitArea = new PIXI.Rectangle(-96, -96, 192, 192)
         } else {
-            // 点光源：显示光照范围 + 中心控制柄，兼顾可读性和命中性
+            // Point light: display lighting range + center handle, balancing readability and hit-testing
             graphics.lineStyle(2, colorNum, 0.4)
             graphics.drawCircle(0, 0, pointRadius)
 
@@ -1212,9 +1213,9 @@ export class SceneObjectRenderer {
             container.hitArea = new PIXI.Rectangle(-96, -96, 192, 192)
         }
 
-        // 位置
+        // Position
         container.position.set(state.x, state.y)
-        // 固定属性
+        // Fixed properties
         container.scale.set(1, 1)
         container.rotation = 0
         container.alpha = 1
@@ -1225,9 +1226,9 @@ export class SceneObjectRenderer {
     }
 
     /**
-     * 应用文本对象状态（text 分支）
+     * Apply text object state (text branch)
      *
-     * 更新 PIXI.Text 的内容和样式，然后委托 applySimpleTransform 处理几何变换。
+     * Updates PIXI.Text content and style, then delegates to applySimpleTransform for geometric transforms.
      */
     private applyTextState(
         container: PIXI.Container,
@@ -1239,12 +1240,12 @@ export class SceneObjectRenderer {
         const effectiveWordWrap = textState.wordWrap ?? true
         const isVertical = textState.writingMode === 'vertical'
 
-        // Phase 1: 检测 writingMode 切换 → 需要重建子结构
+        // Phase 1: Detect writingMode switch -> needs substructure rebuild
         const hasHorizontal = container.getChildByName('text_content') !== null
         const hasVertical = container.getChildByName('text_vertical_group') !== null
 
         if (isVertical && hasHorizontal) {
-            // 横排 → 竖排：销毁现有 text_content，创建 vertical group
+            // Horizontal -> vertical: destroy existing text_content, create vertical group
             const old = container.getChildByName('text_content')
             if (old) container.removeChild(old)
             const styleOpts = this.buildTextStyleOpts(textState)
@@ -1252,7 +1253,7 @@ export class SceneObjectRenderer {
             vertGroup.name = 'text_vertical_group'
             container.addChild(vertGroup)
         } else if (!isVertical && hasVertical) {
-            // 竖排 → 横排：销毁 vertical group，创建 text_content
+            // Vertical -> horizontal: destroy vertical group, create text_content
             const old = container.getChildByName('text_vertical_group')
             if (old) container.removeChild(old)
             const styleOpts = this.buildTextStyleOpts(textState)
@@ -1263,10 +1264,10 @@ export class SceneObjectRenderer {
         }
 
         if (isVertical) {
-            // 竖排模式：重建 vertical group 内容
+            // Vertical mode: rebuild vertical group content
             const vertGroup = container.getChildByName('text_vertical_group') as PIXI.Container | undefined
             if (vertGroup) {
-                // 清空并重新布局
+                // Clear and re-layout
                 vertGroup.removeChildren()
                 const styleOpts = this.buildTextStyleOpts(textState)
                 const newGroup = this.createVerticalTextLayout(textState, styleOpts)
@@ -1279,7 +1280,7 @@ export class SceneObjectRenderer {
             const currentVert = container.getChildByName('text_vertical_group') as PIXI.Container | undefined
             this.syncTextBackground(container, textState, currentVert, textState.textBoxMode ?? 'auto-size')
         } else {
-            // 横排模式：更新 PIXI.Text 属性
+            // Horizontal mode: update PIXI.Text properties
             const textChild = container.getChildByName('text_content') as PIXI.Text | undefined
             if (textChild) {
                 const lineHeightInfo = resolveTextLineHeight(textState.fontFamily, textState.fontSize, textState.lineHeight)
@@ -1342,7 +1343,7 @@ export class SceneObjectRenderer {
             }
         }
 
-        // Phase 1: fixed 模式 — 添加/更新/移除矩形 mask 裁切溢出
+        // Phase 1: fixed mode — add/update/remove rectangular mask to clip overflow
         const boxMode = textState.textBoxMode ?? 'auto-size'
         const existingMask = container.getChildByName('text_box_mask') as PIXI.Graphics | undefined
         if (boxMode === 'fixed' && state.width > 0 && state.height > 0) {
@@ -1363,7 +1364,7 @@ export class SceneObjectRenderer {
                 container.mask = mask
             }
         } else if (existingMask) {
-            // 非 fixed 模式：移除 mask
+            // Non-fixed mode: remove mask
             container.mask = null
             container.removeChild(existingMask)
         }
@@ -1372,12 +1373,12 @@ export class SceneObjectRenderer {
     }
 
     /**
-     * 构建 TextStyle 选项对象（横排/竖排共用）
+     * Build TextStyle options object (shared across horizontal/vertical)
      */
     private buildTextStyleOpts(textState: import('@/types/sceneObject').TextObject): Partial<PIXI.ITextStyle> {
         const effectiveWordWrap = textState.wordWrap ?? true
         const boxMode = textState.textBoxMode ?? 'auto-size'
-        // Phase 2: 渐变填充：当 fillType=linear_gradient 时使用颜色数组
+        // Phase 2: Gradient fill: use color array when fillType=linear_gradient
         const gradient = textState.fillType === 'linear_gradient'
             ? resolveTextGradient(textState.gradientStops, textState.gradientAngle)
             : null
@@ -1420,19 +1421,19 @@ export class SceneObjectRenderer {
             opts.wordWrapWidth = wrapWidth
         }
         if (textState.stroke) opts.stroke = textState.stroke
-        // 始终设置 lineHeight：自动与显式统一通过 resolveTextLineHeight 解析
+        // Always set lineHeight: auto and explicit resolved uniformly via resolveTextLineHeight
         opts.lineHeight = lineHeightInfo.lineHeight
         return opts
     }
 
     // --------------------------------------------------------------------------
-    // 尺寸测量
+    // Dimension Measurement
     // --------------------------------------------------------------------------
 
     /**
-     * 测量场景中所有对象的 localBounds 并缓存到 ObjectStateHost
+     * Measure localBounds for all scene objects and cache to ObjectStateHost
      *
-     * 在所有对象容器创建后调用一次，确保 bounds 测量准确。
+     * Called once after all object containers are created, ensuring accurate bounds measurement.
      */
     measureObjectBounds(
         objects: readonly SceneObject[],
@@ -1441,24 +1442,24 @@ export class SceneObjectRenderer {
     ): void {
         for (const objSetup of objects) {
             if (objSetup.type === 'audio') continue
-            // v25: 光源对象不需要测量边界
+            // v25: Light objects do not need bounds measurement
             if (objSetup.type === 'light') continue
             const container = containers.get(objSetup.id)
             if (!container) continue
 
-            // v19: composite 容器（尤其 union proxy）本身可能为空，
-            // 从子对象位置计算虚拟边界以支持 transform origin
+            // v19: composite container (especially union proxy) itself may be empty,
+            // compute virtual bounds from children positions to support transform origin
             if (objSetup.type === 'composite') {
                 const comp = objSetup as CompositeObject
                 const childIds = comp.childIds ?? []
                 if (childIds.length > 0) {
-                    // 从子对象的 position 计算包围盒
+                    // Compute bounding box from children positions
                     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
                     for (const childId of childIds) {
                         const childObj = objects.find(o => o.id === childId)
                         if (!childObj) continue
-                        // 子对象位置是中心坐标，使用子对象的 width/height 估算边界
-                        // 如果没有 width/height，使用子对象的已测量 dims
+                        // Child position is center coordinate, estimate bounds using child width/height;
+                        // if none, use measured dims
                         const childDims = host.getObjectDimensions(childId)
                         const hw = childDims ? childDims.width / 2 : 50
                         const hh = childDims ? childDims.height / 2 : 50
@@ -1487,8 +1488,8 @@ export class SceneObjectRenderer {
             const pivotX = localBounds.x + localBounds.width / 2
             const pivotY = localBounds.y + localBounds.height / 2
 
-            // prop/background/symbol 设置 pivot
-            // v18: expression 不设 pivot（保持 (0,0) = 锚点位置，由 applyTransformOriginPivot 统一处理）
+            // prop/background/symbol set pivot
+            // v18: expression does not set pivot (keeps (0,0) = anchor position, handled uniformly by applyTransformOriginPivot)
             if (objSetup.type === 'prop' || objSetup.type === 'background' || objSetup.type === 'symbol') {
                 container.pivot.set(pivotX, pivotY)
             }
@@ -1505,17 +1506,17 @@ export class SceneObjectRenderer {
     }
 
     // --------------------------------------------------------------------------
-    // 相机变换
+    // Camera Transform
     // --------------------------------------------------------------------------
 
     /**
-     * 应用相机变换到 contentViewport 容器
+     * Apply camera transform to contentViewport container
      *
-     * 统一了 ScenePlayer.applyCameraTransform 和 FrameCapture.applyCameraTransform 的逻辑。
-     * 包含相机边界限制（确保相机不超出画布范围）。
+     * Unifies logic of ScenePlayer.applyCameraTransform and FrameCapture.applyCameraTransform.
+     * Includes camera boundary clamping (ensuring camera does not exceed canvas bounds).
      *
-     * @param contentViewport  相机视口容器
-     * @param cameraState  运行时相机状态
+     * @param contentViewport  Camera viewport container
+     * @param cameraState  Runtime camera state
      */
     static applyCameraTransform(
         contentViewport: PIXI.Container,
@@ -1524,7 +1525,7 @@ export class SceneObjectRenderer {
     ): void {
         const { x, y, zoom, shakeOffsetX, shakeOffsetY } = cameraState
 
-        // 相机边界限制
+        // Camera boundary clamping
         const halfViewWidth = (CAMERA_BASE_WIDTH / 2) / zoom
         const halfViewHeight = (CAMERA_BASE_HEIGHT / 2) / zoom
         const minX = halfViewWidth
@@ -1534,13 +1535,13 @@ export class SceneObjectRenderer {
         const clampedX = Math.max(minX, Math.min(maxX, x))
         const clampedY = Math.max(minY, Math.min(maxY, y))
 
-        // pivot 方式实现相机跟随
+        // Camera follow via pivot approach
         let pivotX = clampedX + shakeOffsetX
         let pivotY = clampedY + shakeOffsetY
 
-        // 导出路径：对齐到物理像素网格，消除亚像素纹理采样抖动
-        // 屏幕物理像素 = pivot × zoom × resolution(2)
-        // 要求 pivot × zoom × 2 为整数 → 对齐步长 = 1 / (zoom × 2)
+        // Export path: align to physical pixel grid, eliminating subpixel texture sampling jitter
+        // Screen physical pixel = pivot * zoom * resolution(2)
+        // Requires pivot * zoom * 2 to be an integer -> alignment step = 1 / (zoom * 2)
         if (snapToPixel) {
             const snapGrid = zoom * 2
             pivotX = Math.round(pivotX * snapGrid) / snapGrid
@@ -1553,14 +1554,14 @@ export class SceneObjectRenderer {
     }
 
     // --------------------------------------------------------------------------
-    // P2: 通用子容器创建（组合对象的子对象）
+    // P2: Generic Child Container Creation (Children of Composite Object)
     // --------------------------------------------------------------------------
 
     /**
-     * 为组合对象的子对象创建 PIXI 容器
+     * Create PIXI container for child of composite object
      *
-     * 使用内部 dispatch Map 实现多态分发，消除 renderComposite 中的 if/else 链。
-     * 调用者只需遍历 childIds，对每个子对象调用本方法。
+     * Uses internal dispatch Map for polymorphic dispatch, eliminating if/else chain in renderComposite.
+     * Caller only needs to iterate childIds and invoke this method for each child.
      */
     async createChildContainer(obj: SceneObject): Promise<PIXI.Container | null> {
         const dispatch: Record<string, (o: SceneObject) => PIXI.Container | Promise<PIXI.Container>> = {
@@ -1572,7 +1573,7 @@ export class SceneObjectRenderer {
 
         const factory = dispatch[obj.type]
         if (!factory) {
-            // 不支持的子类型（audio/text/camera 等不嵌套）
+            // Unsupported child types (audio/text/camera etc. are not nested)
             return null
         }
 
@@ -1581,13 +1582,13 @@ export class SceneObjectRenderer {
     }
 
     // --------------------------------------------------------------------------
-    // Screen Effect 渲染
+    // Screen Effect Rendering
     // --------------------------------------------------------------------------
 
     /**
-     * 创建画面特效 PIXI 容器（Container + Graphics）
+     * Create screen effect PIXI container (Container + Graphics)
      *
-     * Phase 3 归一化：统一 useSceneGraph 和 renderPipeline 的 screen_effect 容器创建路径。
+     * Phase 3 normalization: unifies screen_effect container creation path between useSceneGraph and renderPipeline.
      */
     createScreenEffectContainer(
         id: string,
@@ -1604,7 +1605,7 @@ export class SceneObjectRenderer {
         const graphics = new PIXI.Graphics()
         graphics.name = 'screen_effect_graphics'
 
-        // 先添加 graphics 到容器，再绘制（羽化需要在 graphics 之后添加 sprite）
+        // Add graphics to container first, then draw (feathering requires sprite to be added after graphics)
         container.addChild(graphics)
         drawScreenEffectGraphics(graphics, params, width, height, container)
 
@@ -1612,14 +1613,14 @@ export class SceneObjectRenderer {
     }
 
     // --------------------------------------------------------------------------
-    // P2: 基础变换应用（DRY）
+    // P2: Basic Transform Application (DRY)
     // --------------------------------------------------------------------------
 
     /**
-     * 应用基础几何变换到容器
+     * Apply basic geometric transform to container
      *
-     * 用于 renderComposite 等场景中只需设置 position/scale/rotation/alpha/zIndex/visible、
-     * 不涉及 pivot 补偿和动画状态的简单变换。
+     * Used in scenarios like renderComposite where only position/scale/rotation/alpha/zIndex/visible need to be set,
+     * without involving pivot compensation or animation states.
      */
     static applyBasicTransform(container: PIXI.Container, obj: SceneObject): void {
         container.position.set(obj.x, obj.y)

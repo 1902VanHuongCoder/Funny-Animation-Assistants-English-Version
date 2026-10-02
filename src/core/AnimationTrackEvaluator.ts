@@ -1,13 +1,13 @@
 /**
- * v12.x: Auto Duration 标记值
- * 当轨道 duration === 'auto' 时，getTrackDuration 返回此值
- * AnimationPlayer 会将其替换为运行时注入的 runtimeDuration
+ * v12.x: Auto Duration marker value
+ * When track duration === 'auto', getTrackDuration returns this value.
+ * AnimationPlayer will replace it with the runtime injected runtimeDuration.
  */
 export const AUTO_DURATION_MARKER = -1
 
 /**
  * Animation Track Evaluator (v11.0)
- * 轨道求值器，负责根据轨道定义和进度计算输出值
+ * Track evaluator responsible for computing output values based on track definition and progress.
  */
 
 import type {
@@ -28,12 +28,12 @@ import { applyEasing, lerp } from '@/utils/easing'
 import { DynamicEffectManager } from './animation/DynamicEffectManager'
 
 /**
- * v13 Scheme B helpers — 分裂关键帧的左右值解析
+ * v13 Scheme B helpers — Left/Right side value resolution for split keyframes
  *
- * 段 [prev, next] 内插值：start = resolveRightSide(prev), end = resolveLeftSide(next)
- * - resolveLeftSide(kf): 顶层字段，代表 valueIn（从左段进入时的值 / 段的结束值）
- * - resolveRightSide(kf): kf.out 覆写后的字段，代表 valueOut（段的起始值）
- * 未设置 out 的关键帧，左右两侧相等（连续，兼容旧数据）
+ * Interpolation within segment [prev, next]: start = resolveRightSide(prev), end = resolveLeftSide(next)
+ * - resolveLeftSide(kf): Top-level fields, representing valueIn (value entering from left segment / end value of segment)
+ * - resolveRightSide(kf): Fields overridden by kf.out, representing valueOut (start value of segment)
+ * Keyframes without out defined have equal left and right sides (continuous, backward compatible)
  */
 function transformKfRight(kf: TransformKeyframe): {
     x: number; y: number; scaleX: number; scaleY: number; rotation: number; flipX: boolean | undefined
@@ -71,23 +71,23 @@ function visibilityKfLeft(kf: VisibilityKeyframe): { alpha: number } {
 }
 
 /**
- * 轨道求值器
- * 纯函数，根据轨道定义和进度计算输出值
+ * Track evaluator
+ * Pure function computing output values based on track definition and progress
  */
 export class AnimationTrackEvaluator {
     /**
-     * 求值轨道
-     * @param track 轨道定义
-     * @param progress 归一化进度 (0-1)
-     * @param duration 动画时长 (ms)，用于进度驱动的特效计算
-     * v11.52: 移除 frame_sequence case，帧动画直接使用 AnimatedSprite.play()
-     * v11.70: 新增 duration 参数支持进度驱动模式
+     * Evaluate track
+     * @param track Track definition
+     * @param progress Normalized progress (0-1)
+     * @param duration Animation duration (ms), used for progress-driven effect calculation
+     * v11.52: Removed frame_sequence case; frame animation directly uses AnimatedSprite.play()
+     * v11.70: Added duration parameter supporting progress-driven mode
      */
     static evaluate(track: AnimationTrack, progress: number, duration = 1000): TrackOutput {
         switch (track.trackType) {
             case 'frame_sequence':
-                // v11.52: 帧序列轨道不再需要评估，返回空输出
-                // 帧动画直接使用 AnimatedSprite.play() 播放
+                // v11.52: Frame sequence tracks no longer need evaluation, returning empty output
+                // Frame animation directly uses AnimatedSprite.play()
                 throw new Error('frame_sequence tracks should not be evaluated. Use AnimatedSprite.play() instead.')
             case 'transform':
                 return this.evaluateTransform(track, progress)
@@ -101,7 +101,7 @@ export class AnimationTrackEvaluator {
     }
 
     /**
-     * 求值变换轨道
+     * Evaluate transform track
      */
     static evaluateTransform(track: TransformTrack, progress: number): TransformTrackOutput {
         const keyframes = track.keyframes
@@ -121,7 +121,7 @@ export class AnimationTrackEvaluator {
         if (keyframes.length === 1) {
             const kf = keyframes[0]
             if (!kf) throw new Error('Keyframe is undefined')
-            // 单帧：按 valueOut 展示（forward-facing）
+            // Single frame: display as valueOut (forward-facing)
             const r = transformKfRight(kf)
             return {
                 targetObjectId: track.targetObjectId,
@@ -135,18 +135,18 @@ export class AnimationTrackEvaluator {
             }
         }
 
-        // 找到前后关键帧并插值
+        // Find surrounding keyframes and interpolate
         const { prev, next, t, atEnd } = this.findKeyframes(keyframes, progress)
         const eased = applyEasing(t, track.easing ?? 'linear')
 
         // v13 Scheme B:
-        //   atEnd=true  → 已到达/越过最后一帧 → 使用 next 的 valueIn（顶层）
-        //   atEnd=false → 段内插值 / 首帧之前 → start=prev.valueOut, end=next.valueIn
+        //   atEnd=true  -> Reached/past last frame -> use next valueIn (top-level)
+        //   atEnd=false -> Segment interpolation / before first frame -> start=prev.valueOut, end=next.valueIn
         const start = atEnd ? transformKfLeft(prev) : transformKfRight(prev)
         const end = transformKfLeft(next)
 
-        // flipX 使用 Step 逻辑：不插值，取当前时间点对应的关键帧值
-        // 当 t >= 0.5 时使用 next 的值，否则使用 prev 的值
+        // flipX uses Step logic: no interpolation, takes keyframe value corresponding to current time point
+        // When t >= 0.5 uses next value, otherwise uses prev value
         const flipX = t >= 0.5 ? end.flipX : start.flipX
 
         return {
@@ -162,7 +162,7 @@ export class AnimationTrackEvaluator {
     }
 
     /**
-     * 求值可见性轨道
+     * Evaluate visibility track
      */
     static evaluateVisibility(track: VisibilityTrack, progress: number): VisibilityTrackOutput {
         const keyframes = track.keyframes
@@ -194,18 +194,18 @@ export class AnimationTrackEvaluator {
         }
     }
 
-    // v11.52: evaluateFrameSequence 已删除。帧动画直接使用 AnimatedSprite.play()
+    // v11.52: evaluateFrameSequence removed. Frame animation directly uses AnimatedSprite.play()
 
     /**
-     * 求值特效轨道
-     * v11.70: 新增 progress 和 duration 参数，支持进度驱动模式
-     * 对于阻尼类特效（jelly/squash），直接使用 progress 计算输出
+     * Evaluate effect track
+     * v11.70: Added progress and duration parameters supporting progress-driven mode
+     * For damped effects (jelly/squash), computes output directly using progress
      */
     static evaluateEffect(track: EffectTrack, progress: number, duration: number): EffectTrackOutput {
         const effectType = track.effectParams.type
 
-        // v11.70: 阻尼类特效使用进度驱动模式，直接计算输出
-        // 这些特效依赖时间衰减，循环时需要 progress 归零来重置
+        // v11.70: Damped effects use progress-driven mode, computing output directly
+        // These effects rely on time decay, resetting when progress returns to zero on loop
         if (effectType === 'jelly' || effectType === 'squash') {
             const effectOutput = DynamicEffectManager.calculateWithProgress(
                 track.effectParams,
@@ -217,12 +217,12 @@ export class AnimationTrackEvaluator {
                 effectType: track.effectParams.type,
                 effectParams: track.effectParams,
                 active: true,
-                // v11.70: 直接携带计算结果
+                // v11.70: Directly carries calculation results
                 ...effectOutput
             }
         }
 
-        // 非阻尼类特效：返回参数，由 DynamicEffectManager 实时计算
+        // Non-damped effects: returns parameters for real-time computation by DynamicEffectManager
         return {
             targetObjectId: track.targetObjectId,
             effectType: track.effectParams.type,
@@ -232,19 +232,19 @@ export class AnimationTrackEvaluator {
     }
 
     /**
-     * 查找前后关键帧
-     * @param keyframes 关键帧数组（按 time 排序）
-     * @param progress 归一化进度 (0-1)
+     * Find surrounding keyframes
+     * @param keyframes Keyframe array (sorted by time)
+     * @param progress Normalized progress (0-1)
      *
-     * v13 Scheme B 增强返回字段 `atEnd`：
-     * - true：progress ≥ 最后一帧时间（已到达末尾，应显示末帧的 valueIn/顶层）
-     * - false：其它（段内 / 首帧之前，应使用 prev.valueOut → next.valueIn 语义）
+     * v13 Scheme B enhanced return field `atEnd`:
+     * - true: progress >= last frame time (reached end, should show last frame's valueIn/top-level)
+     * - false: other (within segment / before first frame, should use prev.valueOut -> next.valueIn semantics)
      */
     private static findKeyframes<T extends { time: number }>(
         keyframes: T[],
         progress: number
     ): { prev: T; next: T; t: number; atEnd: boolean } {
-        // 确保数组非空
+        // Ensure array is non-empty
         if (keyframes.length === 0) {
             throw new Error('Keyframes array is empty')
         }
@@ -256,7 +256,7 @@ export class AnimationTrackEvaluator {
             throw new Error('Keyframes array contains undefined elements')
         }
 
-        // 边界情况：进度小于第一帧（atEnd=false，使用首帧 valueOut）
+        // Boundary case: progress <= first frame (atEnd=false, use first frame valueOut)
         if (progress <= first.time) {
             return {
                 prev: first,
@@ -266,7 +266,7 @@ export class AnimationTrackEvaluator {
             }
         }
 
-        // 边界情况：进度大于最后一帧（atEnd=true，使用末帧 valueIn）
+        // Boundary case: progress >= last frame (atEnd=true, use last frame valueIn)
         if (progress >= last.time) {
             return {
                 prev: last,
@@ -276,8 +276,8 @@ export class AnimationTrackEvaluator {
             }
         }
 
-        // v13 Scheme B: 精确落在中间关键帧时使用其 valueOut（forward-facing）
-        // 这样分裂关键帧产生的跳变在 playhead 停在关键帧位置时显示"右侧"值
+        // v13 Scheme B: When exactly on an intermediate keyframe, use its valueOut (forward-facing)
+        // This ensures sudden jumps from split keyframes show the "right-side" value when playhead stops at keyframe position
         for (let i = 1; i < keyframes.length - 1; i++) {
             const kf = keyframes[i]
             if (kf && kf.time === progress) {
@@ -285,7 +285,7 @@ export class AnimationTrackEvaluator {
             }
         }
 
-        // 查找包含 progress 的区间
+        // Search for interval containing progress
         for (let i = 0; i < keyframes.length - 1; i++) {
             const prev = keyframes[i]
             const next = keyframes[i + 1]
@@ -300,7 +300,7 @@ export class AnimationTrackEvaluator {
             }
         }
 
-        // 不应该到达这里，返回最后一帧作为 fallback
+        // Should not reach here, return last frame as fallback
         return {
             prev: last,
             next: last,
@@ -310,32 +310,32 @@ export class AnimationTrackEvaluator {
     }
 
     /**
-     * 计算轨道持续时间
-     * v11.2: 帧序列轨道根据帧数和帧率计算时长
+     * Calculate track duration
+     * v11.2: Frame sequence tracks calculate duration based on frame count and frame rate
      */
     static getTrackDuration(track: AnimationTrack): number {
         switch (track.trackType) {
             case 'transform':
             case 'visibility':
-                // v12.x: 'auto' 时长由运行时解析
+                // v12.x: 'auto' duration resolved at runtime
                 if (track.duration === 'auto') return AUTO_DURATION_MARKER
                 return track.duration ?? 1000
             case 'frame_sequence': {
-                // v11.52: 帧序列时长由运行时动态计算，这里使用默认值
-                // 实际时长由 AnimationPlayer 根据 AnimatedSprite.textures.length 计算
+                // v11.52: Frame sequence duration computed dynamically at runtime, using default here
+                // Actual duration is computed by AnimationPlayer based on AnimatedSprite.textures.length
                 return 1000
             }
             case 'effect': {
-                // v11.70: 根据特效类型返回适当的时长
+                // v11.70: Return appropriate duration according to effect type
                 const effectType = track.effectParams.type
                 const params = track.effectParams
 
-                // 阻尼类特效：使用 duration 参数或默认 1000ms
+                // Damped effects: use duration parameter or default 1000ms
                 if (effectType === 'jelly' || effectType === 'squash') {
                     return (params as { duration?: number }).duration ?? 1000
                 }
 
-                // 一次性特效：使用自身的 duration 参数 (ms)
+                // One-shot effects: use own duration parameter (ms)
                 if (effectType === 'petrify') {
                     return (params as { duration?: number }).duration ?? 1000
                 }
@@ -343,7 +343,7 @@ export class AnimationTrackEvaluator {
                     return (params as { duration?: number }).duration ?? 1500
                 }
 
-                // 持续性特效（wave/breathe/float/glow/shake/motion_blur）：无限时长
+                // Continuous effects (wave/breathe/float/glow/shake/motion_blur): infinite duration
                 return Infinity
             }
             default:
@@ -353,8 +353,8 @@ export class AnimationTrackEvaluator {
 }
 
 /**
- * 合并多个轨道输出为统一的 AnimationOutput
- * v11.52: frameSequences 已移除
+ * Merge multiple track outputs into unified AnimationOutput
+ * v11.52: frameSequences removed
  */
 export function mergeTrackOutputs(outputs: TrackOutput[]): AnimationOutput {
     const result: AnimationOutput = {
@@ -371,7 +371,7 @@ export function mergeTrackOutputs(outputs: TrackOutput[]): AnimationOutput {
         } else if ('effectType' in output) {
             result.effects.push(output as EffectTrackOutput)
         }
-        // v11.52: frameSequences case 已删除
+        // v11.52: frameSequences case deleted
     }
 
     return result

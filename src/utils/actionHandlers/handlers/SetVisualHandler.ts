@@ -1,8 +1,8 @@
 /**
- * SetVisual Action Handler (v9.3 新增)
- * 处理视觉属性变换：visible, flipX, zIndex
+ * SetVisual Action Handler (Added in v9.3)
+ * Handles visual property transforms: visible, flipX, zIndex
  * 
- * 与 set_transform 和 tween_transform 可共存
+ * Can coexist with set_transform and tween_transform
  */
 
 import type { SetVisualAction } from '@/types/screenplay'
@@ -18,7 +18,7 @@ export const SetVisualHandler: ActionHandler<SetVisualAction> = {
     applyToState(state: WriteableState, action: SetVisualAction, _context?: ActionHandlerContext): void {
         const { params } = action
 
-        // 视觉属性
+        // Visual properties
         if (params.visible !== undefined) state.visible = params.visible
         if (params.flipX !== undefined) state.flipX = params.flipX
         if (params.zIndex !== undefined) state.zIndex = params.zIndex

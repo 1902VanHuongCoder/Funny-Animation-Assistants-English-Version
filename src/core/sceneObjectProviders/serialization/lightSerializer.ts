@@ -1,12 +1,12 @@
 /**
- * Light 序列化器
+ * Light serializer
  *
- * v25.1: 环境光和点光源都参与序列化/反序列化。
- * 环境光由 sceneLoader 自动创建（如不存在），但用户修改的
- * lightColor / lightIntensity 需要持久化，以便 ScenePlayer 读取。
+ * v25.1: Both ambient and point lights participate in serialization/deserialization.
+ * Ambient light is auto-created by sceneLoader (if absent), but user modifications to
+ * lightColor / lightIntensity need persistence so ScenePlayer can read them.
  *
- * Phase 1: 新增 flicker / flickerSpeed / directionMode / directionAngle / coneAngle
- * 序列化策略：仅非默认值写入，减小文件体积（旧数据兼容由 createLightObject 默认值保证）。
+ * Phase 1: Added flicker / flickerSpeed / directionMode / directionAngle / coneAngle
+ * Serialization strategy: Only non-default values written to reduce file size (backward compatibility guaranteed by createLightObject defaults).
  */
 
 import type { LightObject, SceneObject } from '@/types/sceneObject'
@@ -22,7 +22,7 @@ const lightSerializer: TypeSerializer = {
         base['lightIntensity'] = light.lightIntensity
         base['lightRadius'] = light.lightRadius
 
-        // Phase 1: 仅非默认值才写入（减小文件体积）
+        // Phase 1: Only write non-default values (reduce file size)
         if (light.flicker !== undefined && light.flicker !== 0) {
             base['flicker'] = light.flicker
         }
@@ -31,7 +31,7 @@ const lightSerializer: TypeSerializer = {
         }
         if (light.directionMode !== undefined && light.directionMode !== 'omni') {
             base['directionMode'] = light.directionMode
-            // 方向性参数仅 cone 模式才有意义
+            // Directional parameters only meaningful in cone mode
             if (light.directionAngle !== undefined && light.directionAngle !== 0) {
                 base['directionAngle'] = light.directionAngle
             }
@@ -44,7 +44,7 @@ const lightSerializer: TypeSerializer = {
     deserialize(objData: SceneObject, ctx: DeserializeContext): void {
         const lightData = objData as LightObject
 
-        // 值域校验：未知 lightType 回退到 'point'
+        // Value range validation: fallback to 'point' on unknown lightType
         const validLightTypes = ['ambient', 'point', 'spot'] as const
         const lightType = validLightTypes.includes(lightData.lightType)
             ? lightData.lightType
@@ -54,16 +54,16 @@ const lightSerializer: TypeSerializer = {
             lightType,
             objData.name ?? (
                 lightData.lightType === 'ambient'
-                    ? '环境光'
+                    ? 'Ambient Light'
                     : lightData.lightType === 'spot'
-                        ? '聚光灯'
-                        : '点光源'
+                        ? 'Spotlight'
+                        : 'Point Light'
             ),
             {
                 lightColor: lightData.lightColor,
                 lightIntensity: lightData.lightIntensity,
                 lightRadius: lightData.lightRadius,
-                // Phase 1: 条件展开，仅非 undefined 时传入（兼容 exactOptionalPropertyTypes）
+                // Phase 1: Conditional spread, only pass when not undefined (compatible with exactOptionalPropertyTypes)
                 ...(lightData.flicker !== undefined ? { flicker: lightData.flicker } : {}),
                 ...(lightData.flickerSpeed !== undefined ? { flickerSpeed: lightData.flickerSpeed } : {}),
                 ...(lightData.directionMode !== undefined ? { directionMode: lightData.directionMode } : {}),

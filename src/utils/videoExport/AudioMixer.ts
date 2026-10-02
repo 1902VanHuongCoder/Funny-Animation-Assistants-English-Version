@@ -1,21 +1,19 @@
 import type { AudioTrack } from './types'
 
 /**
- * 音频混合器
- * 使用 OfflineAudioContext 预渲染所有音频轨道
+ * Audio Mixer
+ * Uses OfflineAudioContext to pre-render all audio tracks
  */
 export class AudioMixer {
     private offlineCtx: OfflineAudioContext | null = null
     private audioTracks: AudioTrack[] = []
-    // private totalDuration: number = 0 // ms (Unused)
 
     /**
-     * 初始化混音器
-     * @param duration 总时长（毫秒）
-     * @param sampleRate 采样率
+     * Initialize mixer
+     * @param duration Total duration (ms)
+     * @param sampleRate Sample rate
      */
     initialize(duration: number, sampleRate = 48000): void {
-        // this.totalDuration = duration
         const lengthInSamples = Math.ceil((duration / 1000) * sampleRate)
 
         this.offlineCtx = new OfflineAudioContext({
@@ -26,34 +24,32 @@ export class AudioMixer {
     }
 
     /**
-     * 添加音频轨道
+     * Add audio track
      */
     addTrack(track: AudioTrack): void {
         this.audioTracks.push(track)
     }
 
     /**
-     * 渲染并混合所有音频轨道
+     * Render and mix all audio tracks
      */
     async render(): Promise<AudioBuffer> {
         if (!this.offlineCtx) {
             throw new Error('AudioMixer not initialized')
         }
 
-
-
-        // 为每个轨道创建音频图
+        // Create audio graph for each track
         for (const track of this.audioTracks) {
             await this.addTrackToContext(track)
         }
 
-        // 开始离线渲染
+        // Start offline rendering
         const renderedBuffer = await this.offlineCtx.startRendering()
         return renderedBuffer
     }
 
     /**
-     * 将音轨添加到音频上下文
+     * Add track to audio context
      */
     private addTrackToContext(track: AudioTrack): Promise<void> {
         if (!this.offlineCtx) {
@@ -63,33 +59,33 @@ export class AudioMixer {
         const ctx = this.offlineCtx
         const startTimeSec = track.startTime / 1000
 
-        // 创建音频源
+        // Create buffer source
         const source = ctx.createBufferSource()
         source.buffer = track.buffer
 
-        // 创建增益节点
+        // Create gain node
         const gainNode = ctx.createGain()
 
-        // 设置音量
+        // Set volume
         gainNode.gain.value = track.volume
 
-        // 应用淡入淡出（fadeIn/fadeOut 单位已经是秒）
+        // Apply fade-in (fadeIn/fadeOut units are already seconds)
         if (track.fadeIn && track.fadeIn > 0) {
             this.applyFadeIn(gainNode, startTimeSec, track.fadeIn)
         }
 
-        // 处理淡出
-        const AUTO_FADE_OUT = 0.1 // 100ms 自动淡出（与 WebAudioKit 一致）
+        // Handle fade-out
+        const AUTO_FADE_OUT = 0.1 // 100ms auto fade-out (consistent with WebAudioKit)
         const trackDurationSec = track.duration / 1000
         const hasUserFadeOut = track.fadeOut && track.fadeOut > 0
 
         if (hasUserFadeOut) {
-            // 用户设置了淡出，使用用户的设置
+            // User configured fade-out, use user configuration
             const fadeOutStart = startTimeSec + trackDurationSec - track.fadeOut!
             this.applyFadeOut(gainNode, fadeOutStart, track.fadeOut!)
         } else {
-            // 自动淡出：防止音频突然结束时的爆音（仅针对足够长的音轨）
-            // 只有时长 > 淡入 + 自动淡出时才应用
+            // Auto fade-out: prevents clicking on abrupt audio cutoff (only for sufficiently long tracks)
+            // Applied only when duration > fadeIn + autoFadeOut
             const fadeInDuration = track.fadeIn ?? 0
             if (trackDurationSec > fadeInDuration + AUTO_FADE_OUT) {
                 const fadeOutStart = startTimeSec + trackDurationSec - AUTO_FADE_OUT
@@ -97,14 +93,14 @@ export class AudioMixer {
             }
         }
 
-        // 连接音频图
+        // Connect audio graph
         source.connect(gainNode)
         gainNode.connect(ctx.destination)
 
-        //  开始播放
+        // Start playback
         source.start(startTimeSec)
 
-        // 如果有指定时长，在时长结束时停止
+        // If duration specified, stop at end of duration
         if (track.duration) {
             source.stop(startTimeSec + track.duration / 1000)
         }
@@ -112,35 +108,35 @@ export class AudioMixer {
     }
 
     /**
-     * 应用淡入效果
+     * Apply fade-in effect
      */
     private applyFadeIn(gainNode: GainNode, startTime: number, duration: number): void {
         if (!this.offlineCtx) return
 
         const gain = gainNode.gain
 
-        // 淡入曲线：从 0 到当前音量
+        // Fade-in curve: from 0 to current volume
         const currentVolume = gain.value
         gain.setValueAtTime(0, startTime)
         gain.linearRampToValueAtTime(currentVolume, startTime + duration)
     }
 
     /**
-     * 应用淡出效果
+     * Apply fade-out effect
      */
     private applyFadeOut(gainNode: GainNode, startTime: number, duration: number): void {
         if (!this.offlineCtx) return
 
         const gain = gainNode.gain
 
-        // 淡出曲线：从当前音量到 0
+        // Fade-out curve: from current volume to 0
         const currentVolume = gain.value
         gain.setValueAtTime(currentVolume, startTime)
         gain.linearRampToValueAtTime(0, startTime + duration)
     }
 
     /**
-     * 清理资源
+     * Clean up resources
      */
     destroy(): void {
         this.offlineCtx = null

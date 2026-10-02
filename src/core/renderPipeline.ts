@@ -1,11 +1,11 @@
 /**
- * 跨引擎共享渲染管线
+ * Cross-engine shared render pipeline
  *
- * 统一了 ScenePlayer 和 FrameCapture 中完全相同的对象渲染逻辑。
- * 每种对象类型的渲染步骤（容器创建 → AnimationPlayer → 注册）
- * 封装在单一的 renderObject() 入口中。
+ * Unifies the identical object rendering logic between ScenePlayer and FrameCapture.
+ * Rendering steps for each object type (container creation -> AnimationPlayer -> registration)
+ * are encapsulated in a single renderObject() entry point.
  *
- * 两引擎通过实现 RenderHost 接口将各自的注册表和 renderer 注入给共享函数。
+ * Both engines inject their respective registries and renderer into the shared function by implementing the RenderHost interface.
  */
 
 import * as PIXI from 'pixi.js'
@@ -184,40 +184,40 @@ function syncExemptMask(
 // ============================================================================
 
 /**
- * 渲染宿主接口 — 引擎需实现的最小依赖注入
+ * Render host interface — minimal dependency injection required by engine
  *
- * ScenePlayer 和 FrameCapture 各自构造一个 RenderHost 实例，
- * 桥接到各自的本地 Map 和 renderer 实例。
+ * ScenePlayer and FrameCapture each construct a RenderHost instance,
+ * bridging to their local Maps and renderer instances.
  */
 export interface RenderHost {
-    /** 统一渲染器（容器创建） */
+    /** Unified renderer (container creation) */
     sceneObjectRenderer: SceneObjectRenderer
-    /** 对象容器注册表 */
+    /** Object container registry */
     objectContainers: Map<string, PIXI.Container>
-    /** 动画播放器注册表 */
+    /** Animation player registry */
     objectAnimationPlayers: Map<string, GenericAnimationPlayer>
-    /** Composite entity 模式离屏渲染目标 */
+    /** Composite entity mode offscreen render target */
     compositeRenderTargets: Map<string, CompositeRenderTarget>
-    /** 获取引擎的 PIXI Renderer（用于 compositeMode + CRT） */
+    /** Retrieve engine's PIXI Renderer (for compositeMode + CRT) */
     getRenderer(): PIXI.Renderer | undefined
-    /** 获取场景所有对象（composite 渲染子对象时需要查找 childObj） */
+    /** Retrieve all scene objects (needed to look up childObj when composite renders children) */
     getSceneObjects(): SceneObject[]
 }
 
 // ============================================================================
-// renderObject — 统一对象渲染入口
+// renderObject — Unified object render entry point
 // ============================================================================
 
 /**
- * 统一对象渲染入口（跨引擎共享）
+ * Unified object render entry point (shared cross-engine)
  *
- * 每个对象类型在此函数中完成完整的渲染环境创建：
- * 1. 容器创建（委托给 SceneObjectRenderer）
- * 2. GenericAnimationPlayer 创建 + 注册（需要动画驱动的类型）
- * 3. 注册到 host 的 objectContainers / objectAnimationPlayers
- * 5. addChild 到 parentContainer
+ * Each object type completes full rendering environment creation in this function:
+ * 1. Container creation (delegated to SceneObjectRenderer)
+ * 2. GenericAnimationPlayer creation + registration (for types driven by animation)
+ * 3. Registration to host's objectContainers / objectAnimationPlayers
+ * 4. addChild to parentContainer
  *
- * composite 对子对象递归调用此入口，确保子对象走完全一致的渲染路径。
+ * Composite recursively calls this entry point for children, ensuring consistent render paths.
  */
 export async function renderObject(
     obj: SceneObject,
@@ -274,7 +274,7 @@ export async function renderObject(
             parentContainer.addChild(container)
             host.objectContainers.set(obj.id, container)
 
-            // v16: 元件也需要 AnimationPlayer 以支持 initialAnimations / set_anim 帧动画播放
+            // v16: Symbols also need AnimationPlayer to support initialAnimations / set_anim frame animation playback
             const symPlayer = createGenericAnimationPlayer({
                 target: container,
                 ownerObjectId: obj.id,
@@ -318,16 +318,16 @@ export async function renderObject(
             const container = new PIXI.Container()
             container.name = `composite_${obj.id}`
 
-            // v20: union 容器无需设置 renderable=false。
-            // 旧架构中子对象平铺到上级容器，union 本身不渲染所以设 renderable=false。
-            // 新架构中子对象 addChild 到 union 容器内，renderable=false 会阻止整个子树渲染。
-            // union 容器本身无可视内容（仅 Container），不会产生多余绘制。
+            // v20: union containers do not need renderable=false.
+            // In old architecture children were flattened into upper container, union itself wasn't rendered so set renderable=false.
+            // In new architecture children are addChild-ed into union container, renderable=false would block whole subtree rendering.
+            // union container has no visual content (just Container), causing no extra draws.
 
-            // spawned=false 的 composite 不渲染子对象：
-            // - 子对象如果存活，会由上层 syncResources 作为顶层对象独立渲染
-            // - 避免子对象被同时渲染在 composite 容器内和顶层容器上导致重复
+            // Composite with spawned=false does not render children:
+            // - If children survive, upper syncResources renders them independently as top-level objects
+            // - Prevents children from being rendered simultaneously in composite and top-level containers causing duplication
             if (obj.spawned !== false) {
-                // v20: entity/union 统一按 renderChain 或 childIds 遍历子对象
+                // v20: entity/union traverse children uniformly via renderChain or childIds
                 const allObjects = host.getSceneObjects()
                 const childOrder = (composite.renderChain && composite.renderChain.length > 0)
                     ? composite.renderChain
@@ -335,28 +335,28 @@ export async function renderObject(
                 for (const childId of childOrder) {
                     const childObj = allObjects.find(o => o.id === childId)
                     if (!childObj) continue
-                    // 防御性跳过 — 如果子对象已被 syncResources 先行渲染，
-                    // 不再重复创建容器（避免 stage 上产生孤儿容器）
+                    // Defensive skip — if child was already rendered beforehand by syncResources,
+                    // do not re-create container (avoids orphan containers on stage)
                     if (host.objectContainers.has(childId)) continue
-                    // v20: union/entity 统一 addChild 到自身容器
+                    // v20: union/entity uniformly addChild to own container
                     await renderObject(childObj, container, host)
                 }
 
-                // v20: entity 内嵌套 union 时，union 容器作为 entity 的 child 已被遍历，
-                // 但 union 容器自身不在 renderChain 中。
-                // 需要确保 union 容器被注册到 objectContainers 以阻止 syncResources 重复创建。
-                // （这在上面的 renderObject 递归调用中已自动处理）
+                // v20: When union is nested inside entity, union container has been traversed as entity child,
+                // but union container itself is not in renderChain.
+                // Need to ensure union container is registered in objectContainers to prevent syncResources duplicate creation.
+                // (This is automatically handled in the recursive renderObject call above)
             }
 
-            // v21: 为 entity/union 安装 override render，按 renderChain 逐个调度叶子容器
+            // v21: Install override render for entity/union, scheduling leaf containers individually by renderChain
             if (composite.renderChain && composite.renderChain.length > 0) {
                 installRenderChainRenderer(container, composite.renderChain, host.objectContainers)
             }
             SceneObjectRenderer.applyBasicTransform(container, obj)
 
-            // entity 模式：启用离屏渲染
+            // entity mode: enable offscreen rendering
             if (composite.compositeMode === 'entity') {
-                parentContainer.addChild(container) // enable() 需要 source.parent
+                parentContainer.addChild(container) // enable() requires source.parent
                 const renderer = host.getRenderer()
                 if (renderer) {
                     const crt = new CompositeRenderTarget({ source: container, renderer })
@@ -371,8 +371,8 @@ export async function renderObject(
                 host.objectContainers.set(obj.id, container)
             }
 
-            // v20: composite 对象创建 AnimationPlayer（委托模式）
-            // union 子对象在容器内后，getLocalBounds() 自然生效，不再需要自定义 boundsProvider
+            // v20: composite object creates AnimationPlayer (delegation mode)
+            // With union children inside container, getLocalBounds() works naturally, custom boundsProvider no longer needed
             const compositeContainer = host.objectContainers.get(obj.id)
             if (compositeContainer) {
                 const compositePlayer = createGenericAnimationPlayer({
@@ -388,7 +388,7 @@ export async function renderObject(
             break
         }
 
-        // v18: 独立表情对象
+        // v18: Independent expression object
         case 'expression': {
             const container = host.sceneObjectRenderer.createExpressionContainer(obj)
             SceneObjectRenderer.applyBasicTransform(container, obj)
@@ -404,14 +404,14 @@ export async function renderObject(
             break
         }
 
-        // v25: 光源对象 — 注册容器以便 applyObjectState 更新位置
-        // 包含可视指示器（小圆点），编辑器中帮助定位/拖拽
-        // ScenePlayer/FrameCapture 会强制设 container.visible = false 来隐藏
+        // v25: Light object — register container so applyObjectState updates position
+        // Includes visual indicator (small dot) to help positioning/dragging in editor
+        // ScenePlayer/FrameCapture forces container.visible = false to hide
         case 'light': {
             const container = new PIXI.Container()
             container.name = `light_${obj.id}`
 
-            // 可视指示器：白色圆点 + 深色描边
+            // Visual indicator: white circle + dark stroke
             const dot = new PIXI.Graphics()
             dot.beginFill(0xFFFFFF, 0.85)
             dot.drawCircle(0, 0, 6)
@@ -425,8 +425,8 @@ export async function renderObject(
             break
         }
 
-        // Clip-Mask Phase 1：mask 容器仅作为 worldTransform 锚点，无可视内容。
-        // 真正的裁切几何（PIXI.Graphics）由 maskRenderer 每帧按 (mask.id, target.id) 创建到 target 容器之下。
+        // Clip-Mask Phase 1: mask container serves only as worldTransform anchor, no visual content.
+        // True clipping geometry (PIXI.Graphics) is created by maskRenderer per frame under target container by (mask.id, target.id).
         case 'mask': {
             const container = new PIXI.Container()
             container.name = `mask_${obj.id}`
@@ -442,14 +442,14 @@ export async function renderObject(
 
 
 // ============================================================================
-// Composite 辅助函数
+// Composite Helper Functions
 // ============================================================================
 
 /**
- * 按拓扑顺序（从内到外）更新所有 composite entity 模式的离屏渲染纹理
+ * Update offscreen render textures for all composite entity modes in topological order (inside-out)
  *
- * 深度越大的 composite 先更新，确保嵌套 composite 的 RenderTexture
- * 在父级渲染前已就绪。
+ * Composites with greater depth are updated first, ensuring nested composite RenderTextures
+ * are ready before the parent renders.
  */
 export function updateCompositeRenderTargetsInOrder(
     targets: Map<string, CompositeRenderTarget>,
@@ -463,8 +463,8 @@ export function updateCompositeRenderTargetsInOrder(
 }
 
 /**
- * 获取 composite 离屏渲染更新顺序（叶节点优先）
- * 通过 parentId 链计算深度，按深度降序排列
+ * Get composite offscreen render update order (leaf nodes first)
+ * Computes depth via parentId chain, sorted in descending order of depth
  */
 function getCompositeUpdateOrder(
     targets: Map<string, CompositeRenderTarget>,
@@ -489,17 +489,17 @@ function getCompositeUpdateOrder(
     for (const id of ids) {
         getDepth(id)
     }
-    // 深度降序：叶节点先更新
+    // Depth descending: leaf nodes update first
     return ids.sort((a, b) => (depthMap.get(b) ?? 0) - (depthMap.get(a) ?? 0))
 }
 
 // ============================================================================
-// 通用辅助函数
+// General Helper Functions
 // ============================================================================
 
 /**
- * 将 objectDimensions 同步到所有 GenericAnimationPlayer
- * 用于 pivot 位置补偿计算
+ * Synchronize objectDimensions to all GenericAnimationPlayers
+ * Used for pivot position compensation calculation
  */
 export function syncObjectBoundsToPlayers(
     dimensions: Map<string, { width: number; height: number; boundsX?: number; boundsY?: number }>,
@@ -513,16 +513,16 @@ export function syncObjectBoundsToPlayers(
 }
 
 /**
- * 手动排序 entity composite 容器的子对象（renderChain 驱动）
+ * Manually sort children of entity composite container (renderChain driven)
  *
- * 根级 union 的渲染顺序由 stage 的 installRootRenderChainRenderer 统一处理，
- * 无需在此函数中通过 setChildIndex 控制。
+ * Root-level union render order is handled uniformly by stage's installRootRenderChainRenderer,
+ * no need to control via setChildIndex in this function.
  *
- * entity: 按 renderChain + 运行时 zIndex 更新 override render（含 union 展开子对象）
- * union (entity 内): 由父 entity 的 renderByRenderChain 跨容器调度，跳过
- * union (根级): 由 stage 的 renderByRenderChain 统一调度，跳过
+ * entity: Updates override render by renderChain + runtime zIndex (including union expanded children)
+ * union (inside entity): Cross-container scheduled by parent entity's renderByRenderChain, skipped
+ * union (root-level): Scheduled uniformly by stage's renderByRenderChain, skipped
  *
- * v19 Fix: entity CRT 模式下排序 source container（实际子对象所在），而非 output。
+ * v19 Fix: Under entity CRT mode, sort source container (where actual children reside), rather than output.
  */
 export function sortCompositeContainers(
     sceneObjects: readonly SceneObject[],
@@ -537,7 +537,7 @@ export function sortCompositeContainers(
         const compositeMode = comp.compositeMode ?? 'entity'
 
         if (compositeMode === 'entity') {
-            // v20: entity CRT 排序 source container（实际子对象所在）而非 output
+            // v20: entity CRT sorts source container (where actual children reside) rather than output
             const crt = compositeRenderTargets?.get(objSetup.id)
             const compositeContainer = crt
                 ? crt.getSourceContainer()
@@ -545,79 +545,79 @@ export function sortCompositeContainers(
             if (!compositeContainer) continue
 
             if (comp.renderChain && comp.renderChain.length > 0) {
-                // v22: 消费时按运行时 zIndex 排序，更新 entity 的 override render
+                // v22: When consumed, sort by runtime zIndex, updating entity override render
                 const chain = getZIndex
                     ? sortRenderChainByZIndex(comp.renderChain, getZIndex)
                     : comp.renderChain
                 updateRenderChainRenderer(compositeContainer, chain, objectContainers)
             }
         }
-        // union composite（根级或 entity 内）：
-        // 渲染顺序由父级容器（stage 或 entity）的 renderByRenderChain 统一调度，无需单独处理
+        // union composite (root-level or inside entity):
+        // Render order is dispatched uniformly by parent container (stage or entity) renderByRenderChain, no separate handling needed
     }
 }
-// v20: propagateUnionAnimations 已删除
-// union 子对象在容器内（真实 PIXI 父子关系），动画变换自动传播，无需手动同步
+// v20: propagateUnionAnimations has been removed
+// union children reside inside container (genuine PIXI parent-child relation), animation transforms propagate automatically without manual synchronization
 
 // ============================================================================
-// v25: 光照滤镜应用
+// v25: Lighting Filter Application
 // ============================================================================
 
 /**
- * v25.7: CRT 内光源坐标投影辅助
+ * v25.7: Light source coordinate projection helper inside CRT
  *
- * Entity Composite 的 CRT 会将 source 容器脱离 Stage 树并重置其 transform。
- * 当光源是 entity 的子对象时，light container 的 toGlobal() 无法得到正确的屏幕坐标。
+ * Entity Composite's CRT detaches the source container from the Stage tree and resets its transform.
+ * When the light source is a child of the entity, light container's toGlobal() cannot obtain correct screen coordinates.
  *
- * 此函数沿 parentId 链查找最近的 CRT entity 祖先，
- * 计算光源在 entity source 容器内的本地坐标，并返回 entity 的 outputContainer
- * （仍在 Stage 树中），供调用者通过 outputContainer.toGlobal(localPoint) 得到正确屏幕坐标。
+ * This function searches for the nearest CRT entity ancestor along the parentId chain,
+ * computes the local coordinates of the light within the entity source container, and returns the entity's outputContainer
+ * (still in Stage tree), for caller to get correct screen coordinates via outputContainer.toGlobal(localPoint).
  */
 function resolveCRTProjection(
     lightObj: LightObject,
     sceneObjects: readonly SceneObject[],
     compositeRenderTargets: Map<string, CompositeRenderTarget>,
 ): { outputContainer: PIXI.Container; localX: number; localY: number } | null {
-    // 沿 parentId 链查找最近的 CRT entity 祖先
+    // Search for nearest CRT entity ancestor along parentId chain
     let currentId: string | undefined = lightObj.parentId
     while (currentId) {
         const crt = compositeRenderTargets.get(currentId)
         if (crt) {
-            // 找到 CRT entity 祖先
-            // 计算光源在 entity source 容器内的本地坐标
-            // applyLightState 设置 container.position = (state.x, state.y)
-            // 对于 entity 子对象，这是相对于 entity 的局部坐标
-            // CRT source 容器的 transform 已被重置为 identity，
-            // 所以光源的 source-local 坐标就是 container.position
+            // Found CRT entity ancestor
+            // Compute light local coordinates within entity source container
+            // applyLightState sets container.position = (state.x, state.y)
+            // For entity children, this is local coordinates relative to the entity
+            // The CRT source container transform has been reset to identity,
+            // so light's source-local coordinate is container.position
             const outputContainer = crt.getOutputContainer()
 
-            // 获取 compositeSprite 用于坐标映射
-            // CRT.updateRenderTexture 设置:
+            // Get compositeSprite for coordinate mapping
+            // CRT.updateRenderTexture sets:
             //   renderRoot.position = (-bounds.x + padding, -bounds.y + padding)
             //   compositeSprite.position = (bounds.x - padding, bounds.y - padding)
-            // 光源在 source 容器中的坐标 = (lightObj.x, lightObj.y)
-            // compositeSprite 把整个 renderTexture 映射回 entity 的局部空间
-            // 所以直接使用光源的数据模型坐标即可：compositeSprite 已对齐 source bounds
+            // Coordinates of light in source container = (lightObj.x, lightObj.y)
+            // compositeSprite maps the entire renderTexture back to entity local space
+            // So directly use light model coordinates: compositeSprite already aligned with source bounds
             const localX = lightObj.x ?? 0
             const localY = lightObj.y ?? 0
 
             return { outputContainer, localX, localY }
         }
-        // 继续向上搜索
+        // Continue searching upwards
         const parentObj = sceneObjects.find(o => o.id === currentId)
         currentId = parentObj?.parentId
     }
-    // 不在任何 CRT entity 内，但可能在 containerResolver 不工作的根级 union 中
-    // 检查 container 的 parent 链是否到达了 stage（简单启发式）
-    // 无 CRT 祖先 → 返回 null，使用默认 toGlobal 路径
+    // Not inside any CRT entity, but might be in root-level union where containerResolver doesn't work
+    // Check if container's parent chain reached stage (simple heuristic)
+    // No CRT ancestor -> return null, use default toGlobal path
     return null
 }
 
 
 /**
- * 聚合场景中的光源对象，创建/更新 LightingFilter 并挂载到目标容器
+ * Aggregate light source objects in the scene, create/update LightingFilter, and mount to target container
  *
- * 供 ScenePlayer 和 FrameCapture 在 syncResources / updateFrame 时调用
+ * Called by ScenePlayer and FrameCapture during syncResources / updateFrame
  */
 export function applyLightingFilter(
     sceneObjects: readonly SceneObject[],
@@ -647,22 +647,22 @@ export function applyLightingFilter(
         .sort((a, b) => b.ev.intensity - a.ev.intensity)
         .slice(0, 8)
 
-    // v25.6: 光源坐标投影 → 输出帧局部 UV 空间 (0..1)
-    // 先通过 toGlobal 或线性映射获取屏幕坐标，再归一化到当前输出帧区域。
-    // Shader 侧会把这组 0..1 的局部 UV 再映射到真实输入纹理的 UV 空间，
-    // 从而保证 ScenePlayer / FrameCapture / 多分辨率导出使用同一套基准。
+    // v25.6: Light source coordinate projection -> output frame local UV space (0..1)
+    // First obtain screen coordinates via toGlobal or linear mapping, then normalize to current output frame area.
+    // Shader maps this 0..1 local UV to UV space of real input texture,
+    // ensuring ScenePlayer / FrameCapture / multi-resolution export share the same reference frame.
     let points: LightSourceData[]
     if (containerResolver) {
         points = evaluatedLights.map(({ light: l, ev }) => {
             const coneHalfCos = Math.cos((ev.coneAngle / 2) * Math.PI / 180)
             const container = containerResolver(l.id)
             if (container) {
-                // v25.7: Entity Composite CRT 修正
-                // 当光源是 entity composite 的子对象时，CRT.enable() 会将 source 容器
-                // 从 Stage 树脱离到独立的 renderRoot 中。此时 container.toGlobal()
-                // 返回的是离屏渲染纹理的局部坐标，而非正确的屏幕坐标。
-                // 修复：查找最近的 CRT entity 祖先，通过 outputContainer（仍在 Stage 树中）
-                // 投影光源的本地坐标到屏幕空间。
+                // v25.7: Entity Composite CRT fix
+                // When light source is a child of entity composite, CRT.enable() detaches source container
+                // from Stage tree into independent renderRoot. At this point container.toGlobal()
+                // returns local coordinates of offscreen render texture, not correct screen coordinates.
+                // Fix: Find nearest CRT entity ancestor, project light's local coordinates to screen space
+                // via outputContainer (which is still in Stage tree).
                 const crtProjection = compositeRenderTargets
                     ? resolveCRTProjection(l, sceneObjects, compositeRenderTargets)
                     : null
@@ -678,7 +678,7 @@ export function applyLightingFilter(
                 }
                 const screenRadius = Math.hypot(p1.x - p0.x, p1.y - p0.y)
                 return {
-                    // 屏幕坐标 → 输出帧局部 UV 空间
+                    // Screen coordinates -> output frame local UV space
                     x: (p0.x - filterArea.x) / filterArea.width,
                     y: (p0.y - filterArea.y) / filterArea.height,
                     radius: screenRadius / filterArea.height,
@@ -690,7 +690,7 @@ export function applyLightingFilter(
                     softness: ev.softness,
                 } as LightSourceData
             }
-            // fallback: 世界坐标 → 输出帧局部 UV 空间
+            // fallback: World coordinates -> output frame local UV space
             return {
                 x: ev.x / canvasWidth,
                 y: ev.y / canvasHeight,
@@ -704,7 +704,7 @@ export function applyLightingFilter(
             }
         })
     } else {
-        // 无 containerResolver 时：世界坐标 → 输出帧局部 UV 空间
+        // Without containerResolver: World coordinates -> output frame local UV space
         points = evaluatedLights.map(({ ev }) => {
             const coneHalfCos = Math.cos((ev.coneAngle / 2) * Math.PI / 180)
             return {
@@ -721,7 +721,7 @@ export function applyLightingFilter(
         })
     }
 
-    // 复用或创建 filter 实例
+    // Reuse or create filter instance
     let filter = filterCache?.instance
     if (!filter) {
         filter = new LightingFilter()

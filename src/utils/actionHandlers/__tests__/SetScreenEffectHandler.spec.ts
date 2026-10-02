@@ -1,7 +1,7 @@
 /**
- * SetScreenEffectHandler 单元测试 (Phase 1)
- * 注意: Handler 直接操作 state.params（消除 flat state 中间层）
- * coverOpacity 已删除，覆盖不透明度统一由 SceneObject.alpha 控制
+ * SetScreenEffectHandler unit test (Phase 1)
+ * Note: Handler directly operates on state.params (eliminating flat state intermediate layer)
+ * coverOpacity deleted, overlay opacity is uniformly controlled by SceneObject.alpha
  */
 
 import { describe, expect, it } from 'vitest'
@@ -38,36 +38,36 @@ describe('SetScreenEffectHandler', () => {
         }
     }
 
-    describe('覆盖型参数', () => {
-        it('应用 baseColor', () => {
+    describe('Coverage parameters', () => {
+        it('applies baseColor', () => {
             const state = createInitialState()
             SetScreenEffectHandler.applyToState(state, createAction({ baseColor: '#ff0000' }))
             expect(state.params!.baseColor).toBe('#ff0000')
         })
     })
 
-    describe('孔洞参数', () => {
-        it('应用 openRatio', () => {
+    describe('Hole parameters', () => {
+        it('applies openRatio', () => {
             const state = createInitialState()
             SetScreenEffectHandler.applyToState(state, createAction({ openRatio: 0.3 }))
             expect(state.params!.openRatio).toBe(0.3)
         })
 
-        it('应用 holeShape', () => {
+        it('applies holeShape', () => {
             const state = createInitialState()
             SetScreenEffectHandler.applyToState(state, createAction({ holeShape: 'vertical_ellipse' }))
             expect(state.params!.holeShape).toBe('vertical_ellipse')
         })
 
-        it('应用 feather', () => {
+        it('applies feather', () => {
             const state = createInitialState()
             SetScreenEffectHandler.applyToState(state, createAction({ feather: 80 }))
             expect(state.params!.feather).toBe(80)
         })
     })
 
-    describe('跟随参数', () => {
-        it('应用 targetId 和 offset', () => {
+    describe('Target following parameters', () => {
+        it('applies targetId and offset', () => {
             const state = createInitialState()
             SetScreenEffectHandler.applyToState(state, createAction({
                 targetId: 'char_1',
@@ -80,8 +80,8 @@ describe('SetScreenEffectHandler', () => {
         })
     })
 
-    describe('同时应用多个参数', () => {
-        it('混合应用覆盖和孔洞参数', () => {
+    describe('Applying multiple parameters simultaneously', () => {
+        it('mixes coverage and hole parameters', () => {
             const state = createInitialState()
             SetScreenEffectHandler.applyToState(state, createAction({
                 baseColor: '#ff0000',
@@ -96,37 +96,37 @@ describe('SetScreenEffectHandler', () => {
         })
     })
 
-    describe('边界情况', () => {
-        it('空 params 不修改状态', () => {
+    describe('Edge cases', () => {
+        it('does not modify state when params is empty', () => {
             const state = createInitialState()
             SetScreenEffectHandler.applyToState(state, createAction({}))
             expect(state.params!.baseColor).toBe('#000000')
             expect(state.params!.openRatio).toBe(1.0)
         })
 
-        it('处理 0 值 openRatio', () => {
+        it('handles 0 value openRatio', () => {
             const state = createInitialState()
             SetScreenEffectHandler.applyToState(state, createAction({ openRatio: 0 }))
             expect(state.params!.openRatio).toBe(0)
         })
 
-        it('state 无 params 时自动初始化', () => {
+        it('automatically initializes params when missing on state', () => {
             const state: WriteableState = {}
             SetScreenEffectHandler.applyToState(state, createAction({ openRatio: 0.5 }))
             expect(state.params!.openRatio).toBe(0.5)
         })
     })
 
-    describe('Handler 元数据', () => {
-        it('类型为 set_screen_effect', () => {
+    describe('Handler metadata', () => {
+        it('type is set_screen_effect', () => {
             expect(SetScreenEffectHandler.type).toBe('set_screen_effect')
         })
 
-        it('是 Point Action', () => {
+        it('is Point Action', () => {
             expect(SetScreenEffectHandler.isPointAction).toBe(true)
         })
 
-        it('不是 Duration Action', () => {
+        it('is not Duration Action', () => {
             expect(SetScreenEffectHandler.isDurationAction).toBe(false)
         })
     })

@@ -1,11 +1,11 @@
 /**
- * 鍦烘櫙鐘舵€佽绠楀櫒
- * 鐢ㄤ簬瀵兼垙妯″紡鐨勮繍琛屾椂鐘舵€佸洖婧?
+ * Scene State Calculator
+ * Runtime state reconstruction for Director Mode
  * 
- * v6.3 鏇存柊锛?
- * - set_transform 浠呭鐞嗚瑙夊睘鎬?(alpha, visible, flipX, zIndex)
- * - set_character 缁ф壙 set_transform + 瑙掕壊鐘舵€?(pose, expression)
- * - tween_transform 浠呭鐞嗗嚑浣曞睘鎬?(x, y, scaleX, scaleY, rotation)
+ * v6.3 updates:
+ * - set_transform handles visual properties only (alpha, visible, flipX, zIndex)
+ * - set_character inherits set_transform + character state (pose, expression)
+ * - tween_transform handles geometric properties only (x, y, scaleX, scaleY, rotation)
  */
 
 import type { CompositeObject, SceneObject } from '@/types/sceneObject'
@@ -24,7 +24,7 @@ import { parseBlockToSlots } from '@/utils/slotUtils'
 // ==================== Ghost Mode Types ====================
 
 /**
- * 杩愯鏃剁浉鏈虹姸鎬?(鐢ㄤ簬 Ghost Mode)
+ * Runtime camera state (used for Ghost Mode)
  */
 export interface RuntimeCameraState {
   x: number
@@ -33,48 +33,49 @@ export interface RuntimeCameraState {
 }
 
 /**
- * 鍗曚釜瀵硅薄鐨勫菇鐏?瀹炰綋鐘舵€佸
+ * Ghost/Real state pair for a single object
  */
 export interface GhostStateResult {
-  ghost: SceneObject | null  // null 琛ㄧず鏃犻渶鏄剧ず骞界伒
+  ghost: SceneObject | null  // null indicates no ghost required
   real: SceneObject
 }
 
 /**
- * 鐩告満鐨勫菇鐏?瀹炰綋鐘舵€佸
+ * Ghost/Real state pair for camera
  */
 export interface CameraGhostStateResult {
-  ghost: RuntimeCameraState | null  // null 琛ㄧず鏃犻渶鏄剧ず骞界伒
+  ghost: RuntimeCameraState | null  // null indicates no ghost required
   real: RuntimeCameraState
 }
 
 /**
- * 鏁翠釜 Slot 鐨勭姸鎬佽绠楃粨鏋?
+ * State calculation result for entire Slot
  */
 export interface SlotStatesResult {
   objects: Map<string, GhostStateResult>
   camera: CameraGhostStateResult
-  /** runtime 鍦烘櫙绾ф覆鏌撻摼锛堢粡 reconcileRenderChain 鍗忚皟鍚庯級 */
+  /** Runtime scene-level render chain (after reconciliation with reconcileRenderChain) */
   renderChain: string[]
 }
 
 /**
- * 璁＄畻鎸囧畾 Block 寮€濮嬪墠鐨勫満鏅繍琛屾椂蹇収锛坧revContext锛?
- * @param scene 鍦烘櫙瀹瑰櫒
- * @param blockId 褰撳墠 Block 鐨?ID
- * @returns 涓婁竴 Block 缁撴潫鏃剁殑 RuntimeSceneSnapshot
+/**
+ * Computes scene runtime snapshot before specified Block starts (prevContext)
+ * @param scene Scene container
+ * @param blockId Current Block ID
+ * @returns RuntimeSceneSnapshot at the end of previous Block
  */
 export function calculatePrevContext(scene: SceneContainer, blockId: string): RuntimeSceneSnapshot {
-  // 鏌ユ壘褰撳墠 Block 鐨勭储寮?
+  // Find index of current Block
   const blockIndex = scene.script.findIndex(b => b.id === blockId)
 
-  // 濡傛灉鎵句笉鍒版垨杩欐槸绗竴涓?Block锛岀洿鎺ヤ粠 setup 鍒涘缓 snapshot
+  // If not found or this is the first Block, create snapshot directly from setup
   if (blockIndex <= 0) {
     const snapshot = createRuntimeSnapshot(scene.setup)
     return snapshot
   }
 
-  // 浠庡満鏅?setup 寮€濮嬶紝閫愪釜搴旂敤涔嬪墠鎵€鏈?Block 鐨?actions
+  // Starting from scene setup, apply actions from all previous Blocks sequentially
   let currentState: RuntimeSceneSnapshot = createRuntimeSnapshot(scene.setup)
 
   for (let i = 0; i < blockIndex; i++) {
@@ -88,7 +89,7 @@ export function calculatePrevContext(scene: SceneContainer, blockId: string): Ru
 }
 
 /**
- * 灏?SceneSetup 杞崲涓?RuntimeSceneSnapshot锛堟棤娣辨嫹璐濓紝鍏变韩寮曠敤锛?
+ * Converts SceneSetup to RuntimeSceneSnapshot (shared references, no deep copy)
  */
 export function toRuntimeSnapshot(setup: SceneSetup): RuntimeSceneSnapshot {
   return {
@@ -168,13 +169,14 @@ function createSceneStructureRestoreAction(
 }
 
 /**
- * 搴旂敤 Block 鐨勬墍鏈?actions 鍒扮姸鎬佸揩鐓?
- * 娉ㄦ剰锛氳繖涓柟娉曠敤浜庤绠桞lock缁撴潫鏃剁殑鏈€缁堢姸鎬侊紝鍙鐞嗕細褰卞搷闈欐€佺姸鎬佺殑Action
- * @param prevState 鍓嶄竴鐘舵€?
- * @param block 鑴氭湰鍧?
- * @param scene 鍦烘櫙瀹瑰櫒锛堢敤浜庢煡鎵炬紨鍛橀厤缃紝鍙€夛級
- * @param forceAllActions 鏄惁寮哄埗搴旂敤鎵€鏈夊姩浣滐紙蹇界暐鏃堕暱闄愬埗锛岀敤浜庣紪杈戝櫒棰勮锛?
- * @returns 搴旂敤 actions 鍚庣殑鏂扮姸鎬?
+ * Applies all actions in Block to state snapshot
+ * Note: Used to compute final state at Block end; only processes actions affecting static state
+ * @param prevState Previous state
+ * @param block Script block
+ * @param scene Scene container (optional, used for actor lookup)
+ * @param forceAllActions Whether to force apply all actions (ignoring duration limits, for editor preview)
+ * @param skipAutoDespawn Whether to skip auto despawn (default false)
+ * @returns New state after applying actions
  */
 export function applyBlockActionsToState(prevState: RuntimeSceneSnapshot, block: ScriptBlock, scene?: SceneContainer, forceAllActions = false, skipAutoDespawn = false): RuntimeSceneSnapshot {
   const newState: RuntimeSceneSnapshot = JSON.parse(JSON.stringify(prevState)) as RuntimeSceneSnapshot
@@ -184,7 +186,7 @@ export function applyBlockActionsToState(prevState: RuntimeSceneSnapshot, block:
     return newState
   }
 
-  // 璁＄畻Block鐨勬€绘椂闀匡紙鐢ㄤ簬璁＄畻鎸佺画鍔ㄤ綔鐨勬渶缁堝€硷級
+  // Calculate total Block duration (used to calculate final values of duration actions)
   // let blockDuration = 0 // Unused
   // if (block.type === 'dialogue' || block.type === 'narration') {
   //   blockDuration = block.ttsConfig?.duration ?? 0
@@ -192,23 +194,23 @@ export function applyBlockActionsToState(prevState: RuntimeSceneSnapshot, block:
   //   blockDuration = (block as unknown as { duration: number }).duration ?? 0
   // }
 
-  // 瑙ｆ瀽妲戒綅淇℃伅
+  // Parse slot information
   const slots = parseBlockToSlots(block)
 
-  // 寤虹珛 objectId 鈫?prevState.objects 绱㈠紩鏄犲皠锛堢敤浜庡悓 slot 鐨?set_parent 鎺掑簭锛?
+  // Build objectId -> prevState.objects index map (for sorting set_parent within same slot)
   const objectIndexMap = new Map<string, number>()
   prevState.objects.forEach((obj, idx) => {
     objectIndexMap.set(obj.id, idx)
   })
 
-  // 搴旂敤姣忎釜 action锛堟寜妲戒綅绱㈠紩椤哄簭锛屽悓 slot 鐨?set_parent 鎸?target 瀵硅薄浣嶇疆鎺掑簭锛?
+  // Apply each action (in slot index order; sort set_parent in same slot by target object position)
   const sortedActions = sortActionsForEvaluation(block.actions, objectIndexMap)
   const sceneStructureRestoreActions: SetSceneStructureAction[] = []
 
-  // P2 + v17: 闇€瑕佽法瀵硅薄鐘舵€佽闂殑 action 绫诲瀷鍏变韩 context
-  // - set_parent: 鍧愭爣琛ュ伩闇€瑕佽鍙?parent 瀵硅薄鐨勪綅缃?
-  // - set_lifecycle: composite 娑堜骸鏃堕渶瑕佺骇鑱?鍐掓场瀛愬璞?
-  // - set_transform / tween_transform: 鍏ㄥ眬鈫掓湰鍦板潗鏍囪浆鎹?
+  // P2 + v17: Actions needing cross-object state access share context
+  // - set_parent: Coordinate compensation reads parent object position
+  // - set_lifecycle: Composite despawn cascades/bubbles child objects
+  // - set_transform / tween_transform: Global -> local coordinate conversion reads parent coordinate and flipX
   const ctx: import('@/utils/actionHandlers/types').ActionHandlerContext = {
     getObjectState: (id: string) => {
       const obj = newState.objects.find(o => o.id === id)
@@ -226,11 +228,11 @@ export function applyBlockActionsToState(prevState: RuntimeSceneSnapshot, block:
       continue
     }
 
-    // 鑾峰彇 Handler锛堟棤 Handler 鐨?action 绫诲瀷鑷姩璺宠繃锛屽 set_anim/camera_shake/camera_follow锛?
+    // Get Handler (action types without Handler are skipped automatically, e.g. set_anim/camera_shake/camera_follow)
     const handler = getHandler(action.type as ActionType)
     if (!handler) continue
 
-    // 鎸佺画鍔ㄤ綔锛氬垽鏂槸鍚﹀湪 Block 鍐呭畬鎴?
+    // Duration action: check if completed within Block
     if (handler.isDurationAction) {
       const durationAction = action as BaseDurationAction
       if (durationAction.slotIndex >= slots.length) continue
@@ -239,34 +241,34 @@ export function applyBlockActionsToState(prevState: RuntimeSceneSnapshot, block:
       if (!forceAllActions && !isActionCompleted) continue
     }
 
-    // 鐩告満鍔ㄤ綔锛氬簲鐢ㄥ埌 newState.camera
+    // Camera action: apply to newState.camera
     if (action.target === 'camera') {
       handler.applyToState(newState.camera as WriteableState, action)
       continue
     }
 
-    // 瀵硅薄鍔ㄤ綔锛氭煡鎵剧洰鏍囧璞?
+    // Object action: look up target object
     const targetObj = findTargetObject(newState, action.target, scene)
     if (!targetObj) continue
 
-    // 鐢婚潰鐗规晥鍔ㄤ綔锛欻andler 宸茬洿鎺ユ搷浣?state.params锛屾棤闇€ flat 鈫?params 閫傞厤
+    // Screen effect action: Handler operates directly on state.params without flat -> params adaptation
     if (action.type === 'set_screen_effect' || action.type === 'tween_screen_effect') {
       handler.applyToState(targetObj as unknown as WriteableState, action)
       continue
     }
 
-    // 光源动作：Handler 直接操作 state 上的 light 字段（对标 screen_effect 分支）
+    // Light action: Handler directly operates on light fields on state (mirrors screen_effect branch)
     if (action.type === 'set_light' || action.type === 'tween_light') {
       handler.applyToState(targetObj as unknown as WriteableState, action)
       continue
     }
 
-    // 闇€瑕佽法瀵硅薄鐘舵€佽闂殑 action 浼犲叆 ctx锛屽叾浠栫洿鎺ュ鎵?
+    // Actions requiring cross-object state access receive ctx; others delegate directly
     if (action.type === 'set_lifecycle' || action.type === 'set_transform' || action.type === 'tween_transform') {
       handler.applyToState(targetObj as WriteableState, action, ctx)
     } else if (action.type === 'set_mask') {
-      // Clip-Mask Phase 1: set_mask 不在主循环里直接应用，
-      // 由下方 mask post-pass 统一进行同 slot 折叠 + 跨 mask 独占裁决（D1.5）。
+      // Clip-Mask Phase 1: set_mask is not applied directly in main loop,
+      // but unified in mask post-pass below for same-slot folding + cross-mask exclusivity arbitration (D1.5).
       continue
     } else {
       handler.applyToState(targetObj as WriteableState, action)
@@ -276,15 +278,15 @@ export function applyBlockActionsToState(prevState: RuntimeSceneSnapshot, block:
 
   reconcileRuntimeHierarchy(newState)
 
-  // ========== Clip-Mask Phase 1: Mask post-pass (D1.5 同槽 target 归并) ==========
-  // 详见 docs/features/clip-mask.md §3 D1.5
+  // ========== Clip-Mask Phase 1: Mask post-pass (D1.5 same-slot target merging) ==========
+  // See docs/features/clip-mask.md §3 D1.5
   applyMaskPostPass(prevState, newState, sortedActions)
 
-  // v9.5: 搴旂敤鎵€鏈?action 鍚庯紝澶勭悊 autoDespawnOnBlockEnd
-  // skipAutoDespawn=true 鏃惰烦杩囨姝ラ锛堢敤浜?accumulatedParentIds 绛夐渶瑕佽幏鍙?set_parent 鍚庣湡瀹炵姸鎬佺殑鍦烘櫙锛?
+  // v9.5: After applying all actions, handle autoDespawnOnBlockEnd
+  // skipAutoDespawn=true skips this step (for accumulatedParentIds needing real state after set_parent)
   if (!skipAutoDespawn) {
-    // 瀵逛簬鍑虹敓 Action (spawned=true) 涓?autoDespawnOnBlockEnd !== false 鐨勫璞★紝
-    // 濡傛灉鍚?Block 鍐呮病鏈夋墜鍔ㄦ秷浜?Action锛屽垯鑷姩灏嗗叾 spawned 璁句负 false
+    // For birth actions (spawned=true) with autoDespawnOnBlockEnd !== false,
+    // if no manual despawn action exists in same Block, automatically set spawned to false
     const birthActions = sortedActions.filter(
       a => a.type === 'set_lifecycle'
         && (a.params as { spawned: boolean; autoDespawnOnBlockEnd?: boolean }).spawned === true
@@ -293,7 +295,7 @@ export function applyBlockActionsToState(prevState: RuntimeSceneSnapshot, block:
       const lifecycleParams = birthAction.params as { spawned: boolean; autoDespawnOnBlockEnd?: boolean }
       if (lifecycleParams.autoDespawnOnBlockEnd === false) continue
 
-      // 妫€鏌ュ悓 Block 鍐呮槸鍚﹀凡鏈夋墜鍔ㄦ秷浜?
+      // Check if manual despawn exists in same Block
       const hasManualDespawn = sortedActions.some(
         a => a.type === 'set_lifecycle'
           && a.target === birthAction.target
@@ -301,7 +303,7 @@ export function applyBlockActionsToState(prevState: RuntimeSceneSnapshot, block:
       )
       if (hasManualDespawn) continue
 
-      // 鑷姩娑堜骸锛氫慨鏀圭姸鎬?
+      // Auto despawn: modify state
       const autoDespawnTarget = findTargetObject(newState, birthAction.target, scene)
       if (autoDespawnTarget) {
         autoDespawnTarget.spawned = false
@@ -331,21 +333,23 @@ export function applyBlockActionsToState(prevState: RuntimeSceneSnapshot, block:
   return newState
 }
 
-/** * Clip-Mask Phase 1: D1.5 同槽 target 归并 + 跨 mask 独占裁决
+/**
+ * Clip-Mask Phase 1: D1.5 same-slot target merging + cross-mask exclusivity arbitration
  *
- * 详见 docs/features/clip-mask.md §3 D1.5 与
- * docs/features/clip-mask.md §11.4.3。
+ * See docs/features/clip-mask.md §3 D1.5 and
+ * docs/features/clip-mask.md §11.4.3.
  *
- * 算法（按 slotIndex 升序逐 slot 处理）：
- *   1. 折叠：参与 mask 的 set_mask 在槽内按时间顺序套用部分更新（targetIds 整段替换、shape/width/height 覆盖）
- *      → 得每个参与 mask 的 candidate.targetIds。
- *   2. 构造 Claimers(t)：参与 mask（candidate 含 t）∪ 上游已占 t 且本 slot 未参与的 owner。
- *   3. 裁决：|Claimers| ≥ 2 时按 newState.objects 中 mask 的稳定索引升序取首位，
- *      其余从 candidate 中剔除并聚合 1 条 warn；非参与 mask 静默保留（"无隐式释放"）。
- *   4. 写回：仅 *显式参与* 本 slot 的 mask 被修改，未参与者（含原 owner）状态不动。
+ * Algorithm (processed slot-by-slot in ascending slotIndex order):
+ *   1. Fold: participating mask set_mask partially applied in chronological order within slot
+ *      (targetIds full replacement, shape/width/height overwrite)
+ *      -> yields candidate.targetIds for each participating mask.
+ *   2. Construct Claimers(t): participating masks (candidate contains t) union upstream owner holding t without participating in this slot.
+ *   3. Arbitrate: when |Claimers| >= 2, select head by stable ascending index of masks in newState.objects,
+ *      prune rest from candidates with aggregated warning; non-participating masks silently retain ("no implicit release").
+ *   4. Write-back: only masks *explicitly participating* in this slot are modified; non-participants (including original owner) untouched.
  *
- * 导出以供 ScenePlayer.evaluateStates / FrameCapture 等 细颗度的交互预览复用同一后处理逻辑，
- * 避免 在 applyPreviewObjectAction 中逐对象应用 set_mask 时丢失跨 mask 独占 / 順序无关转移 语义。
+ * Exported for fine-grained interactive previews (ScenePlayer.evaluateStates / FrameCapture) to reuse identical post-processing logic,
+ * avoiding loss of cross-mask exclusivity / order-independent transfer semantics when applying set_mask per object in applyPreviewObjectAction.
  */
 export function applyMaskPostPass(
   prevState: RuntimeSceneSnapshot,
@@ -354,7 +358,7 @@ export function applyMaskPostPass(
 ): void {
   type MaskLikeObj = SceneObject & { type: 'mask'; targetIds: string[]; shape: 'rectangle' | 'ellipse'; width: number; height: number }
 
-  // 收集 set_mask（按 slotIndex 分组；组内顺序保留 sortedActions 顺序）
+  // Collect set_mask (grouped by slotIndex; preserving sortedActions order within group)
   const setMasksBySlot = new Map<number, import('@/types/screenplay').SetMaskAction[]>()
   for (const a of sortedActions) {
     if (a.type !== 'set_mask') continue
@@ -364,30 +368,30 @@ export function applyMaskPostPass(
   }
   if (setMasksBySlot.size === 0) return
 
-  // 初始化 mask running state（来自 prevState）
+  // Initialize mask running state (from prevState)
   const running = new Map<string, string[]>() // maskId → targetIds
   for (const obj of prevState.objects) {
     if (obj.type === 'mask') {
       running.set(obj.id, [...((obj as MaskLikeObj).targetIds ?? [])])
     }
   }
-  // 还需补上本 block 内新出生的 mask（在 prevState 不存在但在 newState 存在）
+  // Include newly spawned masks within this block (not in prevState but existing in newState)
   for (const obj of newState.objects) {
     if (obj.type === 'mask' && !running.has(obj.id)) {
-      // 新出生 mask 初始 targetIds 取 setupState 默认（newState 中的 mask 已被主循环跳过 set_mask
-      // 故其 targetIds 当前是 setup 原值；将其作为 pre-block running）
+      // New mask initial targetIds taken from setupState defaults (masks in newState were skipped by main loop set_mask,
+      // so targetIds is currently setup original value; use as pre-block running)
       running.set(obj.id, [...((obj as MaskLikeObj).targetIds ?? [])])
     }
   }
 
-  // mask 稳定索引（newState.objects 顺序）
+  // Mask stable index (newState.objects order)
   const maskIndex = new Map<string, number>()
   newState.objects.forEach((o, i) => {
     if (o.type === 'mask') maskIndex.set(o.id, i)
   })
 
-  // 目标合法性索引：仅活在 newState 中且类型允许（与 maskUtils.isAllowedMaskTargetType 一致）
-  // 用于剔除 set_mask 通过手改 / 旧版工程残留 / 反序列化漏网带入的非法或死引用 targetIds。
+  // Target validity index: alive in newState with permitted type (matching maskUtils.isAllowedMaskTargetType)
+  // Used to prune illegal or dead-reference targetIds introduced by manual edits / legacy project leftovers / deserialization gaps.
   const validTargetIds = new Set<string>()
   for (const o of newState.objects) {
     if (isAllowedMaskTargetType(o.type)) validTargetIds.add(o.id)
@@ -396,7 +400,7 @@ export function applyMaskPostPass(
     const kept: string[] = []
     const dropped: string[] = []
     for (const id of ids) {
-      // 不允许 mask 自指
+      // Disallow mask self-reference
       if (id === maskId) { dropped.push(id); continue }
       if (validTargetIds.has(id)) kept.push(id)
       else dropped.push(id)
@@ -404,12 +408,12 @@ export function applyMaskPostPass(
     return { kept, dropped }
   }
 
-  // 按 slotIndex 升序处理
+  // Process in ascending slotIndex order
   const slotOrder = [...setMasksBySlot.keys()].sort((a, b) => a - b)
   for (const slot of slotOrder) {
     const actions = setMasksBySlot.get(slot)!
 
-    // 1. 槽内折叠：每个参与 mask 在 slot 内按时间顺序合并字段
+    // 1. In-slot folding: merge fields chronologically for each participating mask within slot
     interface Folded { targetIds?: string[]; shape?: 'rectangle' | 'ellipse'; width?: number; height?: number }
     const folded = new Map<string, Folded>()
     for (const a of actions) {
@@ -421,9 +425,9 @@ export function applyMaskPostPass(
       folded.set(a.target, cur)
     }
 
-    // 2. 候选 targetIds：参与 mask 取 folded.targetIds（若 undefined 则保持 running）
-    //    同步执行 sanitize：剔除非法类型 / 死引用 / 自指。
-    const candidate = new Map<string, string[]>() // 仅 *参与* mask
+    // 2. Candidate targetIds: participating masks take folded.targetIds (keep running if undefined)
+    //    Simultaneously sanitize: prune illegal types / dead references / self-references.
+    const candidate = new Map<string, string[]>() // Participating masks only
     const sanitizeWarnings: string[] = []
     for (const [maskId, f] of folded) {
       const raw = f.targetIds !== undefined
@@ -435,8 +439,8 @@ export function applyMaskPostPass(
       }
       candidate.set(maskId, kept)
     }
-    // 同步对未参与 mask 的 running 也做一次 sanitize，避免它们在下方 Claimers 计算中
-    // 把已删除 / 非法 id 引入裁决（不写回 running 本身——保持"无隐式释放"语义）。
+    // Also sanitize running of non-participating masks, preventing them from introducing deleted / invalid IDs
+    // into Claimers calculation below (without mutating running itself — preserving "no implicit release" semantics).
     const runningSanitized = new Map<string, string[]>()
     for (const [maskId, ids] of running) {
       if (folded.has(maskId)) continue
@@ -447,7 +451,7 @@ export function applyMaskPostPass(
       console.warn(`[set_mask] slot ${slot}: invalid targetIds dropped — ${sanitizeWarnings.join('; ')}`)
     }
 
-    // 3. 构造 Claimers(t)
+    // 3. Construct Claimers(t)
     const claimers = new Map<string, string[]>() // targetId → maskId[]
     const pushClaimer = (t: string, m: string) => {
       const arr = claimers.get(t)
@@ -464,7 +468,7 @@ export function applyMaskPostPass(
       for (const t of targets) pushClaimer(t, maskId)
     }
 
-    // 4. 裁决：稳定索引升序取首位
+    // 4. Arbitrate: stable index ascending order selects first
     const evicted: { maskId: string; target: string; winner: string }[] = []
     for (const [t, masks] of claimers) {
       if (masks.length < 2) continue
@@ -473,7 +477,7 @@ export function applyMaskPostPass(
       )
       const winner = sorted[0]!
       for (const loser of sorted.slice(1)) {
-        // 非参与 mask（原 owner）静默保留 t —— 不修改其 running
+        // Non-participating mask (original owner) silently retains t — do not modify its running
         if (!folded.has(loser)) continue
         const arr = candidate.get(loser)
         if (!arr) continue
@@ -490,7 +494,7 @@ export function applyMaskPostPass(
       console.warn(`[set_mask] slot ${slot}: contested targets resolved by stable index — ${summary}`)
     }
 
-    // 5. 写回：仅参与 mask
+    // 5. Write back: participating masks only
     for (const [maskId, f] of folded) {
       const obj = newState.objects.find(o => o.id === maskId) as MaskLikeObj | undefined
       if (!obj || obj.type !== 'mask') continue
@@ -504,27 +508,28 @@ export function applyMaskPostPass(
   }
 }
 
-/** * 鏌ユ壘鐩爣瀵硅薄
- * @param setup 鍦烘櫙璁剧疆
- * @param target 鐩爣鏍囪瘑锛堝彲鑳芥槸actorAlias鎴杘bjectId锛?
- * @param scene 鍦烘櫙瀹瑰櫒锛堝彲閫夛紝鐢ㄤ簬鏌ユ壘婕斿憳閰嶇疆锛?
+/**
+ * Look up target object
+ * @param setup Scene setup
+ * @param target Target identifier (instance ID or objectId)
+ * @param scene Scene container (optional, used for actor lookup)
  */
 function findTargetObject(
   setup: { objects: SceneObject[] },
   target: string,
   _scene?: SceneContainer
 ): SceneObject | null {
-  // 棣栧厛灏濊瘯閫氳繃objectId鏌ユ壘
+  // First attempt lookup by objectId
   let targetObj = setup.objects.find(obj => obj.id === target)
   if (targetObj) return targetObj
 
-  // 濡傛灉鏄?camera'锛岃繑鍥炵浉鏈哄璞★紙闇€瑕佺壒娈婂鐞嗭級
+  // If camera, return camera object (requires special handling)
   if (target === 'camera') {
-    // 鐩告満涓嶅湪objects涓紝闇€瑕佺壒娈婂鐞?
+    // Camera is not in objects, requires special handling
     return null
   }
 
-  // v7.0: target 鐜板湪鏄疄渚婭D锛岀洿鎺ラ€氳繃ID鏌ユ壘
+  // v7.0: target is now instance ID, look up directly by ID
   targetObj = setup.objects.find(obj => obj.id === target)
   if (targetObj) return targetObj
 
@@ -532,11 +537,11 @@ function findTargetObject(
 }
 
 /**
- * 鏇存柊 Block 涓殑 action
- * @param scene 鍦烘櫙瀹瑰櫒
+ * Update action in Block
+ * @param scene Scene container
  * @param blockId Block ID
- * @param actionIndex action 绱㈠紩
- * @param updates 鏇存柊鍐呭
+ * @param actionIndex Action index
+ * @param updates Update content
  */
 export function updateActionInBlock(
   scene: SceneContainer,
@@ -556,10 +561,10 @@ export function updateActionInBlock(
 }
 
 /**
- * 娣诲姞 action 鍒?Block
- * @param scene 鍦烘櫙瀹瑰櫒
+ * Add action to Block
+ * @param scene Scene container
  * @param blockId Block ID
- * @param action 鏂扮殑 action
+ * @param action New action
  */
 export function addActionToBlock(
   scene: SceneContainer,
@@ -579,7 +584,7 @@ export function addActionToBlock(
 // ==================== Ghost Mode Core Functions ====================
 
 /**
- * 鍒ゆ柇鍔ㄤ綔鏄惁褰卞搷鐩爣瀵硅薄锛堢灛鏃跺姩浣滐級
+ * Determine whether action affects target object (point action)
  */
 function isPointActionForTarget(action: Action, targetId: string): boolean {
   if (action.target !== targetId) return false
@@ -587,7 +592,7 @@ function isPointActionForTarget(action: Action, targetId: string): boolean {
 }
 
 /**
- * 鍒ゆ柇鍔ㄤ綔鏄惁褰卞搷鐩爣瀵硅薄锛堟寔缁姩浣滐級
+ * Determine whether action affects target object (duration action)
  */
 function isDurationActionForTarget(action: Action, targetId: string): boolean {
   if (action.target !== targetId) return false
@@ -693,23 +698,23 @@ function getObjectStateBeforeActionSlot(
 }
 
 /**
- * 鍒ゆ柇鐩告満鐬椂鍔ㄤ綔
+ * Determine camera point action
  */
 function isCameraPointAction(action: Action): boolean {
   return action.target === 'camera' && action.type === 'camera_cut'
 }
 
 /**
- * 鍒ゆ柇鐩告満鎸佺画鍔ㄤ綔 (浠?camera_move 鏀寔 Ghost)
+ * Determine camera duration action (camera_move supports Ghost)
  */
 function isCameraDurationAction(action: Action): boolean {
   return action.target === 'camera' && action.type === 'camera_move'
 }
 
 /**
- * 甯?context 鐨勫姩浣滃簲鐢紙set_parent / set_lifecycle 闇€瑕佽闂叾浠栧璞＄姸鎬侊級
- * - set_parent: 鍧愭爣琛ュ伩闇€瑕佽鍙?parent 瀵硅薄鐨勪綅缃?
- * - set_lifecycle: composite 娑堜骸鏃堕渶瑕佺骇鑱?鍐掓场瀛愬璞?
+ * Apply action with context (set_parent / set_lifecycle requires access to other object states)
+ * - set_parent: Coordinate compensation needs to read parent object position
+ * - set_lifecycle: Composite despawn needs to cascade/bubble child objects
  */
 function applyActionToObjectWithContext(
   state: SceneObject,
@@ -738,7 +743,7 @@ function applyActionToObjectWithContext(
 }
 
 /**
- * 搴旂敤鍔ㄤ綔鍒扮浉鏈虹姸鎬?
+ * Apply action to camera state
  */
 function applyActionToCamera(state: RuntimeCameraState, action: Action): RuntimeCameraState {
   const newState: RuntimeCameraState = { ...state }
@@ -753,12 +758,13 @@ function applyActionToCamera(state: RuntimeCameraState, action: Action): Runtime
 }
 
 /**
- * 璁＄畻鎸囧畾 Slot 鐨勬墍鏈夊璞″拰鐩告満鐨?Ghost/Real 鐘舵€?
+ * Calculate Ghost/Real states for all objects and camera at specified Slot
  * 
- * @param scene 鍦烘櫙瀹瑰櫒
- * @param block 褰撳墠 Block
- * @param slotIndex 褰撳墠閫変腑鐨?Slot 绱㈠紩
- * @returns SlotStatesResult 鍖呭惈鎵€鏈夊璞″拰鐩告満鐨勭姸鎬佸
+ * @param scene Scene container
+ * @param block Current Block
+ * @param slotIndex Currently selected Slot index
+ * @param prevContextOverride Optional previous context override
+ * @returns SlotStatesResult containing state pairs for all objects and camera
  */
 export function calculateSlotStates(
   scene: SceneContainer,
@@ -768,16 +774,16 @@ export function calculateSlotStates(
 ): SlotStatesResult {
   const results = new Map<string, GhostStateResult>()
 
-  // 1. 璁＄畻 Block 寮€濮嬪墠鐨勫熀纭€鐘舵€?(PrevContext)
+  // 1. Calculate base state before Block starts (PrevContext)
   const prevContext = prevContextOverride ?? calculatePrevContext(scene, block.id)
   const actions = block.actions || []
 
-  // 2. 璁＄畻 BaseState: 搴旂敤鎵€鏈?slotIndex < currentSlot 鐨勫凡瀹屾垚鍔ㄤ綔
-  // 杩欐槸"褰撳墠 Slot 寮€濮嬫椂"鐨勭姸鎬?
+  // 2. Calculate BaseState: apply all completed actions where slotIndex < currentSlot
+  // This is the state "at the start of current Slot"
   const baseState: RuntimeSceneSnapshot = JSON.parse(JSON.stringify(prevContext)) as RuntimeSceneSnapshot
   reconcileRuntimeHierarchy(baseState)
 
-  // 寤虹珛 objectId 鈫?prevContext.objects 绱㈠紩鏄犲皠锛堢敤浜庡悓 slot 鐨?set_parent 鎺掑簭锛?
+  // Build objectId -> prevContext.objects index mapping (for set_parent sorting in same slot)
   const objectIndexMap = new Map<string, number>()
   prevContext.objects.forEach((obj, idx) => {
     objectIndexMap.set(obj.id, idx)
@@ -795,9 +801,9 @@ export function calculateSlotStates(
       continue
     }
 
-    // 鍙鐞嗗湪褰撳墠 Slot 涔嬪墠宸插畬鎴愮殑鍔ㄤ綔
+    // Process actions completed before current Slot only
     if (action.category === 'point' && action.slotIndex < slotIndex) {
-      // Point action: 鍦?slotIndex 涔嬪墠瑙﹀彂鐨?
+      // Point action: triggered before slotIndex
       const targetObj = findTargetObject(baseState, action.target, scene)
       if (targetObj) {
         const idx = baseState.objects.findIndex(o => o.id === action.target)
@@ -806,7 +812,7 @@ export function calculateSlotStates(
           reconcileRuntimeHierarchy(baseState)
         }
       }
-      // 鐩告満鍔ㄤ綔
+      // Camera action
       if (action.target === 'camera' && action.type === 'camera_cut') {
         baseState.camera = {
           ...baseState.camera,
@@ -820,7 +826,7 @@ export function calculateSlotStates(
     } else if (action.category === 'duration') {
       const span = (action as { slotSpan?: number }).slotSpan ?? 1
       const endSlot = action.slotIndex + span
-      // 鎸佺画鍔ㄤ綔: 鍦ㄥ綋鍓?Slot 涔嬪墠宸插畬鎴愮殑
+      // Duration action: completed before current Slot
       if (endSlot <= slotIndex) {
         const targetObj = findTargetObject(baseState, action.target, scene)
         if (targetObj) {
@@ -830,7 +836,7 @@ export function calculateSlotStates(
             reconcileRuntimeHierarchy(baseState)
           }
         }
-        // 鐩告満鍔ㄤ綔
+      // Camera action
         if (action.target === 'camera' && action.type === 'camera_move') {
           baseState.camera = {
             ...baseState.camera,
@@ -845,7 +851,7 @@ export function calculateSlotStates(
     }
   }
 
-  // 3. 閬嶅巻鎵€鏈夊璞★紝璁＄畻 Ghost/Real 鐘舵€?
+  // 3. Traverse all objects, compute Ghost/Real states
   if (hasCustomActionOrderForSlot(sortedActions, slotIndex)) {
     const slotStartState: RuntimeSceneSnapshot = JSON.parse(JSON.stringify(baseState)) as RuntimeSceneSnapshot
     const directPointGhostTargets = new Set<string>()
@@ -937,20 +943,20 @@ export function calculateSlotStates(
     const hasPointGhostAction = preStructurePointActions.some(shouldCreateObjectGhost)
     const activeGhostDurationActions = activeDurationActions.filter(shouldCreateObjectGhost)
 
-    // 鎯呭喌 A: 鏈夌灛鏃跺姩浣?
+    // Case A: Has point action
     if (preStructurePointActions.length > 0) {
       let realState = JSON.parse(JSON.stringify(baseObj)) as SceneObject
       for (const action of preStructurePointActions) {
         realState = applyActionToObjectWithContext(realState, action, baseState)
       }
-      // 鍚屾椂搴旂敤娲昏穬鐨勬寔缁姩浣滅洰鏍囩姸鎬?
+      // Also apply active duration action target states
       for (const action of activeDurationActions) {
         realState = applyActionToObjectWithContext(realState, action, baseState)
       }
 
-      // v19: GCA 淇 鈥?灏嗗綋鍓?slot 鍐呯殑璇勪及缁撴灉鍐欏洖 baseState锛?
-      // 浣垮悗缁瓙瀵硅薄鐨?globalToLocal 鑳借鍙栧埌 parent 鐨勬渶鏂颁綅缃€?
-      // 鍚﹀垯 child 鐨?globalToLocal 浣跨敤鐨勬槸 slot 寮€濮嬫椂鐨?parent 浣嶇疆锛岃€岄潪绱Н鏇存柊鍚庣殑銆?
+      // v19: GCA fix — write evaluation result within current slot back to baseState,
+      // so subsequent child object globalToLocal can read parent's latest position.
+      // Otherwise child globalToLocal uses parent position at slot start rather than accumulated update.
       const baseIdx = baseState.objects.findIndex(o => o.id === objId)
       if (baseIdx !== -1) {
         baseState.objects[baseIdx] = JSON.parse(JSON.stringify(realState)) as SceneObject
@@ -976,7 +982,7 @@ export function calculateSlotStates(
       continue
     }
 
-    // 鎯呭喌 B: 鏈夎繘琛屼腑鐨勬寔缁姩浣?
+    // Case B: Has ongoing duration action
     if (activeDurationActions.length > 0) {
       const earliestGhostAction = activeGhostDurationActions.length > 0
         ? activeGhostDurationActions.reduce((prev, curr) =>
@@ -987,13 +993,13 @@ export function calculateSlotStates(
         ? getObjectStateBeforeActionSlot(prevContext, sortedActions, objId, earliestGhostAction.slotIndex, baseObj)
         : null
 
-      // Real State: 搴旂敤鎵€鏈夋椿璺冩寔缁姩浣滅殑鐩爣鐘舵€?
+      // Real State: apply target state of all active duration actions
       let realState = JSON.parse(JSON.stringify(baseObj)) as SceneObject
       for (const action of activeDurationActions) {
         realState = applyActionToObjectWithContext(realState, action, baseState)
       }
 
-      // v19: GCA 淇 鈥?鍚屾儏鍐?A锛屽啓鍥?baseState 渚涘悗缁瓙瀵硅薄浣跨敤
+      // v19: GCA fix — same as Case A, write back to baseState for subsequent child objects
       const baseIdx = baseState.objects.findIndex(o => o.id === objId)
       if (baseIdx !== -1) {
         baseState.objects[baseIdx] = JSON.parse(JSON.stringify(realState)) as SceneObject
@@ -1007,7 +1013,7 @@ export function calculateSlotStates(
       continue
     }
 
-    // 鎯呭喌 C: 鏃犲姩浣?(Idle)
+    // Case C: No action (Idle)
     results.set(objId, {
       ghost: null,
       real: JSON.parse(JSON.stringify(baseObj)) as SceneObject
@@ -1104,13 +1110,13 @@ export function calculateSlotStates(
   }
   }
 
-  // 3.5 Post-process: 鍚屾 composite 鐨?childIds + 瀛愬璞＄殑 parentId
-  // Phase 3 閫愬璞¤瘎浼版椂锛宧andler 鐨勮法瀵硅薄淇敼锛堥€氳繃 ctx.getObjectState锛夊啓鍏?baseState锛?
-  // 浣嗚淇敼瀵硅薄鐨?results.real 鍙兘宸茬敓鎴愶紙璇勪及椤哄簭闂锛夛紝闇€瑕佷粠 baseState 鍚屾銆?
+  // 3.5 Post-process: synchronize composite childIds + child object parentId
+  // In Phase 3 per-object evaluation, handler cross-object modifications (via ctx.getObjectState) write to baseState,
+  // but modified object results.real may already be generated (evaluation order issue), requiring sync from baseState.
 
   reconcileRuntimeHierarchy(baseState)
 
-  // Pass 1: 鍚屾 composite 鐨?childIds 鍜?renderChain
+  // Pass 1: synchronize composite childIds and renderChain
   for (const [objId, result] of results) {
     const baseObj = baseState.objects.find(o => o.id === objId)
     if (baseObj?.type !== 'composite') continue
@@ -1123,7 +1129,7 @@ export function calculateSlotStates(
       }
     }
 
-    // v19: 澧為噺鍗忚皟 entity 鐨?renderChain
+    // v19: incrementally reconcile entity renderChain
     const baseMode = (baseObj as CompositeObject).compositeMode
     if (baseMode === 'entity') {
       const existingChain = (baseObj as CompositeObject).renderChain ?? []
@@ -1135,19 +1141,19 @@ export function calculateSlotStates(
     }
   }
 
-  // v21: 澧為噺鍗忚皟鍦烘櫙绾?renderChain锛堝鐞?spawn/despawn 寮曡捣鐨勬牴绾у璞￠泦鍚堝彉鍖栵級
+  // v21: incrementally reconcile scene-level renderChain (handles root object set changes from spawn/despawn)
   baseState.renderChain = reconcileRenderChain(
     baseState.renderChain ?? [], baseState.objects
   )
 
-  // Pass 2: 鍚屾鎵€鏈夊璞＄殑 parentId 鍜屽潗鏍?
-  // SetLifecycleHandler锛堝嚭鐢熼檮鍔?娑堜骸鍐掓场锛夊拰 SetParentHandler 鍙兘閫氳繃 ctx 淇敼浜?
-  // baseState 涓叾浠栧璞＄殑 parentId/鍧愭爣/spawned锛屼絾杩欎簺瀵硅薄鐨?results.real 鍙兘宸插湪 Phase 3 涓敓鎴愩€?
-  // 鍏ㄥ眬閬嶅巻纭繚鏃犺璇勪及椤哄簭濡備綍锛屾墍鏈夎法瀵硅薄淇敼閮借兘鍚屾鍒?results銆?
+  // Pass 2: synchronize parentId and coordinates for all objects
+  // SetLifecycleHandler (birth attachment / death bubbling) and SetParentHandler may modify
+  // parentId / coords / spawned of other objects in baseState via ctx, which may already be generated in Phase 3.
+  // Global traversal ensures all cross-object modifications sync to results regardless of evaluation order.
   for (const [objId, result] of results) {
     const baseObj = baseState.objects.find(o => o.id === objId)
     if (!baseObj) continue
-    // parentId 鍙樺寲锛氬悓姝?parentId + 鍧愭爣 + flipX锛堝嚭鐢熼檮鍔?娑堜骸鍐掓场/set_parent锛?
+    // parentId change: sync parentId + coordinates + flipX (birth attach / death bubble / set_parent)
     if (result.real.parentId !== baseObj.parentId) {
       ;(result.real as unknown as { parentId: string | undefined }).parentId = baseObj.parentId
       result.real.x = baseObj.x
@@ -1157,14 +1163,14 @@ export function calculateSlotStates(
       result.real.rotation = baseObj.rotation
       ;(result.real as unknown as { flipX: boolean }).flipX = (baseObj as unknown as { flipX?: boolean }).flipX ?? false
     }
-    // spawned 鍙樺寲锛氬悓姝?spawned锛坋ntity 绾ц仈鍑虹敓/娑堜骸锛宲arentId 鍙兘涓嶅彉锛?
+    // spawned change: sync spawned (entity cascade birth/death, parentId may remain unchanged)
     if (result.real.spawned !== baseObj.spawned) {
       ;(result.real as unknown as { spawned: boolean }).spawned = (baseObj as unknown as { spawned?: boolean }).spawned !== false
     }
 
   }
 
-  // 4. 璁＄畻鐩告満鐨?Ghost/Real 鐘舵€?
+  // 4. Calculate camera Ghost/Real states
   const baseCameraState: RuntimeCameraState = {
     x: baseState.camera.x,
     y: baseState.camera.y,
@@ -1229,21 +1235,21 @@ export function calculateSlotStates(
 }
 
 /**
- * 璁＄畻鍦烘櫙鐨勬渶缁堢姸鎬?(鐢ㄤ簬鍦烘櫙缁ф壙)
- * @param scene 鍦烘櫙瀵硅薄
- * @returns 鏈€缁堢殑SceneSetup
+ * Calculate final scene state (used for scene inheritance)
+ * @param scene Scene object
+ * @returns Final SceneSetup
  */
 export function calculateFinalSceneState(scene: SceneContainer): SceneSetup {
-  // 1. 浠庡垵濮婼etup鍒涘缓 RuntimeSceneSnapshot
+  // 1. Create RuntimeSceneSnapshot from initial Setup
   let currentState: RuntimeSceneSnapshot = createRuntimeSnapshot(scene.setup)
 
-  // 2. 閬嶅巻鎵€鏈夎剼鏈潡骞跺簲鐢ㄥ姩浣?
+  // 2. Traverse all script blocks and apply actions
   for (const block of scene.script) {
-    // forceAllActions = true: 寮哄埗搴旂敤鎵€鏈夊姩浣滅殑鏈€缁堢姸鎬?(蹇界暐鏃堕暱)
+    // forceAllActions = true: force apply final state of all actions (ignoring duration)
     currentState = applyBlockActionsToState(currentState, block, scene, true)
   }
 
-  // 3. 杞洖 SceneSetup锛堟寔涔呭寲鏍煎紡锛?
+  // 3. Convert back to SceneSetup (persistence format)
   return {
     camera: {
       x: currentState.camera.x,
@@ -1258,21 +1264,21 @@ export function calculateFinalSceneState(scene: SceneContainer): SceneSetup {
 }
 
 /**
- * 鍒涘缓缁ф壙鐨凷etup (杩囨护鎺?spawn: false 鐨勫璞?
- * @param sourceScene 婧愬満鏅?
- * @returns 鏂板満鏅殑Setup
+ * Create inherited Setup (filters out objects with spawned: false)
+ * @param sourceScene Source scene
+ * @returns Setup for new scene
  */
 export function createInheritedSetup(sourceScene: SceneContainer): SceneSetup {
   const finalState = calculateFinalSceneState(sourceScene)
 
-  // 杩囨护瀵硅薄: 绉婚櫎鎵€鏈?spawned 涓?false 鐨勫璞?
+  // Filter objects: remove all objects where spawned is false
   const filteredObjects = finalState.objects.filter(obj => {
-    // undefined 榛樿涓?true (v9.3 鍏煎)
+    // undefined defaults to true (v9.3 compatibility)
     return obj.spawned !== false
   })
 
-  // 杩斿洖鏂扮殑 Setup
-  // v19: 缁ф壙 renderChain 骞惰繃婊ゆ帀宸茬Щ闄ょ殑瀵硅薄 ID
+  // Return new Setup
+  // v19: inherit renderChain and filter out removed object IDs
   const survivingIds = new Set(filteredObjects.map(o => o.id))
   const inheritedRenderChain = (finalState.renderChain ?? []).filter(id => survivingIds.has(id))
   return {

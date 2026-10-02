@@ -1,11 +1,11 @@
 /**
  * WorkbenchBaseTransformSnapshot.spec.ts
  *
- * 覆盖：
- * - capture 返回的快照是独立副本（后续对容器的改动不会污染快照）
- * - apply 能把容器 position/scale/rotation/alpha/pivot 完整还原
- * - Phase 0 smoke：模拟"加载 A 动画 → 用户改动 pivot → 切 B（空）动画"路径后，
- *   容器应回到 mount 快照（特别是 pivot 必须被还原，否则会残留上一条轨道的 track.pivot）
+ * Covers:
+ * - snapshot returned by capture is independent copy (subsequent container modifications do not pollute snapshot)
+ * - apply completely restores container position/scale/rotation/alpha/pivot
+ * - Phase 0 smoke: simulates "load animation A -> user modifies pivot -> switch to empty animation B",
+ *   container returns to mount snapshot (pivot must be restored, avoiding leftovers from track.pivot)
  */
 
 import * as PIXI from 'pixi.js'
@@ -33,7 +33,7 @@ function makeContainer(opts: {
 }
 
 describe('WorkbenchBaseTransformSnapshot — captureContainerBaseState', () => {
-    it('完整读取当前容器的几何量', () => {
+    it('completely reads geometric quantities of current container', () => {
         const c = makeContainer({
             position: [10, 20],
             scale: [1.5, 2],
@@ -52,7 +52,7 @@ describe('WorkbenchBaseTransformSnapshot — captureContainerBaseState', () => {
         expect(state.alpha).toBe(0.8)
     })
 
-    it('返回的快照是独立副本——后续改容器不会影响快照', () => {
+    it('returned snapshot is independent copy - subsequent container mutations do not affect snapshot', () => {
         const c = makeContainer({ position: [1, 2], pivot: [3, 4] })
         const state = captureContainerBaseState(c, null)
 
@@ -63,7 +63,7 @@ describe('WorkbenchBaseTransformSnapshot — captureContainerBaseState', () => {
         expect(state.pivot).toEqual({ x: 3, y: 4 })
     })
 
-    it('objectId = null 时也能正常捕获', () => {
+    it('captures normally even when objectId = null', () => {
         const c = new PIXI.Container()
         const state = captureContainerBaseState(c, null)
         expect(state.objectId).toBeNull()
@@ -71,7 +71,7 @@ describe('WorkbenchBaseTransformSnapshot — captureContainerBaseState', () => {
 })
 
 describe('WorkbenchBaseTransformSnapshot — applyContainerBaseTransform', () => {
-    it('把全部 5 个量完整写回容器', () => {
+    it('completely writes all 5 quantities back to container', () => {
         const snapshot = captureContainerBaseState(
             makeContainer({
                 position: [100, 200],
@@ -96,7 +96,7 @@ describe('WorkbenchBaseTransformSnapshot — applyContainerBaseTransform', () =>
         expect(target.alpha).toBe(0.6)
     })
 
-    it('不触碰 filters 和子节点——只还原几何量', () => {
+    it('does not touch filters and child nodes - restores geometric quantities only', () => {
         const target = new PIXI.Container()
         const child = new PIXI.Container()
         target.addChild(child)
@@ -111,9 +111,9 @@ describe('WorkbenchBaseTransformSnapshot — applyContainerBaseTransform', () =>
     })
 })
 
-describe('WorkbenchBaseTransformSnapshot — Phase 0 smoke：切换动画后容器状态回归', () => {
-    it('加载 A → 用户改动 pivot → 切 B（空）：恢复到 mount 时刻快照', () => {
-        // 1) mount 时刻（加载 A 前）——业务路径在 onContainerReady 捕获基准快照
+describe('WorkbenchBaseTransformSnapshot — Phase 0 smoke: container state returns after switching animation', () => {
+    it('load A -> user modifies pivot -> switch to B (empty): restores to mount snapshot', () => {
+        // 1) mount time (before loading A) - onContainerReady captures baseline snapshot
         const container = makeContainer({
             position: [50, 60],
             scale: [1, 1],
@@ -123,19 +123,19 @@ describe('WorkbenchBaseTransformSnapshot — Phase 0 smoke：切换动画后容�
         })
         const mountSnapshot = captureContainerBaseState(container, 'root')
 
-        // 2) 加载 A 动画 → 中间路径会改 container.pivot / position / rotation / scale
-        //    用户又在 PivotEditorPanel 里把 pivot 拖到新位置
+        // 2) Load animation A -> intermediate paths mutate container.pivot / position / rotation / scale
+        //    User drags pivot to new position in PivotEditorPanel
         container.position.set(120, 140)
         container.scale.set(1.4, 1.4)
         container.pivot.set(35, 40)
         container.rotation = 0.9
         container.alpha = 0.5
 
-        // 3) 切到 B（空动画）—— AnimationWorkbench.resetContainerToBaseStateWithKey 路径
-        //    会调用 applyContainerBaseTransform(container, mountSnapshot)
+        // 3) Switch to B (empty animation) - AnimationWorkbench.resetContainerToBaseStateWithKey path
+        //    calls applyContainerBaseTransform(container, mountSnapshot)
         applyContainerBaseTransform(container, mountSnapshot)
 
-        // 4) 断言：(position, scale, rotation, pivot, alpha) 全部回到 mount 快照
+        // 4) Assert: (position, scale, rotation, pivot, alpha) all return to mount snapshot
         expect(container.position.x).toBe(50)
         expect(container.position.y).toBe(60)
         expect(container.scale.x).toBe(1)
@@ -146,7 +146,7 @@ describe('WorkbenchBaseTransformSnapshot — Phase 0 smoke：切换动画后容�
         expect(container.alpha).toBe(1)
     })
 
-    it('连续多次 apply 保持幂等', () => {
+    it('multiple consecutive apply calls remain idempotent', () => {
         const container = makeContainer({ position: [1, 2], pivot: [3, 4] })
         const snapshot = captureContainerBaseState(container, null)
 

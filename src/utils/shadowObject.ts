@@ -1,20 +1,20 @@
 /**
- * Shadow Object 管理模块
+ * Shadow Object Management Module
  * 
- * 实现动态对象注入功能：
- * - 在 Action Mode 的任意 Slot 动态添加场景对象
- * - 使用 Shadow Pool 策略：对象在 Setup 层创建时 spawned=false
- * - 通过 Action 控制对象的出生时机和位置
+ * Implements dynamic object injection features:
+ * - Dynamically add scene objects at any Slot in Action Mode
+ * - Uses Shadow Pool strategy: objects created with spawned=false at Setup level
+ * - Controls object spawn timing and position via Actions
  * 
- * @version v9.2 - 使用 spawned 属性分离生命周期与可见性
+ * @version v9.2 - Separates lifecycle and visibility using spawned property
  */
 
 import { CANVAS_CENTER_X, CANVAS_CENTER_Y } from '@/constants/canvas'
 import { Z_INDEX_BACKGROUND, Z_INDEX_DEFAULT, Z_INDEX_LIGHT } from '@/constants/zIndex'
 
 /**
- * Shadow Prop 默认尺寸（与 sceneObjectStore.createPropObject 保持一致）
- * 渲染时会根据实际纹理尺寸更新
+ * Shadow Prop default dimensions (consistent with sceneObjectStore.createPropObject)
+ * Updated with actual texture dimensions during rendering
  */
 const SHADOW_PROP_DEFAULT_WIDTH = 200
 const SHADOW_PROP_DEFAULT_HEIGHT = 200
@@ -27,44 +27,44 @@ import type {
 import { generateId } from '@/utils/uuid'
 
 /**
- * 添加 Shadow Object 的参数
+ * Parameters for adding a Shadow Object
  */
 export interface AddShadowObjectParams {
-    /** 场景容器 */
+    /** Scene container */
     scene: SceneContainer
-    /** 当前脚本块 */
+    /** Current script block */
     block: ScriptBlock
-    /** 当前槽位索引 */
+    /** Current slot index */
     slotIndex: number
-    /** 对象类型 */
+    /** Object type */
     objectType: 'prop' | 'audio' | 'background' | 'symbol' | 'expression' | 'light'
-    /** 资源 ID (propId, audioId, backgroundId) */
+    /** Resource ID (propId, audioId, backgroundId) */
     resourceId: string
-    /** 资源名称 */
+    /** Resource name */
     resourceName: string
-    /** 相机中心 X 坐标 */
+    /** Camera center X coordinate */
     cameraCenterX: number
-    /** 相机中心 Y 坐标 */
+    /** Camera center Y coordinate */
     cameraCenterY: number
-    /** 可选：别名 */
+    /** Optional: alias */
     alias?: string
 }
 
 /**
- * 添加 Shadow Object 的返回结果
+ * Result of adding a Shadow Object
  */
 export interface AddShadowObjectResult {
-    /** 创建的 Setup 对象 */
+    /** Created Setup object */
     setupObject: SceneObject
-    /** 出生 Action (v9.3: 类型改为 SetLifecycleAction) */
+    /** Spawn Action (v9.3: type changed to SetLifecycleAction) */
     spawnAction: SetLifecycleAction
 }
 
 /**
- * 创建 Shadow Object 及其出生 Action
+ * Create Shadow Object and its spawn Action
  * 
- * @param params 参数
- * @returns 创建的 Setup 对象和出生 Action
+ * @param params Parameters
+ * @returns Created Setup object and spawn Action
  */
 export function createShadowObject(params: AddShadowObjectParams): AddShadowObjectResult {
     const {
@@ -72,13 +72,13 @@ export function createShadowObject(params: AddShadowObjectParams): AddShadowObje
         objectType,
         resourceId,
         resourceName,
-        // v9.3: cameraCenterX/cameraCenterY 不再需要，位置由后续的 set_transform 设置
+        // v9.3: cameraCenterX/cameraCenterY no longer needed; position set by subsequent set_transform
     } = params
 
-    const objectId = generateId('sceneobject')  // v9.2: 与 Scene Mode 保持一致
+    const objectId = generateId('sceneobject')  // v9.2: Consistent with Scene Mode
 
-    // 1. 创建影子对象 (spawned: false, 位置为画布中心)
-    // v2.0.0: 所有对象统一使用中心坐标语义，与 sceneObjectStore 的 create*Object 保持一致
+    // 1. Create shadow object (spawned: false, positioned at canvas center)
+    // v2.0.0: Uniformly use center coordinate semantics for all objects, consistent with create*Object in sceneObjectStore
     const initialX = CANVAS_CENTER_X
     const initialY = CANVAS_CENTER_Y
 
@@ -96,21 +96,21 @@ export function createShadowObject(params: AddShadowObjectParams): AddShadowObje
         rotation: 0,
         zIndex: objectType === 'background' ? Z_INDEX_BACKGROUND : objectType === 'light' ? Z_INDEX_LIGHT : Z_INDEX_DEFAULT,
         flipX: false,
-        visible: true,   // v9.2: visible 恢复为 true（可见性）
-        spawned: false,  // v9.2: 关键 - 未出生
+        visible: true,   // v9.2: visible restored to true (visibility)
+        spawned: false,  // v9.2: Key - not yet spawned
         alpha: 1,
         ...(params.alias ? { alias: params.alias } : { alias: resourceName }),
-        // 音频对象默认属性
+        // Audio object default properties
         ...(objectType === 'audio' ? {
             volume: 1.0,
             loop: false,
             playbackState: 'stop' as const
         } : {}),
-        // v16: 元件对象默认属性
+        // v16: Symbol object default properties
         ...(objectType === 'symbol' ? {
             materials: []
         } : {}),
-        // v25: 光源对象默认属性（与 sceneObjectStore.createLightObject 保持一致）
+        // v25: Light object default properties (consistent with sceneObjectStore.createLightObject)
         ...(objectType === 'light' ? {
             lightType: 'point' as const,
             lightColor: '#ffffff',
@@ -124,7 +124,7 @@ export function createShadowObject(params: AddShadowObjectParams): AddShadowObje
         } : {}),
     }
 
-    // 2. 创建出生 Action (v9.3: 使用 SetLifecycleAction)
+    // 2. Create spawn Action (v9.3: using SetLifecycleAction)
     const spawnAction: SetLifecycleAction = {
         id: generateId(),
         type: 'set_lifecycle',
@@ -141,30 +141,30 @@ export function createShadowObject(params: AddShadowObjectParams): AddShadowObje
 }
 
 /**
- * 判断对象是否为动态对象 (Shadow Object)
+ * Determine whether object is dynamic object (Shadow Object)
  * 
- * 动态对象的判断依据：
- * - Setup 中 spawned=false
- * - 通过 Action 控制 spawned=true
+ * Criteria for dynamic objects:
+ * - spawned=false in Setup
+ * - spawned=true controlled via Action
  * 
- * @param obj Setup 对象
- * @returns 是否为动态对象
+ * @param obj Setup object
+ * @returns Whether dynamic object
  */
 export function isShadowObject(obj: SceneObject): boolean {
     return obj.spawned === false
 }
 
 /**
- * 查找对象的出生槽位索引
+ * Find object's spawn slot index
  * 
- * v9.3: 使用 SetLifecycleAction 查找出生动作
+ * v9.3: Uses SetLifecycleAction to look up spawn action
  * 
- * @param objectId 对象 ID
- * @param actions 当前 Block 的 Actions 列表
- * @returns 出生槽位索引，如果未找到返回 -1
+ * @param objectId Object ID
+ * @param actions Current Block's actions list
+ * @returns Spawn slot index, or -1 if not found
  */
 export function findBirthSlotIndex(objectId: string, actions: SetLifecycleAction[]): number {
-    // 查找第一个 spawned: true 的 set_lifecycle action
+    // Look up the first set_lifecycle action with spawned: true
     const birthAction = actions
         .filter(a =>
             a.type === 'set_lifecycle' &&
@@ -177,15 +177,15 @@ export function findBirthSlotIndex(objectId: string, actions: SetLifecycleAction
 }
 
 /**
- * 检查对象在指定槽位是否活跃（已出生且未消亡）
+ * Check whether object is alive at specified slot (spawned and not despawned)
  * 
- * v9.3: 使用 SetLifecycleAction 检查 spawned 状态
+ * v9.3: Uses SetLifecycleAction to check spawned state
  * 
- * @param objectId 对象 ID
- * @param slotIndex 槽位索引
- * @param actions Actions 列表
- * @param isSetupSpawned Setup 中的 spawned 值
- * @returns 是否有生命（spawned 状态）
+ * @param objectId Object ID
+ * @param slotIndex Slot index
+ * @param actions Actions list
+ * @param isSetupSpawned spawned value in Setup
+ * @returns Whether alive (spawned state)
  */
 export function isObjectAliveAtSlot(
     objectId: string,
@@ -193,7 +193,7 @@ export function isObjectAliveAtSlot(
     actions: SetLifecycleAction[],
     isSetupSpawned: boolean
 ): boolean {
-    // 获取该对象在指定槽位之前（含）的所有 spawned 变更
+    // Get all spawned changes for this object at or before specified slot
     const lifecycleActions = actions
         .filter(a =>
             a.type === 'set_lifecycle' &&
@@ -202,12 +202,12 @@ export function isObjectAliveAtSlot(
         )
         .sort((a, b) => a.slotIndex - b.slotIndex)
 
-    // 如果没有 spawned 变更，使用 Setup 中的值
+    // If no spawned changes, use value from Setup
     if (lifecycleActions.length === 0) {
         return isSetupSpawned
     }
 
-    // 返回最后一个 spawned 变更的值
+    // Return the value from the last spawned change
     const lastAction = lifecycleActions[lifecycleActions.length - 1]
     return lastAction?.params.spawned === true
 }

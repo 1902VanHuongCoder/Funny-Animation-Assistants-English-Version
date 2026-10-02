@@ -1,19 +1,19 @@
 /**
- * AnimationController — 统一动画控制模块
+ * AnimationController — Unified animation control module
  *
- * 从 ScenePlayer.vue 和 FrameCapture.ts 提取共享的动画控制逻辑，
- * 消除两个渲染引擎之间的代码重复。
+ * Extracts shared animation control logic from ScenePlayer.vue and FrameCapture.ts,
+ * eliminating code duplication between the two rendering engines.
  *
- * 设计原则：
- * - 通过 AnimationHost 接口抽象引擎差异（播放器注册表、资源查找等）
- * - 所有动画命令处理逻辑集中在此模块
- * - 引擎特有行为（如 FrameCapture 的 _shouldPlay）通过 onAnimationTriggered 钩子注入
- * - v16: 统一 getAnimationDefinition(objectId, animName) 签名，消除三分支硬编码
+ * Design principles:
+ * - Abstracts engine differences via AnimationHost interface (player registries, asset lookup, etc.)
+ * - Centralizes all animation command handling logic in this module
+ * - Injects engine-specific behavior (e.g. FrameCapture's _shouldPlay) via onAnimationTriggered hook
+ * - v16: Unified getAnimationDefinition(objectId, animName) signature, removing hardcoded three-way branching
  *
- * 职责：
- * - processSetAnimActions()        — 对象级 set_anim 动作处理
- * - processAutoStopOnBlockEnd()    — Block 结束时自动停止动画
- * - processInitialAnimationStates() — 应用初始动画状态
+ * Responsibilities:
+ * - processSetAnimActions()        — Object-level set_anim action handling
+ * - processAutoStopOnBlockEnd()    — Automatically stop animations on Block end
+ * - processInitialAnimationStates() — Apply initial animation states
  */
 
 import type * as PIXI from 'pixi.js'
@@ -37,35 +37,35 @@ import type { TTSTimingFile } from '@/utils/ttsTiming'
 // ============================================================================
 
 /**
- * AnimationHost 接口
+ * AnimationHost interface
  *
- * 各渲染引擎（ScenePlayer / FrameCapture）实现此接口，
- * 将自身的播放器注册表和资源查找能力暴露给 AnimationController。
+ * Implemented by rendering engines (ScenePlayer / FrameCapture) to expose
+ * their player registry and asset lookup capabilities to AnimationController.
  */
 export interface AnimationHost {
-    // ─── 播放器注册表访问 ───
+    // ─── Player registry access ───
     getAnimationPlayer(objectId: string): GenericAnimationPlayer | null
     getObjectContainer(objectId: string): PIXI.Container | null
 
-    // ─── 场景数据访问 ───
+    // ─── Scene data access ───
     getSceneObjects(): SceneObject[]
 
-    // ─── 动画定义解析 ───
-    // v16: 统一签名，通过 objectId 获取动画定义
-    // 宿主负责决定查找策略（对象级 animations 字段、资源级 store、隐式帧动画等）
+    // ─── Animation definition resolution ───
+    // v16: Unified signature to retrieve animation definition by objectId
+    // Host is responsible for deciding lookup strategy (object-level animations field, resource-level store, implicit frame animations, etc.)
     getAnimationDefinition(
         objectId: string,
         animName: string,
     ): AnimationDefinition | null
 
     /**
-     * 宿主特有的 post-play 钩子
+     * Host-specific post-play hook
      *
-     * FrameCapture 使用此钩子设置 _shouldPlay 标志和 animationSpeed。
-     * ScenePlayer 不需要此钩子（PIXI ticker 自动驱动帧动画）。
+     * FrameCapture uses this hook to set _shouldPlay flag and animationSpeed.
+     * ScenePlayer does not need this hook (PIXI ticker automatically drives frame animations).
      *
-     * @param objectId   对象 ID
-     * @param animName   动画名称
+     * @param objectId   Object ID
+     * @param animName   Animation name
      * @param cmd        'play' | 'stop'
      */
     onAnimationTriggered?(
@@ -87,7 +87,7 @@ type SetAnimItem = SetAnimAction['params']['animations'][number]
 // ============================================================================
 
 /**
- * 获取 Action 在 Block 中的开始时间
+ * Get Action start time within Block
  */
 export function getActionStartTime(action: Action, slots: RuntimeSlot[]): number {
     if (!slots || slots.length === 0) return 0
@@ -96,7 +96,7 @@ export function getActionStartTime(action: Action, slots: RuntimeSlot[]): number
 }
 
 /**
- * 检查动画定义是否包含 Auto Duration 轨道
+ * Check if animation definition contains Auto Duration tracks
  */
 export function hasAutoDuration(
     definition: { type?: string; tracks?: { trackType: string; duration?: number | 'auto' }[] },
@@ -108,9 +108,9 @@ export function hasAutoDuration(
 }
 
 /**
- * 计算 Auto Duration 的运行时时长
+ * Calculate runtime duration for Auto Duration
  *
- * 在同 Block 内查找匹配的 stop 动作时间，若无则延伸到 Block 结束。
+ * Looks up matching stop action time within the same Block; if none, extends to Block end.
  */
 export function calculateRuntimeDuration(
     blockActions: Action[],
@@ -191,14 +191,14 @@ export class AnimationController {
     }
 
     /**
-     * 更新宿主引用（用于引擎在场景切换时更新注册表）
+     * Update host reference (used by engines when switching scenes to update registries)
      */
     updateHost(host: AnimationHost): void {
         this.host = host
     }
 
     /**
-     * 重置触发记录（用于 Block 切换或重播时）
+     * Reset trigger records (used on Block switch or replay)
      */
     resetTriggeredAnimations(): void {
         this.triggeredAnimations.clear()
@@ -206,26 +206,26 @@ export class AnimationController {
     }
 
     // ════════════════════════════════════════════════════════════════════════
-    // 统一 Player 获取 — 消除按类型分发的 if/else
+    // Unified Player Retrieval — Eliminates type-based branching if/else
     // ════════════════════════════════════════════════════════════════════════
 
     /**
-     * 获取对象对应的 GenericAnimationPlayer
+     * Get corresponding GenericAnimationPlayer for object
      *
-     * 统一 prop/background/symbol 等类型的 player 获取逻辑。
+     * Unifies player retrieval logic for prop/background/symbol etc.
      */
     private getPlayerForObject(objSetup: SceneObject): GenericAnimationPlayer | null {
         return this.host.getAnimationPlayer(objSetup.id)
     }
 
     // ════════════════════════════════════════════════════════════════════════
-    // processSetAnimActions — 统一 set_anim 动作处理
+    // processSetAnimActions — Unified set_anim action handling
     // ════════════════════════════════════════════════════════════════════════
 
     /**
-     * 处理 Block 中的所有 set_anim 动作
+     * Process all set_anim actions in Block
      *
-     * 对应 ScenePlayer.applyAnimationControl + FrameCapture.updateAnimationStates
+     * Corresponds to ScenePlayer.applyAnimationControl + FrameCapture.updateAnimationStates
      */
     processSetAnimActions(
         blockActions: Action[],
@@ -234,7 +234,7 @@ export class AnimationController {
         blockDuration: number,
         context: AnimationControlContext = {},
     ): void {
-        // 对象级动画处理
+        // Object-level animation processing
         const setupObjects = this.host.getSceneObjects()
         for (const objSetup of setupObjects) {
             const targetId = objSetup.id
@@ -244,7 +244,7 @@ export class AnimationController {
             )
             if (animActions.length === 0) continue
 
-            // v16: 统一分发，不再区分 character/prop/background
+            // v16: Unified dispatch without distinguishing character/prop/background
             this.processObjectAnimActions(
                 objSetup, animActions, slots, currentTime, blockActions, blockDuration, context,
             )
@@ -252,11 +252,11 @@ export class AnimationController {
     }
 
     // ════════════════════════════════════════════════════════════════════════
-    // processAutoStopOnBlockEnd — Block 结束时自动停止动画
+    // processAutoStopOnBlockEnd — Automatically stop animations on Block end
     // ════════════════════════════════════════════════════════════════════════
 
     /**
-     * Block 结束时自动停止 autoStopOnBlockEnd !== false 的动画
+     * Automatically stop animations with autoStopOnBlockEnd !== false when Block ends
      */
     processAutoStopOnBlockEnd(blockActions: Action[]): void {
         const setAnimActions = blockActions.filter(
@@ -270,7 +270,7 @@ export class AnimationController {
                 const shouldAutoStop = anim.autoStopOnBlockEnd !== false
                 if (!shouldAutoStop) continue
 
-                // 只停止 play 动作的动画
+                // Only stop animations with play action
                 if (anim.action === 'stop') continue
 
                 const animName = anim.animName
@@ -281,34 +281,34 @@ export class AnimationController {
     }
 
     // ════════════════════════════════════════════════════════════════════════
-    // processInitialAnimationStates — 初始动画状态应用
+    // processInitialAnimationStates — Apply initial animation states
     // ════════════════════════════════════════════════════════════════════════
 
     /**
-     * 应用场景中所有对象的初始动画状态
+     * Apply initial animation states for all objects in the scene
      *
-     * 对应 ScenePlayer.applyInitialAnimationStates + FrameCapture.applyInitialAnimationStates
+     * Corresponds to ScenePlayer.applyInitialAnimationStates + FrameCapture.applyInitialAnimationStates
      */
     processInitialAnimationStates(): void {
         this.deferredInitialAnimationObjectIds.clear()
         const setupObjects = this.host.getSceneObjects()
 
-        // v16: 统一初始动画处理，不再按类型分支
+        // v16: Unified initial animation handling without branching by type
         for (const objSetup of setupObjects) {
             this.applyObjectInitialAnimations(objSetup)
         }
     }
 
     // ════════════════════════════════════════════════════════════════════════
-    // Private: 对象级动画处理（v16: 统一，消除三分支）
+    // Private: Object-level animation handling (v16: unified, removing three-way branch)
     // ════════════════════════════════════════════════════════════════════════
 
     /**
-     * 统一对象级动画动作处理
+     * Unified object-level animation action handling
      *
-     * v16: 合并 processCharacterAnimActions + processGenericAnimActions，
-     * Character 仍通过 CharacterSprite 独立 API 播放，其余通过 GenericAnimationPlayer。
-     * 动画定义统一通过 host.getAnimationDefinition(objectId, animName) 获取。
+     * v16: Merged processCharacterAnimActions + processGenericAnimActions.
+     * Characters still play via CharacterSprite independent API, others via GenericAnimationPlayer.
+     * Animation definitions are uniformly retrieved via host.getAnimationDefinition(objectId, animName).
      */
     private processObjectAnimActions(
         objSetup: SceneObject,
@@ -319,7 +319,7 @@ export class AnimationController {
         blockDuration: number,
         context: AnimationControlContext,
     ): void {
-        // 统一使用 GenericAnimationPlayer
+        // Uniformly use GenericAnimationPlayer
         const player = this.getPlayerForObject(objSetup)
         const container = this.host.getObjectContainer(objSetup.id)
         for (const action of animActions) {
@@ -332,8 +332,8 @@ export class AnimationController {
                 const triggerKey = `${objSetup.id}:${animName}:${actionStartTime}:${cmd}`
 
                 if (cmd === 'play') {
-                    // v21: TTS 有声片段门控模式需要在 action 生效后持续按当前帧状态切换，
-                    // 不能使用一次性 triggeredAnimations 机制。
+                    // v21: TTS speech segment gated mode requires continuous switching based on current frame state after action activates,
+                    // cannot use the one-off triggeredAnimations mechanism.
                     const definition = this.host.getAnimationDefinition(objSetup.id, animName)
                     const timingMode = resolveAnimationTimingMode(animItem, definition)
                     if (timingMode === 'tts_speech') {
@@ -355,7 +355,7 @@ export class AnimationController {
                             )
                             continue
                         }
-                        // timing 已确认不存在时，降级为连续播放。
+                        // When timing is confirmed absent, fall back to continuous playback.
                     }
 
                     if (this.triggeredAnimations.has(triggerKey)) continue
@@ -495,7 +495,7 @@ export class AnimationController {
     ): void {
         const animName = animItem.animName
         if (definition) {
-            // 轨道动画 → 直接播放
+            // Track animation -> play directly
             const playParams: AnimationPlayParams = {
                 loop: animItem.loop ?? definition.loop,
                 reset: action.params.reset ?? true,
@@ -510,7 +510,7 @@ export class AnimationController {
                 player.playAnimation(animName, definition, playParams)
             }
         } else if (objSetup.type === 'prop' && container) {
-            // 回退：直接控制 AnimatedSprite（prop 专用）
+            // Fallback: direct AnimatedSprite control (prop specific)
             this.fallbackPlayPropSprite(container, objSetup)
         }
     }
@@ -534,7 +534,7 @@ export class AnimationController {
     }
 
     // ════════════════════════════════════════════════════════════════════════
-    // Private: 停止对象动画 (autoStop 使用)
+    // Private: Stop object animation (used by autoStop)
     // ════════════════════════════════════════════════════════════════════════
 
     private stopObjectAnimation(targetId: string, animName: string): void {
@@ -542,7 +542,7 @@ export class AnimationController {
         const objSetup = setupObjects.find((o: SceneObject) => o.id === targetId)
         if (!objSetup) return
 
-        // 统一处理：通过 Player 或 Prop 回退
+        // Unified handling: via Player or Prop fallback
         const player = this.getPlayerForObject(objSetup)
         if (player) {
             player.stopAnimation(animName)
@@ -553,21 +553,21 @@ export class AnimationController {
     }
 
     // ════════════════════════════════════════════════════════════════════════
-    // Private: 初始动画状态应用
+    // Private: Apply initial animation states
     // ════════════════════════════════════════════════════════════════════════
 
     /**
-     * 统一初始动画应用
+     * Unified initial animation application
      *
-     * v16: 合并 applyCharacterInitialAnimations + applyPropInitialAnimations + applyGenericInitialAnimations
-     * 消除 as unknown as 断言，直接使用 SceneObjectBase.initialAnimations。
+     * v16: Merged applyCharacterInitialAnimations + applyPropInitialAnimations + applyGenericInitialAnimations.
+     * Eliminates as unknown as assertions, directly uses SceneObjectBase.initialAnimations.
      */
     private applyObjectInitialAnimations(objSetup: SceneObject): void {
-        // SceneObjectBase 已有 initialAnimations 字段，无需断言
+        // SceneObjectBase already has initialAnimations field, no assertion needed
         const animItems = this.parseInitialAnimationItems(objSetup.initialAnimations)
 
         if (animItems.length === 0) {
-            // 无初始动画 — 通知宿主停止（prop 需要恢复 stillFrame）
+            // No initial animations — notify host to stop (prop needs to restore stillFrame)
             this.deferredInitialAnimationObjectIds.delete(objSetup.id)
             if (objSetup.type === 'prop') {
                 this.host.onAnimationTriggered?.(objSetup.id, '_initial', 'stop')
@@ -609,7 +609,8 @@ export class AnimationController {
     }
 
     /**
-     * 在布局/可见性更新后，立即补启动之前因 spawned=false / visible=false 延迟的初始动画。
+     * Synchronize and start initial animations that were previously deferred due to spawned=false / visible=false,
+     * immediately after layout/visibility updates.
      */
     syncDeferredInitialAnimations(): void {
         this.processDeferredInitialAnimations()
@@ -636,8 +637,8 @@ export class AnimationController {
     private canStartInitialAnimations(objSetup: SceneObject): boolean {
         const runtimeState = this.host.getSceneObjects().find((o: SceneObject) => o.id === objSetup.id) ?? objSetup
         const container = this.host.getObjectContainer(objSetup.id)
-        // 对于延迟启动的初始动画，容器可见性已经包含了 spawned + visible 的最终结果。
-        // scene setup 中的 objSetup 可能仍保留初始 spawned=false，不能再拿它阻断补启动。
+        // For deferred initial animations, container visibility already reflects the final spawned + visible result.
+        // In scene setup objSetup might still have initial spawned=false, which must not block deferred startup.
         if (container) return container.visible
 
         const spawned = (runtimeState as SceneObject & { spawned?: boolean }).spawned ?? true
@@ -668,7 +669,7 @@ export class AnimationController {
     }
 
     // ════════════════════════════════════════════════════════════════════════
-    // Private: AnimatedSprite 回退控制（prop 专用）
+    // Private: AnimatedSprite fallback control (prop specific)
     // ════════════════════════════════════════════════════════════════════════
 
     private fallbackPlayPropSprite(
@@ -680,18 +681,18 @@ export class AnimationController {
             | undefined
         if (!animatedSprite) return
 
-        // 保底逻辑：直接启动 AnimatedSprite
-        // 具体的 fps/loop/播放方式由宿主的 onAnimationTriggered 处理
-        // 但如果没有钩子，就使用默认行为
+        // Fallback logic: directly start AnimatedSprite
+        // Specific fps/loop/playback behavior is handled by host's onAnimationTriggered
+        // But if there is no hook, use default behavior
         if (!this.host.onAnimationTriggered) {
-            // ScenePlayer 路径：直接 gotoAndPlay
+            // ScenePlayer path: directly gotoAndPlay
             if (!animatedSprite.playing) {
                 animatedSprite.loop = true
                 animatedSprite.gotoAndPlay(0)
             }
         }
-        // FrameCapture 路径由 onAnimationTriggered 处理
-        void objSetup // 使用 objSetup 避免 lint 警告（fps 通过钩子获取）
+        // FrameCapture path is handled by onAnimationTriggered
+        void objSetup // Use objSetup to avoid lint warning (fps retrieved via hook)
     }
 
     private fallbackStopPropSprite(container: PIXI.Container): void {
@@ -701,11 +702,11 @@ export class AnimationController {
         if (!animatedSprite) return
 
         if (!this.host.onAnimationTriggered) {
-            // ScenePlayer 路径
+            // ScenePlayer path
             if (animatedSprite.playing) {
                 animatedSprite.gotoAndStop(0)
             }
         }
-        // FrameCapture 路径由 onAnimationTriggered 处理
+        // FrameCapture path is handled by onAnimationTriggered
     }
 }

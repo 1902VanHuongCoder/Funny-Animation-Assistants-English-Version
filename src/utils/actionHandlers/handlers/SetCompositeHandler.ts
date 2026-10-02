@@ -1,13 +1,13 @@
 /**
  * SetComposite Action Handler (P2)
- * 处理组合对象自身属性变更：compositeMode、renderChain 排序等
+ * Handles composite object property changes: compositeMode, renderChain sorting, etc.
  *
- * 遵循"字段族合一"设计模式（类比 SetVisualHandler 合并 visible/flipX/zIndex），
- * 将 composite 特有属性统一到一个 Action 类型中。
+ * Follows the "field family consolidation" design pattern (analogous to SetVisualHandler merging visible/flipX/zIndex),
+ * consolidating composite-specific properties into a single Action type.
  *
- * 用法：
- * - set_composite { compositeMode: "entity" } → 切换组合模式
- * - set_composite { renderChain: ["B", "A", "C"] } → 修改渲染链排序
+ * Usage:
+ * - set_composite { compositeMode: "entity" } → Switch composite mode
+ * - set_composite { renderChain: ["B", "A", "C"] } → Modify render chain order
  */
 
 import type { SetCompositeAction } from '@/types/screenplay'

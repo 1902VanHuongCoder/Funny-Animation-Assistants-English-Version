@@ -1,8 +1,8 @@
 /**
- * Shadow Object 模块集成测试
- * 覆盖动态对象生命周期：创建、出生、可见性判断
- * 
- * @version v9.3 - 使用 SetLifecycleAction 管理 spawned 状态
+ * Shadow Object Module Integration Tests
+ * Covers dynamic object lifecycle: creation, spawn, visibility evaluation
+ *
+ * @version v9.3 - Uses SetLifecycleAction to manage spawned state
  */
 
 import { describe, expect, it } from 'vitest'
@@ -23,7 +23,7 @@ import {
     isShadowObject
 } from '../shadowObject'
 
-// ==================== 测试辅助函数 ====================
+// ==================== Test Helper Functions ====================
 
 function createMockScene(): SceneContainer {
     return {
@@ -50,7 +50,7 @@ function createMockBlock(): ScriptBlock {
     } as unknown as ScriptBlock
 }
 
-// ==================== createShadowObject 测试 ====================
+// ==================== createShadowObject Tests ====================
 
 describe('createShadowObject', () => {
     it('creates prop type Shadow Object', () => {
@@ -79,7 +79,7 @@ describe('createShadowObject', () => {
         expect(result.spawnAction.target).toBe(result.setupObject.id)
         expect(result.spawnAction.slotIndex).toBe(2)
         expect(result.spawnAction.params.spawned).toBe(true)
-        // v9.3: spawnAction 不再包含 x/y，位置由单独的 set_transform 设置
+        // v9.3: spawnAction no longer contains x/y; position is configured by separate set_transform
     })
 
     it('creates prop type Shadow Object', () => {
@@ -100,10 +100,10 @@ describe('createShadowObject', () => {
         expect(result.setupObject.type).toBe('prop')
         expect(result.setupObject.refId).toBe('prop_001')
         expect(result.setupObject.spawned).toBe(false)
-        // v2.0.0: 所有对象统一使用中心坐标语义
+        // v2.0.0: All objects uniformly use center coordinate semantics
         expect(result.setupObject.x).toBe(CANVAS_CENTER_X)
         expect(result.setupObject.y).toBe(CANVAS_CENTER_Y)
-        // v9.3: spawnAction 不再包含 x/y
+        // v9.3: spawnAction no longer contains x/y
         expect(result.spawnAction.params.spawned).toBe(true)
     })
 
@@ -125,7 +125,7 @@ describe('createShadowObject', () => {
         expect(result.setupObject.type).toBe('background')
         expect(result.setupObject.refId).toBe('bg_001')
         expect(result.setupObject.spawned).toBe(false)
-        // v2.0.0: 所有对象统一使用中心坐标语义
+        // v2.0.0: All objects uniformly use center coordinate semantics
         expect(result.setupObject.x).toBe(CANVAS_CENTER_X)
         expect(result.setupObject.y).toBe(CANVAS_CENTER_Y)
         expect(result.spawnAction.params.spawned).toBe(true)
@@ -182,7 +182,7 @@ describe('createShadowObject', () => {
     })
 })
 
-// ==================== isShadowObject 测试 ====================
+// ==================== isShadowObject Tests ====================
 
 describe('isShadowObject', () => {
     it('identifies spawned=false object as Shadow Object', () => {
@@ -250,7 +250,7 @@ describe('isShadowObject', () => {
     })
 })
 
-// ==================== findBirthSlotIndex 测试 ====================
+// ==================== findBirthSlotIndex Tests ====================
 
 describe('findBirthSlotIndex', () => {
     it('finds first spawned=true Action slot', () => {
@@ -306,7 +306,7 @@ describe('findBirthSlotIndex', () => {
     })
 })
 
-// ==================== isObjectAliveAtSlot 测试 ====================
+// ==================== isObjectAliveAtSlot Tests ====================
 
 describe('isObjectAliveAtSlot', () => {
     it('alive when Setup spawned=true and no Action', () => {

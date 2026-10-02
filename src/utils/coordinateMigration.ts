@@ -1,19 +1,19 @@
 /**
- * v1→v2 坐标迁移
+ * v1 -> v2 coordinate migration
  *
- * v1: prop/background 的 x/y 是左上角坐标
- * v2: 所有对象统一使用中心坐标
+ * v1: prop/background x/y were top-left coordinates
+ * v2: All objects uniformly use center coordinates
  *
- * 迁移公式（左上角 → 中心）：
+ * Migration formula (top-left -> center):
  *   newX = oldX + (width * scaleX) / 2
  *   newY = oldY + (height * scaleY) / 2
  *
- * camera / screen_effect 已经是中心坐标，不需要迁移。
+ * camera / screen_effect are already center coordinates, no migration needed.
  */
 
 import type { ProjectData } from '@/types/project'
 
-/** 需要迁移坐标的对象类型（v1 存储左上角坐标的类型） */
+/** Object types requiring coordinate migration (types storing top-left coordinates in v1) */
 const TYPES_NEEDING_MIGRATION: ReadonlySet<string> = new Set([
     'prop',
     'background',
@@ -30,13 +30,13 @@ interface MigratableObject {
 }
 
 /**
- * 将单个对象的坐标从左上角转为中心
+ * Convert single object coordinate from top-left to center
  */
 function migrateObjectCoordinate(obj: MigratableObject): void {
     if (!TYPES_NEEDING_MIGRATION.has(obj.type)) return
 
-    // 防御：width/height 为 0 时无法精确迁移（Background 首次创建未加载纹理）
-    // 但已保存的项目中 width/height 通常不为 0（渲染时已同步更新到 store）
+    // Defensive: when width/height is 0, cannot accurately migrate (Background first created before loading texture)
+    // But saved projects typically have non-zero width/height (synced to store during render)
     const halfW = (obj.width * obj.scaleX) / 2
     const halfH = (obj.height * obj.scaleY) / 2
 
@@ -45,9 +45,9 @@ function migrateObjectCoordinate(obj: MigratableObject): void {
 }
 
 /**
- * 将 ProjectData 从 v1 格式迁移到 v2 格式
- * - 遍历所有 episode → scene → setup.objects，迁移坐标
- * - 更新 meta.version 为 '2.0.0'
+ * Migrate ProjectData from v1 format to v2 format
+ * - Traverse all episode -> scene -> setup.objects, migrate coordinates
+ * - Update meta.version to '2.0.0'
  */
 export function migrateV1ToV2(projectData: ProjectData): void {
     const episodes = projectData.episodes as {
@@ -71,18 +71,17 @@ export function migrateV1ToV2(projectData: ProjectData): void {
         if (!episode.scenes) continue
 
         for (const scene of episode.scenes) {
-            // 迁移 setup.objects 中的坐标
+            // Migrate coordinates in setup.objects
             if (scene.setup?.objects) {
                 for (const obj of scene.setup.objects) {
                     migrateObjectCoordinate(obj)
                 }
             }
 
-            // 注意：Action 中的 x/y 参数（如 set_transform, tween_transform）
-            // 这些存储的是 action 目标坐标，也应当是中心坐标语义。
-            // 但由于 Action 中的坐标来源于拖拽写回（getObjectPositionFromContainer），
-            // 而 v1 的写回逻辑已经做了 offset 处理，Action 中存的值与 obj.x/y 语义一致（左上角）。
-            // 因此 Action 中的坐标也需要迁移。
+            // Note: x/y params in Action (e.g. set_transform, tween_transform)
+            // store action target coordinates, which should also follow center coordinate semantics.
+            // In v1, action values matched obj.x/y semantics (top-left).
+            // Therefore coordinates in Action also need to be migrated.
             if (scene.script) {
                 for (const block of scene.script) {
                     if (!block.actions) continue
@@ -94,17 +93,17 @@ export function migrateV1ToV2(projectData: ProjectData): void {
         }
     }
 
-    // 更新版本号
+    // Update version number
     projectData.meta.version = '2.0.0'
 }
 
 /**
- * 迁移 Action 中的坐标参数
+ * Migrate coordinate parameters in Action
  *
- * 需要迁移的 Action 类型：
- * - set_transform: params.x/y（如果 target 是需要迁移的类型）
- * - tween_transform: params.x/y（同上）
- * - camera_cut / camera_move: target='camera'，已经是中心坐标，不迁移
+ * Action types requiring migration:
+ * - set_transform: params.x/y (if target is a type requiring migration)
+ * - tween_transform: params.x/y (same as above)
+ * - camera_cut / camera_move: target='camera', already center coordinates, no migration
  */
 function migrateActionCoordinate(
     action: { type: string; target: string; params?: Record<string, unknown> },
@@ -112,20 +111,20 @@ function migrateActionCoordinate(
 ): void {
     if (!action.params) return
 
-    // camera 动作不需要迁移
+    // camera actions do not need migration
     if (action.target === 'camera') return
 
-    // 只处理包含 x/y 的 action 类型
+    // Only process action types containing x/y
     const actionTypesWithCoords = ['set_transform', 'tween_transform']
     if (!actionTypesWithCoords.includes(action.type)) return
 
-    // 如果 action 中没有 x 或 y 参数，跳过
+    // Skip if action has neither x nor y param
     const hasX = action.params['x'] !== undefined
     const hasY = action.params['y'] !== undefined
     if (!hasX && !hasY) return
 
-    // 查找 target 对象以获取 width/height
-    // 注意：setupObjects 中的坐标此时已经被迁移了，但 width/height/scale 不变
+    // Look up target object to obtain width/height
+    // Note: coordinates in setupObjects are already migrated by this point, but width/height/scale remain unchanged
     const targetObj = setupObjects?.find(
         (obj) => (obj as unknown as { id: string }).id === action.target
     ) as (MigratableObject & { id: string }) | undefined

@@ -1,26 +1,25 @@
 /**
  * WaveEffect.ts (v11.5)
  * 
- * 波浪飘动特效，使用 PIXI.SimplePlane 实现顶点变形
- * 让素材像旗帜/披风一样在风中飘动
+ * Wave undulation effect using PIXI.SimplePlane for vertex deformation
+ * Makes assets flutter in the wind like flags or cloaks
  */
 
 import * as PIXI from 'pixi.js'
 
 /**
- * 波浪特效参数
+ * Wave effect parameters
  */
 export interface WaveEffectParams {
-    speed?: number        // 速度倍率 (默认 1.0)
-    amplitude?: number    // 幅度像素 (默认 10)
-    frequency?: number    // 频率 (默认 2)
-    // 1. Update Interface at top of file (around line 17)
-    direction?: 'horizontal' | 'vertical' | 'both'  // 方向 (默认 horizontal)
-    segments?: number     // 网格分段数 (默认 10)
+    speed?: number        // Speed multiplier (default 1.0)
+    amplitude?: number    // Amplitude in pixels (default 10)
+    frequency?: number    // Frequency (default 2)
+    direction?: 'horizontal' | 'vertical' | 'both'  // Direction (default horizontal)
+    segments?: number     // Grid subdivision count (default 10)
 }
 
 /**
- * 波浪特效实例状态
+ * Wave effect instance state
  */
 interface WaveInstance {
     originalSprite: PIXI.Sprite | PIXI.AnimatedSprite
@@ -33,27 +32,27 @@ interface WaveInstance {
 
 /**
  * WaveEffect
- * 管理波浪特效的创建、更新和销毁
+ * Manages creation, update, and destruction of wave effects
  */
 export class WaveEffect {
     private instances = new Map<string, WaveInstance>()
     private currentTime = 0
 
     /**
-     * 更新时间
-     * @param deltaTime 时间增量（毫秒）
+     * Update time
+     * @param deltaTime Time delta (ms)
      */
     update(deltaTime: number): void {
         this.currentTime += deltaTime
     }
 
     /**
-     * 为 Sprite 应用波浪特效
-     * @param partId 部位 ID
-     * @param sprite 原始 Sprite
-     * @param container 父容器
-     * @param params 特效参数
-     * @returns 创建的 SimplePlane
+     * Apply wave effect to Sprite
+     * @param partId Part ID
+     * @param sprite Original Sprite
+     * @param container Parent container
+     * @param params Effect parameters
+     * @returns Created SimplePlane
      */
     applyEffect(
         partId: string,
@@ -61,28 +60,28 @@ export class WaveEffect {
         container: PIXI.Container,
         params: WaveEffectParams = {}
     ): PIXI.SimplePlane | null {
-        // 如果已经有实例，只更新参数
+        // If instance exists, update parameters only
         const existing = this.instances.get(partId)
         if (existing) {
             existing.params = this.normalizeParams(params)
             return existing.simplePlane
         }
 
-        // 获取纹理
+        // Get texture
         const texture = sprite.texture
         if (!texture || texture === PIXI.Texture.EMPTY) {
             console.warn('[WaveEffect] Cannot apply effect: sprite has no texture')
             return null
         }
 
-        // 标准化参数
+        // Normalize parameters
         const normalizedParams = this.normalizeParams(params)
         const segments = normalizedParams.segments
 
-        // 创建 SimplePlane
+        // Create SimplePlane
         const simplePlane = new PIXI.SimplePlane(texture, segments + 1, segments + 1)
 
-        // 复制原 Sprite 的变换属性
+        // Copy original Sprite transform properties
         simplePlane.position.copyFrom(sprite.position)
         simplePlane.scale.copyFrom(sprite.scale)
         simplePlane.rotation = sprite.rotation
@@ -103,12 +102,12 @@ export class WaveEffect {
             originalAnchor = { x: anchorX, y: anchorY }
         }
 
-        // 保存原始顶点位置
+        // Save original vertex positions
         const positionBuffer = simplePlane.geometry.getBuffer('aVertexPosition')
         const originalVertices = new Float32Array(positionBuffer.data.length)
         originalVertices.set(positionBuffer.data)
 
-        // 从容器中移除原 Sprite，添加 SimplePlane
+        // Remove original Sprite from container, add SimplePlane
         const index = container.getChildIndex(sprite)
         sprite.visible = false
         sprite.renderable = false
@@ -124,12 +123,11 @@ export class WaveEffect {
         if (originalAnchor) instance.originalAnchor = originalAnchor
         this.instances.set(partId, instance)
 
-        // console.log('[WaveEffect] Applied wave effect to part:', partId)
         return simplePlane
     }
 
     /**
-     * 更新所有波浪特效的顶点
+     * Update vertices for all wave effects
      */
     updateAllEffects(): void {
         for (const [partId, instance] of this.instances) {
@@ -138,19 +136,19 @@ export class WaveEffect {
     }
 
     /**
-     * 更新单个特效的顶点
+     * Update vertices for a single effect
      */
     private updateVertices(_partId: string, instance: WaveInstance): void {
         const { simplePlane, originalSprite, originalVertices, params, startTime } = instance
-        const elapsed = (this.currentTime - startTime) / 1000 // 转换为秒
+        const elapsed = (this.currentTime - startTime) / 1000 // Convert to seconds
 
-        // v11.95: 同步原 Sprite 的变换到 SimplePlane
-        // 修复波浪特效期间部位不跟随虚拟组/部位变换动画的问题
+        // v11.95: Synchronize original Sprite transform to SimplePlane
+        // Fixes issue where part does not follow virtual group/part transform animation during wave effect
         simplePlane.position.copyFrom(originalSprite.position)
         simplePlane.scale.copyFrom(originalSprite.scale)
         simplePlane.rotation = originalSprite.rotation
         simplePlane.alpha = originalSprite.alpha
-        // visible 不同步，因为原 sprite 始终是 false
+        // visible not synced because original sprite is always false
 
         const currentTexture = instance.originalSprite.texture
         if (currentTexture && currentTexture !== PIXI.Texture.EMPTY && simplePlane.texture !== currentTexture) {
@@ -174,48 +172,48 @@ export class WaveEffect {
             const col = i % vertexPerRow
             const row = Math.floor(i / vertexPerRow)
 
-            // 原始位置
+            // Original position
             const originalX = originalVertices[i * 2]
             const originalY = originalVertices[i * 2 + 1]
 
             if (originalX === undefined || originalY === undefined) continue
 
-            // 计算波浪偏移
-            // 偏移量随着行/列增加而增大（模拟旗帜固定一端的效果）
+            // Compute wave offset
+            // Offset increases with row/column (simulating flag fixed at one end)
             const phase = elapsed * speed * frequency * Math.PI * 2
 
             let offsetX = 0
             let offsetY = 0
 
-            // 水平波浪 (X轴位移，基于 Y/Row)
+            // Horizontal wave (X-axis displacement, based on Y/Row)
             if (direction === 'horizontal' || direction === 'both') {
                 const factor = row / segments
-                // sin(phase + row) 产生波动
+                // sin(phase + row) produces undulation
                 offsetX = Math.sin(phase + row * 0.5) * amplitude * factor
             }
 
-            // 垂直波浪 (Y轴位移，基于 X/Col)
+            // Vertical wave (Y-axis displacement, based on X/Col)
             if (direction === 'vertical' || direction === 'both') {
                 const factor = col / segments
-                // sin(phase + col) 产生波动
+                // sin(phase + col) produces undulation
                 offsetY = Math.sin(phase + col * 0.5) * amplitude * factor
             }
 
-            // 应用两方向的叠加
+            // Apply superposition of both directions
             vertices[i * 2] = originalX + offsetX
             vertices[i * 2 + 1] = originalY + offsetY
         }
 
-        // 更新位置缓冲区
+        // Update position buffer
         const bufferData = positionBuffer.data as unknown as Float32Array
         bufferData.set(vertices)
         positionBuffer.update()
     }
 
     /**
-     * 移除波浪特效，恢复原始 Sprite
-     * @param partId 部位 ID
-     * @param container 父容器
+     * Remove wave effect, restore original Sprite
+     * @param partId Part ID
+     * @param container Parent container
      */
     removeEffect(partId: string, container: PIXI.Container): PIXI.Sprite | PIXI.AnimatedSprite | null {
         const instance = this.instances.get(partId)
@@ -223,51 +221,50 @@ export class WaveEffect {
 
         const { originalSprite, simplePlane } = instance
 
-        // v12.1: 如果 Sprite 或 SimplePlane 已被销毁（transform 为 null），跳过位置同步
+        // v12.1: If Sprite or SimplePlane destroyed (transform is null), skip position sync
         const spriteDestroyed = (originalSprite as unknown as { destroyed?: boolean }).destroyed === true || !(originalSprite as unknown as { transform?: unknown }).transform
         const planeDestroyed = (simplePlane as unknown as { destroyed?: boolean }).destroyed === true || !(simplePlane as unknown as { transform?: unknown }).transform
 
         if (!spriteDestroyed && !planeDestroyed) {
-            // 恢复原 Sprite 的可见性
+            // Restore original Sprite visibility
             originalSprite.visible = true
             originalSprite.renderable = true
 
-            // 同步位置（以防 SimplePlane 被移动过）
+            // Sync position (in case SimplePlane was moved)
             originalSprite.position.copyFrom(simplePlane.position)
             originalSprite.scale.copyFrom(simplePlane.scale)
             originalSprite.rotation = simplePlane.rotation
             originalSprite.alpha = simplePlane.alpha
         }
 
-        // 从容器移除 SimplePlane（安全检查）
+        // Remove SimplePlane from container (safety check)
         if (!planeDestroyed) {
             container.removeChild(simplePlane)
             simplePlane.destroy()
         }
 
-        // 删除实例
+        // Delete instance
         this.instances.delete(partId)
 
-        // console.log('[WaveEffect] Removed wave effect from part:', partId)
         return spriteDestroyed ? null : originalSprite
     }
 
     /**
-     * 检查部位是否正在应用波浪特效
+     * Check if part has wave effect applied
      */
     hasEffect(partId: string): boolean {
         return this.instances.has(partId)
     }
 
     /**
-     * 获取波浪特效的 SimplePlane（如果存在）
+     * Get wave effect SimplePlane (if present)
      */
     getSimplePlane(partId: string): PIXI.SimplePlane | undefined {
         return this.instances.get(partId)?.simplePlane
     }
 
     /**
-     * 清除所有特效
+     * Clear all effects
      */
     clear(container: PIXI.Container): void {
         for (const partId of this.instances.keys()) {
@@ -276,7 +273,7 @@ export class WaveEffect {
     }
 
     /**
-     * 标准化参数
+     * Normalize parameters
      */
     private normalizeParams(params: WaveEffectParams): Required<WaveEffectParams> {
         return {
@@ -289,7 +286,7 @@ export class WaveEffect {
     }
 
     /**
-     * 获取活动特效数量
+     * Get active effect count
      */
     get activeCount(): number {
         return this.instances.size
@@ -297,7 +294,7 @@ export class WaveEffect {
 }
 
 /**
- * 创建 WaveEffect 实例
+ * Create WaveEffect instance
  */
 export function createWaveEffect(): WaveEffect {
     return new WaveEffect()

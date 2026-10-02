@@ -1,8 +1,8 @@
 /**
- * Text 序列化器
+ * Text serializer
  *
- * 从 sceneObjectStore 的 text case 提取。
- * 序列化/反序列化 TextObject 的子类型特化字段。
+ * Extracted from sceneObjectStore text case.
+ * Serializes/deserializes TextObject subtype-specialized fields.
  */
 
 import type { SceneObject, TextObject } from '@/types/sceneObject'
@@ -23,7 +23,7 @@ const textSerializer: TypeSerializer = {
         base['align'] = text.align
         base['wordWrap'] = text.wordWrap ?? true
         base['wordWrapWidth'] = text.wordWrapWidth ?? 400
-        // Phase 1: 视觉增强
+        // Phase 1: Visual enhancement
         if (text.stroke !== undefined) base['stroke'] = text.stroke
         if (text.strokeThickness !== undefined) base['strokeThickness'] = text.strokeThickness
         if (text.dropShadow) {
@@ -40,7 +40,7 @@ const textSerializer: TypeSerializer = {
         if (text.letterSpacing !== undefined) base['letterSpacing'] = text.letterSpacing
         if (text.textBoxMode && text.textBoxMode !== 'auto-size') base['textBoxMode'] = text.textBoxMode
         if (text.writingMode && text.writingMode !== 'horizontal') base['writingMode'] = text.writingMode
-        // Phase 2: 动画
+        // Phase 2: Animation
         if (text.revealInitialState === 'typewriter') base['revealInitialState'] = text.revealInitialState
         if (text.revealSpeed !== undefined) base['revealSpeed'] = text.revealSpeed
         if (text.fillType === 'linear_gradient') {
@@ -59,7 +59,7 @@ const textSerializer: TypeSerializer = {
     deserialize(objData: SceneObject, ctx: DeserializeContext): void {
         const textData = objData as TextObject
         const textObj = ctx.createTextObject(
-            textData.content ?? '文本',
+            textData.content ?? 'Text',
             undefined,
             objData.id,
             objData.alias ?? '',
@@ -85,7 +85,7 @@ const textSerializer: TypeSerializer = {
             transformOriginX: objData.transformOriginX,
             transformOriginY: objData.transformOriginY,
             parentId: objData.parentId,
-            // 文本特化字段
+            // Text specialized fields
             fontSize: textData.fontSize ?? 72,
             fontFamily: textData.fontFamily ?? 'Noto Sans SC',
             fontWeight: textData.fontWeight ?? 'normal',
@@ -94,8 +94,8 @@ const textSerializer: TypeSerializer = {
             align: textData.align ?? 'center',
             wordWrap: textData.wordWrap ?? true,
             wordWrapWidth: textData.wordWrapWidth ?? 400,
-            content: textData.content ?? '文本',
-            // Phase 1: 视觉增强（向后兼容：缺失字段保持 undefined，渲染层 ?? 回退）
+            content: textData.content ?? 'Text',
+            // Phase 1: Visual enhancement (backward compatibility: missing fields remain undefined, render layer ?? fallback)
             stroke: textData.stroke,
             strokeThickness: textData.strokeThickness,
             dropShadow: textData.dropShadow,
@@ -107,7 +107,7 @@ const textSerializer: TypeSerializer = {
             letterSpacing: textData.letterSpacing,
             textBoxMode: textData.textBoxMode,
             writingMode: textData.writingMode,
-            // Phase 2: 动画
+            // Phase 2: Animation
             revealInitialState: textData.revealInitialState ?? 'complete',
             revealSpeed: textData.revealSpeed,
             fillType: textData.fillType,

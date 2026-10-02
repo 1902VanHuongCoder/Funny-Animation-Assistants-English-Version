@@ -1,6 +1,6 @@
 /**
  * CameraCut Action Handler
- * 处理相机瞬切
+ * Handles camera cut
  */
 
 import type { CameraCutAction } from '@/types/screenplay'

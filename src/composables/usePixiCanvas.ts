@@ -21,7 +21,7 @@ export function usePixiCanvas(
     backgroundColor = 0x1f2937
   } = options
 
-  // 初始化 Pixi 应用
+  // Initialize Pixi application
   async function initPixiApp() {
     if (!container.value || app.value) return
 
@@ -29,7 +29,7 @@ export function usePixiCanvas(
 
     try {
 
-      // 创建 Pixi 应用
+      // Create Pixi application
       const pixiApp = new PIXI.Application({
         width,
         height,
@@ -38,24 +38,25 @@ export function usePixiCanvas(
         resolution: window.devicePixelRatio || 1,
         autoDensity: true
       })
-      // 开发环境下暴露给 Devtools
-      if (import.meta.env.DEV) {
+      // Expose to Devtools in development environment
+      const isDev = Boolean((import.meta as unknown as { env?: { DEV?: boolean } }).env?.DEV)
+      if (isDev) {
         (globalThis as unknown as Record<string, unknown>)['__PIXI_APP__'] = pixiApp;
       }
-      // 将 canvas 添加到容器
+      // Add canvas to container
       container.value.appendChild(pixiApp.view as HTMLCanvasElement)
 
-      // 使用 markRaw 标记 Pixi 实例，防止 Vue 深度代理
+      // Use markRaw to mark Pixi instance and prevent Vue deep proxying
       app.value = markRaw(pixiApp)
       stage.value = markRaw(pixiApp.stage)
       isReady.value = true
 
     } catch (error) {
-      console.error('[PixiCanvas] 初始化失败:', error)
+      console.error('[PixiCanvas] Initialization failed:', error)
     }
   }
 
-  // 销毁 Pixi 应用
+  // Destroy Pixi application
   function destroyPixiApp() {
     if (app.value) {
       app.value.destroy(true, { children: true, texture: true })
@@ -65,28 +66,28 @@ export function usePixiCanvas(
     }
   }
 
-  // 添加对象到舞台
+  // Add object to stage
   function addToStage(displayObject: PIXI.Container) {
     if (stage.value) {
       stage.value.addChild(displayObject)
     }
   }
 
-  // 从舞台移除对象
+  // Remove object from stage
   function removeFromStage(displayObject: PIXI.Container) {
     if (stage.value) {
       stage.value.removeChild(displayObject)
     }
   }
 
-  // 清空舞台
+  // Clear stage
   function clearStage() {
     if (stage.value) {
       stage.value.removeChildren()
     }
   }
 
-  // 调整画布大小
+  // Resize canvas
   function resize(newWidth: number, newHeight: number) {
     if (app.value) {
       app.value.renderer.resize(newWidth, newHeight)

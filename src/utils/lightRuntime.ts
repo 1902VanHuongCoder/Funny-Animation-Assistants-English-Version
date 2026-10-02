@@ -1,44 +1,44 @@
 /**
- * lightRuntime — 光源运行时求值器
+ * lightRuntime — Light source runtime evaluator
  *
- * Phase 2: 基于简化参数（flicker/flickerSpeed）驱动动态闪烁效果。
- * Phase 3: 传递方向性参数（directionMode/directionAngle/coneAngle）。
+ * Phase 2: Drives dynamic flicker effects based on simplified parameters (flicker/flickerSpeed).
+ * Phase 3: Passes directional parameters (directionMode/directionAngle/coneAngle).
  *
- * 设计原则：
- * - 纯函数，无副作用，无状态
- * - 相同输入永远返回相同输出（相同 timeMs 下确定性）
- * - flicker=0 时短路返回静态值（零开销）
+ * Design principles:
+ * - Pure functions, side-effect free, stateless
+ * - Same input always returns same output (deterministic for same timeMs)
+ * - Short-circuits when flicker=0 to return static values (zero overhead)
  */
 
 import type { LightObject } from '@/types/sceneObject'
 
 export interface EvaluatedLight {
-    /** 光源 X 坐标 */
+    /** Light X coordinate */
     x: number
-    /** 光源 Y 坐标（含闪烁微抖动） */
+    /** Light Y coordinate (including flicker micro-jitter) */
     y: number
-    /** 动态强度 */
+    /** Dynamic intensity */
     intensity: number
-    /** 动态半径 */
+    /** Dynamic radius */
     radius: number
-    /** 光照颜色 (hex) */
+    /** Light color (hex) */
     color: string
-    /** 发光模式 */
+    /** Emission mode */
     directionMode: 'omni' | 'cone'
-    /** 方向角（弧度） */
+    /** Direction angle (radians) */
     directionAngle: number
-    /** 扇形开角（角度制） */
+    /** Cone aperture angle (degrees) */
     coneAngle: number
-    /** 边缘柔化（内部固定值） */
+    /** Edge softness (internal constant) */
     softness: number
 }
 
-/** @deprecated 兼容别名，请使用 EvaluatedLight */
+/** @deprecated Compatibility alias, please use EvaluatedLight */
 export type EvaluatedPointLight = EvaluatedLight
 
 /**
- * 类型守卫：判断 lightType 是否为位置光源（point 或 spot）
- * 用于在渲染管线中统一过滤需要 GPU 计算的光源
+ * Type guard: determines whether lightType is a positional light (point or spot)
+ * Used to filter lights requiring GPU computation in render pipeline
  */
 export function isPointLikeLight(light: { lightType: string }): boolean {
     return light.lightType === 'point' || light.lightType === 'spot'
@@ -49,9 +49,9 @@ function lerp(a: number, b: number, t: number): number {
 }
 
 /**
- * 从 object id 生成稳定的相位偏移，让多个光源闪烁不同步
- * 使用乘法散列（hash = hash * 31 + charCode）提高分散度，
- * 避免结构化 ID（如 sceneobject_01 vs sceneobject_10）产生相同偏移
+ * Generates stable phase offset from object id so multiple lights flicker out-of-sync
+ * Uses multiplicative hash (hash = hash * 31 + charCode) to improve dispersion,
+ * preventing structured IDs (e.g. sceneobject_01 vs sceneobject_10) from yielding identical offsets
  */
 function stablePhase(id: string): number {
     let hash = 0
@@ -62,17 +62,17 @@ function stablePhase(id: string): number {
 }
 
 /**
- * 评估光源在给定时刻的动态状态
+ * Evaluates dynamic state of light at given time
  *
- * @param light - 光源对象（含基础参数 + 闪烁/方向性参数）
- * @param timeMs - 当前时间（毫秒），通常为 Date.now() 或虚拟时钟
- * @returns 经过闪烁计算后的运行时光源状态
+ * @param light - Light object (basic parameters + flicker/directional parameters)
+ * @param timeMs - Current time (ms), typically Date.now() or virtual clock
+ * @returns Evaluated runtime light state after flicker calculations
  */
 export function evaluateLight(light: LightObject, timeMs: number): EvaluatedLight {
     return evaluatePointLight(light, timeMs)
 }
 
-/** @deprecated 兼容别名，请使用 evaluateLight */
+/** @deprecated Compatibility alias, please use evaluateLight */
 export function evaluatePointLight(light: LightObject, timeMs: number): EvaluatedLight {
     const baseIntensity = light.lightIntensity ?? 1.0
     const baseRadius = light.lightRadius ?? 500
@@ -81,7 +81,7 @@ export function evaluatePointLight(light: LightObject, timeMs: number): Evaluate
     const flicker = light.flicker ?? 0
     const color = light.lightColor ?? '#ffffff'
 
-    // flicker=0 短路：完全静态，跳过所有噪声计算
+    // flicker=0 short-circuit: completely static, skip noise computation
     if (flicker <= 0) {
         return {
             x: baseX,
@@ -96,27 +96,27 @@ export function evaluatePointLight(light: LightObject, timeMs: number): Evaluate
         }
     }
 
-    // --- 闪烁计算 ---
+    // --- Flicker calculation ---
 
     const timeSec = timeMs / 1000
     const phase = stablePhase(light.id)
     const speed = lerp(0.8, 4.0, light.flickerSpeed ?? 0.35)
 
-    // 双层正弦波叠加（PRD §7.6）
+    // Dual-layer sine superposition (PRD §7.6)
     const baseSin = Math.sin((timeSec * speed + phase) * Math.PI * 2)
     const detailSin = Math.sin((timeSec * speed * 2.37 + phase * 1.73) * Math.PI * 2)
     const rawSignal = baseSin * 0.72 + detailSin * 0.28
     const flickerSignal = Math.max(-1, Math.min(1, rawSignal))
 
-    // flicker 缩放因子（PRD §7.4）
+    // Flicker scaling factors (PRD §7.4)
     const intensityAmount = flicker * 0.18
     const radiusAmount = flicker * 0.08
     const positionJitterY = flicker * 3
 
-    // PRD §7.8: 颜色偏暖（仅在 flickerSignal > 0 时轻微偏移）
-    // normalizedSignal: 0~1，表示偏暖程度
+    // PRD §7.8: Shift warmer (slight shift only when flickerSignal > 0)
+    // normalizedSignal: 0~1, degree of warmth shift
     const normalizedSignal = Math.max(0, flickerSignal)
-    const colorShiftAmount = flicker * 0.06  // 最大偏移幅度
+    const colorShiftAmount = flicker * 0.06  // Max shift magnitude
     const shiftedColor = shiftColorWarmer(color, normalizedSignal * colorShiftAmount)
 
     return {
@@ -133,9 +133,9 @@ export function evaluatePointLight(light: LightObject, timeMs: number): Evaluate
 }
 
 /**
- * 将 hex 颜色轻微偏暖：提升 R、降低 B，G 保持不变
- * @param hex - '#rrggbb' 格式
- * @param amount - 偏移量 0~1（0=无偏移，1=最大偏移）
+ * Shifts hex color slightly warmer: increases R, decreases B, preserves G
+ * @param hex - '#rrggbb' format
+ * @param amount - Shift amount 0~1 (0=no shift, 1=max shift)
  */
 function shiftColorWarmer(hex: string, amount: number): string {
     if (amount <= 0) return hex
@@ -144,7 +144,7 @@ function shiftColorWarmer(hex: string, amount: number): string {
     const g = parseInt(h.substring(2, 4), 16)
     const b = parseInt(h.substring(4, 6), 16)
 
-    // R 上移，B 下移，幅度很小（最大 ±15/255 ≈ 6%）
+    // Increase R, decrease B with subtle magnitude (max ±15/255 ≈ 6%)
     const shift = Math.round(amount * 15)
     const nr = Math.min(255, r + shift)
     const nb = Math.max(0, b - shift)

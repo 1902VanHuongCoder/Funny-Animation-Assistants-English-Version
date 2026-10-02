@@ -1,6 +1,6 @@
 /**
- * renderChain 测试
- * 模拟人物编辑器导入流程，验证 renderChain 相关函数的正确性
+ * renderChain Tests
+ * Simulates character editor import workflow, verifying renderChain helper correctness
  */
 
 import { createPinia, setActivePinia } from 'pinia'
@@ -10,8 +10,8 @@ import { useSceneObjectStore } from '@/stores/sceneObjectStore'
 import type { CompositeObject, ScreenEffectObject, SymbolObject, TextObject } from '@/types/sceneObject'
 
 /**
- * 模拟 convertConfigToSceneObjects 的输出结构：
- * entity composite (无 parentId) + symbol 子对象 (有 parentId)
+ * Simulates output structure of convertConfigToSceneObjects:
+ * entity composite (no parentId) + symbol child objects (with parentId)
  */
 function createImportedCharacterObjects() {
     const compositeId = 'sceneobject_composite_1'
@@ -22,8 +22,8 @@ function createImportedCharacterObjects() {
     const composite: CompositeObject = {
         id: compositeId,
         type: 'composite',
-        name: '导入人物',
-        alias: '导入人物',
+        name: 'Imported Character',
+        alias: 'Imported Character',
         refId: '',
         childIds: [child1Id, child2Id, child3Id],
         compositeLocked: true,
@@ -44,8 +44,8 @@ function createImportedCharacterObjects() {
     const child1: SymbolObject = {
         id: child1Id,
         type: 'symbol',
-        name: '后发',
-        alias: '后发',
+        name: 'Back Hair',
+        alias: 'Back Hair',
         refId: '',
         parentId: compositeId,
         materials: [],
@@ -65,8 +65,8 @@ function createImportedCharacterObjects() {
     const child2: SymbolObject = {
         id: child2Id,
         type: 'symbol',
-        name: '身体',
-        alias: '身体',
+        name: 'Body',
+        alias: 'Body',
         refId: '',
         parentId: compositeId,
         materials: [],
@@ -86,8 +86,8 @@ function createImportedCharacterObjects() {
     const child3: SymbolObject = {
         id: child3Id,
         type: 'symbol',
-        name: '前发',
-        alias: '前发',
+        name: 'Front Hair',
+        alias: 'Front Hair',
         refId: '',
         parentId: compositeId,
         materials: [],
@@ -104,7 +104,7 @@ function createImportedCharacterObjects() {
         visible: true,
     }
 
-    // configImporter 返回的顺序：composite 在前，子对象在后（DFS 序）
+    // configImporter returned order: composite first, child objects after (DFS order)
     return {
         compositeId,
         child1Id,
@@ -114,19 +114,19 @@ function createImportedCharacterObjects() {
     }
 }
 
-describe('renderChain: 人物编辑器导入流程', () => {
+describe('renderChain: Character editor import workflow', () => {
     beforeEach(() => {
         setActivePinia(createPinia())
     })
 
-    it('RC-IMPORT-01: 导入后 sceneRenderChain 只包含根级 composite', () => {
+    it('RC-IMPORT-01: after import sceneRenderChain contains root composite only', () => {
         const store = useSceneObjectStore()
         store.setActionMode(false)
         store.clearObjects()
 
         const { compositeId, child1Id, child2Id, child3Id, objects } = createImportedCharacterObjects()
 
-        // 模拟导入：逐个 addObject
+        // Simulate import: addObject one by one
         for (const obj of objects) {
             store.addObject(obj)
         }
@@ -134,7 +134,7 @@ describe('renderChain: 人物编辑器导入流程', () => {
         const chain = store.getSceneRenderChain()
         console.log('[RC-IMPORT-01] sceneRenderChain:', chain)
 
-        // renderChain 应只包含根级 composite
+        // renderChain should contain root composite only
         expect(chain).toContain(compositeId)
         expect(chain).not.toContain(child1Id)
         expect(chain).not.toContain(child2Id)
@@ -142,7 +142,7 @@ describe('renderChain: 人物编辑器导入流程', () => {
         expect(chain.length).toBe(1)
     })
 
-    it('RC-IMPORT-02: getSortedObjects 必须返回所有对象（含子对象）', () => {
+    it('RC-IMPORT-02: getSortedObjects must return all objects (including children)', () => {
         const store = useSceneObjectStore()
         store.setActionMode(false)
         store.clearObjects()
@@ -159,7 +159,7 @@ describe('renderChain: 人物编辑器导入流程', () => {
         console.log('[RC-IMPORT-02] getSortedObjects types:', sorted.map(o => o.type))
         console.log('[RC-IMPORT-02] getSortedObjects parentIds:', sorted.map(o => o.parentId ?? 'ROOT'))
 
-        // 必须包含所有 4 个对象
+        // Must include all 4 objects
         expect(sorted.length).toBe(4)
         expect(sortedIds).toContain(compositeId)
         expect(sortedIds).toContain(child1Id)
@@ -167,7 +167,7 @@ describe('renderChain: 人物编辑器导入流程', () => {
         expect(sortedIds).toContain(child3Id)
     })
 
-    it('RC-IMPORT-03: getChildObjects 返回 entity 的子对象', () => {
+    it('RC-IMPORT-03: getChildObjects returns child objects of entity', () => {
         const store = useSceneObjectStore()
         store.setActionMode(false)
         store.clearObjects()
@@ -188,48 +188,48 @@ describe('renderChain: 人物编辑器导入流程', () => {
         expect(childIds).toContain(child3Id)
     })
 
-    it('RC-IMPORT-04: 编辑模式加载（instantiateTemplate 流程）', () => {
+    it('RC-IMPORT-04: edit mode loading (instantiateTemplate workflow)', () => {
         const store = useSceneObjectStore()
         store.setActionMode(false)
         store.clearObjects()
 
         const { objects } = createImportedCharacterObjects()
 
-        // 模拟编辑模式加载：与 CompositeCharacterEditor onMounted 一致
+        // Simulate edit mode loading: consistent with CompositeCharacterEditor onMounted
         for (const obj of objects) {
             store.addObject(obj)
         }
 
-        // 验证 store.objects 包含所有对象
+        // Verify store.objects contains all objects
         const allObjects = store.objects
         console.log('[RC-IMPORT-04] store.objects count:', allObjects.length)
         console.log('[RC-IMPORT-04] store.objects ids:', allObjects.map(o => o.id))
         expect(allObjects.length).toBe(4)
 
-        // 验证 getSortedObjects 返回所有对象
+        // Verify getSortedObjects returns all objects
         const sorted = store.getSortedObjects()
         console.log('[RC-IMPORT-04] getSortedObjects count:', sorted.length)
         expect(sorted.length).toBe(4)
 
-        // 验证 renderChain
+        // Verify renderChain
         const chain = store.getSceneRenderChain()
         console.log('[RC-IMPORT-04] renderChain:', chain)
         expect(chain.length).toBe(1)
 
-        // 模拟渲染循环：遍历 getSortedObjects，每个对象都应该能正常处理
+        // Simulate render loop: iterate getSortedObjects, every object should process normally
         for (const obj of sorted) {
             if (obj.parentId) {
-                // 子对象：应能找到父对象
+                // Child object: should locate parent object
                 const parent = store.getObject(obj.parentId)
                 expect(parent).toBeDefined()
-                console.log(`[RC-IMPORT-04] 子对象 ${obj.id} (${obj.type}) → 父 ${obj.parentId} (${parent?.type})`)
+                console.log(`[RC-IMPORT-04] Child ${obj.id} (${obj.type}) -> Parent ${obj.parentId} (${parent?.type})`)
             } else {
-                console.log(`[RC-IMPORT-04] 根对象 ${obj.id} (${obj.type})`)
+                console.log(`[RC-IMPORT-04] Root object ${obj.id} (${obj.type})`)
             }
         }
     })
 
-    it('RC-IMPORT-05: getRootObjects 不含子对象', () => {
+    it('RC-IMPORT-05: getRootObjects excludes child objects', () => {
         const store = useSceneObjectStore()
         store.setActionMode(false)
         store.clearObjects()
@@ -244,44 +244,44 @@ describe('renderChain: 人物编辑器导入流程', () => {
         const rootIds = rootObjects.map(o => o.id)
         console.log('[RC-IMPORT-05] rootObjects ids:', rootIds)
 
-        // 根对象只有 composite（无 parentId 的对象）
+        // Root object has only composite (object without parentId)
         expect(rootIds).toContain(compositeId)
-        // 子对象不应在根列表中
+        // Child objects should not appear in root list
         expect(rootIds.length).toBe(1)
     })
 })
 
-describe('renderChain: union 成组后渲染顺序', () => {
+describe('renderChain: Render order after union grouping', () => {
     beforeEach(() => {
         setActivePinia(createPinia())
     })
 
     /**
-     * 模拟场景：entity composite 内有 3 个子对象（后发、头部、身体）
-     * 用户选择其中 2 个（后发、头部）创建 union
+     * Simulated scenario: entity composite contains 3 children (back hair, head, body)
+     * User selects 2 of them (back hair, head) to create union
      */
-    it('RC-UNION-01: union 成组后 renderChain 应保持子对象原始顺序', () => {
+    it('RC-UNION-01: renderChain preserves child object original order after union grouping', () => {
         const store = useSceneObjectStore()
         store.setActionMode(false)
         store.clearObjects()
 
-        // 创建 3 个根级对象（模拟 entity 的子对象平铺在根级）
+        // Create 3 root objects (simulating entity children flattened at root)
         const obj1: SymbolObject = {
-            id: 'obj_hair_back', type: 'symbol', name: '后发', alias: '后发',
+            id: 'obj_hair_back', type: 'symbol', name: 'Back Hair', alias: 'Back Hair',
             refId: '', materials: [],
             x: 0, y: -50, width: 100, height: 100,
             scaleX: 1, scaleY: 1, rotation: 0, alpha: 1, flipX: false,
             zIndex: 10, visible: true,
         }
         const obj2: SymbolObject = {
-            id: 'obj_head', type: 'symbol', name: '头部', alias: '头部',
+            id: 'obj_head', type: 'symbol', name: 'Head', alias: 'Head',
             refId: '', materials: [],
             x: 0, y: 0, width: 200, height: 200,
             scaleX: 1, scaleY: 1, rotation: 0, alpha: 1, flipX: false,
             zIndex: 10, visible: true,
         }
         const obj3: SymbolObject = {
-            id: 'obj_body', type: 'symbol', name: '身体', alias: '身体',
+            id: 'obj_body', type: 'symbol', name: 'Body', alias: 'Body',
             refId: '', materials: [],
             x: 0, y: 100, width: 200, height: 300,
             scaleX: 1, scaleY: 1, rotation: 0, alpha: 1, flipX: false,
@@ -294,21 +294,21 @@ describe('renderChain: union 成组后渲染顺序', () => {
 
         const chainBefore = [...store.getSceneRenderChain()]
         console.log('[RC-UNION-01] renderChain BEFORE:', chainBefore)
-        // 成组前：3 个对象都在 renderChain
+        // Before grouping: all 3 objects in renderChain
         expect(chainBefore).toEqual(['obj_hair_back', 'obj_head', 'obj_body'])
 
-        // 成组：后发 + 头部 → union
+        // Group: back hair + head -> union
         const union = store.groupObjects(['obj_hair_back', 'obj_head'], 'union')
         console.log('[RC-UNION-01] union created:', union.id, 'compositeMode:', union.compositeMode)
 
         const chainAfter = [...store.getSceneRenderChain()]
         console.log('[RC-UNION-01] renderChain AFTER:', chainAfter)
 
-        // 关键断言：union 不应出现在 renderChain 中
+        // Key assertion: union should not appear in renderChain
         expect(chainAfter).not.toContain(union.id)
 
-        // 关键断言：子对象应保持在 renderChain 中，且顺序不变
-        // 后发仍在头部前面，身体在最后
+        // Key assertion: child objects stay in renderChain with order preserved
+        // Back hair remains before head, body at end
         const hairIdx = chainAfter.indexOf('obj_hair_back')
         const headIdx = chainAfter.indexOf('obj_head')
         const bodyIdx = chainAfter.indexOf('obj_body')
@@ -317,11 +317,11 @@ describe('renderChain: union 成组后渲染顺序', () => {
         expect(hairIdx).toBeGreaterThanOrEqual(0)
         expect(headIdx).toBeGreaterThanOrEqual(0)
         expect(bodyIdx).toBeGreaterThanOrEqual(0)
-        expect(hairIdx).toBeLessThan(headIdx)  // 后发在头部前
-        expect(headIdx).toBeLessThan(bodyIdx)  // 头部在身体前
+        expect(hairIdx).toBeLessThan(headIdx)  // Back hair before head
+        expect(headIdx).toBeLessThan(bodyIdx)  // Head before body
     })
 
-    it('RC-UNION-02: union 成组后 getSortedObjects 顺序不变', () => {
+    it('RC-UNION-02: getSortedObjects order remains unchanged after union grouping', () => {
         const store = useSceneObjectStore()
         store.setActionMode(false)
         store.clearObjects()
@@ -352,7 +352,7 @@ describe('renderChain: union 成组后渲染顺序', () => {
         store.addObject(obj2)
         store.addObject(obj3)
 
-        // 成组前 getSortedObjects 顺序
+        // getSortedObjects order before grouping
         const sortedBefore = store.getSortedObjects().map(o => o.id)
         console.log('[RC-UNION-02] sortedObjects BEFORE:', sortedBefore)
 
@@ -362,7 +362,7 @@ describe('renderChain: union 成组后渲染顺序', () => {
         const sortedAfter = store.getSortedObjects().map(o => o.id)
         console.log('[RC-UNION-02] sortedObjects AFTER:', sortedAfter)
 
-        // A, B, C 的相对顺序应保持不变（union 排在最后，作为链外对象）
+        // Relative order of A, B, C should remain unchanged (union placed at end as off-chain object)
         const aIdx = sortedAfter.indexOf('A')
         const bIdx = sortedAfter.indexOf('B')
         const cIdx = sortedAfter.indexOf('C')
@@ -373,12 +373,12 @@ describe('renderChain: union 成组后渲染顺序', () => {
     })
 })
 
-describe('renderChain: 文本对象参与场景排序', () => {
+describe('renderChain: Text object participation in scene ordering', () => {
     beforeEach(() => {
         setActivePinia(createPinia())
     })
 
-    it('RC-TEXT-01: 文本应进入 renderChain，并按 zIndex 位于画面特效下方', () => {
+    it('RC-TEXT-01: text should enter renderChain and position below screen effects by zIndex', () => {
         const store = useSceneObjectStore()
         store.setActionMode(false)
         store.clearObjects()
@@ -386,10 +386,10 @@ describe('renderChain: 文本对象参与场景排序', () => {
         const text: TextObject = {
             id: 'text_1',
             type: 'text',
-            name: '文本',
-            alias: '文本',
+            name: 'Text',
+            alias: 'Text',
             refId: '',
-            content: '测试文本',
+            content: 'Test Text',
             fontSize: 72,
             fontFamily: 'Noto Sans SC',
             fontWeight: 'normal',
@@ -413,8 +413,8 @@ describe('renderChain: 文本对象参与场景排序', () => {
         const effect: ScreenEffectObject = {
             id: 'effect_1',
             type: 'screen_effect',
-            name: '画面特效',
-            alias: '画面特效',
+            name: 'Screen Effect',
+            alias: 'Screen Effect',
             refId: 'screen_effect',
             effectClass: 'screen_effect',
             params: { baseColor: '#000000', openRatio: 1 },

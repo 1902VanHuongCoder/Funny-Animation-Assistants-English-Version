@@ -1,8 +1,8 @@
 import './style.css'
 import 'vue-virtual-scroller/dist/vue-virtual-scroller.css'
 
-// 解决 pixi-filters 废弃 API 警告
-// pixi-filters v5 内部使用 settings.FILTER_RESOLUTION，在 PixiJS v7+ 中已废弃
+// Resolve pixi-filters deprecated API warning
+// pixi-filters v5 internally uses settings.FILTER_RESOLUTION, which is deprecated in PixiJS v7+
 import { Filter } from 'pixi.js'
 Filter.defaultResolution = window.devicePixelRatio || 1
 

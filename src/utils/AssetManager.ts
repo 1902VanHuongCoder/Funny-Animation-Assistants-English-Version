@@ -1,6 +1,6 @@
 /**
- * 资源加载器
- * 管理图片、音频等资源的加载和缓存
+ * Asset loader
+ * Manages loading and caching of images, audio, and other resources
  */
 
 import * as PIXI from 'pixi.js'
@@ -16,8 +16,8 @@ export interface LoadProgress {
 }
 
 export interface AssetManagerConfig {
-  maxTextureCache?: number // 最大纹理缓存数量
-  maxMemoryMB?: number // 最大内存限制（MB）
+  maxTextureCache?: number // Maximum texture cache count
+  maxMemoryMB?: number // Maximum memory limit (MB)
 }
 
 export class AssetManager {
@@ -30,18 +30,18 @@ export class AssetManager {
   private currentMemoryBytes = 0
 
   constructor(config: AssetManagerConfig = {}) {
-    // 不再使用 maxTextureCache，完全由内存限制控制
+    // maxTextureCache no longer used; controlled entirely by memory limit
     const maxMemoryMB = config.maxMemoryMB ?? 200
 
     this.maxMemoryBytes = maxMemoryMB * 1024 * 1024
 
-    // 创建 LRU 纹理缓存，驱逐时销毁纹理
+    // Create LRU texture cache, destroys textures on eviction
     this.textureCache = new LRUCache<string, PIXI.Texture>(
-      10000, // 设置极大值，实际由内存限制控制驱逐
+      10000, // Very large limit; eviction controlled by memory limit
       (url, texture) => {
         texture.destroy(true)
 
-        // 更新内存统计
+        // Update memory statistics
         const img = this.imageCache.get(url)
         if (img) {
           const size = this.estimateImageSize(img)
@@ -51,18 +51,18 @@ export class AssetManager {
       }
     )
 
-    // 延迟初始化 AudioContext，避免在用户未交互时创建导致 suspended 状态
-    // 在实际需要时再创建（在 loadAudio 中）
+    // Lazily initialize AudioContext to avoid suspended state when created without user interaction
+    // Created when actually needed (in loadAudio)
     this.audioContext = null as unknown as AudioContext
   }
 
   /**
-   * 获取或创建 AudioContext（延迟初始化）
+   * Get or create AudioContext (lazy initialization)
    */
   private getAudioContext(): AudioContext {
     if (!this.audioContext) {
       this.audioContext = new AudioContext()
-      // 如果处于 suspended 状态，尝试恢复
+      // If suspended, attempt resume
       if (this.audioContext.state === 'suspended') {
         this.audioContext.resume().catch(err => {
           console.warn('[AssetManager] Failed to resume AudioContext:', err)
@@ -73,7 +73,7 @@ export class AssetManager {
   }
 
   /**
-   * 从项目资源列表加载所有资源
+   * Load all assets from project asset list
    */
   async loadProjectAssets(
     assets: Assets,
@@ -81,12 +81,12 @@ export class AssetManager {
   ): Promise<void> {
     const urls: string[] = []
 
-    // 收集背景图片 URL
+    // Collect background image URLs
     assets.backgrounds.forEach(bg => {
         if (bg.url) urls.push(bg.url)
     })
 
-    // 收集音乐 URL
+    // Collect music URLs
     assets.musics.forEach(music => urls.push(music.url))
     let loaded = 0
     const total = urls.length
@@ -114,22 +114,22 @@ export class AssetManager {
   }
 
   /**
-   * 加载图片并创建纹�?
+   * Load image and create texture
    */
   async loadImage(url: string): Promise<PIXI.Texture> {
-    // 检查纹理缓�?
+    // Check texture cache
     const cached = this.textureCache.get(url)
     if (cached) {
       return cached
     }
 
-    // 检查是否正在加?
+    // Check if already loading
     const loading = this.loadingPromises.get(url)
     if (loading) {
       return loading as Promise<PIXI.Texture>
     }
 
-    // 开始加�?
+    // Start loading
     const promise = this._loadImageInternal(url)
     this.loadingPromises.set(url, promise)
 
@@ -148,22 +148,22 @@ export class AssetManager {
 
       img.onload = () => {
         try {
-          // 估算图片大小
+          // Estimate image size
           const size = this.estimateImageSize(img)
 
-          // 检查内存限�?
+          // Check memory limit
           if (this.currentMemoryBytes + size > this.maxMemoryBytes) {
             this.evictOldTextures(size)
           }
 
-          // 创建 Pixi 纹理
+          // Create Pixi texture
           const baseTexture = PIXI.BaseTexture.from(img, {
             scaleMode: PIXI.SCALE_MODES.LINEAR,
             resolution: 1
           })
           const texture = new PIXI.Texture(baseTexture)
 
-          // 缓存图片和纹�?
+          // Cache image and texture
           this.imageCache.set(url, img)
           this.textureCache.set(url, texture)
           this.currentMemoryBytes += size
@@ -175,7 +175,7 @@ export class AssetManager {
       }
 
       img.onerror = () => {
-        reject(new Error(`加载图片失败: ${url}`))
+        reject(new Error(`Failed to load image: ${url}`))
       }
 
       img.src = url
@@ -183,22 +183,22 @@ export class AssetManager {
   }
 
   /**
-   * 加载音频
+   * Load audio
    */
   async loadAudio(url: string): Promise<AudioBuffer> {
-    // 检查缓�?
+    // Check cache
     const cached = this.audioCache.get(url)
     if (cached) {
       return cached
     }
 
-    // 检查是否正在加?
+    // Check if already loading
     const loading = this.loadingPromises.get(url)
     if (loading) {
       return loading as Promise<AudioBuffer>
     }
 
-    // 开始加�?
+    // Start loading
     const promise = this._loadAudioInternal(url)
     this.loadingPromises.set(url, promise)
 
@@ -220,26 +220,26 @@ export class AssetManager {
       this.audioCache.set(url, audioBuffer)
       return audioBuffer
     } catch (error) {
-      throw new Error(`加载音频失败: ${url} - ${error instanceof Error ? error.message : String(error)}`)
+      throw new Error(`Failed to load audio: ${url} - ${error instanceof Error ? error.message : String(error)}`)
     }
   }
 
   /**
-   * 获取纹理
+   * Get texture
    */
   getTexture(url: string): PIXI.Texture | undefined {
     return this.textureCache.get(url)
   }
 
   /**
-   * 获取音频缓冲
+   * Get audio buffer
    */
   getAudio(url: string): AudioBuffer | undefined {
     return this.audioCache.get(url)
   }
 
   /**
-   * 预加载多个资�?
+   * Preload multiple assets
    */
   async preload(urls: string[]): Promise<void> {
     const promises = urls.map(url => {
@@ -254,7 +254,7 @@ export class AssetManager {
   }
 
   /**
-   * 清理缓存
+   * Clear cache
    */
   clear(): void {
     this.textureCache.clear()
@@ -265,7 +265,7 @@ export class AssetManager {
   }
 
   /**
-   * 获取缓存统计信息
+   * Get cache statistics
    */
   getStats() {
     return {
@@ -278,16 +278,16 @@ export class AssetManager {
   }
 
   /**
-   * 估算图片占用内存大小（字节）
+   * Estimate image memory footprint (bytes)
    */
   private estimateImageSize(img: HTMLImageElement): number {
-    // 估算：width * height * 4 (RGBA)
-    // 考虑 Mipmap 和 GPU 内存对齐，使用 1.5 倍安全系数
+    // Estimate: width * height * 4 (RGBA)
+    // Factoring in Mipmaps and GPU memory alignment, use 1.5x safety margin
     return Math.ceil(img.width * img.height * 4 * 1.5)
   }
 
   /**
-   * 驱逐旧纹理以释放内�?
+   * Evict old textures to free memory
    */
   private evictOldTextures(neededBytes: number): void {
     const keys = this.textureCache.keys()
@@ -303,11 +303,10 @@ export class AssetManager {
         freedBytes += size
       }
     }
-
   }
 
   /**
-   * 判断是否为音�?URL
+   * Determine whether URL is audio
    */
   private isAudioUrl(url: string): boolean {
     const audioExts = ['.mp3', '.ogg', '.wav', '.m4a', '.aac']
@@ -316,7 +315,7 @@ export class AssetManager {
   }
 
   /**
-   * 销毁资源管理器
+   * Destroy asset manager
    */
   destroy(): void {
     this.clear()

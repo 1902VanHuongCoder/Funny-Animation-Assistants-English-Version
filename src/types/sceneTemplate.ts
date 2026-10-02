@@ -1,16 +1,16 @@
 /**
- * 场景模板类型定义
- * v17: 多根平坦列表结构，与 SceneSetup.objects 对齐
+ * Scene template type definitions
+ * v17: Multi-root flat list structure, aligned with SceneSetup.objects
  */
 
 import type { SceneObject } from './sceneObject'
 
 /**
- * 场景模板 — 一级素材资源，与角色/道具/背景平级
+ * Scene Template — First-class asset resource, peer to character/prop/background
  *
- * 模板内部直接使用现有的 SceneObject 类型。
- * 所有对象存放在平坦的 objects 列表中（含 composite 的子对象），
- * 通过 parentId / childIds 维护层级关系。
+ * Internally uses existing SceneObject types directly.
+ * All objects reside in flat objects list (including composite children),
+ * maintaining hierarchy through parentId / childIds.
  */
 export interface SceneTemplate {
     id: string
@@ -19,20 +19,20 @@ export interface SceneTemplate {
     createdAt: number
     updatedAt?: number
 
-    /** 缩略图文件相对路径 */
+    /** Relative path to thumbnail file */
     thumbnailPath?: string
-    /** 运行时 Blob URL（不持久化） */
+    /** Runtime Blob URL (not persisted) */
     _runtimeThumbnailUrl?: string
 
-    /** 模板包含的所有场景对象（平坦列表，与 SceneSetup.objects 对齐） */
+    /** All scene objects contained in template (flat list, aligned with SceneSetup.objects) */
     objects: SceneObject[]
 
-    /** v19: 场景级渲染链（有序 ID 列表，决定根级对象的渲染顺序） */
+    /** v19: Scene-level render chain (ordered ID list determining root-level render order) */
     renderChain?: string[]
 
-    /** 模板编辑器画布锚点（归零前包围盒中心），用于编辑器加载时还原位置 */
+    /** Template editor canvas anchor (bounding box center before zeroing), used to restore position when loaded into editor */
     editorAnchor?: { x: number; y: number }
 
-    /** 导入源 config.json 所在目录的相对路径 */
+    /** Relative path to directory containing import source config.json */
     importSourcePath?: string
 }

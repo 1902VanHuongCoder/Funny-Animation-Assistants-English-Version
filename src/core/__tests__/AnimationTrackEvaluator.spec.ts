@@ -1,7 +1,7 @@
 /**
  * AnimationTrackEvaluator.spec.ts
  * 
- * 轨道求值器单元测试
+ * Track Evaluator Unit Tests
  */
 
 import { describe, expect, it } from 'vitest'
@@ -18,7 +18,7 @@ import type {
 
 describe('AnimationTrackEvaluator', () => {
     describe('evaluateTransform', () => {
-        it('空关键帧应该返回默认值', () => {
+        it('returns default value for empty keyframes', () => {
             const track: TransformTrack = {
                 trackType: 'transform',
                 duration: 1000,
@@ -35,7 +35,7 @@ describe('AnimationTrackEvaluator', () => {
             expect(result.rotation).toBe(0)
         })
 
-        it('单个关键帧应该返回该帧的值', () => {
+        it('returns value of single keyframe', () => {
             const track: TransformTrack = {
                 trackType: 'transform',
                 duration: 1000,
@@ -54,7 +54,7 @@ describe('AnimationTrackEvaluator', () => {
             expect(result.rotation).toBe(45)
         })
 
-        it('两个关键帧应该进行线性插值', () => {
+        it('linearly interpolates between two keyframes', () => {
             const track: TransformTrack = {
                 trackType: 'transform',
                 duration: 1000,
@@ -71,7 +71,7 @@ describe('AnimationTrackEvaluator', () => {
             expect(result.y).toBeCloseTo(25, 0)
         })
 
-        it('应该支持 targetObjectId', () => {
+        it('should support targetObjectId', () => {
             const track: TransformTrack = {
                 trackType: 'transform',
                 targetObjectId: 'part-1',
@@ -85,7 +85,7 @@ describe('AnimationTrackEvaluator', () => {
             expect(result.targetObjectId).toBe('part-1')
         })
 
-        it('应该支持 pivot 锚点', () => {
+        it('should support pivot anchor', () => {
             const track: TransformTrack = {
                 trackType: 'transform',
                 duration: 1000,
@@ -99,9 +99,9 @@ describe('AnimationTrackEvaluator', () => {
             expect(result.pivot).toEqual({ x: 0.5, y: 0.5 })
         })
 
-        // v11.1: flipX 离散求值测试
-        describe('flipX 离散求值 (v11.1)', () => {
-            it('单个关键帧应该返回该帧的 flipX 值', () => {
+        // v11.1: flipX discrete evaluation tests
+        describe('flipX discrete evaluation (v11.1)', () => {
+            it('single keyframe should return flipX value of that frame', () => {
                 const track: TransformTrack = {
                     trackType: 'transform',
                     duration: 1000,
@@ -114,7 +114,7 @@ describe('AnimationTrackEvaluator', () => {
                 expect(result.flipX).toBe(true)
             })
 
-            it('空关键帧应该返回 undefined', () => {
+            it('empty keyframes should return undefined', () => {
                 const track: TransformTrack = {
                     trackType: 'transform',
                     duration: 1000,
@@ -127,7 +127,7 @@ describe('AnimationTrackEvaluator', () => {
                 expect(result.flipX).toBeUndefined()
             })
 
-            it('flipX 应该使用 Step 逻辑 - t < 0.5 时取前一帧', () => {
+            it('flipX uses Step logic - takes previous frame when t < 0.5', () => {
                 const track: TransformTrack = {
                     trackType: 'transform',
                     duration: 1000,
@@ -138,13 +138,13 @@ describe('AnimationTrackEvaluator', () => {
                     ]
                 }
 
-                // 进度 0.3 -> t = 0.3 < 0.5，应该取 prev.flipX = false
+                // Progress 0.3 -> t = 0.3 < 0.5, should take prev.flipX = false
                 const result = AnimationTrackEvaluator.evaluateTransform(track, 0.3)
 
                 expect(result.flipX).toBe(false)
             })
 
-            it('flipX 应该使用 Step 逻辑 - t >= 0.5 时取后一帧', () => {
+            it('flipX uses Step logic - takes next frame when t >= 0.5', () => {
                 const track: TransformTrack = {
                     trackType: 'transform',
                     duration: 1000,
@@ -155,13 +155,13 @@ describe('AnimationTrackEvaluator', () => {
                     ]
                 }
 
-                // 进度 0.7 -> t = 0.7 >= 0.5，应该取 next.flipX = true
+                // Progress 0.7 -> t = 0.7 >= 0.5, should take next.flipX = true
                 const result = AnimationTrackEvaluator.evaluateTransform(track, 0.7)
 
                 expect(result.flipX).toBe(true)
             })
 
-            it('flipX 在 t = 0.5 时应该取后一帧', () => {
+            it('flipX takes next frame when t = 0.5', () => {
                 const track: TransformTrack = {
                     trackType: 'transform',
                     duration: 1000,
@@ -177,14 +177,14 @@ describe('AnimationTrackEvaluator', () => {
                 expect(result.flipX).toBe(true)
             })
 
-            it('flipX undefined 时应该正确传递', () => {
+            it('flipX passes undefined correctly', () => {
                 const track: TransformTrack = {
                     trackType: 'transform',
                     duration: 1000,
                     easing: 'linear',
                     keyframes: [
-                        { time: 0, x: 0, y: 0 },  // flipX 未定义
-                        { time: 1, x: 100, y: 0 }  // flipX 未定义
+                        { time: 0, x: 0, y: 0 },  // flipX undefined
+                        { time: 1, x: 100, y: 0 }  // flipX undefined
                     ]
                 }
 
@@ -196,7 +196,7 @@ describe('AnimationTrackEvaluator', () => {
     })
 
     describe('evaluateVisibility', () => {
-        it('空关键帧应该返回默认 alpha=1', () => {
+        it('empty keyframes should return default alpha=1', () => {
             const track: VisibilityTrack = {
                 trackType: 'visibility',
                 duration: 1000,
@@ -209,7 +209,7 @@ describe('AnimationTrackEvaluator', () => {
             expect(result.alpha).toBe(1)
         })
 
-        it('应该在可见性关键帧之间插值', () => {
+        it('interpolates between visibility keyframes', () => {
             const track: VisibilityTrack = {
                 trackType: 'visibility',
                 duration: 1000,
@@ -226,11 +226,11 @@ describe('AnimationTrackEvaluator', () => {
         })
     })
 
-    // v11.52: evaluateFrameSequence 测试已删除
-    // 帧动画直接使用 AnimatedSprite.play() 播放，不再需要评估器
+    // v11.52: evaluateFrameSequence tests removed
+    // Frame animation plays directly via AnimatedSprite.play(), no evaluator needed
 
     describe('evaluateEffect', () => {
-        it('应该返回特效参数', () => {
+        it('should return effect parameters', () => {
             const track: EffectTrack = {
                 trackType: 'effect',
                 effectParams: { type: 'breathe', intensity: 0.5, speed: 2 }
@@ -243,7 +243,7 @@ describe('AnimationTrackEvaluator', () => {
             expect(result.effectParams).toHaveProperty('speed', 2)
         })
 
-        it('应该支持 targetObjectId', () => {
+        it('should support targetObjectId', () => {
             const track: EffectTrack = {
                 trackType: 'effect',
                 targetObjectId: 'body',
@@ -257,7 +257,7 @@ describe('AnimationTrackEvaluator', () => {
     })
 
     describe('evaluate (dispatch)', () => {
-        it('应该正确分发 transform 轨道', () => {
+        it('should correctly dispatch transform track', () => {
             const track: TransformTrack = {
                 trackType: 'transform',
                 duration: 1000,
@@ -271,7 +271,7 @@ describe('AnimationTrackEvaluator', () => {
             expect(result).toHaveProperty('y', 25)
         })
 
-        it('应该正确分发 visibility 轨道', () => {
+        it('should correctly dispatch visibility track', () => {
             const track: VisibilityTrack = {
                 trackType: 'visibility',
                 duration: 1000,
@@ -284,18 +284,18 @@ describe('AnimationTrackEvaluator', () => {
             expect(result).toHaveProperty('alpha')
         })
 
-        it('应该对 frame_sequence 轨道抛出错误', () => {
+        it('should throw error for frame_sequence track', () => {
             const track: FrameSequenceTrack = {
                 trackType: 'frame_sequence',
                 targetObjectId: 'part-1',
                 assetId: 'test-asset'
             }
 
-            // v11.52: frame_sequence 轨道现在应该抛出错误
+            // v11.52: frame_sequence track should throw error now
             expect(() => AnimationTrackEvaluator.evaluate(track, 0)).toThrow()
         })
 
-        it('应该正确分发 effect 轨道', () => {
+        it('should correctly dispatch effect track', () => {
             const track: EffectTrack = {
                 trackType: 'effect',
                 effectParams: { type: 'glow', color: '#ff0000' }
@@ -308,7 +308,7 @@ describe('AnimationTrackEvaluator', () => {
     })
 
     describe('getTrackDuration', () => {
-        it('应该返回轨道的 duration', () => {
+        it('should return track duration', () => {
             const track: TransformTrack = {
                 trackType: 'transform',
                 duration: 2000,
@@ -321,7 +321,7 @@ describe('AnimationTrackEvaluator', () => {
             expect(duration).toBe(2000)
         })
 
-        it('无 duration 时应该返回默认值', () => {
+        it('should return default value when duration is missing', () => {
             const track: EffectTrack = {
                 trackType: 'effect',
                 effectParams: { type: 'breathe' }
@@ -335,7 +335,7 @@ describe('AnimationTrackEvaluator', () => {
 })
 
 describe('mergeTrackOutputs', () => {
-    it('应该合并多个轨道输出', () => {
+    it('should merge multiple track outputs', () => {
         const transformOutput: TransformTrackOutput = {
             targetObjectId: undefined,
             x: 10,
@@ -352,13 +352,13 @@ describe('mergeTrackOutputs', () => {
 
         const result = mergeTrackOutputs([transformOutput, visibilityOutput])
 
-        // mergeTrackOutputs 返回的是数组格式
+        // mergeTrackOutputs returns array format
         expect(result.transforms).toBeDefined()
         expect(Array.isArray(result.transforms)).toBe(true)
         expect(result.transforms.length).toBe(1)
     })
 
-    it('空输出数组应该返回空结果', () => {
+    it('should return empty result for empty output array', () => {
         const result = mergeTrackOutputs([])
 
         expect(result.transforms).toEqual([])

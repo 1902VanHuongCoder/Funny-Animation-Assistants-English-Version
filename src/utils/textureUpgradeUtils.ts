@@ -1,5 +1,5 @@
 /**
- * 收集可用纹理，过滤 undefined URL 和空纹理占位符。
+ * Collect available textures, filtering undefined URLs and empty texture placeholders.
  */
 export function collectNonEmptyTextures<T>(
   urls: (string | undefined)[],

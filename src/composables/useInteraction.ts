@@ -1,15 +1,15 @@
 /**
- * useInteraction - 交互逻辑模块
+ * useInteraction - Interaction logic module
  * 
- * 职责：
- * 1. 处理拖拽逻辑（handleDrag）
- * 2. 处理调整大小逻辑（handleResize）
- * 3. 处理旋转逻辑（handleRotate）
- * 4. 管理交互状态（isDragging, isResizing, isRotating）
+ * Responsibilities:
+ * 1. Handle drag logic (handleDrag)
+ * 2. Handle resize logic (handleResize)
+ * 3. Handle rotate logic (handleRotate)
+ * 4. Manage interaction states (isDragging, isResizing, isRotating)
  * 
- * 解耦点：
- * - 接收鼠标事件，计算出增量 (dx, dy)
- * - 通过回调抛出结果，而不是直接修改数据
+ * Decoupling points:
+ * - Receive mouse events, compute delta (dx, dy)
+ * - Emit results through callbacks instead of directly modifying data
  */
 
 import * as PIXI from 'pixi.js'
@@ -90,21 +90,21 @@ export interface InteractionCallbacks {
   getContainer?: (objectId: string) => PIXI.Container | undefined
   getCharacterEffectiveScale?: (objectId: string) => number | undefined
   /**
-   * v19: 获取对象在数据模型中的评估位置（parent-local）
-   * Setup Mode: 返回 obj.x/y
-   * Action Mode: 从 ghost states 获取 action 评估后的状态
+   * v19: Get evaluated position of object in data model (parent-local)
+   * Setup Mode: returns obj.x/y
+   * Action Mode: gets evaluated state after action from ghost states
    */
   getEvaluatedPosition?: (objectId: string) => { x: number; y: number } | undefined
   getEvaluatedGlobalPosition?: (objectId: string) => { x: number; y: number } | undefined
   /**
-   * v20: 获取对象在数据模型中的评估变换（scaleX, scaleY, rotation）
-   * Setup Mode: 返回 obj.scaleX/scaleY/rotation
-   * Action Mode: 从 ghost states 获取 action 评估后的状态
+   * v20: Get evaluated transform of object in data model (scaleX, scaleY, rotation)
+   * Setup Mode: returns obj.scaleX/scaleY/rotation
+   * Action Mode: gets evaluated state after action from ghost states
    */
   getEvaluatedTransform?: (objectId: string) => { scaleX: number; scaleY: number; rotation: number } | undefined
-  /** v19: 拖拽时的位置补偿量（Transform Origin → container.position 的偏移） */
+  /** v19: Position compensation during drag (offset from Transform Origin → container.position) */
   getPositionCompensation?: (objectId: string) => { cx: number; cy: number }
-  /** v19: 获取对象沿父链累积的有效翻转状态（XOR 所有祖先 + 自身的 flipX） */
+  /** v19: Get effective flip state accumulated along parent chain (XOR of all ancestors + own flipX) */
   getEffectiveFlipX?: (objectId: string) => boolean
 }
 
@@ -117,30 +117,30 @@ export interface UseInteractionOptions {
 export function useInteraction(options: UseInteractionOptions) {
   const { stage, canvasElement, callbacks } = options
 
-  // 拖拽状态
+  // Drag state
   let isDragging = false
   let dragState: DragState | null = null
 
-  // v19: 拖拽期间数据模型坐标追踪
-  // 用于 handleDragEnd 时获取与 startObjectX/Y 同坐标空间的最终位置，
-  // 避免从 container.position 读取（union 子对象经 proxy chain 展平后处于 stage 空间）
+  // v19: Track data model coordinates during drag
+  // Used by handleDragEnd to get final position in same coordinate space as startObjectX/Y,
+  // avoiding reading from container.position (union child objects are flattened in stage space via proxy chain)
   let dragMoved = false
   let lastDragModelX = 0
   let lastDragModelY = 0
   let lastDragGlobalX = 0
   let lastDragGlobalY = 0
 
-  // 调整大小状态
+  // Resize state
   let isResizing = false
   let resizeState: ResizeState | null = null
 
-  // 旋转状态
+  // Rotation state
   let isRotating = false
   let rotateState: RotateState | null = null
 
   /**
-   * v2.0.0: 从容器位置获取对象中心点坐标
-   * v2.0.0 后 container.position 已直接存储中心坐标（不含 offset 补偿），直接读取即可
+   * v2.0.0: Get object center coordinates from container position
+   * In v2.0.0+ container.position directly stores center coordinates (no offset compensation), read directly
    */
   function getObjectPositionFromContainer(container: PIXI.Container, _obj: SceneObject): { x: number; y: number } {
     return {
@@ -150,8 +150,8 @@ export function useInteraction(options: UseInteractionOptions) {
   }
 
   /**
-   * v2.0.0: 应用对象中心点坐标到容器
-   * v2.0.0 后直接赋值中心坐标，与 updateActionModeObjects / applyTransform 保持一致
+   * v2.0.0: Apply object center coordinates to container
+   * In v2.0.0+ directly assign center coordinates, consistent with updateActionModeObjects / applyTransform
    */
   function applyContainerPosition(container: PIXI.Container, _obj: SceneObject, newX: number, newY: number) {
     container.position.set(
@@ -161,7 +161,7 @@ export function useInteraction(options: UseInteractionOptions) {
   }
 
   /**
-   * 获取画布坐标
+   * Get canvas coordinates
    */
   function getCanvasPosition(event: PointerEvent): { x: number; y: number } {
     const rect = canvasElement.getBoundingClientRect()
@@ -172,11 +172,11 @@ export function useInteraction(options: UseInteractionOptions) {
   }
 
   /**
-   * 将 stage 坐标转换到对象父容器的局部坐标。
+   * Convert stage coordinates to local coordinates of object's parent container.
    *
-   * 对象数据模型的 x/y 存在于 parent-local 坐标系中。拖拽子对象时，
-   * 鼠标位移必须先投影到同一个 parent-local 坐标系；否则当父级 composite
-   * 存在旋转/缩放/翻转时，直接把 stage delta 加到 x/y 会造成拖拽方向偏离鼠标。
+   * Object data model x/y lives in parent-local coordinate space. When dragging a child object,
+   * mouse displacement must first be projected into the same parent-local coordinate space; otherwise
+   * when parent composite has rotation/scale/flip, adding stage delta directly to x/y deviates from mouse.
    */
   function getPointerPositionInObjectParent(objectId: string, stagePos: { x: number; y: number }): { x: number; y: number } {
     const container = callbacks.getContainer?.(objectId)
@@ -188,7 +188,7 @@ export function useInteraction(options: UseInteractionOptions) {
   }
 
   /**
-   * 开始拖拽
+   * Start drag
    */
   function startDrag(objectId: string, event: PIXI.FederatedPointerEvent, _container: PIXI.Container) {
     const obj = callbacks.getObject?.(objectId)
@@ -197,9 +197,9 @@ export function useInteraction(options: UseInteractionOptions) {
     const localPos = stage.toLocal(event.global)
     const parentLocalPos = getPointerPositionInObjectParent(objectId, localPos)
 
-    // v20: 统一从 getEvaluatedPosition 获取当前位置
-    // Setup Mode: 返回 obj.x/y
-    // Action Mode: 从 ghost states 获取 action 评估后的 parent-local 坐标
+    // v20: Uniformly get current position from getEvaluatedPosition
+    // Setup Mode: returns obj.x/y
+    // Action Mode: gets parent-local coordinates evaluated after actions from ghost states
     const evaluatedPos = callbacks.getEvaluatedPosition?.(objectId)
     const currentObjectX = evaluatedPos?.x ?? obj.x
     const currentObjectY = evaluatedPos?.y ?? obj.y
@@ -225,12 +225,12 @@ export function useInteraction(options: UseInteractionOptions) {
       startObjectGlobalY: currentObjectGlobalY
     }
 
-    // 选中对象
+    // Select object
     callbacks.onSelect?.(objectId)
   }
 
   /**
-   * 处理拖拽移动
+   * Handle drag move
    */
   function handleDragMove(event: PointerEvent) {
     if (!isDragging || !dragState) return
@@ -239,31 +239,31 @@ export function useInteraction(options: UseInteractionOptions) {
     const obj = callbacks.getObject?.(dragState.objectId)
     if (!obj) return
 
-    // 计算增量
+    // Calculate delta
     const deltaX = localPos.x - dragState.startMouseX
     const deltaY = localPos.y - dragState.startMouseY
     const parentLocalPos = getPointerPositionInObjectParent(dragState.objectId, localPos)
     const parentDeltaX = parentLocalPos.x - dragState.startMouseParentX
     const parentDeltaY = parentLocalPos.y - dragState.startMouseParentY
 
-    // 新位置 = 起始位置 + parent-local 增量。
-    // parent-local 增量由 PIXI 矩阵转换得到，天然覆盖父级旋转/缩放/翻转/嵌套 composite。
+    // New position = start position + parent-local delta.
+    // Parent-local delta from PIXI matrix transform naturally covers parent rotation/scale/flip/nested composite.
     const newX = dragState.startObjectX + parentDeltaX
     const newY = dragState.startObjectY + parentDeltaY
 
-    // v19: 追踪数据模型坐标（与 startObjectX/Y 同空间）
+    // v19: Track data model coordinates (same space as startObjectX/Y)
     dragMoved = true
     lastDragModelX = newX
     lastDragModelY = newY
     lastDragGlobalX = dragState.startObjectGlobalX + deltaX
     lastDragGlobalY = dragState.startObjectGlobalY + deltaY
 
-    // 通过回调通知
+    // Notify via callback
     callbacks.onDragMove?.(dragState.objectId, newX, newY, deltaX, deltaY)
   }
 
   /**
-   * 处理拖拽结束
+   * Handle drag end
    */
   function handleDragEnd() {
     if (!isDragging || !dragState) {
@@ -275,13 +275,13 @@ export function useInteraction(options: UseInteractionOptions) {
     const obj = callbacks.getObject?.(dragState.objectId)
 
     if (obj) {
-      // v19: 使用追踪的数据模型坐标作为最终位置，而非从 container.position 读取。
-      // 对于 union composite 子对象：
-      //   container.position 处于 stage 空间（经 applyUnionProxyChain 展平），
-      //   而 startObjectX/Y 处于 parent-local 空间（来自 getEvaluatedPosition）。
-      //   两者坐标空间不匹配会导致距离检查失效和错误的 action 创建。
-      // 使用 lastDragModelX/Y（来自 handleDragMove 的 startObjectX + delta）
-      // 确保与 startObjectX/Y 处于同一坐标空间。
+      // v19: Use tracked data model coordinates as final position instead of reading from container.position.
+      // For union composite child objects:
+      //   container.position is in stage space (flattened by applyUnionProxyChain),
+      //   while startObjectX/Y is in parent-local space (from getEvaluatedPosition).
+      //   Coordinate space mismatch leads to failed distance checks and incorrect action creation.
+      // Using lastDragModelX/Y (from startObjectX + delta in handleDragMove)
+      // guarantees same coordinate space as startObjectX/Y.
       const finalX = dragMoved ? lastDragModelX : dragState.startObjectX
       const finalY = dragMoved ? lastDragModelY : dragState.startObjectY
       const finalGlobalX = dragMoved ? lastDragGlobalX : dragState.startObjectGlobalX
@@ -302,7 +302,7 @@ export function useInteraction(options: UseInteractionOptions) {
   }
 
   /**
-   * 开始调整大小
+   * Start resize
    */
   function startResize(
     objectId: string,
@@ -315,9 +315,9 @@ export function useInteraction(options: UseInteractionOptions) {
 
     const localPos = stage.toLocal(event.global)
 
-    // v20: 统一从 getEvaluatedPosition/getEvaluatedTransform 获取初始状态
-    // Setup Mode: 返回 obj.x/y/scaleX/scaleY/rotation
-    // Action Mode: 从 ghost states 获取 action 评估后的状态
+    // v20: Uniformly get initial state from getEvaluatedPosition/getEvaluatedTransform
+    // Setup Mode: returns obj.x/y/scaleX/scaleY/rotation
+    // Action Mode: gets evaluated state after action from ghost states
     const evaluatedPos = callbacks.getEvaluatedPosition?.(objectId)
     const evaluatedTransform = callbacks.getEvaluatedTransform?.(objectId)
     const currentObjectX = evaluatedPos?.x ?? obj.x
@@ -344,10 +344,10 @@ export function useInteraction(options: UseInteractionOptions) {
   }
 
   /**
- * 处理调整大小移动
- * v9.4: 中心 Pivot 缩放 - 缩放时保持对象视觉中心不动
- * 支持 OBB 局部投影缩放和独立宽高等比缩放
- */
+   * Handle resize move
+   * v9.4: Center Pivot scale - keeps object visual center fixed while scaling
+   * Supports OBB local projection scale and independent aspect ratio scaling
+   */
   function handleResizeMove(event: PointerEvent) {
     if (!isResizing || !resizeState) return
 
@@ -355,20 +355,20 @@ export function useInteraction(options: UseInteractionOptions) {
     const obj = callbacks.getObject?.(resizeState.objectId)
     if (!obj) return
 
-    // 计算鼠标全局移动增量
+    // Calculate global mouse movement delta
     const deltaX = localPos.x - resizeState.startMouseX
     const deltaY = localPos.y - resizeState.startMouseY
 
-    // 旋转逆投影：将鼠标增量从全局坐标系映射到对象的本地未旋转坐标系
+    // Inverse rotation projection: map mouse delta from global coordinates to object unrotated local coordinates
     const angle = resizeState.startRotation
     const cosA = Math.cos(-angle)
     const sinA = Math.sin(-angle)
 
-    // 如果对象的有效翻转状态为 true（含父级继承），x 轴方向被反转，需要反向投射 deltaX
+    // If object effective flip is true (including parent inheritance), x axis is reversed; project deltaX inverted
     const effectiveFlip = callbacks.getEffectiveFlipX?.(resizeState.objectId) ?? obj.flipX ?? false
     const flipMultiplierX = effectiveFlip ? -1 : 1
 
-    // 投影到对象的未旋转本地坐标系，并考虑翻转修复鼠标拉伸方向关联
+    // Project to object unrotated local coordinates, considering flip to fix mouse drag direction
     const localDeltaX = (deltaX * cosA - deltaY * sinA) * flipMultiplierX
     const localDeltaY = deltaX * sinA + deltaY * cosA
 
@@ -376,8 +376,8 @@ export function useInteraction(options: UseInteractionOptions) {
     let scaleChangeX = 0
     let scaleChangeY = 0
 
-    // 根据拖动的手柄和局部增量计算 X/Y 独立的缩放变化
-    // 注意：如果是负向手柄拉伸负向距离，实际属于放大，因此公式带负号
+    // Calculate X/Y independent scale changes based on dragged handle and local delta
+    // Note: If negative handle is pulled negative distance, it is an enlarge, so formula has negative sign
     if (corner === 'top-left') {
       scaleChangeX = -localDeltaX / resizeState.startWidth
       scaleChangeY = -localDeltaY / resizeState.startHeight
@@ -391,7 +391,7 @@ export function useInteraction(options: UseInteractionOptions) {
       scaleChangeX = localDeltaX / resizeState.startWidth
       scaleChangeY = localDeltaY / resizeState.startHeight
     } else if (corner === 'top') {
-      // 仅边上的手柄：单轴计算
+      // Edge handles only: single-axis calculation
       scaleChangeY = -localDeltaY / resizeState.startHeight
     } else if (corner === 'bottom') {
       scaleChangeY = localDeltaY / resizeState.startHeight
@@ -404,19 +404,19 @@ export function useInteraction(options: UseInteractionOptions) {
     let newScaleX = resizeState.startScaleX + scaleChangeX
     let newScaleY = resizeState.startScaleY + scaleChangeY
 
-    // 默认行为：普通对象拖动四角时进行等比缩放，按住 Shift 键则自由缩放。
-    // 蒙版是裁切框，四角拖动应直接改变宽高比例；拖动单边手柄也始终是单轴拉伸。
+    // Default behavior: regular objects scale proportionally by dragging corners, hold Shift for free scale.
+    // Masks are crop boxes, dragging corners directly changes aspect ratio; dragging edge handles is always single axis.
     if (obj.type !== 'mask' && !event.shiftKey && corner.includes('-')) {
       const avgScaleChange = (scaleChangeX + scaleChangeY) / 2
       newScaleX = resizeState.startScaleX + avgScaleChange
       newScaleY = resizeState.startScaleY + avgScaleChange
     }
 
-    // 限制最小缩放值
+    // Clamp minimum scale value
     newScaleX = Math.max(0.1, newScaleX)
     newScaleY = Math.max(0.1, newScaleY)
 
-    // v2.0.0: 中心坐标下，缩放时中心不动，位置不需要补偿
+    // v2.0.0: Under center coordinates, center stays fixed during scale, position needs no compensation
     const newX = resizeState.startObjectX
     const newY = resizeState.startObjectY
 
@@ -424,7 +424,7 @@ export function useInteraction(options: UseInteractionOptions) {
   }
 
   /**
-   * 处理调整大小结束
+   * Handle resize end
    */
   function handleResizeEnd() {
     if (isResizing && resizeState) {
@@ -435,13 +435,13 @@ export function useInteraction(options: UseInteractionOptions) {
   }
 
   /**
-   * 开始旋转
+   * Start rotate
    */
   function startRotate(objectId: string, event: PIXI.FederatedPointerEvent, container: PIXI.Container, rotationCenter?: PIXI.Point) {
     const obj = callbacks.getObject?.(objectId)
     if (!obj) return
 
-    // 使用提供的旋转中心（transform origin），或回退到容器位置（中心点）
+    // Use provided rotation center (transform origin), or fall back to container position (center point)
     const globalCenter = rotationCenter ?? container.getGlobalPosition()
     const stageCenter = stage.toLocal(globalCenter)
     const stageMousePos = stage.toLocal(event.global)
@@ -460,7 +460,7 @@ export function useInteraction(options: UseInteractionOptions) {
   }
 
   /**
-   * 处理旋转移动
+   * Handle rotate move
    */
   function handleRotateMove(event: PointerEvent) {
     if (!isRotating || !rotateState) return
@@ -469,12 +469,12 @@ export function useInteraction(options: UseInteractionOptions) {
     const obj = callbacks.getObject?.(rotateState.objectId)
     if (!obj) return
 
-    // 计算当前鼠标相对于旋转中心的角度
+    // Calculate angle of mouse relative to rotation center
     const dx = localPos.x - rotateState.centerX
     const dy = localPos.y - rotateState.centerY
     const currentAngle = Math.atan2(dy, dx)
 
-    // 连续累计每一步的最短弧增量，支持单次拖拽超过 180° 甚至整圈旋转
+    // Accumulate shortest arc delta step by step, supporting single drag beyond 180° or multiple rotations
     const accumulated = accumulateRotationDelta(
       rotateState.lastAngle,
       currentAngle,
@@ -484,18 +484,18 @@ export function useInteraction(options: UseInteractionOptions) {
     rotateState.accumulatedDelta = accumulated.accumulatedDelta
     let deltaAngle = rotateState.accumulatedDelta
 
-    // v20: flipX 旋转方向补偿
-    // 只考虑父链的累积翻转（不含自身），因为：
-    // - 自身 flipX 通过 PIXI scale.x < 0 已经在矩阵中正确处理了旋转方向
-    // - 父级翻转会镜像鼠标所在的坐标空间，需要反转 delta 补偿
+    // v20: flipX rotation direction compensation
+    // Only consider parent chain accumulated flip (excluding self), because:
+    // - Self flipX via PIXI scale.x < 0 is already correctly handled in matrix for rotation direction
+    // - Parent flip mirrors coordinate space where mouse resides, requiring reversed delta compensation
     let parentFlipped = false
     const selfObj = callbacks.getObject?.(rotateState.objectId)
     if (selfObj?.parentId) {
-      // 从父对象开始遍历，不含自身
+      // Traverse starting from parent object, excluding self
       const parentFlip = callbacks.getEffectiveFlipX?.(selfObj.parentId)
-      // getEffectiveFlipX 从参数对象开始含自身遍历，传入 parentId 即为"父链含父自身"
-      // 但这里我们需要的是"父链中的翻转"，所以用 parentId 开始
-      // 注意：getEffectiveFlipX(parentId) 已经正确计算了从 parent 开始的累积翻转
+      // getEffectiveFlipX traverses from parameter object including itself; passing parentId means "parent chain including parent itself"
+      // But here we need "flip in parent chain", so start with parentId
+      // Note: getEffectiveFlipX(parentId) correctly computes accumulated flip starting from parent
       parentFlipped = parentFlip ?? false
     }
     if (parentFlipped) {
@@ -508,7 +508,7 @@ export function useInteraction(options: UseInteractionOptions) {
   }
 
   /**
-   * 处理旋转结束
+   * Handle rotate end
    */
   function handleRotateEnd() {
     if (isRotating && rotateState) {
@@ -519,7 +519,7 @@ export function useInteraction(options: UseInteractionOptions) {
   }
 
   /**
-   * 全局鼠标移动处理
+   * Handle global pointer move
    */
   function handleGlobalPointerMove(event: PointerEvent) {
     if (isDragging) {
@@ -532,7 +532,7 @@ export function useInteraction(options: UseInteractionOptions) {
   }
 
   /**
-   * 全局鼠标释放处理
+   * Handle global pointer up
    */
   function handleGlobalPointerUp() {
     handleDragEnd()
@@ -541,7 +541,7 @@ export function useInteraction(options: UseInteractionOptions) {
   }
 
   /**
-   * 绑定全局事件
+   * Bind global events
    */
   function bindGlobalEvents() {
     window.addEventListener('pointerup', handleGlobalPointerUp)
@@ -549,7 +549,7 @@ export function useInteraction(options: UseInteractionOptions) {
   }
 
   /**
-   * 解绑全局事件
+   * Unbind global events
    */
   function unbindGlobalEvents() {
     window.removeEventListener('pointerup', handleGlobalPointerUp)
@@ -557,8 +557,8 @@ export function useInteraction(options: UseInteractionOptions) {
   }
 
   /**
-   * 获取当前正在交互（拖拽/缩放/旋转）的对象 ID
-   * 用于防止异步渲染覆盖交互期间直接设置的容器状态
+   * Get object ID currently undergoing interaction (drag/resize/rotate)
+   * Used to prevent async rendering from overwriting container state directly set during interaction
    */
   function getActiveInteractionObjectId(): string | null {
     if (isDragging && dragState) return dragState.objectId
@@ -568,22 +568,22 @@ export function useInteraction(options: UseInteractionOptions) {
   }
 
   return {
-    // 状态
+    // State
     get isDragging() { return isDragging },
     get isResizing() { return isResizing },
     get isRotating() { return isRotating },
     get dragState() { return dragState },
 
-    // 操作
+    // Actions
     startDrag,
     startResize,
     startRotate,
 
-    // 事件绑定
+    // Event binding
     bindGlobalEvents,
     unbindGlobalEvents,
 
-    // 工具函数
+    // Utility functions
     getObjectPositionFromContainer,
     applyContainerPosition,
     getCanvasPosition,

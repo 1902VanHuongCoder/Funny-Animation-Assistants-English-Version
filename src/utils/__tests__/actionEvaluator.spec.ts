@@ -24,7 +24,7 @@ describe('actionEvaluator', () => {
         zIndex: 0
     } as SceneObject
 
-    // Phase 4e: 测试中访问 evaluator 返回值的子类型字段
+    // Phase 4e: Access subtype fields of evaluator return value in tests
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     // Phase 4e: asAny removed (character type deleted)
 
@@ -58,7 +58,7 @@ describe('actionEvaluator', () => {
             // Ah, I missed 'applyPointAction' definition in previous view block. It might be local helper not shown or imported?
             // Actually, lines 197 calls applyPointAction(baseState, action).
             // Let's assume standard behavior based on comments:
-            // "v6.3 更新：set_transform 仅处理视觉属性 (alpha, visible, flipX, zIndex)"
+            // "v6.3 update: set_transform handles visual properties only (alpha, visible, flipX, zIndex)"
 
             expect(result.alpha).toBe(0.5)
             // x/y should NOT change if set_transform is strictly visual.
@@ -77,9 +77,9 @@ describe('actionEvaluator', () => {
             } as any]
 
             // Even if we are at slot 0 (start of action), Action Mode (Edit Mode) usually shows result state?
-            // "移除 Slot 限制：总是显示最终状态 (v7.20)" -> Wait, the code says:
-            // "无论动作是瞬时还是持续，只要它已经开始，我们就认为在当前 Slot 应该显示其效果"
-            // "对于 Duration Action，这等同于显示其“最终状态”或“进行中状态”的目标值"
+            // "Remove Slot restriction: always display final state (v7.20)" -> Wait, the code says:
+            // "Regardless of whether action is point or duration, as long as it has begun, its effect should display in current Slot"
+            // "For Duration Action, this is equivalent to displaying its target value for final or ongoing state"
 
             const result = evaluateObjectStateBySlot(initialState, actions, 0)
             expect(result.x).toBe(50)
@@ -311,7 +311,7 @@ describe('evaluateCameraState (Camera Follow Enhancements)', () => {
         })
     })
 
-    describe('Auto Push-Pull (自动推拉)', () => {
+    describe('Auto Dolly Zoom (Auto Push-Pull)', () => {
         it('should not oscillate when autoZoom is false', () => {
             const actions = [makeFollowAction({ smoothEntry: false, zoom: 1, autoZoom: false })]
             const result1 = evaluateCameraState(defaultCameraState, actions, 500, 2000, slots, visualCenters, null)

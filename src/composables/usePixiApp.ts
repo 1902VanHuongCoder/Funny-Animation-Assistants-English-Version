@@ -1,10 +1,10 @@
 /**
- * usePixiApp - PixiJS Application 基础设置模块
+ * usePixiApp - PixiJS Application base setup module
  * 
- * 职责：
- * 1. 管理 PixiJS Application 的生命周期（init/destroy）
- * 2. 处理画布尺寸和视口变换（缩放 + 平移）
- * 3. 管理基础图层结构（stage, viewportLayer, selectionContainer, activeLayer）
+ * Responsibilities:
+ * 1. Manage PixiJS Application lifecycle (init/destroy)
+ * 2. Handle canvas dimensions and viewport transform (scale + translation)
+ * 3. Manage basic layer hierarchy (stage, viewportLayer, selectionContainer, activeLayer)
  */
 
 import * as PIXI from 'pixi.js'
@@ -19,8 +19,8 @@ export interface PixiAppOptions {
   mode?: 'setup' | 'action'
   wheelZoomAnchor?: 'pointer' | 'viewport-center'
   /**
-   * 禁用视口滚轮和平移交互：滚轮不再缩放/平移视口，中键与 Space+拖拽也不再平移。
-   * 用于 PivotEditorPanel 这类固定视图面板，避免对象被滚动或中键拖拽带离可视区。
+   * Disable viewport wheel and pan interactions: wheel no longer zooms/pans, middle click and Space+drag no longer pan.
+   * Used for fixed-view panels like PivotEditorPanel, preventing objects from being scrolled or dragged out of the visible area.
    */
   disableViewportPanZoom?: boolean
 }
@@ -37,17 +37,17 @@ export interface PixiAppContext {
 }
 
 // ============================================================================
-// 缩放常量
+// Zoom Constants
 // ============================================================================
 
-const MIN_ZOOM = 0.1    // 最小缩放倍率（相对于 fitScale）
-const MAX_ZOOM = 8.0    // 最大缩放倍率
-const ZOOM_STEP = 1.1   // 每次滚轮缩放步长
-const PAN_SPEED = 1.0   // 滚轮平移速度倍率
+const MIN_ZOOM = 0.1    // Minimum zoom ratio (relative to fitScale)
+const MAX_ZOOM = 8.0    // Maximum zoom ratio
+const ZOOM_STEP = 1.1   // Zoom step per wheel tick
+const PAN_SPEED = 1.0   // Wheel pan speed multiplier
 
 export function usePixiApp(options: PixiAppOptions) {
 
-  // 应用实例
+  // Application instance
   let app: PIXI.Application | null = null
   let stage: PIXI.Container | null = null
   let viewportLayer: PIXI.Container | null = null
@@ -58,48 +58,48 @@ export function usePixiApp(options: PixiAppOptions) {
   let contentLayer: PIXI.Container | null = null
   let lightingBoundsAnchor: PIXI.Graphics | null = null
 
-  // v25.4: 视口变换变更回调（pan/zoom 时通知外部更新光照等）
+  // v25.4: Viewport transform change callbacks (notify external listeners to update lighting, etc. on pan/zoom)
   const viewportTransformCallbacks = new Set<() => void>()
 
-  // 坐标转换参数
+  // Coordinate transform parameters
   const transformParams = ref({
     scale: 1,
     offsetX: 0,
     offsetY: 0
   })
 
-  // 画布尺寸
+  // Canvas dimensions
   const canvasSize = ref({
     width: options.canvasWidth ?? CANVAS_WIDTH,
     height: options.canvasHeight ?? CANVAS_HEIGHT
   })
 
-  // 鼠标位置（画布坐标）
+  // Mouse position (canvas coordinates)
   const mousePosition = ref({ x: 0, y: 0 })
 
-  // ========== 缩放与平移状态 ==========
+  // ========== Zoom and Pan State ==========
 
-  /** 基础适配比例（高度填满视口），由 updateTransformParams 计算 */
+  /** Base fit scale (fill viewport height), calculated by updateTransformParams */
   let fitScale = 1
 
-  /** 用户缩放因子（默认 1.0 = Fit Height） */
+  /** User zoom factor (default 1.0 = Fit Height) */
   const userZoom = ref(1.0)
 
-  /** 用户平移偏移（屏幕像素） */
+  /** User pan offset (screen pixels) */
   const panOffset = ref({ x: 0, y: 0 })
 
-  /** 当前是否处于平移拖拽中 */
+  /** Whether currently panning */
   let isPanning = false
   let panStartX = 0
   let panStartY = 0
   let panStartOffsetX = 0
   let panStartOffsetY = 0
 
-  /** Space 键按下状态（用于 Space+拖拽 平移） */
+  /** Space key pressed state (for Space+drag panning) */
   let spacePressed = false
 
   /**
-   * 初始化 PixiJS Application
+   * Initialize PixiJS Application
    */
   async function initApp(): Promise<PixiAppContext | null> {
     if (app) {
@@ -108,7 +108,7 @@ export function usePixiApp(options: PixiAppOptions) {
 
     await Promise.resolve() // Ensure async behavior
 
-    // 创建 PixiJS Application — renderer 大小为视口大小
+    // Create PixiJS Application — renderer size equals viewport size
     app = new PIXI.Application({
       width: options.canvasContainer.clientWidth,
       height: options.canvasContainer.clientHeight,
@@ -118,49 +118,49 @@ export function usePixiApp(options: PixiAppOptions) {
       autoDensity: true
     })
 
-    // 挂载到容器
+    // Mount to container
     canvasElement = app.view as HTMLCanvasElement
     options.canvasContainer.appendChild(canvasElement)
 
-    // 创建根舞台
+    // Create root stage
     stage = new PIXI.Container()
     stage.sortableChildren = true
     stage.name = 'main_stage'
     app.stage.addChild(stage)
 
-    // 创建视口层（承载缩放 + 平移）
+    // Create viewport layer (hosts scale + pan)
     viewportLayer = new PIXI.Container()
     viewportLayer.sortableChildren = true
     viewportLayer.name = 'viewport_layer'
     stage.addChild(viewportLayer)
 
-    // 创建选择框容器
+    // Create selection box container
     selectionContainer = new PIXI.Container()
     selectionContainer.zIndex = 9999
     selectionContainer.name = 'selection_container'
     app.stage.addChild(selectionContainer)
 
-    // 创建安全区域遮罩
+    // Create safe area overlay
     safeAreaOverlay = new PIXI.Graphics()
     safeAreaOverlay.zIndex = 9998
     safeAreaOverlay.name = 'safe_area_overlay'
     app.stage.addChild(safeAreaOverlay)
 
-    // v25.3: activeLayer 作为滤镜宿主层，contentLayer 承载实际场景对象
+    // v25.3: activeLayer acts as filter host layer, contentLayer holds actual scene objects
     activeLayer = new PIXI.Container()
     activeLayer.zIndex = 1
     activeLayer.sortableChildren = true
     activeLayer.name = 'active_layer'
     viewportLayer.addChild(activeLayer)
 
-    // 让 activeLayer 的局部 bounds 固定覆盖整张画布，
-    // 避免 LightingFilter 的输入空间退化成“当前可见对象包围盒”。
+    // Fix activeLayer local bounds to cover whole canvas,
+    // avoiding LightingFilter input space degrading into "current visible object bounding box".
     lightingBoundsAnchor = new PIXI.Graphics()
     lightingBoundsAnchor.name = 'lighting_bounds_anchor'
     lightingBoundsAnchor.zIndex = -9999
     lightingBoundsAnchor.eventMode = 'none'
-    // alpha=0 的图元不会稳定进入 getLocalBounds()，这里保留极低透明度，
-    // 让 activeLayer 的 filter 输入空间固定覆盖整张画布。
+    // Primitive with alpha=0 will not stably enter getLocalBounds(); keep extremely low opacity here
+    // so activeLayer filter input space covers the entire canvas.
     lightingBoundsAnchor.beginFill(0xffffff, 0.001)
     lightingBoundsAnchor.drawRect(0, 0, canvasSize.value.width, canvasSize.value.height)
     lightingBoundsAnchor.endFill()
@@ -172,20 +172,20 @@ export function usePixiApp(options: PixiAppOptions) {
     contentLayer.name = 'content_layer'
     activeLayer.addChild(contentLayer)
 
-    // 计算坐标转换参数
+    // Calculate coordinate transform parameters
     updateTransformParams()
 
-    // 初始平移：将画布水平居中到视口
+    // Initial pan: horizontally center canvas in viewport
     centerCanvasInViewport()
 
-    // 绑定基础事件
+    // Bind base events
     bindEvents()
 
     return getContext()
   }
 
   /**
-   * 获取应用上下文
+   * Get application context
    */
   function getContext(): PixiAppContext | null {
     if (!app || !stage || !viewportLayer || !canvasElement || !selectionContainer || !safeAreaOverlay) {
@@ -203,10 +203,10 @@ export function usePixiApp(options: PixiAppOptions) {
     }
   }
 
-  // ========== 视口变换 ==========
+  // ========== Viewport Transform ==========
 
   /**
-   * 计算 effectiveScale 并应用到 viewportLayer
+   * Calculate effectiveScale and apply to viewportLayer
    */
   function applyTransform() {
     if (!viewportLayer || !app) return
@@ -216,14 +216,14 @@ export function usePixiApp(options: PixiAppOptions) {
     viewportLayer.scale.set(effectiveScale, effectiveScale)
     viewportLayer.position.set(panOffset.value.x, panOffset.value.y)
 
-    // 安全区域遮罩跟随 viewportLayer 变换
+    // Safe area overlay follows viewportLayer transform
     if (safeAreaOverlay) {
       safeAreaOverlay.scale.set(effectiveScale, effectiveScale)
       safeAreaOverlay.position.set(panOffset.value.x, panOffset.value.y)
     }
 
-    // 选择框容器保持在屏幕坐标系（toGlobal 返回屏幕坐标）
-    // 不需要跟随 stage 变换，手柄大小自然保持屏幕像素恒定
+    // Selection box container remains in screen coordinate system (toGlobal returns screen coordinates)
+    // No need to follow stage transform, handle sizes naturally remain constant in screen pixels
 
     transformParams.value = {
       scale: effectiveScale,
@@ -233,12 +233,12 @@ export function usePixiApp(options: PixiAppOptions) {
 
     updateSafeAreaOverlay()
 
-    // v25.4: 通知外部视口变换已更新（光照滤镜需要重新计算屏幕坐标）
+    // v25.4: Notify external listeners that viewport transform updated (lighting filter needs to recompute screen coordinates)
     for (const cb of viewportTransformCallbacks) cb()
   }
 
   /**
-   * 更新坐标转换参数（高度填满视口）
+   * Update coordinate transform parameters (fill viewport height)
    */
   function updateTransformParams() {
     if (!options.canvasContainer || !app) return
@@ -246,17 +246,17 @@ export function usePixiApp(options: PixiAppOptions) {
     const viewportWidth = options.canvasContainer.clientWidth
     const viewportHeight = options.canvasContainer.clientHeight
 
-    // 计算基础适配比例（高度填满）
+    // Calculate base fit scale (height fill)
     fitScale = viewportHeight / canvasSize.value.height
 
-    // Renderer 大小 = 视口大小（不再随画布宽度缩放）
+    // Renderer size = viewport size (no longer scales with canvas width)
     app.renderer.resize(viewportWidth, viewportHeight)
 
     applyTransform()
   }
 
   /**
-   * 将画布水平居中到视口
+   * Center canvas horizontally in viewport
    */
   function centerCanvasInViewport() {
     if (!options.canvasContainer) return
@@ -265,14 +265,14 @@ export function usePixiApp(options: PixiAppOptions) {
     const effectiveScale = fitScale * userZoom.value
     const canvasPixelWidth = canvasSize.value.width * effectiveScale
 
-    // 如果画布比视口宽，将画布中心对齐视口中心
+    // If canvas is wider than viewport, center canvas center with viewport center
     if (canvasPixelWidth > viewportWidth) {
       panOffset.value = {
         x: (viewportWidth - canvasPixelWidth) / 2,
         y: panOffset.value.y
       }
     } else {
-      // 画布比视口窄，也居中
+      // If canvas is narrower than viewport, also center
       panOffset.value = {
         x: (viewportWidth - canvasPixelWidth) / 2,
         y: panOffset.value.y
@@ -282,13 +282,13 @@ export function usePixiApp(options: PixiAppOptions) {
     applyTransform()
   }
 
-  // ========== 缩放 ==========
+  // ========== Zoom ==========
 
   /**
-   * 以指定屏幕坐标为锚点进行缩放
-   * @param newZoom 新的 userZoom 值
-   * @param anchorScreenX 锚点屏幕 X（相对于 canvas 元素）
-   * @param anchorScreenY 锚点屏幕 Y（相对于 canvas 元素）
+   * Zoom anchored at specified screen coordinates
+   * @param newZoom New userZoom value
+   * @param anchorScreenX Anchor screen X (relative to canvas element)
+   * @param anchorScreenY Anchor screen Y (relative to canvas element)
    */
   function zoomAtPoint(newZoom: number, anchorScreenX: number, anchorScreenY: number) {
     const clampedZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, newZoom))
@@ -297,7 +297,7 @@ export function usePixiApp(options: PixiAppOptions) {
 
     userZoom.value = clampedZoom
 
-    // 锚点公式：保持鼠标指向的世界坐标不变
+    // Anchor formula: keep world coordinates pointed by mouse unchanged
     const ratio = clampedZoom / oldZoom
     panOffset.value = {
       x: anchorScreenX - (anchorScreenX - panOffset.value.x) * ratio,
@@ -308,8 +308,8 @@ export function usePixiApp(options: PixiAppOptions) {
   }
 
   /**
-   * 设置缩放级别（以视口中心为锚点）
-   * 供工具栏 +/- 按钮和预设列表使用
+   * Set zoom level (anchored at viewport center)
+   * Used by toolbar +/- buttons and preset lists
    */
   function setZoomLevel(newZoom: number) {
     if (!options.canvasContainer) return
@@ -319,7 +319,7 @@ export function usePixiApp(options: PixiAppOptions) {
   }
 
   /**
-   * 直接设置平移偏移（供滚动条组件调用）
+   * Directly set pan offset (called by scrollbar component)
    */
   function setPanOffset(x: number, y: number) {
     panOffset.value = { x, y }
@@ -327,7 +327,7 @@ export function usePixiApp(options: PixiAppOptions) {
   }
 
   /**
-   * 重置视图为默认 Fit Height + 水平居中
+   * Reset view to default Fit Height + horizontal center
    */
   function resetView() {
     userZoom.value = 1.0
@@ -337,7 +337,7 @@ export function usePixiApp(options: PixiAppOptions) {
   }
 
   /**
-   * Fit All：缩放使整个画布在视口中完全可见
+   * Fit All: zoom so entire canvas is completely visible in viewport
    */
   function fitAll() {
     if (!options.canvasContainer) return
@@ -352,7 +352,7 @@ export function usePixiApp(options: PixiAppOptions) {
     // userZoom = targetFitScale / fitScale
     userZoom.value = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, targetFitScale / fitScale))
 
-    // 居中
+    // Center
     const effectiveScale = fitScale * userZoom.value
     const canvasPixelWidth = canvasSize.value.width * effectiveScale
     const canvasPixelHeight = canvasSize.value.height * effectiveScale
@@ -365,15 +365,15 @@ export function usePixiApp(options: PixiAppOptions) {
   }
 
   /**
-   * Fit Content：缩放使给定包围盒在视口中完全可见（留 15% padding）
-   * @param bbox 包围盒（世界坐标）
+   * Fit Content: zoom so given bounding box is completely visible in viewport (leaves 15% padding)
+   * @param bbox Bounding box (world coordinates)
    */
   function fitContent(bbox: { x: number; y: number; width: number; height: number }) {
     if (!options.canvasContainer || bbox.width <= 0 || bbox.height <= 0) return
 
     const viewportWidth = options.canvasContainer.clientWidth
     const viewportHeight = options.canvasContainer.clientHeight
-    const padding = 0.85 // 留 15% padding
+    const padding = 0.85 // Leave 15% padding
 
     const scaleX = (viewportWidth * padding) / bbox.width
     const scaleY = (viewportHeight * padding) / bbox.height
@@ -381,7 +381,7 @@ export function usePixiApp(options: PixiAppOptions) {
 
     userZoom.value = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, targetEffectiveScale / fitScale))
 
-    // 将包围盒中心对齐视口中心
+    // Align bounding box center to viewport center
     const effectiveScale = fitScale * userZoom.value
     const bboxCenterX = (bbox.x + bbox.width / 2) * effectiveScale
     const bboxCenterY = (bbox.y + bbox.height / 2) * effectiveScale
@@ -394,7 +394,7 @@ export function usePixiApp(options: PixiAppOptions) {
   }
 
   /**
-   * 100% 视图：1:1 像素显示，画布中心对齐视口中心
+   * 100% View: 1:1 pixel display, canvas center aligned to viewport center
    */
   function zoomTo100() {
     if (!options.canvasContainer) return
@@ -405,7 +405,7 @@ export function usePixiApp(options: PixiAppOptions) {
     // fitScale * userZoom = 1.0 → userZoom = 1 / fitScale
     userZoom.value = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, 1.0 / fitScale))
 
-    // 画布中心对齐视口中心
+    // Center canvas center to viewport center
     const effectiveScale = fitScale * userZoom.value
     const canvasPixelWidth = canvasSize.value.width * effectiveScale
     const canvasPixelHeight = canvasSize.value.height * effectiveScale
@@ -417,12 +417,12 @@ export function usePixiApp(options: PixiAppOptions) {
     applyTransform()
   }
 
-  // ========== 安全区域遮罩 ==========
+  // ========== Safe Area Overlay ==========
 
   /**
-   * 更新安全区域遮罩
-   * 安全区域遮罩跟随 stage 变换（scale + position），
-   * 所以绘制坐标使用世界坐标空间（与 stage 一致）
+   * Update safe area overlay
+   * Safe area overlay follows stage transform (scale + position),
+   * so drawing coordinates use world coordinate space (consistent with stage)
    */
   function updateSafeAreaOverlay() {
     if (!safeAreaOverlay || !app) return
@@ -432,13 +432,13 @@ export function usePixiApp(options: PixiAppOptions) {
     const effectiveScale = fitScale * userZoom.value
     if (effectiveScale <= 0) return
 
-    // 可见区域（世界坐标）
+    // Visible area (world coordinates)
     const viewportWidth = options.canvasContainer.clientWidth / effectiveScale
     const viewportHeight = options.canvasContainer.clientHeight / effectiveScale
     const viewOriginX = -panOffset.value.x / effectiveScale
     const viewOriginY = -panOffset.value.y / effectiveScale
 
-    // 填充整个可视区为半透明黑
+    // Fill entire visible area with semi-transparent black
     safeAreaOverlay.beginFill(0x000000, 0.3)
     const padding = 10000
     safeAreaOverlay.drawRect(
@@ -448,21 +448,21 @@ export function usePixiApp(options: PixiAppOptions) {
       viewportHeight + padding * 2
     )
 
-    // 挖空中间的安全区
+    // Cut out center safe area
     safeAreaOverlay.beginHole()
     safeAreaOverlay.drawRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT)
     safeAreaOverlay.endHole()
     safeAreaOverlay.endFill()
 
-    // 绘制安全区绿色边框
+    // Draw safe area green border
     safeAreaOverlay.lineStyle(4 / effectiveScale, 0x00ff00, 0.5)
     safeAreaOverlay.drawRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT)
   }
 
-  // ========== 事件处理 ==========
+  // ========== Event Handling ==========
 
   /**
-   * 滚轮事件处理
+   * Handle wheel events
    */
   function handleWheel(e: WheelEvent) {
     if (options.disableViewportPanZoom) {
@@ -470,7 +470,7 @@ export function usePixiApp(options: PixiAppOptions) {
       return
     }
 
-    // Ctrl/Meta + 滚轮：缩放
+    // Ctrl/Meta + wheel: zoom
     if (e.ctrlKey || e.metaKey) {
       e.preventDefault()
       const factor = e.deltaY > 0 ? 1 / ZOOM_STEP : ZOOM_STEP
@@ -484,7 +484,7 @@ export function usePixiApp(options: PixiAppOptions) {
         : e.clientY - rect.top
       zoomAtPoint(userZoom.value * factor, offsetX, offsetY)
     } else if (e.shiftKey) {
-      // Shift + 滚轮：水平平移
+      // Shift + wheel: horizontal pan
       e.preventDefault()
       panOffset.value = {
         x: panOffset.value.x - e.deltaY * PAN_SPEED,
@@ -492,7 +492,7 @@ export function usePixiApp(options: PixiAppOptions) {
       }
       applyTransform()
     } else {
-      // 滚轮：垂直平移
+      // Wheel: vertical pan
       e.preventDefault()
       panOffset.value = {
         x: panOffset.value.x,
@@ -503,7 +503,7 @@ export function usePixiApp(options: PixiAppOptions) {
   }
 
   /**
-   * 指针按下：检测中键拖拽 / Space+拖拽
+   * Pointer down: detect middle click drag / Space+drag
    */
   function handlePointerDownForPan(e: PointerEvent) {
     if (options.disableViewportPanZoom) {
@@ -521,7 +521,7 @@ export function usePixiApp(options: PixiAppOptions) {
       panStartOffsetX = panOffset.value.x
       panStartOffsetY = panOffset.value.y
 
-      // 设置光标
+      // Set cursor
       if (canvasElement) {
         canvasElement.style.cursor = 'grabbing'
       }
@@ -529,7 +529,7 @@ export function usePixiApp(options: PixiAppOptions) {
   }
 
   /**
-   * 指针移动：平移拖拽
+   * Pointer move: pan drag
    */
   function handlePointerMoveForPan(e: PointerEvent) {
     if (!isPanning) return
@@ -542,12 +542,12 @@ export function usePixiApp(options: PixiAppOptions) {
   }
 
   /**
-   * 指针释放：结束平移
+   * Pointer up: end pan
    */
   function handlePointerUpForPan(_e: PointerEvent) {
     if (isPanning) {
       isPanning = false
-      // 恢复光标
+      // Restore cursor
       if (canvasElement) {
         canvasElement.style.cursor = spacePressed ? 'grab' : ''
       }
@@ -555,7 +555,7 @@ export function usePixiApp(options: PixiAppOptions) {
   }
 
   /**
-   * 键盘按下：Space 键
+   * Key down: Space key
    */
   function handleKeyDown(e: KeyboardEvent) {
     // Ctrl+0: Fit All
@@ -566,7 +566,7 @@ export function usePixiApp(options: PixiAppOptions) {
       return
     }
 
-    // Ctrl+1: 100% 视图
+    // Ctrl+1: 100% view
     if ((e.ctrlKey || e.metaKey) && (e.key === '1' || e.code === 'Digit1')) {
       e.preventDefault()
       if (options.disableViewportPanZoom) return
@@ -575,7 +575,7 @@ export function usePixiApp(options: PixiAppOptions) {
     }
 
     if (e.code === 'Space' && !e.repeat) {
-      // 仅当焦点不在输入框/文本区时激活平移模式
+      // Only activate pan mode when focus is not in input/textarea/select
       const tag = (e.target as HTMLElement).tagName
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return
 
@@ -589,7 +589,7 @@ export function usePixiApp(options: PixiAppOptions) {
   }
 
   /**
-   * 键盘释放：Space 键
+   * Key up: Space key
    */
   function handleKeyUp(e: KeyboardEvent) {
     if (e.code === 'Space') {
@@ -601,12 +601,12 @@ export function usePixiApp(options: PixiAppOptions) {
   }
 
   /**
-   * 画布鼠标移动事件（更新世界坐标）
+   * Canvas mouse move event (update world coordinates)
    */
   function handleCanvasPointerMove(event: PointerEvent) {
     if (!viewportLayer || !canvasElement) return
 
-    // 平移拖拽处理
+    // Pan drag handling
     handlePointerMoveForPan(event)
 
     const rect = canvasElement.getBoundingClientRect()
@@ -621,38 +621,38 @@ export function usePixiApp(options: PixiAppOptions) {
     }
   }
 
-  // ========== 事件绑定 ==========
+  // ========== Event Binding ==========
 
   /**
-   * 绑定基础事件
+   * Bind base events
    */
   function bindEvents() {
     if (!canvasElement || !stage) return
 
     const container = options.canvasContainer
 
-    // 鼠标移动事件（更新鼠标位置 + 平移）
+    // Mouse move event (update mouse position + pan)
     canvasElement.addEventListener('pointermove', handleCanvasPointerMove as EventListener)
 
-    // 滚轮事件（缩放 / 平移）
+    // Wheel event (zoom / pan)
     container.addEventListener('wheel', handleWheel, { passive: false })
 
-    // 中键 / Space+左键 平移
+    // Middle click / Space+left click pan
     canvasElement.addEventListener('pointerdown', handlePointerDownForPan as EventListener)
     window.addEventListener('pointerup', handlePointerUpForPan as EventListener)
 
-    // Space 键
+    // Space key
     window.addEventListener('keydown', handleKeyDown)
     window.addEventListener('keyup', handleKeyUp)
 
-    // 阻止中键默认滚动行为
+    // Prevent default middle click scroll behavior
     canvasElement.addEventListener('mousedown', (e: MouseEvent) => {
       if (e.button === 1) e.preventDefault()
     })
   }
 
   /**
-   * 解绑事件
+   * Unbind events
    */
   function unbindEvents() {
     if (!canvasElement) return
@@ -668,7 +668,7 @@ export function usePixiApp(options: PixiAppOptions) {
   }
 
   /**
-   * 销毁 PixiJS Application
+   * Destroy PixiJS Application
    */
   function destroyApp() {
     unbindEvents()
@@ -684,8 +684,8 @@ export function usePixiApp(options: PixiAppOptions) {
     }
 
     if (app) {
-      // v8.8 Fix: 不销毁共享的纹理缓存 (texture)
-      // 只销毁本组件创建的 Container 和 Sprite，保留全局纹理缓存供其他组件使用
+      // v8.8 Fix: Do not destroy shared texture cache (texture)
+      // Only destroy Container and Sprite created by this component, keeping global texture cache for other components
       app.destroy(true, { children: true, texture: false })
       app = null
     }
@@ -701,12 +701,12 @@ export function usePixiApp(options: PixiAppOptions) {
 
 
   return {
-    // 生命周期
+    // Lifecycle
     initApp,
     destroyApp,
     getContext,
 
-    // 视口控制
+    // Viewport control
     updateTransformParams,
     resetView,
     fitAll,
@@ -717,21 +717,21 @@ export function usePixiApp(options: PixiAppOptions) {
     zoomAtPoint,
     centerCanvasInViewport,
 
-    // 缩放平移状态
+    // Zoom and pan state
     userZoom,
     panOffset,
     get fitScale() { return fitScale },
 
-    // 状态
+    // State
     canvasSize,
     mousePosition,
     transformParams,
 
-    // 平移状态查询（供交互模块判断是否抑制对象拖拽）
+    // Pan state query (for interaction module to determine whether to suppress object dragging)
     get isSpacePressed() { return spacePressed },
     get isPanning() { return isPanning },
 
-    // 内部引用（供其他模块使用）
+    // Internal references (for other modules)
     get app() { return app },
     get stage() { return stage },
     get viewportLayer() { return viewportLayer },
@@ -739,7 +739,7 @@ export function usePixiApp(options: PixiAppOptions) {
     get selectionContainer() { return selectionContainer },
     get activeLayer() { return activeLayer },
 
-    // v25.4: 视口变换变更回调
+    // v25.4: Viewport transform change callbacks
     onViewportTransformChanged(cb: () => void) { viewportTransformCallbacks.add(cb) },
     offViewportTransformChanged(cb: () => void) { viewportTransformCallbacks.delete(cb) },
   }

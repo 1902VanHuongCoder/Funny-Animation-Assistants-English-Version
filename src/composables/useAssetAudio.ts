@@ -4,7 +4,7 @@ import { useProjectStore } from '@/stores/projectStore'
 import { loadAssetFromDisk } from '@/utils/fileSystem'
 
 // ========================================
-// 全局单例缓存（所有组件共享）
+// Global singleton cache (shared across all components)
 // ========================================
 const globalAudioCache = reactive<Record<string, string>>({})
 const globalCacheVersion = ref(0)
@@ -12,34 +12,34 @@ const globalLoadingPaths = new Set<string>()
 const globalCreatedBlobUrls = new Set<string>()
 
 /**
- * 统一的资源音频加载 Composable
- * 用于将相对路径转换为 Blob URL 用于播放
+ * Unified asset audio loader Composable
+ * Converts relative paths to Blob URLs for playback
  */
 export function useAssetAudio() {
   const projectStore = useProjectStore()
 
   /**
-   * 获取音频 URL（同步版本）
-   * 如果是路径，会异步加载并缓存
-   * 如果缓存中没有，返回空字符串
+   * Get audio URL (sync version)
+   * If it is a path, loads asynchronously and caches it
+   * If not cached, returns empty string
    */
   function getAudioUrl(pathOrUrl: string | null | undefined): string {
     if (!pathOrUrl) return ''
 
-    // 如果已经是 Blob URL 或 data URL，直接返回
+    // If already Blob URL or data URL, return directly
     if (pathOrUrl.startsWith('blob:') || pathOrUrl.startsWith('data:')) {
       return pathOrUrl
     }
 
-    // 访问 cacheVersion 以确保响应式追踪
+    // Access cacheVersion to ensure reactive tracking
     if (globalCacheVersion.value < 0) { /* noop */ }
 
-    // 检查缓存
+    // Check cache
     if (pathOrUrl in globalAudioCache) {
       return globalAudioCache[pathOrUrl] ?? ''
     }
 
-    // 如果是路径，异步加载
+    // If it is a path, load asynchronously
     if (projectStore.isProjectOpen && projectStore.projectHandle) {
       void loadAudioUrl(pathOrUrl)
     }
@@ -48,36 +48,36 @@ export function useAssetAudio() {
   }
 
   /**
-   * 异步加载音频 URL
+   * Asynchronously load audio URL
    */
   async function loadAudioUrl(path: string) {
-    // 如果已经是 Blob URL 或 data URL，无需加载
+    // If already Blob URL or data URL, no need to load
     if (path.startsWith('blob:') || path.startsWith('data:')) {
       return
     }
 
     if (!projectStore.projectHandle) {
-      console.warn('[useAssetAudio] 项目未打开，跳过加载:', path)
+      console.warn('[useAssetAudio] Project not open, skipping load:', path)
       return
     }
 
-    // 如果已经在缓存中，直接返回
+    // If already in cache, return directly
     if (path in globalAudioCache) {
 
       return
     }
 
-    // 如果正在加载中，等待加载完成
+    // If already loading, wait for completion
     if (globalLoadingPaths.has(path)) {
-      console.log('[useAssetAudio] 等待其他加载完成:', path)
-      // 等待加载完成（轮询等待）
+      console.log('[useAssetAudio] Waiting for existing load:', path)
+      // Wait for completion (polling)
       while (globalLoadingPaths.has(path)) {
         await new Promise(resolve => setTimeout(resolve, 10))
       }
       return
     }
 
-    // 标记为正在加载
+    // Mark as loading
     globalLoadingPaths.add(path)
 
 
@@ -87,30 +87,30 @@ export function useAssetAudio() {
 
       if (blobUrl) {
         globalAudioCache[path] = blobUrl
-        // 记录创建的 Blob URL
+        // Record created Blob URL
         if (blobUrl.startsWith('blob:')) {
           globalCreatedBlobUrls.add(blobUrl)
         }
-        // 触发响应式更新
+        // Trigger reactive update
         globalCacheVersion.value++
       } else {
-        console.warn('[useAssetAudio] 加载返回空:', path)
+        console.warn('[useAssetAudio] Load returned empty:', path)
       }
     } catch (error) {
-      console.error('[useAssetAudio] 加载音频失败:', path, error)
+      console.error('[useAssetAudio] Failed to load audio:', path, error)
     } finally {
-      // 移除加载标记
+      // Remove loading flag
       globalLoadingPaths.delete(path)
     }
   }
 
   /**
-   * 预加载多个音频
+   * Preload multiple audio files
    */
   function preloadAudios(paths: string[]) {
     if (!projectStore.isProjectOpen || !projectStore.projectHandle) return
 
-    // 去重路径
+    // Deduplicate paths
     const uniquePaths = Array.from(new Set(paths))
 
     uniquePaths.forEach(path => {
@@ -121,20 +121,20 @@ export function useAssetAudio() {
   }
 
   /**
-   * 清除缓存
+   * Clear cache
    */
   function clearCache() {
-    // 释放所有 Blob URL
+    // Revoke all Blob URLs
     globalCreatedBlobUrls.forEach(url => {
       try {
         URL.revokeObjectURL(url)
       } catch (error) {
-        console.error('[useAssetAudio] 释放 Blob URL 失败:', url, error)
+        console.error('[useAssetAudio] Failed to revoke Blob URL:', url, error)
       }
     })
     globalCreatedBlobUrls.clear()
 
-    // 清空对象
+    // Clear cache object
     Object.keys(globalAudioCache).forEach(key => {
       delete globalAudioCache[key]
     })
@@ -142,8 +142,8 @@ export function useAssetAudio() {
   }
 
   /**
-   * 清理单个 Blob URL
-   * @param path 路径
+   * Revoke single Blob URL
+   * @param path Path
    */
   function revokeBlobUrl(path: string) {
     const url = globalAudioCache[path]
@@ -154,13 +154,13 @@ export function useAssetAudio() {
         delete globalAudioCache[path]
         globalCacheVersion.value++
       } catch (error) {
-        console.error('[useAssetAudio] 释放 Blob URL 失败:', path, error)
+        console.error('[useAssetAudio] Failed to revoke Blob URL:', path, error)
       }
     }
   }
 
   /**
-   * 检查资源是否已准备好
+   * Check if asset is ready
    */
   function isAudioReady(path: string): boolean {
     if (!path) return true

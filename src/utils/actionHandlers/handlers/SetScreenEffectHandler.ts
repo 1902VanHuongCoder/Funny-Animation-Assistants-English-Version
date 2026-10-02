@@ -1,7 +1,7 @@
 /**
  * SetScreenEffect Action Handler (Phase 1)
- * 处理画面特效参数的瞬时设置
- * 直接操作 state.params 嵌套结构（消除 flat state 中间层）
+ * Handles instantaneous setting of screen effect parameters
+ * Directly operates on nested state.params structure (eliminating flat state intermediate layer)
  */
 
 import type { ScreenEffectParams } from '@/types/sceneObject'
@@ -20,10 +20,10 @@ export const SetScreenEffectHandler: ActionHandler<SetScreenEffectAction> = {
         state.params ??= {} as ScreenEffectParams
         const p = state.params
 
-        // 覆盖型参数 (coverOpacity 已删除，统一由 alpha 控制)
+        // Coverage parameters (coverOpacity deleted, uniformly controlled by alpha)
         if (params.baseColor !== undefined) p.baseColor = params.baseColor
 
-        // 孔洞参数
+        // Hole parameters
         if (params.holeShape !== undefined) p.holeShape = params.holeShape
         if (params.holeCenterX !== undefined) p.holeCenterX = params.holeCenterX
         if (params.holeCenterY !== undefined) p.holeCenterY = params.holeCenterY
@@ -32,7 +32,7 @@ export const SetScreenEffectHandler: ActionHandler<SetScreenEffectAction> = {
         if (params.openRatio !== undefined) p.openRatio = params.openRatio
         if (params.feather !== undefined) p.feather = params.feather
 
-        // 跟随参数
+        // Target following parameters
         if (params.targetId !== undefined) p.targetId = params.targetId
         if (params.offsetX !== undefined) p.offsetX = params.offsetX
         if (params.offsetY !== undefined) p.offsetY = params.offsetY

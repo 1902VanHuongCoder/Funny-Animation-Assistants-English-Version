@@ -1,97 +1,97 @@
 /**
  * Easing Functions Library
- * 缓动函数库，支持 Animation 系统的各种缓动效果
+ * Easing library supporting various animation easing effects in the Animation system
  */
 
 import type { EasingType } from '@/types/animation'
 
 /**
- * 缓动函数类型
+ * Easing function type
  */
 export type EasingFunction = (t: number) => number
 
 /**
- * 线性缓动
+ * Linear easing
  */
 export function linear(t: number): number {
     return t
 }
 
 /**
- * 阶跃缓动 (Step)
- * 保持起始值直到结束，适用于离散状态切换
+ * Step easing
+ * Holds start value until completion, suitable for discrete state changes
  */
 export function step(_t: number): number {
-    // 始终返回 0，表示保持起始值
-    // 插值结果: start + (end - start) * 0 = start
+    // Always returns 0 to hold start value
+    // Interpolation result: start + (end - start) * 0 = start
     return 0
 }
 
 /**
- * 二次方缓动 - 加速
+ * Quadratic easing - In
  */
 export function easeInQuad(t: number): number {
     return t * t
 }
 
 /**
- * 二次方缓动 - 减速
+ * Quadratic easing - Out
  */
 export function easeOutQuad(t: number): number {
     return 1 - (1 - t) * (1 - t)
 }
 
 /**
- * 二次方缓动 - 加速减速
+ * Quadratic easing - In/Out
  */
 export function easeInOutQuad(t: number): number {
     return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2
 }
 
 /**
- * 三次方缓动 - 加速
+ * Cubic easing - In
  */
 export function easeInCubic(t: number): number {
     return t * t * t
 }
 
 /**
- * 三次方缓动 - 减速
+ * Cubic easing - Out
  */
 export function easeOutCubic(t: number): number {
     return 1 - Math.pow(1 - t, 3)
 }
 
 /**
- * 三次方缓动 - 加速减速
+ * Cubic easing - In/Out
  */
 export function easeInOutCubic(t: number): number {
     return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2
 }
 
 /**
- * 正弦缓动 - 加速
+ * Sine easing - In
  */
 export function easeInSine(t: number): number {
     return 1 - Math.cos((t * Math.PI) / 2)
 }
 
 /**
- * 正弦缓动 - 减速
+ * Sine easing - Out
  */
 export function easeOutSine(t: number): number {
     return Math.sin((t * Math.PI) / 2)
 }
 
 /**
- * 正弦缓动 - 加速减速
+ * Sine easing - In/Out
  */
 export function easeInOutSine(t: number): number {
     return -(Math.cos(Math.PI * t) - 1) / 2
 }
 
 /**
- * 弹性缓动 - 加速
+ * Elastic easing - In
  */
 export function easeInElastic(t: number): number {
     const c4 = (2 * Math.PI) / 3
@@ -103,7 +103,7 @@ export function easeInElastic(t: number): number {
 }
 
 /**
- * 弹性缓动 - 减速
+ * Elastic easing - Out
  */
 export function easeOutElastic(t: number): number {
     const c4 = (2 * Math.PI) / 3
@@ -115,7 +115,7 @@ export function easeOutElastic(t: number): number {
 }
 
 /**
- * 弹性缓动 - 加速减速
+ * Elastic easing - In/Out
  */
 export function easeInOutElastic(t: number): number {
     const c5 = (2 * Math.PI) / 4.5
@@ -129,14 +129,14 @@ export function easeInOutElastic(t: number): number {
 }
 
 /**
- * 弹跳缓动 - 加速
+ * Bounce easing - In
  */
 export function easeInBounce(t: number): number {
     return 1 - easeOutBounce(1 - t)
 }
 
 /**
- * 弹跳缓动 - 减速
+ * Bounce easing - Out
  */
 export function easeOutBounce(t: number): number {
     const n1 = 7.5625
@@ -154,7 +154,7 @@ export function easeOutBounce(t: number): number {
 }
 
 /**
- * 弹跳缓动 - 加速减速
+ * Bounce easing - In/Out
  */
 export function easeInOutBounce(t: number): number {
     return t < 0.5
@@ -163,28 +163,28 @@ export function easeInOutBounce(t: number): number {
 }
 
 /**
- * 简化的 easeIn (使用二次方)
+ * Simplified easeIn (uses quadratic)
  */
 export function easeIn(t: number): number {
     return easeInQuad(t)
 }
 
 /**
- * 简化的 easeOut (使用二次方)
+ * Simplified easeOut (uses quadratic)
  */
 export function easeOut(t: number): number {
     return easeOutQuad(t)
 }
 
 /**
- * 简化的 easeInOut (使用二次方)
+ * Simplified easeInOut (uses quadratic)
  */
 export function easeInOut(t: number): number {
     return easeInOutQuad(t)
 }
 
 /**
- * 缓动函数映射表
+ * Easing functions map
  */
 const easingFunctions: Record<EasingType, EasingFunction> = {
     linear,
@@ -210,16 +210,16 @@ const easingFunctions: Record<EasingType, EasingFunction> = {
 }
 
 /**
- * 获取缓动函数
+ * Get easing function
  */
 export function getEasingFunction(type: EasingType): EasingFunction {
     return easingFunctions[type] ?? linear
 }
 
 /**
- * 应用缓动函数
- * @param t 归一化时间 (0-1)
- * @param easing 缓动类型
+ * Apply easing function
+ * @param t Normalized time (0-1)
+ * @param easing Easing type
  */
 export function applyEasing(t: number, easing: EasingType = 'linear'): number {
     const fn = getEasingFunction(easing)
@@ -227,7 +227,7 @@ export function applyEasing(t: number, easing: EasingType = 'linear'): number {
 }
 
 /**
- * 线性插值
+ * Linear interpolation
  */
 export function lerp(start: number, end: number, t: number): number {
     return start + (end - start) * t

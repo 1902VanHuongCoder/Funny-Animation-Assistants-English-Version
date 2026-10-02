@@ -1,21 +1,21 @@
 /**
  * Animation System Types (v11.0)
- * 沙雕动画小助手 可复用动画系统类型定义
+ * Reusable animation system type definitions for Funny Animation Assistant
  */
 
-// ===== 基础类型 =====
+// ===== Base Types =====
 
 /**
- * 轨道类型枚举
+ * Track type enum
  */
 export type AnimationTrackType = 'frame_sequence' | 'transform' | 'visibility' | 'effect'
 
 /**
- * 缓动函数类型
+ * Easing function types
  */
 export type EasingType =
     | 'linear'
-    | 'step'  // v11.1: 阶跃函数，无插值，保持前一帧的值直到下一帧
+    | 'step'  // v11.1: Step function, no interpolation, holds preceding frame value until next frame
     | 'easeIn' | 'easeOut' | 'easeInOut'
     | 'easeInQuad' | 'easeOutQuad' | 'easeInOutQuad'
     | 'easeInCubic' | 'easeOutCubic' | 'easeInOutCubic'
@@ -24,40 +24,40 @@ export type EasingType =
     | 'easeInBounce' | 'easeOutBounce' | 'easeInOutBounce'
 
 /**
- * 动态特效类型 (Phase 1: 5 种)
+ * Dynamic effect types (Phase 1: 5 types)
  */
 export type DynamicEffectType = 'wave' | 'ribbon' | 'breathe' | 'float' | 'glow' | 'motion_blur' | 'jelly' | 'squash' | 'shake' | 'petrify' | 'shatter'
 
 /**
- * 初始动画配置项 (v11.x)
- * 用于 Setup 模式配置场景对象的初始播放动画
+ * Initial animation config item (v11.x)
+ * Used in Setup mode to configure initial playback animation of scene objects
  */
 export interface InitialAnimationItem {
-    name: string      // 动画名称（资源级或场景级 Animation 的 name）
-    loop: boolean     // 是否循环播放
+    name: string      // Animation name (name of asset-level or scene-level Animation)
+    loop: boolean     // Whether to loop playback
 }
 
-// ===== 关键帧类型 =====
+// ===== Keyframe Types =====
 
 /**
- * 变换关键帧
- * 所有属性均为相对于基准的增量
+ * Transform keyframe
+ * All properties are deltas relative to baseline
  *
- * v13 (Scheme B) 分裂关键帧：
- * - 顶层字段 (x/y/...) 代表 valueIn —— 从左段进入本关键帧时看到的值（段的结束值）
- * - 可选 `out` 覆写 valueOut —— 从本关键帧继续到右段时使用的起始值
- * - 未设置 `out` 时 valueIn===valueOut（连续关键帧，完全等同旧数据）
- * - `out` 仅需声明差异字段：未覆写的字段继承顶层（fall-through）
+ * v13 (Scheme B) Split keyframe:
+ * - Top-level fields (x/y/...) represent valueIn —— value seen when entering this keyframe from the left segment (segment end value)
+ * - Optional `out` overrides valueOut —— starting value when continuing from this keyframe into the right segment
+ * - When `out` is not set, valueIn === valueOut (continuous keyframe, fully equivalent to legacy data)
+ * - `out` only needs to declare changed fields: non-overridden fields inherit top-level (fall-through)
  */
 export interface TransformKeyframe {
-    time: number              // 归一化时间 (0-1)
-    x?: number                // X 偏移量 (像素)
-    y?: number                // Y 偏移量 (像素)
-    scaleX?: number           // X 缩放乘数 (1.0 = 无变化)
-    scaleY?: number           // Y 缩放乘数
-    rotation?: number         // 旋转角度 (弧度)
-    flipX?: boolean           // v11.1: 水平翻转 (离散状态，不插值)
-    /** v13: 可选 valueOut 覆写；存在任一字段即视为本关键帧在时间轴上产生跳变 */
+    time: number              // Normalized time (0-1)
+    x?: number                // X offset (pixels)
+    y?: number                // Y offset (pixels)
+    scaleX?: number           // X scale multiplier (1.0 = no change)
+    scaleY?: number           // Y scale multiplier
+    rotation?: number         // Rotation angle (radians)
+    flipX?: boolean           // v11.1: Horizontal flip (discrete state, no interpolation)
+    /** v13: Optional valueOut override; presence of any field treats this keyframe as having a jump on the timeline */
     out?: {
         x?: number
         y?: number
@@ -69,200 +69,200 @@ export interface TransformKeyframe {
 }
 
 /**
- * 可见性关键帧
- * v13 (Scheme B) 分裂：顶层=valueIn，`out`=valueOut 覆写
+ * Visibility keyframe
+ * v13 (Scheme B) Split: top-level = valueIn, `out` = valueOut override
  */
 export interface VisibilityKeyframe {
-    time: number              // 归一化时间 (0-1)
-    alpha?: number            // 透明度 (0-1)
-    /** v13: 可选 valueOut 覆写 */
+    time: number              // Normalized time (0-1)
+    alpha?: number            // Opacity (0-1)
+    /** v13: Optional valueOut override */
     out?: {
         alpha?: number
     }
 }
 
-// ===== 轨道目标常量 =====
+// ===== Track Target Constants =====
 
 /**
- * 轨道目标对象 ID 的“自身”哨兵值
- * 当 targetObjectId === TARGET_SELF 时，变换应用到动画所属对象自身
+ * Track target object ID sentinel for "self"
+ * When targetObjectId === TARGET_SELF, transform applies to the animation's owning object itself
  */
 export const TARGET_SELF = '_self' as const
 
-// ===== 轨道类型 =====
+// ===== Track Types =====
 
 /**
- * 帧序列轨道
- * 支持两种模式：
- * 1. 引用模式：通过 assetId 引用旧资源模型中的动画素材
- * 2. 直接定义模式：通过 frames 直接定义帧序列
+ * Frame sequence track
+ * Supports two modes:
+ * 1. Reference mode: references animated material from legacy asset model via assetId
+ * 2. Direct definition mode: defines frame sequence directly via frames
  */
 export interface FrameSequenceTrack {
     trackType: 'frame_sequence'
-    displayName?: string     // 轨道显示名（仅用于编辑器展示，不改变目标对象名称）
-    targetObjectId?: string   // 目标对象 ID（'_self' = 自身，或后代对象 ID）
+    displayName?: string     // Track display name (editor presentation only; does not alter target object name)
+    targetObjectId?: string   // Target object ID ('_self' = self, or descendant object ID)
 
-    assetId?: string          // 引用帧动画素材 ID
-    // === 通用设置（可覆盖素材默认值）===
-    fps?: number              // 帧率，不填则使用素材定义或默认 25
-    loop?: boolean            // 是否循环，不填则使用素材定义或默认 true
-    // 时长由 frames.length / fps 或 frameCount / fps 自动计算
+    assetId?: string          // Referenced frame animation asset ID
+    // === General settings (overrides asset default values) ===
+    fps?: number              // Framerate; if omitted, uses asset definition or default 25
+    loop?: boolean            // Whether to loop; if omitted, uses asset definition or default true
+    // Duration is calculated automatically via frames.length / fps or frameCount / fps
 }
 
 /**
- * 变换轨道
- * 使用 keyframes 定义关键帧（至少 2 帧）
+ * Transform track
+ * Defines keyframes using keyframes (minimum 2 frames)
  */
 export interface TransformTrack {
     trackType: 'transform'
-    displayName?: string     // 轨道显示名（仅用于编辑器展示，不改变目标对象名称）
-    targetObjectId?: string   // 目标对象 ID（'_self' = 自身，或后代对象 ID）
-    duration?: number | 'auto' // 动画时长 (ms)，默认 1000；'auto' = 运行时自动确定
-    easing?: EasingType       // 缓动函数，默认 'linear'
-    keyframes: TransformKeyframe[]  // 关键帧列表（至少 2 帧）
+    displayName?: string     // Track display name (editor presentation only; does not alter target object name)
+    targetObjectId?: string   // Target object ID ('_self' = self, or descendant object ID)
+    duration?: number | 'auto' // Animation duration (ms), default 1000; 'auto' = resolved automatically at runtime
+    easing?: EasingType       // Easing function, default 'linear'
+    keyframes: TransformKeyframe[]  // Keyframe list (minimum 2 frames)
 
-    // 旋转/缩放变换点（可选，对象本地坐标系的像素值，与 PIXI container.pivot 同坐标系）
-    // 未设置时表示不覆盖对象默认 pivot（即维持当前 container.pivot 不变，无位置补偿）。
+    // Rotation/scale transform origin (optional, pixel values in object local space, same space as PIXI container.pivot)
+    // When unset, indicates not overriding object default pivot (keeps current container.pivot unchanged, no position compensation).
     pivot?: {
-        x: number   // 对象本地坐标 X（像素）
-        y: number   // 对象本地坐标 Y（像素）
+        x: number   // Object local coordinate X (pixels)
+        y: number   // Object local coordinate Y (pixels)
     }
 }
 
 /**
- * 可见性轨道
- * 使用 keyframes 定义关键帧
+ * Visibility track
+ * Defines keyframes using keyframes
  */
 export interface VisibilityTrack {
     trackType: 'visibility'
-    displayName?: string     // 轨道显示名（仅用于编辑器展示，不改变目标对象名称）
-    targetObjectId?: string   // 目标对象 ID（'_self' = 自身，或后代对象 ID）
-    duration?: number | 'auto' // 动画时长 (ms)，默认 1000；'auto' = 运行时自动确定
+    displayName?: string     // Track display name (editor presentation only; does not alter target object name)
+    targetObjectId?: string   // Target object ID ('_self' = self, or descendant object ID)
+    duration?: number | 'auto' // Animation duration (ms), default 1000; 'auto' = resolved automatically at runtime
     easing?: EasingType
     keyframes: VisibilityKeyframe[]
 }
 
-// ===== 特效参数类型 =====
+// ===== Effect Parameter Types =====
 
 /**
- * Wave 特效参数 (波浪飘动)
+ * Wave effect parameters (undulating wave)
  */
 export interface WaveEffectParams {
     type: 'wave'
-    speed?: number            // 波浪速度，默认 1.0
-    amplitude?: number        // 波浪幅度，默认 10
-    frequency?: number        // 波浪频率，默认 0.5
-    direction?: 'horizontal' | 'vertical' | 'both'  // 波浪方向，默认 'horizontal'
+    speed?: number            // Wave speed, default 1.0
+    amplitude?: number        // Wave amplitude, default 10
+    frequency?: number        // Wave frequency, default 0.5
+    direction?: 'horizontal' | 'vertical' | 'both'  // Wave direction, default 'horizontal'
 }
 
 /**
- * Ribbon 特效参数 (飘带)
+ * Ribbon effect parameters (flowing ribbon)
  */
 export interface RibbonEffectParams {
     type: 'ribbon'
-    speed?: number            // 速度 (默认 1.0)
-    amplitude?: number        // 最大振幅 (默认 10)
-    frequency?: number        // 频率 (默认 0.5)
+    speed?: number            // Speed (default 1.0)
+    amplitude?: number        // Maximum amplitude (default 10)
+    frequency?: number        // Frequency (default 0.5)
     direction?: 'horizontal' | 'vertical' | 'both'
-    segments?: number         // 网格分段 (默认 10)
-    damping?: number          // 衰减指数 (默认 1.5)
-    phaseScale?: number       // 相位累积 (默认 0.5)
+    segments?: number         // Mesh segments (default 10)
+    damping?: number          // Damping exponent (default 1.5)
+    phaseScale?: number       // Phase accumulation (default 0.5)
 }
 
 /**
- * Breathe 特效参数 (呼吸起伏)
+ * Breathe effect parameters (breathing scaling)
  */
 export interface BreatheEffectParams {
     type: 'breathe'
-    intensity?: number        // 呼吸强度 (缩放幅度)，默认 0.02
-    speed?: number            // 呼吸速度，默认 1.0
+    intensity?: number        // Breathing intensity (scale amplitude), default 0.02
+    speed?: number            // Breathing speed, default 1.0
 }
 
 /**
- * Float 特效参数 (漂浮悬浮)
+ * Float effect parameters (floating hover)
  */
 export interface FloatEffectParams {
     type: 'float'
-    amplitude?: number        // 漂浮幅度 (像素)，默认 5
-    speed?: number            // 漂浮速度，默认 1.0
+    amplitude?: number        // Float amplitude (pixels), default 5
+    speed?: number            // Float speed, default 1.0
 }
 
 /**
- * Glow 特效参数 (发光轮廓)
+ * Glow effect parameters (glowing outline)
  */
 export interface GlowEffectParams {
     type: 'glow'
-    color?: string            // 发光颜色，默认 '#ffffff'
-    intensity?: number        // 发光强度，默认 1.0
-    size?: number             // 发光大小 (像素)，默认 4
+    color?: string            // Glow color, default '#ffffff'
+    intensity?: number        // Glow intensity, default 1.0
+    size?: number             // Glow size (pixels), default 4
 }
 
 /**
- * MotionBlur 特效参数 (运动模糊)
+ * MotionBlur effect parameters (motion blur)
  */
 export interface MotionBlurEffectParams {
     type: 'motion_blur'
-    velocity?: number         // 模糊速度，默认 20
-    angle?: number            // 模糊角度 (度数)，默认 0 (水平)
-    kernelSize?: number       // 核大小，默认 5
+    velocity?: number         // Blur velocity, default 20
+    angle?: number            // Blur angle (degrees), default 0 (horizontal)
+    kernelSize?: number       // Kernel size, default 5
 }
 
 /**
- * Jelly 特效参数 (果冻抖动)
- * v11.70: 新增 duration 属性支持自定义衰减时长
+ * Jelly effect parameters (jelly bounce)
+ * v11.70: Added duration property to support custom decay duration
  */
 export interface JellyEffectParams {
     type: 'jelly'
-    stiffness?: number        // 刚度，默认 8
-    damping?: number          // 阻尼，默认 0.3
-    intensity?: number        // 强度，默认 0.3
-    duration?: number         // 特效时长 (ms)，默认 1000
+    stiffness?: number        // Stiffness, default 8
+    damping?: number          // Damping, default 0.3
+    intensity?: number        // Intensity, default 0.3
+    duration?: number         // Effect duration (ms), default 1000
 }
 
 /**
- * Squash 特效参数 (挤压拉伸)
- * v11.70: 新增 duration 属性支持自定义特效时长
+ * Squash effect parameters (squash & stretch)
+ * v11.70: Added duration property to support custom effect duration
  */
 export interface SquashEffectParams {
     type: 'squash'
-    intensity?: number        // 强度，默认 0.2
-    speed?: number            // 速度，默认 2
-    duration?: number         // 特效时长 (ms)，默认 1000
+    intensity?: number        // Intensity, default 0.2
+    speed?: number            // Speed, default 2
+    duration?: number         // Effect duration (ms), default 1000
 }
 
 /**
- * Shake 特效参数 (震动/点头)
+ * Shake effect parameters (shake / nod)
  */
 export interface ShakeEffectParams {
     type: 'shake'
-    speed?: number            // 震动速度，默认 5
-    range?: number            // 震动幅度 (角度或像素)，默认 10
-    axis?: 'x' | 'y' | 'rotation'  // 震动轴向，默认 rotation
+    speed?: number            // Shake speed, default 5
+    range?: number            // Shake range (degrees or pixels), default 10
+    axis?: 'x' | 'y' | 'rotation'  // Shake axis, default rotation
 }
 
 /**
- * Petrify 特效参数 (石化)
+ * Petrify effect parameters (petrification)
  */
 export interface PetrifyEffectParams {
     type: 'petrify'
-    duration?: number         // 石化过程时长 (ms)，默认 1000
-    intensity?: number        // 最终硬化程度 (0-1)，默认 1.0
-    grayScale?: boolean       // (Legacy) 是否去色，默认 true
-    seed?: number             // (New) 随机种子，用于纹理噪声，不填则随机生成
+    duration?: number         // Petrification process duration (ms), default 1000
+    intensity?: number        // Final hardening degree (0-1), default 1.0
+    grayScale?: boolean       // (Legacy) Whether to desaturate, default true
+    seed?: number             // (New) Random seed for texture noise; generated randomly if omitted
 }
 
 /**
- * Shatter 特效参数 (碎裂)
+ * Shatter effect parameters (shattering)
  */
 export interface ShatterEffectParams {
     type: 'shatter'
-    pieceCount?: number       // 碎片密度 (1-10)，默认 5
-    explodeForce?: number     // 爆炸扩散力度，默认 10.0
-    duration?: number         // 动画总时长 (ms)，默认 1500
+    pieceCount?: number       // Fragment density (1-10), default 5
+    explodeForce?: number     // Explosion spread force, default 10.0
+    duration?: number         // Total animation duration (ms), default 1500
 }
 
 /**
- * 特效参数联合类型
+ * Effect parameters union type
  */
 export type EffectParams =
     | WaveEffectParams
@@ -278,98 +278,98 @@ export type EffectParams =
     | ShatterEffectParams
 
 /**
- * 特效轨道
- * 使用引擎内置算法，无需手动关键帧
+ * Effect track
+ * Uses engine built-in algorithms, manual keyframes not required
  */
 export interface EffectTrack {
     trackType: 'effect'
-    displayName?: string     // 轨道显示名（仅用于编辑器展示，不改变目标对象名称）
-    targetObjectId?: string   // 目标对象 ID（'_self' = 自身，或后代对象 ID）
+    displayName?: string     // Track display name (editor presentation only; does not alter target object name)
+    targetObjectId?: string   // Target object ID ('_self' = self, or descendant object ID)
     effectParams: EffectParams
 }
 
 /**
- * 轨道联合类型
+ * Animation track union type
  */
 export type AnimationTrack = FrameSequenceTrack | TransformTrack | VisibilityTrack | EffectTrack
 
-// ===== Animation 定义 =====
+// ===== Animation Definitions =====
 
 export type AnimationTimingMode = 'continuous' | 'tts_speech'
 
 /**
- * 动画定义基类：所有动画类型共享的字段
+ * Animation definition base class: fields shared across all animation types
  */
 export interface AnimationDefinitionBase {
-    type: string              // 判别字段（'track'）
+    type: string              // Discriminator field ('track')
     id: string                // UUID
-    name: string              // 语义化名称 (如 "speak", "idle")
-    description?: string | undefined      // 描述说明
-    tags?: string[] | undefined           // 标签分类
-    loop: boolean             // 是否循环，默认 false
-    timingMode?: AnimationTimingMode // 默认播放方式，缺省为 continuous
-    origin?: 'auto' | 'user'  // 'auto' = 对象创建时自动生成的帧动画, 'user' = 用户手动创建
+    name: string              // Semantic name (e.g. "speak", "idle")
+    description?: string | undefined      // Description
+    tags?: string[] | undefined           // Tag categories
+    loop: boolean             // Whether to loop, default false
+    timingMode?: AnimationTimingMode // Default playback mode, defaults to continuous
+    origin?: 'auto' | 'user'  // 'auto' = frame animation auto-generated on object creation, 'user' = created manually by user
 
-    // 元数据（必填，创建时自动生成）
+    // Metadata (required, auto-generated on creation)
     createdAt: number
     updatedAt: number
 }
 
 /**
- * 轨道动画（直接驱动属性变化）
- * 注意：不再有全局 duration，时长由各轨道自己决定
+ * Track animation (directly drives property changes)
+ * Note: No global duration; duration is determined by individual tracks
  */
 export interface TrackAnimationDefinition extends AnimationDefinitionBase {
     type: 'track'
     tracks: AnimationTrack[]
-    duration?: number         // 可选的显式总时长 (ms)
+    duration?: number         // Optional explicit total duration (ms)
     /**
-     * 动画结束后的填充行为
-     * - 'none' (默认): 停止后 delta 清零，回到基线
-     * - 'forwards': 停止后保持最后一帧的 delta 值
+     * Fill behavior after animation ends
+     * - 'none' (default): deltas reset to zero after stop, returning to baseline
+     * - 'forwards': keeps final frame delta values after stop
      */
     fillMode?: 'none' | 'forwards'
 }
 
 /**
- * Animation 定义类型
+ * Animation definition type
  *
- * 旧数据兼容：缺少 type 字段的旧 AnimationDefinition 在反序列化时
- * 应自动注入 type: 'track'（见 sceneLoader.ts 迁移逻辑）。
+ * Legacy data compatibility: old AnimationDefinition without type field
+ * should auto-inject type: 'track' during deserialization (see sceneLoader.ts migration logic).
  */
 export type AnimationDefinition = TrackAnimationDefinition
 
 /**
- * 创建 AnimationDefinition 时的输入类型（省略自动生成字段）
+ * Input type when creating AnimationDefinition (omits auto-generated fields)
  */
 export type AnimationDefinitionInput = Omit<TrackAnimationDefinition, 'id' | 'createdAt' | 'updatedAt'>
 
 
 
-// ===== 运行时类型 =====
+// ===== Runtime Types =====
 
 /**
- * Animation 播放状态
+ * Animation play state
  */
 export type AnimationPlayState = 'stopped' | 'playing' | 'paused' | 'filled'
 
 /**
- * Animation 播放参数
+ * Animation play parameters
  */
 export interface AnimationPlayParams {
-    speed?: number            // 播放速度，默认 1.0
-    loop?: boolean            // 覆盖默认循环设置
-    reset?: boolean           // 是否从头开始，默认 true
-    // v11.52: 运行时帧数，用于帧序列轨道计算正确的帧索引
-    // 由 GenericAnimationPlayer 从 AnimatedSprite.textures.length 获取并传入
+    speed?: number            // Playback speed, default 1.0
+    loop?: boolean            // Overrides default loop setting
+    reset?: boolean           // Whether to start from beginning, default true
+    // v11.52: Runtime frame count used by frame sequence track to calculate correct frame index
+    // Provided by GenericAnimationPlayer from AnimatedSprite.textures.length
     runtimeFrameCount?: number
-    // v12.x: Auto Duration 解析后的实际时长 (ms)
-    // 当轨道 duration === 'auto' 时，由播放引擎计算后注入
+    // v12.x: Actual duration (ms) resolved from Auto Duration
+    // Injected by playback engine when track duration === 'auto'
     runtimeDuration?: number
 }
 
 /**
- * 轨道输出结果（变换）
+ * Track output result (transform)
  */
 export interface TransformTrackOutput {
     targetObjectId?: string | undefined
@@ -378,24 +378,24 @@ export interface TransformTrackOutput {
     scaleX: number
     scaleY: number
     rotation: number
-    flipX?: boolean | undefined  // v11.1: 水平翻转 (离散状态)
+    flipX?: boolean | undefined  // v11.1: Horizontal flip (discrete state)
     pivot: { x: number; y: number } | undefined
 }
 
 /**
- * 轨道输出结果（可见性）
+ * Track output result (visibility)
  */
 export interface VisibilityTrackOutput {
     targetObjectId?: string | undefined
     alpha: number
 }
 
-// v11.52: FrameSequenceTrackOutput 已删除
-// 帧动画直接使用 AnimatedSprite.play() 播放
+// v11.52: FrameSequenceTrackOutput removed
+// Frame animation plays directly via AnimatedSprite.play()
 
 /**
- * 轨道输出结果（特效）
- * v11.70: 新增进度驱动模式的预计算结果字段
+ * Track output result (effect)
+ * v11.70: Added precomputed result fields for progress-driven mode
  */
 export interface EffectTrackOutput {
     targetObjectId?: string | undefined
@@ -403,7 +403,7 @@ export interface EffectTrackOutput {
     effectParams: EffectParams
     active: boolean
 
-    // v11.70: 进度驱动模式的预计算结果（jelly/squash 等阻尼类特效）
+    // v11.70: Precomputed result for progress-driven mode (jelly/squash and other damped effects)
     deltaScaleX?: number
     deltaScaleY?: number
     deltaX?: number
@@ -412,18 +412,17 @@ export interface EffectTrackOutput {
 }
 
 /**
- * 轨道输出联合类型
+ * Track output union type
  */
 export type TrackOutput =
     | TransformTrackOutput
     | VisibilityTrackOutput
-    // v11.52: FrameSequenceTrackOutput 已移除
     | EffectTrackOutput
 
 /**
- * Animation 输出状态
- * 由 AnimationPlayer 计算后输出
- * v11.52: frameSequences 已移除，帧动画直接使用 AnimatedSprite.play()
+ * Animation output state
+ * Computed and output by AnimationPlayer
+ * v11.52: frameSequences removed; frame animation plays directly via AnimatedSprite.play()
  */
 export interface AnimationOutput {
     transforms: TransformTrackOutput[]
@@ -431,20 +430,20 @@ export interface AnimationOutput {
     effects: EffectTrackOutput[]
 }
 
-// ===== 辅助类型 =====
+// ===== Helper Types =====
 
 /**
- * 资源类型（用于 Animation 管理）
+ * Resource type (used for Animation management)
  */
 export type AnimationResourceType = 'character' | 'prop' | 'background' | 'scene' | 'composite'
 
 /**
- * Animation 列表项（用于 UI 显示）
+ * Animation list item (used for UI display)
  */
 export interface AnimationListItem {
     id: string
     name: string
     loop: boolean
     trackCount: number
-    estimatedDuration: number  // 估算时长 (ms)
+    estimatedDuration: number  // Estimated duration (ms)
 }

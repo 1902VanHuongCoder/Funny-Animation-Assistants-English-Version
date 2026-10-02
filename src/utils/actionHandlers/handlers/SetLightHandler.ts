@@ -1,8 +1,8 @@
 /**
- * SetLight Action Handler (点光源 PRD Phase 0.5)
- * 处理光源参数的瞬时设置
- * 直接操作 state.lightColor / lightIntensity / lightRadius
- * 对标 SetScreenEffectHandler 的精简实现
+ * SetLight Action Handler (Point light PRD Phase 0.5)
+ * Handles instantaneous setting of light source parameters
+ * Directly operates on state.lightColor / lightIntensity / lightRadius
+ * Mirrors the concise implementation of SetScreenEffectHandler
  */
 
 import type { SetLightAction } from '@/types/screenplay'
@@ -20,7 +20,7 @@ export const SetLightHandler: ActionHandler<SetLightAction> = {
         if (params.lightColor !== undefined) state.lightColor = params.lightColor
         if (params.lightIntensity !== undefined) state.lightIntensity = params.lightIntensity
         if (params.lightRadius !== undefined) state.lightRadius = params.lightRadius
-        // Phase 1: 闪烁和方向性
+        // Phase 1: Flicker and directivity
         if (params.flicker !== undefined) state.flicker = params.flicker
         if (params.flickerSpeed !== undefined) state.flickerSpeed = params.flickerSpeed
         if (params.directionMode !== undefined) state.directionMode = params.directionMode

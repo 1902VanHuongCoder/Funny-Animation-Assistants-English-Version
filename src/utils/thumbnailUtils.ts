@@ -1,26 +1,24 @@
 import * as PIXI from 'pixi.js'
 
 /**
- * 生成缩略图工具
+ * Thumbnail generation utility
  */
 
 const THUMBNAIL_SIZE = 512
 const THUMBNAIL_QUALITY = 0.8
 
-// 内存中的缩略图缓存 (Map<sourceUrl, thumbnailUrl>)
-// 使用 WeakMap 防止内存泄漏？不，我们需要持久化缓存直到组件销毁
-// 但为了跨组件复用，可以用全局 Map，这里先用简单的
+// In-memory thumbnail cache (Map<sourceUrl, thumbnailUrl>)
 const thumbnailCache = new Map<string, string>()
 
 /**
- * 从图片 URL 生成缩略图 Blob URL
- * @param sourceUrl 原始图片 URL (Blob URL 或 http URL)
- * @returns 缩略图 Blob URL
+ * Generate thumbnail Blob URL from image URL
+ * @param sourceUrl Original image URL (Blob URL or HTTP URL)
+ * @returns Thumbnail Blob URL
  */
 export async function generateThumbnail(sourceUrl: string): Promise<string> {
   if (!sourceUrl) return ''
 
-  // 1. 检查缓存
+  // 1. Check cache
   if (thumbnailCache.has(sourceUrl)) {
     return thumbnailCache.get(sourceUrl)!
   }
@@ -31,18 +29,18 @@ export async function generateThumbnail(sourceUrl: string): Promise<string> {
 
     img.onload = () => {
       try {
-        // 计算缩放比例
+        // Calculate scaling ratio
         let width = img.width
         let height = img.height
 
-        // 如果图片本身很小，直接返回原图
+        // If image itself is small, return original
         if (width <= THUMBNAIL_SIZE && height <= THUMBNAIL_SIZE) {
           thumbnailCache.set(sourceUrl, sourceUrl)
           resolve(sourceUrl)
           return
         }
 
-        // 保持纵横比缩放
+        // Maintain aspect ratio scaling
         if (width > height) {
           if (width > THUMBNAIL_SIZE) {
             height = Math.round(height * (THUMBNAIL_SIZE / width))
@@ -55,7 +53,7 @@ export async function generateThumbnail(sourceUrl: string): Promise<string> {
           }
         }
 
-        // 创建 Canvas
+        // Create canvas
         const canvas = document.createElement('canvas')
         canvas.width = width
         canvas.height = height
@@ -66,10 +64,10 @@ export async function generateThumbnail(sourceUrl: string): Promise<string> {
           return
         }
 
-        // 绘制图片
+        // Draw image
         ctx.drawImage(img, 0, 0, width, height)
 
-        // 导出为 Blob
+        // Export as Blob
         canvas.toBlob((blob) => {
           if (blob) {
             const thumbUrl = URL.createObjectURL(blob)
@@ -100,22 +98,22 @@ export async function generateThumbnail(sourceUrl: string): Promise<string> {
 }
 
 /**
- * 从 PIXI Application 生成缩略图
- * @param app PIXI Application 实例
- * @returns 缩略图 Blob URL
+ * Generate thumbnail from PIXI Application
+ * @param app PIXI Application instance
+ * @returns Thumbnail Blob URL
  */
 export async function generateThumbnailFromCanvas(app: PIXI.Application): Promise<string> {
-  // 1. 提取 Canvas
-  // 注意：Extract 操作比较昂贵，可能会导致一瞬间的卡顿
+  // 1. Extract canvas
+  // Note: Extract operation is expensive and may cause momentary frame drop
   const sourceCanvas = app.renderer.extract.canvas(app.stage) as HTMLCanvasElement
 
   return new Promise((resolve, reject) => {
     try {
-      // 计算缩放比例
+      // Calculate scaling ratio
       let width = sourceCanvas.width
       let height = sourceCanvas.height
 
-      // 保持纵横比缩放
+      // Maintain aspect ratio scaling
       if (width > height) {
         if (width > THUMBNAIL_SIZE) {
           height = Math.round(height * (THUMBNAIL_SIZE / width))
@@ -128,7 +126,7 @@ export async function generateThumbnailFromCanvas(app: PIXI.Application): Promis
         }
       }
 
-      // 创建目标 Canvas
+      // Create target canvas
       const canvas = document.createElement('canvas')
       canvas.width = width
       canvas.height = height
@@ -139,15 +137,14 @@ export async function generateThumbnailFromCanvas(app: PIXI.Application): Promis
         return
       }
 
-      // ★★★ 关键修复：先填充白色背景，避免透明区域在 JPEG 转换时变成黑色 ★★★
+      // Fill white background first to avoid transparent areas turning black during JPEG conversion
       ctx.fillStyle = '#FFFFFF'
       ctx.fillRect(0, 0, width, height)
 
-      // 绘制图片
+      // Draw image
       ctx.drawImage(sourceCanvas, 0, 0, width, height)
 
-      // ★★★ 修改：导出为 Base64 Data URL，而不是 Blob URL ★★★
-      // 这样可以直接存储到 .anime 文件中，避免 Blob URL 失效
+      // Export as Base64 Data URL instead of Blob URL so it can be stored in .anime project files
       try {
         const dataUrl = canvas.toDataURL('image/jpeg', THUMBNAIL_QUALITY)
         resolve(dataUrl)
@@ -162,17 +159,14 @@ export async function generateThumbnailFromCanvas(app: PIXI.Application): Promis
 }
 
 /**
- * 清理缩略图缓存
+ * Clear thumbnail cache
  */
 export function clearThumbnailCache() {
   thumbnailCache.forEach(url => {
-    // 只有当我们创建的 Blob URL 才需要释放
-    // 注意：如果是原图 URL (sourceUrl) 被存入缓存，不要释放它！
+    // Only release Blob URLs we created
     if (url.startsWith('blob:') && url !== thumbnailCache.keys().next().value) {
-      // 这里很难判断哪个是生成的，哪个是原图。
-      // 改进策略：cache 存储 { url: string, isGenerated: boolean }
+      // Cache stores url
     }
   })
-  // 简单起见，这里暂不自动清理，依赖浏览器页面刷新或组件销毁
-  // 实际项目中应该有更严谨的生命周期管理
+  // Relies on page reload or component destruction for cleanup
 }

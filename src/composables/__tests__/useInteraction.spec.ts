@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { accumulateRotationDelta, normalizeAngleDelta } from '../useInteraction'
 
 describe('normalizeAngleDelta', () => {
-  it('将跨越 +pi/-pi 边界的小角度旋转归一化为最短弧', () => {
+  it('normalizes small angular rotations crossing +pi/-pi boundary to shortest arc', () => {
     const startAngle = 179 * Math.PI / 180
     const currentAngle = -171 * Math.PI / 180
 
@@ -12,7 +12,7 @@ describe('normalizeAngleDelta', () => {
     expect(normalized).toBeCloseTo(10 * Math.PI / 180, 6)
   })
 
-  it('保留本来就在最短弧范围内的角度差', () => {
+  it('preserves angular differences already within shortest arc range', () => {
     const normalized = normalizeAngleDelta(-20 * Math.PI / 180)
 
     expect(normalized).toBeCloseTo(-20 * Math.PI / 180, 6)
@@ -20,7 +20,7 @@ describe('normalizeAngleDelta', () => {
 })
 
 describe('accumulateRotationDelta', () => {
-  it('跨越 +pi/-pi 边界时仍能连续累计正向旋转', () => {
+  it('continuously accumulates positive rotation across +pi/-pi boundary', () => {
     const firstStep = accumulateRotationDelta(
       170 * Math.PI / 180,
       -170 * Math.PI / 180,
@@ -36,7 +36,7 @@ describe('accumulateRotationDelta', () => {
     expect(secondStep.accumulatedDelta).toBeCloseTo(40 * Math.PI / 180, 6)
   })
 
-  it('支持单次拖拽累计超过 180 度', () => {
+  it('supports single drag accumulation exceeding 180 degrees', () => {
     let state = {
       currentAngle: 0,
       accumulatedDelta: 0

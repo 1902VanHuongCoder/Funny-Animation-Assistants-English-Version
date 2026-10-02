@@ -2,7 +2,7 @@ import type { MP4MuxerWrapper } from './MP4MuxerWrapper'
 import type { VideoExportConfig } from './types'
 
 /**
- * 音频编码器封装类
+ * Audio encoder wrapper class
  */
 export class AudioEncoderWrapper {
     private encoder: AudioEncoder | null = null
@@ -16,7 +16,7 @@ export class AudioEncoderWrapper {
     }
 
     /**
-     * 初始化并配置编码器
+     * Initialize and configure encoder
      */
     async initialize(): Promise<void> {
         return new Promise((resolve, reject) => {
@@ -25,16 +25,16 @@ export class AudioEncoderWrapper {
                     try {
                         this.muxer.addAudioChunk(chunk, meta)
                     } catch (error) {
-                        console.error('[AudioEncoder] 添加音频块失败:', error)
+                        console.error('[AudioEncoder] Failed to add audio chunk:', error)
                     }
                 },
                 error: (error) => {
-                    console.error('[AudioEncoder] 编码错误:', error)
+                    console.error('[AudioEncoder] Encoding error:', error)
                     reject(error)
                 },
             })
 
-            // 配置编码器
+            // Configure encoder
             const encoderConfig: AudioEncoderConfig = {
                 codec: this.config.audioCodec,
                 sampleRate: this.config.audioSampleRate,
@@ -50,7 +50,7 @@ export class AudioEncoderWrapper {
     }
 
     /**
-     * 编码 AudioData
+     * Encode AudioData
      */
     encode(audioData: AudioData): void {
         if (!this.encoder || !this.isConfigured) {
@@ -60,13 +60,13 @@ export class AudioEncoderWrapper {
         try {
             this.encoder.encode(audioData)
         } catch (error) {
-            console.error('[AudioEncoder] 编码失败:', error)
+            console.error('[AudioEncoder] Encoding failed:', error)
             throw error
         }
     }
 
     /**
-     * 批量编码 AudioBuffer
+     * Batch encode AudioBuffer
      */
     encodeBuffer(buffer: AudioBuffer): Promise<void> {
         if (!this.encoder || !this.isConfigured) {
@@ -77,14 +77,14 @@ export class AudioEncoderWrapper {
         const numberOfChannels = buffer.numberOfChannels
         const length = buffer.length
 
-        // 将 AudioBuffer 转换为 AudioData
-        // 每次传递一小块数据以避免内存问题
-        const chunkSize = sampleRate // 1秒的数据
+        // Convert AudioBuffer to AudioData
+        // Pass chunks to avoid memory issues
+        const chunkSize = sampleRate // 1 second of data
 
         for (let offset = 0; offset < length; offset += chunkSize) {
             const frameLength = Math.min(chunkSize, length - offset)
 
-            // 提取平面数据（通道连续排列）
+            // Extract planar data (channels sequentially arranged)
             const planarData = new Float32Array(frameLength * numberOfChannels)
             for (let ch = 0; ch < numberOfChannels; ch++) {
                 const channelSamples = buffer.getChannelData(ch)
@@ -92,13 +92,13 @@ export class AudioEncoderWrapper {
                 planarData.set(channelSlice, ch * frameLength)
             }
 
-            // 创建 AudioData - 使用 f32-planar 格式
+            // Create AudioData - using f32-planar format
             const audioData = new AudioData({
                 format: 'f32-planar',
                 sampleRate: sampleRate,
                 numberOfFrames: frameLength,
                 numberOfChannels: numberOfChannels,
-                timestamp: (offset / sampleRate) * 1_000_000, // 转为微秒
+                timestamp: (offset / sampleRate) * 1_000_000, // Convert to microseconds
                 data: planarData,
             })
 
@@ -109,7 +109,7 @@ export class AudioEncoderWrapper {
     }
 
     /**
-     * 刷新编码器缓冲区
+     * Flush encoder buffer
      */
     async flush(): Promise<void> {
         if (!this.encoder) {
@@ -120,7 +120,7 @@ export class AudioEncoderWrapper {
     }
 
     /**
-     * 清理资源
+     * Clean up resources
      */
     async destroy(): Promise<void> {
         if (this.encoder) {
@@ -128,7 +128,7 @@ export class AudioEncoderWrapper {
                 await this.flush()
                 this.encoder.close()
             } catch (error) {
-                console.error('[AudioEncoder] 清理失败:', error)
+                console.error('[AudioEncoder] Cleanup failed:', error)
             }
             this.encoder = null
         }

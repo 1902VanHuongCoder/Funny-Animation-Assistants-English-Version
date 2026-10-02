@@ -92,17 +92,17 @@ function compareActionsByDefaultOrder(
 }
 
 /**
- * 统一动作评估顺序。
+ * Unified action evaluation order.
  *
- * 规则：
- * 1. 先按 slotIndex
- * 2. 同 slot 下如果存在显式 order，则按 order 执行
- * 3. 没有显式 order 的旧数据沿用兼容排序：point action 先于 duration action
- * 4. 同 slot 下 point action 使用固定优先级
- * 5. 普通对象 set_transform 在 set_scene_structure 前执行，
- *    这样加入人物/成组时可以基于当前 slot 的最终视觉姿态反算 local。
- * 6. 由 set_scene_structure 在同 slot 启用的结构对象，其自身 set_transform 后置执行，
- *    这样新组合先启用/挂载，再接收旋转、缩放、变换点。
+ * Rules:
+ * 1. First by slotIndex
+ * 2. Within the same slot, if explicit order exists, execute by order
+ * 3. Legacy data without explicit order preserves compatibility ordering: point action before duration action
+ * 4. Fixed priority for point actions within the same slot
+ * 5. Ordinary object set_transform executes before set_scene_structure,
+ *    allowing local transform back-calculation based on final visual pose of the current slot when joining a character/group.
+ * 6. For structural objects spawned in the same slot by set_scene_structure, their own set_transform executes afterwards,
+ *    so that new composite objects are spawned/mounted first before receiving rotation, scale, and transform origin.
  */
 export function sortActionsForEvaluation(
   actions: readonly Action[],

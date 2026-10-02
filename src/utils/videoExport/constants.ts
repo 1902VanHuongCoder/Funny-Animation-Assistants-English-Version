@@ -1,7 +1,7 @@
 import type { SubtitleStyle } from './types'
 
 /**
- * 画布尺寸常量（从统一常量文件导入）
+ * Canvas dimension constants (imported from unified constants)
  */
 export {
     CAMERA_BASE_HEIGHT,
@@ -13,32 +13,32 @@ export {
 } from '@/constants/canvas'
 
 /**
- * 默认导出配置
+ * Default export configuration
  */
 export const DEFAULT_EXPORT_CONFIG = {
-    // 分辨率倍数
+    // Resolution scale
     resolutionScale: 1.0,  // 1x = 1456×819
 
-    // 默认帧率
+    // Default framerate
     frameRate: 60,
 
-    // 视频码率 (15 Mbps，极高质量)
+    // Video bitrate (15 Mbps, ultra quality)
     videoBitrate: 15_000_000,
 
-    // 音频码率 (128 kbps)
+    // Audio bitrate (128 kbps)
     audioBitrate: 128_000,
 
-    // 音频采样率
+    // Audio sample rate
     audioSampleRate: 48000,
 
-    // 编码器配置
+    // Encoder configuration
     videoCodec: 'avc1.640028' as const,  // H.264 High Profile Level 4.0
     audioCodec: 'mp4a.40.2' as const,    // AAC-LC
 }
 
 /**
- * 默认导出字幕样式
- * 与 ScenePlayer 当前字幕视觉保持一致：底部居中、白字、半透明黑底。
+ * Default export subtitle style
+ * Aligned with ScenePlayer subtitle appearance: bottom-centered, white text, translucent black background.
  */
 export const DEFAULT_SUBTITLE_STYLE: SubtitleStyle = {
     fontFamily: 'Noto Sans SC',
@@ -51,7 +51,7 @@ export const DEFAULT_SUBTITLE_STYLE: SubtitleStyle = {
 }
 
 /**
- * 支持的分辨率预设
+ * Supported resolution presets
  */
 export const RESOLUTION_PRESETS = [
     { id: '1080p', label: '1080P', width: 1920, height: 1080 },
@@ -59,24 +59,24 @@ export const RESOLUTION_PRESETS = [
 ] as const
 
 /**
- * 支持的帧率预设
+ * Supported framerate presets
  */
 export const FRAMERATE_PRESETS = [
     { value: 60, label: '60 FPS' },
 ] as const
 
 /**
- * 质量预设
+ * Quality presets
  */
 export const QUALITY_PRESETS = [
-    { id: 'low', label: '低', videoBitrate: 2_000_000, description: '文件最小' },
-    { id: 'medium', label: '中', videoBitrate: 5_000_000, description: '平衡' },
-    { id: 'high', label: '高', videoBitrate: 8_000_000, description: '推荐' },
-    { id: 'ultra', label: '极高', videoBitrate: 15_000_000, description: '最佳质量' },
+    { id: 'low', label: 'Low', videoBitrate: 2_000_000, description: 'Smallest file' },
+    { id: 'medium', label: 'Medium', videoBitrate: 5_000_000, description: 'Balanced' },
+    { id: 'high', label: 'High', videoBitrate: 8_000_000, description: 'Recommended' },
+    { id: 'ultra', label: 'Ultra', videoBitrate: 15_000_000, description: 'Best quality' },
 ] as const
 
 /**
- * 错误代码
+ * Error codes
  */
 export const ERROR_CODES = {
     BROWSER_NOT_SUPPORTED: 'BROWSER_NOT_SUPPORTED',
@@ -89,20 +89,20 @@ export const ERROR_CODES = {
 } as const
 
 /**
- * 检查浏览器是否支持 WebCodecs
+ * Check whether browser supports WebCodecs
  */
 export function checkWebCodecsSupport(): { supported: boolean; error?: string } {
     if (typeof VideoEncoder === 'undefined') {
         return {
             supported: false,
-            error: '当前浏览器不支持 WebCodecs API，请使用 Chrome 94+ 或 Edge 94+'
+            error: 'Current browser does not support WebCodecs API, please use Chrome 94+ or Edge 94+'
         }
     }
 
     if (typeof AudioEncoder === 'undefined') {
         return {
             supported: false,
-            error: '当前浏览器不支持 WebCodecs AudioEncoder'
+            error: 'Current browser does not support WebCodecs AudioEncoder'
         }
     }
 

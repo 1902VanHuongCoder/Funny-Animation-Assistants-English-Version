@@ -1,10 +1,10 @@
 /**
- * MotionPathOverlay — 运动路径可视化
+ * MotionPathOverlay — Motion path visualization
  * 
- * 在 pathLayer 上渲染：
- * - 虚线连接关键帧位移位置
- * - 关键帧位置圆点（可点击选中、可拖拽修改 x/y）
- * - 与时间轴/属性面板选中状态同步
+ * Renders on pathLayer:
+ * - Dashed lines connecting keyframe translation positions
+ * - Keyframe position dots (clickable for selection, draggable to edit x/y)
+ * - Synchronized with timeline / properties panel selection state
  */
 
 import * as PIXI from 'pixi.js'

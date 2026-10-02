@@ -1,12 +1,12 @@
 // @vitest-environment happy-dom
 /**
- * ScriptPreviewDialog V7 自动化测试
+ * ScriptPreviewDialog V7 Automated Tests
  * 
- * 覆盖全剧预览的核心功能：
- * 1. 资源预加载 (V7 State-Centric / useAssetLoader)
- * 2. 全局时间线构建
- * 3. 全局 BGM 调度
- * 4. 场景切换逻辑
+ * Covers core screenplay preview functionality:
+ * 1. Asset preloading (V7 State-Centric / useAssetLoader)
+ * 2. Global timeline construction
+ * 3. Global BGM scheduling
+ * 4. Scene transition logic
  */
 
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
@@ -201,7 +201,7 @@ describe('ScriptPreviewDialog.vue', () => {
         return wrapper.vm as unknown as ScriptPreviewVM
     }
 
-    // 1. 资源预加载测试 (TC-SCPD-PRELOAD)
+    // 1. Asset preload test (TC-SCPD-PRELOAD)
     describe('Resource Preloading', () => {
         it('TC-SCPD-PRELOAD-01: All scenes should be scanned via useAssetLoader', async () => {
             const collectAssetsMock = vi.fn().mockReturnValue({ imageUrls: new Set<string>(['img1']), audioUrls: new Set<string>() })
@@ -262,7 +262,7 @@ describe('ScriptPreviewDialog.vue', () => {
         })
     })
 
-    // 2. 全局时间线测试 (TC-SCPD-TIMELINE)
+    // 2. Global timeline test (TC-SCPD-TIMELINE)
     describe('Global Timeline', () => {
         it('TC-SCPD-TIMELINE-03: Total duration should be sum of all scene durations', async () => {
             vi.mocked(useAssetLoader).mockReturnValue({ collectAssets: vi.fn(() => ({ imageUrls: new Set<string>(), audioUrls: new Set<string>() })), collectEditorFirstPaintAssets: vi.fn(() => ({ imageUrls: new Set<string>(), audioUrls: new Set<string>() })), loadAssets: vi.fn(), getTexture: vi.fn(), textureCache: new Map() })
@@ -279,7 +279,7 @@ describe('ScriptPreviewDialog.vue', () => {
         })
     })
 
-    // 3. 全局 BGM 测试 (TC-SCPD-BGM)
+    // 3. Global BGM test (TC-SCPD-BGM)
     describe('Global BGM', () => {
         const bgmTrack = {
             id: 'track_1',
@@ -332,7 +332,7 @@ describe('ScriptPreviewDialog.vue', () => {
         })
     })
 
-    // 4. 场景切换测试 (TC-SCPD-TRANS)
+    // 4. Scene transition test (TC-SCPD-TRANS)
     describe('Scene Transitions', () => {
         vi.mocked(useAssetLoader).mockReturnValue({ collectAssets: vi.fn(() => ({ imageUrls: new Set<string>(), audioUrls: new Set<string>() })), collectEditorFirstPaintAssets: vi.fn(() => ({ imageUrls: new Set<string>(), audioUrls: new Set<string>() })), loadAssets: vi.fn(), getTexture: vi.fn(), textureCache: new Map() })
 
@@ -375,7 +375,7 @@ describe('ScriptPreviewDialog.vue', () => {
         })
     })
 
-    // 5. 资源清理测试 (TC-SCPD-CLEANUP)
+    // 5. Resource cleanup test (TC-SCPD-CLEANUP)
     describe('Cleanup', () => {
         vi.mocked(useAssetLoader).mockReturnValue({ collectAssets: vi.fn(() => ({ imageUrls: new Set<string>(['img1']), audioUrls: new Set<string>() })), collectEditorFirstPaintAssets: vi.fn(() => ({ imageUrls: new Set<string>(), audioUrls: new Set<string>() })), loadAssets: vi.fn(), getTexture: vi.fn(), textureCache: new Map() })
 

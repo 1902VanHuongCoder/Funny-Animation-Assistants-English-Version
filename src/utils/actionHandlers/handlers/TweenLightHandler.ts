@@ -1,8 +1,8 @@
 /**
- * TweenLight Action Handler (点光源 PRD Phase 0.5)
- * 处理光源参数的持续渐变
- * 直接操作 state.lightColor / lightIntensity / lightRadius
- * 对标 TweenScreenEffectHandler 的实现
+ * TweenLight Action Handler (Point light PRD Phase 0.5)
+ * Handles continuous easing of light source parameters
+ * Directly operates on state.lightColor / lightIntensity / lightRadius
+ * Mirrors the implementation of TweenScreenEffectHandler
  */
 
 import type { TweenLightAction } from '@/types/screenplay'
@@ -10,14 +10,14 @@ import type { TweenLightAction } from '@/types/screenplay'
 import type { ActionHandler, ActionHandlerContext, WriteableState } from '../types'
 
 /**
- * 线性插值
+ * Linear interpolation
  */
 function lerp(start: number, end: number, t: number): number {
     return start + (end - start) * t
 }
 
 /**
- * Hex 颜色 RGB 逐通道线性插值
+ * Hex color RGB per-channel linear interpolation
  */
 function hexToRgb(hex: string): [number, number, number] {
     const h = hex.replace('#', '')
@@ -48,12 +48,12 @@ export const TweenLightHandler: ActionHandler<TweenLightAction> = {
     affectsObjectState: true,
 
     applyToState(state: WriteableState, action: TweenLightAction, _context?: ActionHandlerContext): void {
-        // 瞬时应用：直接设置为目标值
+        // Instantaneous application: directly set to target values
         const { params } = action
         if (params.lightColor !== undefined) state.lightColor = params.lightColor
         if (params.lightIntensity !== undefined) state.lightIntensity = params.lightIntensity
         if (params.lightRadius !== undefined) state.lightRadius = params.lightRadius
-        // Phase 1: 闪烁和方向性
+        // Phase 1: Flicker and directivity
         if (params.flicker !== undefined) state.flicker = params.flicker
         if (params.flickerSpeed !== undefined) state.flickerSpeed = params.flickerSpeed
         if (params.directionMode !== undefined) state.directionMode = params.directionMode
@@ -69,25 +69,25 @@ export const TweenLightHandler: ActionHandler<TweenLightAction> = {
     ): void {
         const { params } = action
 
-        // 数值型参数线性插值
+        // Numeric parameter linear interpolation
         if (params.lightIntensity !== undefined && startState.lightIntensity !== undefined) {
             state.lightIntensity = lerp(startState.lightIntensity, params.lightIntensity, progress)
         }
         if (params.lightRadius !== undefined && startState.lightRadius !== undefined) {
             state.lightRadius = lerp(startState.lightRadius, params.lightRadius, progress)
         }
-        // 颜色 RGB 逐通道插值
+        // Color RGB per-channel interpolation
         if (params.lightColor !== undefined && startState.lightColor !== undefined) {
             state.lightColor = lerpHexColor(startState.lightColor, params.lightColor, progress)
         }
-        // Phase 1: 闪烁和方向性插值
+        // Phase 1: Flicker and directivity interpolation
         if (params.flicker !== undefined && startState.flicker !== undefined) {
             state.flicker = lerp(startState.flicker, params.flicker, progress)
         }
         if (params.flickerSpeed !== undefined && startState.flickerSpeed !== undefined) {
             state.flickerSpeed = lerp(startState.flickerSpeed, params.flickerSpeed, progress)
         }
-        // directionMode 是枚举，不插值，直接设置终态
+        // directionMode is enum, do not interpolate, set final state directly
         if (params.directionMode !== undefined) {
             state.directionMode = params.directionMode
         }

@@ -15,7 +15,7 @@ vi.mock('pixi.js', () => {
 import { PetrifyFilter } from '../PetrifyFilter'
 
 describe('PetrifyFilter', () => {
-    it('应该能被正确实例化', () => {
+    it('should instantiate correctly', () => {
         const filter = new PetrifyFilter()
         expect(filter).toBeDefined()
         expect(filter.progress).toBe(0)
@@ -23,21 +23,21 @@ describe('PetrifyFilter', () => {
         expect(filter.seed).toBeDefined()
     })
 
-    it('应该能更新 progress', () => {
+    it('should update progress', () => {
         const filter = new PetrifyFilter()
         filter.progress = 0.5
         expect(filter.progress).toBe(0.5)
         expect(filter.uniforms['uProgress']).toBe(0.5)
     })
 
-    it('应该能更新 intensity', () => {
+    it('should update intensity', () => {
         const filter = new PetrifyFilter()
         filter.intensity = 0.8
         expect(filter.intensity).toBe(0.8)
         expect(filter.uniforms['uIntensity']).toBe(0.8)
     })
 
-    it('应该能更新 seed', () => {
+    it('should update seed', () => {
         const filter = new PetrifyFilter()
         const newSeed = 12345
         filter.seed = newSeed

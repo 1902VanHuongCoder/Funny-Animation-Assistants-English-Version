@@ -1,11 +1,11 @@
 /**
  * screenEffectRenderer.ts
- * 共享的画面特效 PIXI.Graphics 渲染逻辑
- * 用于 useSceneGraph / ScenePlayer / ActionPreviewDialog / FrameCapture
+ * Shared screen effect PIXI.Graphics rendering logic
+ * Used for useSceneGraph / ScenePlayer / ActionPreviewDialog / FrameCapture
  *
- * v2.0: 支持羽化 (feather) 效果
- *   当 feather > 0 时，使用 Canvas2D blur + PIXI.BLEND_MODES.ERASE 实现柔边孔洞
- *   当 feather === 0 时，使用传统 beginHole/endHole 实现硬边孔洞
+ * v2.0: Supports feather effect
+ *   When feather > 0, uses Canvas2D blur + PIXI.BLEND_MODES.ERASE to achieve soft-edge hole
+ *   When feather === 0, uses traditional beginHole/endHole to achieve hard-edge hole
  */
 
 import * as PIXI from 'pixi.js'
@@ -29,13 +29,13 @@ function logPixiTree(event: string, payload: Record<string, unknown>): void {
 }
 
 /**
- * 绘制画面特效图形（以容器原点为中心）
- * 支持全屏覆盖 + 孔洞挖切（椭圆/圆/矩形）+ 羽化
- * @param graphics PIXI.Graphics 实例
- * @param params 特效参数
- * @param width 特效宽度（像素）
- * @param height 特效高度（像素）
- * @param container 父容器（可选，传入后启用羽化渲染）
+ * Draw screen effect graphics (centered on container origin)
+ * Supports full screen coverage + hole cutout (ellipse/circle/rectangle) + feathering
+ * @param graphics PIXI.Graphics instance
+ * @param params Effect parameters
+ * @param width Effect width (pixels)
+ * @param height Effect height (pixels)
+ * @param container Parent container (optional, enables feather rendering when passed)
  */
 export function drawScreenEffectGraphics(
     graphics: PIXI.Graphics,
@@ -46,22 +46,22 @@ export function drawScreenEffectGraphics(
 ): void {
     graphics.clear()
 
-    // ── 光照模式：不绘制覆盖层，改为添加发光 sprite ──
+    // ── Light mode: do not draw overlay, add glowing sprite instead ──
     if (params.lightMode && container) {
         drawLightEffect(graphics, params, width, height, container)
         return
     }
 
     const color = params.baseColor ?? '#000000'
-    const opacity = 1.0 // 覆盖不透明度统一由容器 alpha 控制
+    const opacity = 1.0 // Overlay opacity is uniformly controlled by container alpha
     const colorNum = parseInt(color.replace('#', ''), 16)
     const feather = params.feather ?? 0
 
-    // 以容器原点为中心绘制覆盖矩形
+    // Draw overlay rectangle centered at container origin
     const halfW = width / 2
     const halfH = height / 2
 
-    // 清理已有的羽化 Sprite
+    // Clean up existing feather Sprite
     if (container) {
         const existing = container.getChildByName(FEATHER_SPRITE_NAME)
         if (existing) {
@@ -79,16 +79,16 @@ export function drawScreenEffectGraphics(
     graphics.beginFill(colorNum, opacity)
     graphics.drawRect(-halfW, -halfH, width, height)
 
-    // 如果有孔洞参数，挖洞（坐标相对于特效中心，0,0 = 特效正中）
+    // If hole parameters exist, cut hole (coordinates relative to effect center, 0,0 = effect center)
     if (params.holeShape && params.openRatio !== undefined && params.openRatio > 0) {
         const cx = params.holeCenterX ?? 0
         const cy = params.holeCenterY ?? 0
         const baseW = (params.holeWidth ?? 400) / 2
         const baseH = (params.holeHeight ?? 300) / 2
-        // openRatio 按形状方向缩放：
-        // horizontal_ellipse (眼睛): 仅缩放高度 → 模拟眨眼（宽度不变）
-        // vertical_ellipse (聚光灯): 仅缩放宽度 → 模拟聚光灯收窄（高度不变）
-        // circle / rectangle: 两轴均匀缩放
+        // openRatio scales according to shape direction:
+        // horizontal_ellipse (eyes): only scale height → simulate blinking (width constant)
+        // vertical_ellipse (spotlight): only scale width → simulate spotlight narrowing (height constant)
+        // circle / rectangle: uniform scaling on both axes
         let hw: number
         let hh: number
         switch (params.holeShape) {
@@ -108,7 +108,7 @@ export function drawScreenEffectGraphics(
 
         if (hw > 0 && hh > 0) {
             if (feather > 0 && container) {
-                // ── 羽化孔洞：Canvas2D blur 生成柔边纹理 + ERASE 混合模式 ──
+                // ── Feather hole: Canvas2D blur generates soft-edge texture + ERASE blend mode ──
                 graphics.endFill()
 
                 const featherCanvas = generateFeatherCanvas(params.holeShape, hw, hh, feather)
@@ -127,13 +127,13 @@ export function drawScreenEffectGraphics(
                     feather,
                 })
 
-                // ERASE 混合模式要求容器渲染到缓冲区（通过 filter 触发）
+                // ERASE blend mode requires container rendered to buffer (triggered via filter)
                 ensureContainerBuffered(container)
-                // 固定 hitArea 为覆盖矩形，防止羽化 Sprite 影响容器 bounds
+                // Fix hitArea to overlay rectangle, preventing feather Sprite from affecting container bounds
                 container.hitArea = new PIXI.Rectangle(-halfW, -halfH, width, height)
                 return
             } else {
-                // ── 硬边孔洞：传统 beginHole/endHole ──
+                // ── Hard-edge hole: traditional beginHole/endHole ──
                 graphics.beginHole()
                 switch (params.holeShape) {
                     case 'circle':
@@ -154,20 +154,20 @@ export function drawScreenEffectGraphics(
 
     graphics.endFill()
 
-    // 无羽化时移除缓冲 filter
+    // Remove buffer filter when no feathering
     if (container) {
         removeContainerBuffer(container)
-        // 固定 hitArea 为覆盖矩形，防止羽化 Sprite 影响容器 bounds（选择框大小跳变）
+        // Fix hitArea to overlay rectangle, preventing feather Sprite from affecting container bounds (selection box jump)
         container.hitArea = new PIXI.Rectangle(-halfW, -halfH, width, height)
     }
 }
 
 
-// ==================== 光照效果 ====================
+// ==================== Lighting Effect ====================
 
 /**
- * 光照模式：在容器上添加发光 sprite（不绘制黑色覆盖）
- * 使用 Canvas2D 径向渐变生成光斑纹理，通过 ADD/SCREEN 混合模式叠加到场景上
+ * Light mode: Adds glowing sprite to container (does not draw black overlay)
+ * Uses Canvas2D radial gradient to generate light spot texture, overlaid onto scene via ADD/SCREEN blend modes
  */
 function drawLightEffect(
     _graphics: PIXI.Graphics,
@@ -176,7 +176,7 @@ function drawLightEffect(
     height: number,
     container: PIXI.Container
 ): void {
-    // 清理已有的光照 sprite
+    // Clean up existing light sprite
     const existing = container.getChildByName(LIGHT_SPRITE_NAME)
     if (existing) {
         logPixiTree('remove_light_sprite', {
@@ -199,7 +199,7 @@ function drawLightEffect(
     const baseW = (params.holeWidth ?? 400) / 2
     const baseH = (params.holeHeight ?? 300) / 2
 
-    // 按形状方向缩放（与遮罩模式一致）
+    // Scale according to shape direction (consistent with mask mode)
     let hw: number
     let hh: number
     switch (params.holeShape) {
@@ -226,7 +226,7 @@ function drawLightEffect(
     const lightColor = params.lightColor ?? '#ffffff'
     const falloff = params.lightFalloff ?? 'smooth'
 
-    // 生成径向渐变光斑纹理
+    // Generate radial gradient light spot texture
     const lightCanvas = generateLightCanvas(params.holeShape, hw, hh, feather, lightColor, falloff)
     const texture = PIXI.Texture.from(lightCanvas)
     const sprite = new PIXI.Sprite(texture)
@@ -246,18 +246,18 @@ function drawLightEffect(
         lightMode: params.lightMode ?? 'screen',
     })
 
-    // ADD/SCREEN 混合模式也需要容器渲染到缓冲区
+    // ADD/SCREEN blend modes also require container rendered to buffer
     ensureContainerBuffered(container)
 
-    // 固定 hitArea（与遮罩模式一致）
+    // Fix hitArea (consistent with mask mode)
     const halfW = width / 2
     const halfH = height / 2
     container.hitArea = new PIXI.Rectangle(-halfW, -halfH, width, height)
 }
 
 /**
- * 使用 Canvas2D 径向渐变生成光斑纹理
- * 中心为 lightColor，边缘渐变为透明
+ * Uses Canvas2D radial gradient to generate light spot texture
+ * Center is lightColor, edges fade to transparent
  */
 function generateLightCanvas(
     _shape: string,
@@ -280,16 +280,16 @@ function generateLightCanvas(
     const cx = canvasW / 2
     const cy = canvasH / 2
 
-    // 对于非圆形：用 scale 变换将椭圆渐变转换为圆形渐变后再绘制
+    // For non-circles: use scale transform to convert ellipse gradient to circular gradient before drawing
     const maxR = Math.max(totalW, totalH)
     const gradient = ctx.createRadialGradient(cx, cy, 0, cx, cy, maxR)
 
-    // 内径比例（光斑核心区域，无衰减）
+    // Inner radius ratio (light spot core area, no attenuation)
     const coreRatio = Math.max(0, Math.min(0.95,
         Math.min(halfWidth, halfHeight) / maxR * 0.5
     ))
 
-    // 根据衰减曲线设置渐变色标
+    // Set gradient color stops based on falloff curve
     switch (falloff) {
         case 'linear':
             gradient.addColorStop(0, lightColor)
@@ -320,12 +320,12 @@ function generateLightCanvas(
 }
 
 
-// ==================== 内部辅助函数 ====================
+// ==================== Internal Helper Functions ====================
 
 /**
- * 使用 Canvas2D 的 filter: blur() 生成羽化孔洞纹理
- * 原理：在 Canvas 上绘制硬边形状，通过 CSS blur filter 实现柔边
- * 生成的纹理作为 ERASE sprite 使用，白色区域 = 被擦除（透明孔洞）
+ * Uses Canvas2D filter: blur() to generate feathered hole texture
+ * Principle: Draw hard-edge shape on Canvas, achieve soft edge via CSS blur filter
+ * Generated texture used as ERASE sprite, white area = erased (transparent hole)
  */
 function generateFeatherCanvas(
     shape: string,
@@ -333,7 +333,7 @@ function generateFeatherCanvas(
     halfHeight: number,
     feather: number
 ): HTMLCanvasElement {
-    // blur 会向外扩展约 3 倍，留足余量
+    // Blur extends outward ~3x, allocate sufficient margin
     const margin = Math.ceil(feather * 3)
     const canvasW = Math.max(4, Math.ceil((halfWidth + margin) * 2))
     const canvasH = Math.max(4, Math.ceil((halfHeight + margin) * 2))
@@ -345,7 +345,7 @@ function generateFeatherCanvas(
     const cx = canvasW / 2
     const cy = canvasH / 2
 
-    // CSS blur filter 自动为绘制的形状添加柔边，适用于所有形状
+    // CSS blur filter automatically adds soft edges to drawn shapes, suitable for all shapes
     ctx.filter = `blur(${feather}px)`
     ctx.fillStyle = 'white'
 
@@ -369,7 +369,7 @@ function generateFeatherCanvas(
             break
         }
         default: {
-            // 默认回退到椭圆
+            // Default fallback to ellipse
             ctx.beginPath()
             ctx.ellipse(cx, cy, halfWidth, halfHeight, 0, 0, Math.PI * 2)
             ctx.fill()
@@ -381,17 +381,17 @@ function generateFeatherCanvas(
 }
 
 /**
- * 确保容器有 AlphaFilter，使 ERASE 混合模式生效
- * PIXI 的 ERASE 需要容器渲染到独立缓冲区（filter 会触发此行为）
+ * Ensure container has AlphaFilter so ERASE blend mode takes effect
+ * PIXI ERASE requires container to be rendered to an isolated buffer (filter triggers this behavior)
  */
 function ensureContainerBuffered(container: PIXI.Container): void {
-    // 检查是否已有我们添加的 AlphaFilter
+    // Check if AlphaFilter we added already exists
     if (container.filters?.length) return
     container.filters = [new PIXI.AlphaFilter(1)]
 }
 
 /**
- * 移除仅为 ERASE 添加的 AlphaFilter（当不再需要羽化时）
+ * Remove AlphaFilter added exclusively for ERASE (when feathering is no longer needed)
  */
 function removeContainerBuffer(container: PIXI.Container): void {
     if (

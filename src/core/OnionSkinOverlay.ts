@@ -1,10 +1,10 @@
 /**
- * OnionSkinOverlay — 洋葱皮（鬼影帧）可视化
+ * OnionSkinOverlay — Onion skinning (ghost frames) visualization
  * 
- * 在 onionSkinLayer 上渲染前后关键帧的半透明克隆
- * - 蓝色 (#2196F3) 半透明：前帧（past frames）
- * - 绿色 (#4CAF50) 半透明：后帧（future frames）
- * - 可配置：开关、帧数 (0-3)、透明度
+ * Renders semi-transparent clones of preceding and succeeding keyframes on onionSkinLayer
+ * - Blue (#2196F3) semi-transparent: past frames
+ * - Green (#4CAF50) semi-transparent: future frames
+ * - Configurable: enabled toggle, frame count (0-3), opacity
  */
 
 import * as PIXI from 'pixi.js'

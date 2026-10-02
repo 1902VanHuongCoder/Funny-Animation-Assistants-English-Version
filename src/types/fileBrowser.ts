@@ -15,7 +15,7 @@ export interface SelectedFile {
 }
 
 /**
- * 目录选择结果（用于 FileBrowserDialog 的目录选择模式）
+ * Directory selection result (used for FileBrowserDialog directory selection mode)
  */
 export interface SelectedDirectory {
   handle: FileSystemDirectoryHandle

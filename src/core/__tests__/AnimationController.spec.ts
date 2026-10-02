@@ -1,8 +1,8 @@
 /**
  * AnimationController.spec.ts
  *
- * AnimationController 单元测试
- * 测试纯函数辅助工具和核心方法（通过 mock AnimationHost）
+ * AnimationController Unit Tests
+ * Tests pure function helpers and core methods (via mocked AnimationHost)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -103,18 +103,18 @@ function createTTSTimingFile(
 // ============================================================================
 
 describe('getActionStartTime', () => {
-    it('slots 为空时返回 0', () => {
+    it('returns 0 when slots is empty', () => {
         const action = { slotIndex: 0 } as Action
         expect(getActionStartTime(action, [])).toBe(0)
     })
 
-    it('应返回对应 slot 的 startTime', () => {
+    it('should return startTime of corresponding slot', () => {
         const action = { slotIndex: 1 } as Action
         const slots = createSlots(0, 500, 1200)
         expect(getActionStartTime(action, slots)).toBe(500)
     })
 
-    it('slotIndex 超出范围时返回 0', () => {
+    it('returns 0 when slotIndex is out of range', () => {
         const action = { slotIndex: 5 } as Action
         const slots = createSlots(0, 500)
         expect(getActionStartTime(action, slots)).toBe(0)
@@ -122,29 +122,29 @@ describe('getActionStartTime', () => {
 })
 
 describe('hasAutoDuration', () => {
-    it('有 auto duration 的 transform 轨道应返回 true', () => {
+    it('returns true for transform track with auto duration', () => {
         const def = { tracks: [{ trackType: 'transform', duration: 'auto' as const }] }
         expect(hasAutoDuration(def)).toBe(true)
     })
 
-    it('有 auto duration 的 visibility 轨道应返回 true', () => {
+    it('returns true for visibility track with auto duration', () => {
         const def = { tracks: [{ trackType: 'visibility', duration: 'auto' as const }] }
         expect(hasAutoDuration(def)).toBe(true)
     })
 
-    it('固定 duration 应返回 false', () => {
+    it('returns false for fixed duration', () => {
         const def = { tracks: [{ trackType: 'transform', duration: 1000 }] }
         expect(hasAutoDuration(def)).toBe(false)
     })
 
-    it('非 transform/visibility 轨道即使有 auto 也应返回 false', () => {
+    it('returns false for non-transform/visibility track even with auto', () => {
         const def = { tracks: [{ trackType: 'color', duration: 'auto' as const }] }
         expect(hasAutoDuration(def)).toBe(false)
     })
 })
 
 describe('calculateRuntimeDuration', () => {
-    it('有匹配 stop action 时返回到 stop 的时长', () => {
+    it('returns duration to stop when matching stop action exists', () => {
         const actions: Action[] = [
             createSetAnimAction('obj-1', 0, [{ animName: 'walk', action: 'play' }]),
             createSetAnimAction('obj-1', 1, [{ animName: 'walk', action: 'stop' }]),
@@ -155,7 +155,7 @@ describe('calculateRuntimeDuration', () => {
         expect(result).toBe(800)
     })
 
-    it('无匹配 stop action 时延伸到 Block 结束', () => {
+    it('extends to Block end when no matching stop action exists', () => {
         const actions: Action[] = [
             createSetAnimAction('obj-1', 0, [{ animName: 'walk', action: 'play' }]),
         ]
@@ -164,7 +164,7 @@ describe('calculateRuntimeDuration', () => {
         expect(result).toBe(3000) // blockDuration - playStartTime
     })
 
-    it('stop 在 play 之前的不应匹配', () => {
+    it('should not match stop occurring before play', () => {
         const actions: Action[] = [
             createSetAnimAction('obj-1', 0, [{ animName: 'walk', action: 'stop' }]),
             createSetAnimAction('obj-1', 1, [{ animName: 'walk', action: 'play' }]),
@@ -188,8 +188,8 @@ describe('AnimationController', () => {
         triggeredAnimations = new Set()
     })
 
-    describe('processSetAnimActions - 对象动画', () => {
-        it('应该在正确的时间触发对象动画播放', () => {
+    describe('processSetAnimActions - Object Animation', () => {
+        it('should trigger object animation playback at correct time', () => {
             const mockPlayer = {
                 playAnimation: vi.fn(),
                 stopAnimation: vi.fn(),
@@ -216,7 +216,7 @@ describe('AnimationController', () => {
             )
         })
 
-        it('时间未到时不应触发动画', () => {
+        it('should not trigger animation before timestamp', () => {
             const mockPlayer = { playAnimation: vi.fn(), stopAnimation: vi.fn() }
             const host = createMockHost({
                 getSceneObjects: vi.fn().mockReturnValue([
@@ -236,7 +236,7 @@ describe('AnimationController', () => {
             expect(mockPlayer.playAnimation).not.toHaveBeenCalled()
         })
 
-        it('同一动画不应重复触发', () => {
+        it('should not trigger duplicate animations', () => {
             const mockPlayer = { playAnimation: vi.fn(), stopAnimation: vi.fn() }
             const mockDef = createTestDefinition()
             const host = createMockHost({
@@ -259,7 +259,7 @@ describe('AnimationController', () => {
             expect(mockPlayer.playAnimation).toHaveBeenCalledTimes(1)
         })
 
-        it('stop 命令应该停止动画', () => {
+        it('stop command should stop animation', () => {
             const mockPlayer = { playAnimation: vi.fn(), stopAnimation: vi.fn() }
             const host = createMockHost({
                 getSceneObjects: vi.fn().mockReturnValue([
@@ -279,7 +279,7 @@ describe('AnimationController', () => {
             expect(mockPlayer.stopAnimation).toHaveBeenCalledWith('wave')
         })
 
-        it('tts_speech 应只在 TTS 有声片段内播放，并在气口停顿停止', () => {
+        it('tts_speech should only play during voiced TTS segments and pause during breath pauses', () => {
             const mockPlayer = { playAnimation: vi.fn(), stopAnimation: vi.fn() }
             const mockDef = createTestDefinition({ timingMode: 'tts_speech' })
             const host = createMockHost({
@@ -309,7 +309,7 @@ describe('AnimationController', () => {
             expect(mockPlayer.stopAnimation).toHaveBeenCalledWith('talk')
         })
 
-        it('tts_speech 应使用 animationSpeechSegments 作为动画门控片段', () => {
+        it('tts_speech should use animationSpeechSegments as animation gating segments', () => {
             const mockPlayer = { playAnimation: vi.fn(), stopAnimation: vi.fn() }
             const mockDef = createTestDefinition({ timingMode: 'tts_speech' })
             const host = createMockHost({
@@ -343,7 +343,7 @@ describe('AnimationController', () => {
             expect(mockPlayer.stopAnimation).not.toHaveBeenCalled()
         })
 
-        it('tts_speech timing 正在加载时不应先按连续播放启动', () => {
+        it('tts_speech should not start continuous playback while timing is loading', () => {
             const mockPlayer = { playAnimation: vi.fn(), stopAnimation: vi.fn() }
             const mockDef = createTestDefinition()
             const host = createMockHost({
@@ -367,7 +367,7 @@ describe('AnimationController', () => {
             expect(mockPlayer.stopAnimation).not.toHaveBeenCalled()
         })
 
-        it('tts_speech 确认无 timing 文件时应降级为连续播放', () => {
+        it('tts_speech should fall back to continuous playback when no timing file exists', () => {
             const mockPlayer = { playAnimation: vi.fn(), stopAnimation: vi.fn() }
             const mockDef = createTestDefinition()
             const host = createMockHost({
@@ -391,7 +391,7 @@ describe('AnimationController', () => {
             expect(mockPlayer.stopAnimation).not.toHaveBeenCalled()
         })
 
-        it('显式 stop 后 tts_speech play 不应在后续有声片段重新启动', () => {
+        it('tts_speech play should not restart in subsequent voiced segments after explicit stop', () => {
             const mockPlayer = { playAnimation: vi.fn(), stopAnimation: vi.fn() }
             const mockDef = createTestDefinition()
             const host = createMockHost({
@@ -422,7 +422,7 @@ describe('AnimationController', () => {
     })
 
     describe('processAutoStopOnBlockEnd', () => {
-        it('应该停止 autoStopOnBlockEnd 的动画', () => {
+        it('should stop animation with autoStopOnBlockEnd', () => {
             const mockPlayer = { playAnimation: vi.fn(), stopAnimation: vi.fn() }
             const host = createMockHost({
                 getSceneObjects: vi.fn().mockReturnValue([
@@ -434,7 +434,7 @@ describe('AnimationController', () => {
 
             const actions: Action[] = [
                 createSetAnimAction('obj-1', 0, [
-                    { animName: 'walk', action: 'play' }, // autoStopOnBlockEnd 默认 true
+                    { animName: 'walk', action: 'play' }, // autoStopOnBlockEnd defaults to true
                 ]),
             ]
 
@@ -443,7 +443,7 @@ describe('AnimationController', () => {
             expect(mockPlayer.stopAnimation).toHaveBeenCalledWith('walk')
         })
 
-        it('autoStopOnBlockEnd=false 的动画不应被停止', () => {
+        it('should not stop animation with autoStopOnBlockEnd=false', () => {
             const mockPlayer = { playAnimation: vi.fn(), stopAnimation: vi.fn() }
             const host = createMockHost({
                 getSceneObjects: vi.fn().mockReturnValue([
@@ -464,7 +464,7 @@ describe('AnimationController', () => {
             expect(mockPlayer.stopAnimation).not.toHaveBeenCalled()
         })
 
-        it('stop 动作本身不应触发自动停止', () => {
+        it('stop action itself should not trigger auto stop', () => {
             const mockPlayer = { playAnimation: vi.fn(), stopAnimation: vi.fn() }
             const host = createMockHost({
                 getSceneObjects: vi.fn().mockReturnValue([
@@ -487,7 +487,7 @@ describe('AnimationController', () => {
     })
 
     describe('processInitialAnimationStates', () => {
-        it('应该播放对象的初始动画', () => {
+        it('should play object initial animation', () => {
             const mockPlayer = { playAnimation: vi.fn(), stopAnimation: vi.fn() }
             const mockDef = createTestDefinition()
             const host = createMockHost({
@@ -509,7 +509,7 @@ describe('AnimationController', () => {
             )
         })
 
-        it('应该调用 onAnimationTriggered 处理 prop 初始动画', () => {
+        it('should call onAnimationTriggered to handle prop initial animation', () => {
             const onTriggered = vi.fn()
             const host = createMockHost({
                 getSceneObjects: vi.fn().mockReturnValue([
@@ -533,7 +533,7 @@ describe('AnimationController', () => {
     })
 
     describe('resetTriggeredAnimations', () => {
-        it('重置后应该允许重新触发', () => {
+        it('should allow re-trigger after reset', () => {
             const mockPlayer = { playAnimation: vi.fn(), stopAnimation: vi.fn() }
             const mockDef = createTestDefinition()
             const host = createMockHost({

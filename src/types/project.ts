@@ -1,6 +1,6 @@
 /**
- * 沙雕动画小助手 Project JSON Schema
- * 基于 PRD v2.4
+ * Funny Animation Assistant Project JSON Schema
+ * Based on PRD v2.4
  */
 
 import type { AnimationDefinition } from './animation'
@@ -9,7 +9,7 @@ import type { PresetAnimationTemplate } from './presetAnimation'
 import type { SceneTemplate } from './sceneTemplate'
 import type { ActorConfig, NarratorConfig } from './screenplay'
 
-// ===== 元信息 =====
+// ===== Metadata =====
 export interface ProjectMeta {
   name: string
   resolution: { w: number; h: number }
@@ -17,80 +17,80 @@ export interface ProjectMeta {
   version: string
 }
 
-// ===== 演员定义 =====
-// 使用 screenplay.ts 中的 ActorConfig 和 NarratorConfig
+// ===== Actor Definitions =====
+// Uses ActorConfig and NarratorConfig from screenplay.ts
 
 
-// ===== 资源定义 =====
+// ===== Asset Definitions =====
 
 /**
- * 性别
+ * Gender
  */
 export type Gender = 'male' | 'female' | 'other'
 
-// ===== 表情系统 (Independent Expression System) =====
+// ===== Expression System (Independent Expression System) =====
 
 /**
- * 表情帧定义
- * 每一帧包含图片URL和可选的原始文件对象
+ * Expression frame definition
+ * Each frame contains image URL and optional raw file object
  */
 export interface ExpressionFrame {
   id: string                // UUID
-  url: string               // 图片地址：路径（如 "assets/expressions/expr_123/default.png"）- 持久化存储
-  _runtimeUrl?: string      // [非持久化] 运行时 Blob URL，用于前端显示
-  file?: File              // 原始文件对象 (仅前端上传时存在)
+  url: string               // Image address: path (e.g. "assets/expressions/expr_123/default.png") - persisted storage
+  _runtimeUrl?: string      // [Non-persisted] Runtime Blob URL for frontend display
+  file?: File              // Raw file object (only present during frontend upload)
 }
 
 /**
- * 锚点坐标 (相对比例)
+ * Anchor coordinates (relative ratio)
  */
 export interface AnchorPoint {
-  x: number                // 0.0 - 1.0 (默认 0.5)
-  y: number                // 0.0 - 1.0 (默认 0.5)
+  x: number                // 0.0 - 1.0 (default 0.5)
+  y: number                // 0.0 - 1.0 (default 0.5)
 }
 
 /**
- * 表情资产定义（多图表情动画系统）
- * 支持单张图片（静态表情）或多张图片（动画表情）
+ * Expression asset definition (multi-frame expression animation system)
+ * Supports single image (static expression) or multiple images (animated expression)
  */
 export interface Expression {
-  id: string                // 表情唯一ID
-  name: string              // 表情名称，如 "开心"
-  tags: string[]            // 标签分类
-  gender?: Gender           // 性别 (v8.0 新增)
+  id: string                // Expression unique ID
+  name: string              // Expression name, e.g. "Happy"
+  tags: string[]            // Tag categories
+  gender?: Gender           // Gender (added in v8.0)
 
 
-  // 核心资源
-  defaultFrame: ExpressionFrame      // 默认状态（必填）：不说话时的静止图
-  speakingFrames: ExpressionFrame[]  // 说话状态（可选）：说话时的动画序列
+  // Core assets
+  defaultFrame: ExpressionFrame      // Default state (required): still frame when not speaking
+  speakingFrames: ExpressionFrame[]  // Speaking state (optional): animation sequence while speaking
 
-  // 核心配置
-  anchor: AnchorPoint       // 锚点坐标，用于对齐面部中心
-  speakingFps: number       // 帧率，默认 30
-  speakingLoop: boolean     // 是否循环，默认 true
+  // Core configuration
+  anchor: AnchorPoint       // Anchor coordinates for face center alignment
+  speakingFps: number       // Framerate, default 30
+  speakingLoop: boolean     // Whether to loop, default true
 
-  // 显示变换属性（封装处理，外部通过 expressionStore 方法访问）
-  flipHorizontal: boolean   // 水平翻转，默认 false
-  blendMode?: 'normal' | 'multiply'  // 混合模式，默认 'normal'，'multiply' 用于白背景表情
-  lockEdit?: boolean        // 是否锁定编辑（禁止修改尺寸/缩放），默认 false
-  defaultScale?: number     // 默认缩放比例 (0.1-5.0)，始终生效
+  // Display transform properties (encapsulated, accessed externally via expressionStore methods)
+  flipHorizontal: boolean   // Horizontal flip, default false
+  blendMode?: 'normal' | 'multiply'  // Blend mode, default 'normal'; 'multiply' for white background expressions
+  lockEdit?: boolean        // Whether edit locked (prohibit modifying dimensions/scale), default false
+  defaultScale?: number     // Default scale ratio (0.1-5.0), always effective
 
-  // v6.5: 静止帧来源标识（仅当 speakingFrames.length > 0 时有意义）
-  // 'frame' = defaultFrame 使用 speakingFrames 中的某一帧，修改序列帧时同步更新
-  // 'custom' = defaultFrame 是用户单独上传的图片，修改序列帧时不变
+  // v6.5: Still frame source indicator (meaningful only when speakingFrames.length > 0)
+  // 'frame' = defaultFrame uses a frame from speakingFrames, synced when sequence frames change
+  // 'custom' = defaultFrame is separately uploaded image, unaffected when sequence frames change
   stillFrameSource?: 'frame' | 'custom'
-  stillFrameIndex?: number   // 当 stillFrameSource='frame' 时，记录使用的 speakingFrames 索引
+  stillFrameIndex?: number   // When stillFrameSource='frame', records index in speakingFrames
 
-  // 元数据
-  createdAt: number         // 创建时间戳 (用于排序)
+  // Metadata
+  createdAt: number         // Creation timestamp (for sorting)
 }
 
 /**
- * 表情显示变换参数（封装后的结果）
+ * Expression display transform parameters (encapsulated result)
  */
 export interface ExpressionDisplayTransform {
-  scale: number             // 有效缩放比例
-  flipX: boolean            // 是否需要水平翻转
+  scale: number             // Effective scale ratio
+  flipX: boolean            // Whether horizontal flip is needed
 }
 
 export interface PropAsset {
@@ -109,7 +109,7 @@ export interface PropAsset {
   stillFrameSource?: 'frame' | 'custom'
   stillFrameIndex?: number
   backgroundImage?: string // compat
-  // v11.0: Animation 预设库
+  // v11.0: Animation preset library
   animations?: Record<string, AnimationDefinition>
   [key: string]: unknown
 }
@@ -146,7 +146,7 @@ export interface Background {
   stillFrameSource?: 'frame' | 'custom'
   stillFrameIndex?: number
   backgroundImage?: string // compat
-  // v11.0: Animation 预设库
+  // v11.0: Animation preset library
   animations?: Record<string, AnimationDefinition>
   [key: string]: unknown
 }
@@ -184,14 +184,14 @@ export interface ProjectData {
     sounds?: SoundAsset[]
     [key: string]: unknown
   }
-  backgrounds?: Record<string, unknown> // 兼容旧版
+  backgrounds?: Record<string, unknown> // Legacy compatibility
   expressions?: Record<string, Expression>
   episodes?: unknown[]
   actors?: ActorConfig[]
   narrator?: NarratorConfig
   sceneTemplates?: SceneTemplate[]
   compositeCharacters?: CompositeCharacter[]
-  /** v20: 用户自定义预定义动作模板（项目级） */
+  /** v20: User-defined preset action templates (project level) */
   customPresetAnimations?: PresetAnimationTemplate[]
   [key: string]: unknown
 }

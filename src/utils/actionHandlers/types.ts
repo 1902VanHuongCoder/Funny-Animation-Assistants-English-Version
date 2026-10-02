@@ -1,8 +1,8 @@
 /**
- * Action Handler 类型定义
- * v11.0: 移除旧的 AnimPartState/animStates
- * v11.8x: 移除 activeAnimations（死写入，无读取处）
- * Phase 4e: 移除 objectStateTypes 依赖，引用 sceneObject.ts 的原始类型
+ * Action Handler type definitions
+ * v11.0: Removed legacy AnimPartState/animStates
+ * v11.8x: Removed activeAnimations (dead write, never read)
+ * Phase 4e: Removed objectStateTypes dependency, referencing raw types from sceneObject.ts
  */
 
 import type {
@@ -12,49 +12,49 @@ import type {
 } from '@/types/sceneObject'
 import type { Action } from '@/types/screenplay'
 
-// 子类型可写字段切片
+// Subtype writeable fields slice
 type CompositeWriteable = Partial<Pick<CompositeObject, 'compositeMode' | 'childIds' | 'renderChain'>>
 
-// Clip-Mask Phase 1：mask 子类型可写字段
+// Clip-Mask Phase 1: mask subtype writeable fields
 interface MaskWriteable {
-    /** mask.targetIds — set_mask Handler 会整段替换（部分更新语义） */
+    /** mask.targetIds — set_mask Handler replaces entire segment (partial update semantics) */
     targetIds?: string[]
-    /** mask.shape — set_mask Handler 切换 */
+    /** mask.shape — set_mask Handler toggles */
     shape?: 'rectangle' | 'ellipse'
 }
 
 /**
- * v11.0 统一的可写状态接口
+ * v11.0 Unified writeable state interface
  *
- * 基于 SceneObjectBase + 各子类型 Pick 组合，
- * 覆盖 Handler 所有可能写入的字段。
+ * Based on SceneObjectBase + subtype Pick combinations,
+ * covers all fields that Handlers may write to.
  */
 export interface WriteableState extends
     Omit<Partial<SceneObjectBase>, 'parentId'>,
     CompositeWriteable,
     MaskWriteable {
-    // parentId 需显式覆盖：Handler 可能赋值 null（移出组合），
-    // 而 SceneObjectBase.parentId?: string 不包含 null
+    // parentId requires explicit override: Handler may assign null (move out of composite),
+    // whereas SceneObjectBase.parentId?: string does not include null
     parentId?: string | null
     // camera
     zoom?: number
     shakeOffsetX?: number
     shakeOffsetY?: number
-    // 画面特效参数（Handler 直接操作嵌套结构，消除 flat state 中间层）
+    // Screen effect parameters (Handler directly operates on nested structure, eliminating flat state intermediate layer)
     params?: ScreenEffectParams
-    // v16: 元件当前素材 ID
+    // v16: Symbol current material ID
     currentMaterialId?: string
-    // 光源参数（Handler 直接操作，点光源 PRD Phase 0.5）
+    // Light parameters (Handler operates directly, Point Light PRD Phase 0.5)
     lightColor?: string
     lightIntensity?: number
     lightRadius?: number
-    // Phase 1: 闪烁和方向性
+    // Phase 1: Flicker and directionality
     flicker?: number
     flickerSpeed?: number
     directionMode?: 'omni' | 'cone'
     directionAngle?: number
     coneAngle?: number
-    // 文本属性（Text PRD Phase 0 + Phase 1）
+    // Text properties (Text PRD Phase 0 + Phase 1)
     content?: string
     fontSize?: number
     fontFamily?: string
@@ -75,7 +75,7 @@ export interface WriteableState extends
     letterSpacing?: number
     textBoxMode?: 'auto-width' | 'auto-height' | 'auto-size' | 'fixed'
     writingMode?: 'horizontal' | 'vertical'
-    // Phase 2: 打字机效果
+    // Phase 2: Typewriter effect
     revealInitialState?: 'complete' | 'typewriter'
     revealSpeed?: number
     fillType?: 'linear_gradient'
@@ -87,17 +87,17 @@ export interface WriteableState extends
     textBackgroundPaddingX?: number
     textBackgroundPaddingY?: number
     textBackgroundRadius?: number
-    revealProgress?: number  // 0~1, 运行时驱动的显示进度
+    revealProgress?: number  // 0~1, runtime-driven reveal progress
 }
 
 /**
- * Action Handler 上下文
+ * Action Handler context
  */
 export interface ActionHandlerContext {
     /**
-     * P2: 获取指定对象的当前累积状态（用于 SetParentHandler 坐标补偿）
-     * 在 sceneStateCalculator 中，返回 newState.objects 中匹配 ID 的对象
-     * 可选：不提供时 SetParentHandler 跳过坐标补偿（向后兼容）
+     * P2: Get current accumulated state of target object (used for SetParentHandler coordinate compensation)
+     * In sceneStateCalculator, returns object matching ID from newState.objects
+     * Optional: when omitted SetParentHandler skips coordinate compensation (backward compatibility)
      */
     getObjectState?: (targetId: string) => WriteableState | undefined
     /**
@@ -109,35 +109,35 @@ export interface ActionHandlerContext {
 }
 
 /**
- * Action Handler 接口
+ * Action Handler interface
  */
 export interface ActionHandler<T extends Action = Action> {
-    /** Action 类型标识 */
+    /** Action type identifier */
     readonly type: T['type']
 
-    /** 是否为瞬时动作（立即生效） */
+    /** Whether this is a point/instant action (takes effect immediately) */
     readonly isPointAction: boolean
 
-    /** 是否为持续动作（需要插值） */
+    /** Whether this is a duration action (requires interpolation) */
     readonly isDurationAction: boolean
 
-    /** 是否影响对象状态（用于 prepareBlocks 等过滤）— 相机 Action 为 false */
+    /** Whether this affects object state (used for filtering in prepareBlocks etc.) — false for camera Actions */
     readonly affectsObjectState: boolean
 
     /**
-     * 应用动作到状态（瞬时生效）
-     * @param state 目标状态对象
-     * @param action 动作
-     * @param context 可选的上下文（用于 SceneObject 模式等）
+     * Apply action to state (instant effect)
+     * @param state Target state object
+     * @param action Action
+     * @param context Optional context (for SceneObject mode etc.)
      */
     applyToState(state: WriteableState, action: T, context?: ActionHandlerContext): void
 
     /**
-     * 计算插值状态（持续动作）
-     * @param state 目标状态对象
-     * @param action 动作
-     * @param progress 进度 (0-1)
-     * @param startState 起始状态
+     * Calculate interpolated state (duration action)
+     * @param state Target state object
+     * @param action Action
+     * @param progress Progress (0-1)
+     * @param startState Start state
      */
     interpolate?(
         state: WriteableState,
@@ -148,15 +148,15 @@ export interface ActionHandler<T extends Action = Action> {
     ): void
 
     /**
-     * 获取动作完成后的目标状态
-     * @param state 当前状态对象
-     * @param action 动作
+     * Get target state after action completes
+     * @param state Current state object
+     * @param action Action
      */
     getTargetState?(state: WriteableState, action: T): void
 }
 
 /**
- * Action 类型枚举 (v11.0 更新)
+ * Action type enum (v11.0 updated)
  */
 export type ActionType =
     | 'set_scene_structure'
@@ -166,17 +166,17 @@ export type ActionType =
     | 'set_composite'   // P2
     | 'set_mask'        // Clip-Mask Phase 1
 
-    | 'set_anim'        // v10.0 重命名 (原 trigger_anim), 由 ScenePlayer 直接处理
-    | 'set_audio'       // v10.0 重命名 (原 trigger_audio)
-    | 'set_screen_effect' // Phase 1 新增: 瞬时设置画面特效参数
-    | 'set_light'          // 点光源 PRD Phase 0.5: 瞬时设置光源参数
-    | 'set_material'    // v16: 切换 SymbolObject 的当前素材
-    | 'set_text'        // Text PRD Phase 0: 瞬时设置文本属性
-    | 'set_text_reveal' // TextObject 程序化显现播放控制
+    | 'set_anim'        // v10.0 renamed (formerly trigger_anim), handled directly by ScenePlayer
+    | 'set_audio'       // v10.0 renamed (formerly trigger_audio)
+    | 'set_screen_effect' // Phase 1 addition: instantaneously sets screen effect parameters
+    | 'set_light'          // Point light PRD Phase 0.5: instantaneously sets light parameters
+    | 'set_material'    // v16: switches SymbolObject current material
+    | 'set_text'        // Text PRD Phase 0: instantaneously sets text properties
+    | 'set_text_reveal' // TextObject procedural reveal playback control
     | 'tween_transform'
-    | 'tween_screen_effect' // Phase 1 新增: 渐变画面特效参数
-    | 'tween_light'        // 点光源 PRD Phase 0.5: 渐变光源参数
-    | 'tween_text'         // Text PRD Phase 1: 渐变文本属性
+    | 'tween_screen_effect' // Phase 1 addition: tweens screen effect parameters
+    | 'tween_light'        // Point light PRD Phase 0.5: tweens light parameters
+    | 'tween_text'         // Text PRD Phase 1: tweens text properties
     | 'camera_cut'
     | 'camera_move'
     | 'camera_shake'

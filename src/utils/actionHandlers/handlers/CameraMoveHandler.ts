@@ -1,6 +1,6 @@
 /**
  * CameraMove Action Handler
- * 处理相机平滑移动
+ * Handles smooth camera movement
  */
 
 import type { CameraMoveAction } from '@/types/screenplay'
@@ -8,7 +8,7 @@ import type { CameraMoveAction } from '@/types/screenplay'
 import type { ActionHandler, ActionHandlerContext, WriteableState } from '../types'
 
 /**
- * 线性插值
+ * Linear interpolation
  */
 function lerp(start: number, end: number, t: number): number {
     return start + (end - start) * t

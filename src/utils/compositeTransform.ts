@@ -1,17 +1,17 @@
 /**
- * Composite 坐标变换工具
+ * Composite coordinate transform utilities
  *
- * v2.0.0 方案 A: 保持视觉不变（Preserve Visual Appearance）
+ * v2.0.0 Scheme A: Preserve Visual Appearance
  *
- * 对象加入/脱离 composite 时，同时转换 position、scale、rotation，
- * 使对象的全局视觉表现不发生任何变化。
+ * When an object attaches to or detaches from a composite, position, scale, and rotation are transformed
+ * simultaneously, ensuring the global visual appearance of the object does not change.
  *
- * v19.2: 使用矩阵分解代替简化公式，正确处理 flipX 翻转场景。
- * 当 parent.flipX=true 时，PIXI scaleX 为负值，简化公式的
- * position / rotation 计算均不正确。矩阵方案统一处理所有情况。
+ * v19.2: Uses matrix decomposition instead of simplified formulas to properly handle flipX scenarios.
+ * When parent.flipX=true, PIXI scaleX is negative, causing simplified position / rotation formulas to fail.
+ * The matrix approach handles all cases uniformly.
  */
 
-/** 变换所需的最小接口 */
+/** Minimal interface required for transformation */
 interface TransformData {
     x: number
     y: number
@@ -23,9 +23,9 @@ interface TransformData {
     transformOriginY?: number
 }
 
-// ==================== 内部矩阵工具 ====================
+// ==================== Internal Matrix Utilities ====================
 
-/** 2D 仿射变换矩阵 */
+/** 2D affine transform matrix */
 interface Transform2D {
     a: number   // effScaleX * cos(rotation)
     b: number   // effScaleX * sin(rotation)
@@ -35,7 +35,7 @@ interface Transform2D {
     ty: number  // y
 }
 
-/** 从 TransformData 构建仿射矩阵（flipX 烘焙到 scaleX） */
+/** Build affine matrix from TransformData (flipX baked into scaleX) */
 function buildMatrix(t: TransformData): Transform2D {
     const effScaleX = t.scaleX * (t.flipX ? -1 : 1)
     const cos = Math.cos(t.rotation)
@@ -59,7 +59,7 @@ function buildMatrix(t: TransformData): Transform2D {
     }
 }
 
-/** 矩阵乘法 */
+/** Matrix multiplication */
 function multiplyMatrix(parent: Transform2D, child: Transform2D): Transform2D {
     return {
         a: parent.a * child.a + parent.c * child.b,
@@ -71,7 +71,7 @@ function multiplyMatrix(parent: Transform2D, child: Transform2D): Transform2D {
     }
 }
 
-/** 矩阵求逆 */
+/** Matrix inversion */
 function invertMatrix(m: Transform2D): Transform2D {
     const det = m.a * m.d - m.b * m.c
     if (Math.abs(det) < 1e-10) {
@@ -89,11 +89,11 @@ function invertMatrix(m: Transform2D): Transform2D {
 }
 
 /**
- * 从仿射矩阵分解出 scaleX, scaleY, rotation
+ * Decompose scaleX, scaleY, rotation from affine matrix
  *
- * 矩阵 = R(θ) * S(sx, sy)，其中 sx 可为负（flipX）。
- * 当 det < 0（反射）时，负号放到 scaleX 上，旋转角用 atan2(-b, -a) 修正。
- * 这避免将纯 X 翻转误解为 180° 旋转（atan2(0, -1) = π 的陷阱）。
+ * Matrix = R(theta) * S(sx, sy), where sx can be negative (flipX).
+ * When det < 0 (reflection), the negative sign goes to scaleX, and rotation is corrected with atan2(-b, -a).
+ * This prevents pure X-reflection from being misinterpreted as 180° rotation (the atan2(0, -1) = pi trap).
  */
 function decomposeMatrix(m: Transform2D): {
     x: number; y: number; scaleX: number; scaleY: number; rotation: number
@@ -108,11 +108,11 @@ function decomposeMatrix(m: Transform2D): {
     let rotation: number
 
     if (det < 0) {
-        // 负行列式 = 反射（flipX），将负号放在 scaleX 上
+        // Negative determinant = reflection (flipX), place negative sign on scaleX
         scaleX = -scaleXRaw
-        // atan2(b, a) 在 a<0 时会多出 π（将 flipX 误解为 180° 旋转）
-        // 用 atan2(-b, -a) 补偿：a = sx*cosθ, b = sx*sinθ，
-        // 当 sx<0 时 -b/(-sx)=sinθ, -a/(-sx)=cosθ → atan2(-b,-a)=θ
+        // atan2(b, a) adds pi when a < 0 (misinterpreting flipX as 180° rotation)
+        // Compensate with atan2(-b, -a): a = sx*cos(theta), b = sx*sin(theta),
+        // when sx < 0, -b/(-sx)=sin(theta), -a/(-sx)=cos(theta) -> atan2(-b, -a) = theta
         rotation = Math.atan2(-m.b, -m.a)
     } else {
         scaleX = scaleXRaw
@@ -150,13 +150,13 @@ function decomposeMatrixForTransform(m: Transform2D, t: TransformData): {
 }
 
 /**
- * 全局坐标 → 局部坐标（attach 时使用）
+ * Global coordinates -> Local coordinates (used when attaching)
  *
- * 将子对象的全局变换转换为相对于 parent 的局部变换，
- * 保持子对象的全局视觉表现不变。
+ * Converts child object global transform to local transform relative to parent,
+ * preserving child's global visual appearance.
  *
- * v19.2: 使用矩阵分解正确处理 parent.flipX，
- * 返回值的 flipX 表示附加后子对象的 flipX 应设为该值。
+ * v19.2: Uses matrix decomposition to handle parent.flipX accurately.
+ * The returned flipX indicates the value to set on the child after attaching.
  */
 export function globalToLocal(child: TransformData, parent: TransformData): TransformData {
     const childMatrix = buildMatrix(child)
@@ -165,9 +165,9 @@ export function globalToLocal(child: TransformData, parent: TransformData): Tran
     const localMatrix = multiplyMatrix(invParent, childMatrix)
     const decomposed = decomposeMatrixForTransform(localMatrix, child)
 
-    // decomposeMatrix 只能标记 scaleY 为负来表达反射，
-    // 但我们的数据模型要求 scaleX/scaleY 均 >=0，flipX 单独标记。
-    // 行列式符号变化 = parent 和 child 的 flipX 不同（XOR）
+    // decomposeMatrix can only represent reflection via negative scale,
+    // but our data model requires scaleX/scaleY >= 0 with separate flipX flag.
+    // Determinant sign change = parent and child flipX differ (XOR)
     const parentFlip = parent.flipX ?? false
     const childFlip = child.flipX ?? false
     const localFlip = parentFlip !== childFlip
@@ -183,13 +183,13 @@ export function globalToLocal(child: TransformData, parent: TransformData): Tran
 }
 
 /**
- * 局部坐标 → 全局坐标（detach 时使用）
+ * Local coordinates -> Global coordinates (used when detaching)
  *
- * 将子对象的局部变换恢复为全局变换，
- * 保持子对象的全局视觉表现不变。
+ * Restores child local transform to global transform,
+ * preserving child's global visual appearance.
  *
- * v19.2: 使用矩阵分解正确处理 parent.flipX，
- * 返回值的 flipX 表示脱离后子对象的 flipX 应设为该值。
+ * v19.2: Uses matrix decomposition to handle parent.flipX accurately.
+ * The returned flipX indicates the value to set on the child after detaching.
  */
 export function localToGlobal(child: TransformData, parent: TransformData): TransformData {
     const childMatrix = buildMatrix(child)
@@ -197,7 +197,7 @@ export function localToGlobal(child: TransformData, parent: TransformData): Tran
     const globalMatrix = multiplyMatrix(parentMatrix, childMatrix)
     const decomposed = decomposeMatrixForTransform(globalMatrix, child)
 
-    // 同 globalToLocal：XOR 恢复全局 flipX
+    // Same as globalToLocal: XOR restores global flipX
     const parentFlip = parent.flipX ?? false
     const childFlip = child.flipX ?? false
     const globalFlip = parentFlip !== childFlip

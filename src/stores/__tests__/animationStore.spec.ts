@@ -1,7 +1,7 @@
 /**
  * animationStore.spec.ts
  * 
- * Animation Store CRUD 操作单元测试
+ * Animation Store CRUD Operations Unit Tests
  */
 
 import { createPinia, setActivePinia } from 'pinia'
@@ -53,30 +53,30 @@ describe('animationStore', () => {
     })
 
     describe('estimateAnimationDuration', () => {
-        it('应该返回轨道中最长的时长', () => {
-            // 直接测试导出的函数
-            // 示例轨道配置：
+        it('should return longest duration among tracks', () => {
+            // Test exported function directly
+            // Example track configurations:
             // - transform: 500ms
-            // - transform: 1000ms (最长)
+            // - transform: 1000ms (longest)
             // - visibility: 750ms
-            // 获取 estimateAnimationDuration（需要从模块导入）
-            // 由于是内部函数，我们通过 store 的行为间接测试
+            // Get estimateAnimationDuration (imported from module)
+            // Internal function tested indirectly via store behavior
         })
 
-        it('空轨道应该返回默认时长', () => {
-            // 空轨道时默认时长应该是 1000ms
+        it('should return default duration for empty tracks', () => {
+            // Default duration for empty tracks should be 1000ms
         })
     })
 
     describe('getAnimations', () => {
-        it('应该返回资源的动画列表', () => {
+        it('should return animation list for asset', () => {
             const store = useAnimationStore()
             const animations = store.getAnimations('prop', 'prop-1')
 
             expect(Array.isArray(animations)).toBe(true)
         })
 
-        it('不存在的资源应该返回空数组', () => {
+        it('should return empty array for nonexistent asset', () => {
             const store = useAnimationStore()
             const animations = store.getAnimations('prop', 'nonexistent')
 
@@ -85,25 +85,25 @@ describe('animationStore', () => {
     })
 
     describe('getAnimationListItems', () => {
-        it('应该返回 UI 友好的列表项', () => {
+        it('should return UI-friendly list items', () => {
             const store = useAnimationStore()
             const items = store.getAnimationListItems('prop', 'prop-1')
 
             expect(Array.isArray(items)).toBe(true)
-            // 每个项应该有 id, name, duration, loop, trackCount
+            // Each item should have id, name, duration, loop, trackCount
         })
     })
 
     describe('getAnimation', () => {
-        it('应该返回指定的动画', () => {
+        it('should return specified animation', () => {
             const store = useAnimationStore()
             const animation = store.getAnimation('prop', 'prop-1', 'anim-1')
 
-            // 由于 mock，应该有返回值
+            // Mocked, should return value
             expect(animation).toBeDefined()
         })
 
-        it('不存在的动画应该返回 undefined', () => {
+        it('should return undefined for nonexistent animation', () => {
             const store = useAnimationStore()
             const animation = store.getAnimation('prop', 'prop-1', 'nonexistent')
 
@@ -112,14 +112,14 @@ describe('animationStore', () => {
     })
 
     describe('getAnimationByName', () => {
-        it('应该根据名称查找动画', () => {
+        it('should find animation by name', () => {
             const store = useAnimationStore()
             const animation = store.getAnimationByName('prop', 'prop-1', 'idle')
 
             expect(animation).toBeDefined()
         })
 
-        it('不存在的名称应该返回 undefined', () => {
+        it('should return undefined for nonexistent name', () => {
             const store = useAnimationStore()
             const animation = store.getAnimationByName('prop', 'prop-1', 'nonexistent')
 
@@ -128,11 +128,11 @@ describe('animationStore', () => {
     })
 
     describe('addAnimation', () => {
-        it('应该添加新动画并生成 ID', () => {
+        it('should add new animation and generate ID', () => {
             const store = useAnimationStore()
 
-            // 注意：由于 mock 的限制，实际添加可能不会持久化
-            // 但我们可以验证函数不抛出异常
+            // Note: Due to mock limits, addition may not persist
+            // But we verify the function does not throw
             expect(() => {
                 store.addAnimation('prop', 'prop-2', {
                     type: 'track',
@@ -143,7 +143,7 @@ describe('animationStore', () => {
             }).not.toThrow()
         })
 
-        it('添加的动画应该有时间戳', () => {
+        it('added animation should have timestamps', () => {
             const store = useAnimationStore()
             const beforeTime = Date.now()
 
@@ -160,27 +160,27 @@ describe('animationStore', () => {
     })
 
     describe('updateAnimation', () => {
-        it('应该更新动画属性', () => {
+        it('should update animation properties', () => {
             const store = useAnimationStore()
 
-            // 由于 mock，实际更新可能不会反映
-            // 但我们验证函数存在且可调用
+            // Due to mock, actual update may not reflect
+            // But we verify the function exists and is callable
             expect(typeof store.updateAnimation).toBe('function')
         })
 
-        it('更新应该修改 updatedAt', () => {
-            // 测试 updatedAt 时间戳变化
+        it('update should modify updatedAt', () => {
+            // Test updatedAt timestamp change
         })
     })
 
     describe('deleteAnimation', () => {
-        it('应该删除指定动画', () => {
+        it('should delete specified animation', () => {
             const store = useAnimationStore()
 
             expect(typeof store.deleteAnimation).toBe('function')
         })
 
-        it('删除不存在的动画应该返回 false', () => {
+        it('deleting nonexistent animation should return false', () => {
             const store = useAnimationStore()
             const result = store.deleteAnimation('prop', 'prop-1', 'nonexistent')
 
@@ -189,22 +189,22 @@ describe('animationStore', () => {
     })
 
     describe('importAnimation', () => {
-        it('应该从其他资源复制动画', () => {
+        it('should copy animation from other asset', () => {
             const store = useAnimationStore()
 
             expect(typeof store.importAnimation).toBe('function')
         })
 
-        it('导入应该包含来源追踪信息', () => {
-            // 验证 sourceRef 字段
+        it('import should include provenance tracking information', () => {
+            // Verify sourceRef field
         })
     })
 
     describe('getAllResourcesWithAnimations', () => {
-        it('函数应该存在', () => {
+        it('function should exist', () => {
             const store = useAnimationStore()
 
-            // 由于 mock 复杂度，只验证函数存在
+            // Due to mock complexity, only verify function exists
             expect(typeof store.getAllResourcesWithAnimations).toBe('function')
         })
     })

@@ -1,32 +1,32 @@
 /**
- * 表情导入工具
- * 用于从文件夹批量扫描和导入表情资源
+ * Expression import utility
+ * Used for batch scanning and importing expression assets from folders
  */
 
 import type { ExpressionFrame } from '@/types/project'
 
 /**
- * 导入预览项
+ * Import preview item
  */
 export interface ImportPreviewItem {
-    /** 表情类型：静态（单图）或动画（多图） */
+    /** Expression type: static (single image) or animated (multiple images) */
     type: 'static' | 'animation'
-    /** 表情名称（来自文件名或文件夹名） */
+    /** Expression name (from filename or directory name) */
     name: string
-    /** 图片数量 */
+    /** Image count */
     imageCount: number
-    /** 静态表情的文件 Handle */
+    /** File handle for static expression */
     fileHandle?: FileSystemFileHandle
-    /** 动画表情的目录 Handle */
+    /** Directory handle for animated expression */
     dirHandle?: FileSystemDirectoryHandle
-    /** 文件相对路径（静态表情用） */
+    /** File relative path (for static expression) */
     filePath?: string
-    /** 目录相对路径（动画表情用） */
+    /** Directory relative path (for animated expression) */
     dirPath?: string
 }
 
 /**
- * 导入结果项
+ * Import result item
  */
 export interface ImportResultItem {
     name: string
@@ -35,12 +35,12 @@ export interface ImportResultItem {
 }
 
 /**
- * 支持的图片扩展名
+ * Supported image extensions
  */
 const IMAGE_EXTENSIONS = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp']
 
 /**
- * 判断是否为支持的图片文件
+ * Check whether filename has supported image extension
  */
 export function isImageFile(filename: string): boolean {
     const ext = filename.split('.').pop()?.toLowerCase() ?? ''
@@ -48,7 +48,7 @@ export function isImageFile(filename: string): boolean {
 }
 
 /**
- * 从文件名提取表情名称（去除扩展名）
+ * Extract expression name from filename (removes extension)
  */
 export function extractNameFromFile(filename: string): string {
     const lastDot = filename.lastIndexOf('.')
@@ -56,16 +56,16 @@ export function extractNameFromFile(filename: string): string {
 }
 
 /**
- * 自然排序比较函数
+ * Natural comparison function
  */
 function naturalCompare(a: string, b: string): number {
     return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' })
 }
 
 /**
- * 扫描目录，生成导入预览列表
- * @param dirHandle 要扫描的目录 Handle
- * @param basePath 目录的相对路径前缀
+ * Scan directory to generate import preview list
+ * @param dirHandle Directory handle to scan
+ * @param basePath Relative path prefix of directory
  */
 export async function scanDirectoryForExpressions(
     dirHandle: FileSystemDirectoryHandle,
@@ -75,7 +75,7 @@ export async function scanDirectoryForExpressions(
     const fileEntries: { name: string; handle: FileSystemFileHandle }[] = []
     const dirEntries: { name: string; handle: FileSystemDirectoryHandle }[] = []
 
-    // 收集所有条目，分开存储文件和目录
+    // Collect all entries, separating files and directories
     for await (const entry of dirHandle.values()) {
         if (entry.kind === 'file') {
             fileEntries.push({ name: entry.name, handle: entry })
@@ -84,11 +84,11 @@ export async function scanDirectoryForExpressions(
         }
     }
 
-    // 按名称自然排序
+    // Sort naturally by name
     fileEntries.sort((a, b) => naturalCompare(a.name, b.name))
     dirEntries.sort((a, b) => naturalCompare(a.name, b.name))
 
-    // 处理文件 → 静态表情
+    // Process files -> static expressions
     for (const entry of fileEntries) {
         if (isImageFile(entry.name)) {
             const filePath = basePath ? `${basePath}/${entry.name}` : entry.name
@@ -102,7 +102,7 @@ export async function scanDirectoryForExpressions(
         }
     }
 
-    // 处理目录 → 动画表情
+    // Process directories -> animated expressions
     for (const entry of dirEntries) {
         const imageCount = await countImagesInDirectory(entry.handle)
         if (imageCount > 0) {
@@ -121,7 +121,7 @@ export async function scanDirectoryForExpressions(
 }
 
 /**
- * 统计目录中的图片数量
+ * Count image files in directory
  */
 async function countImagesInDirectory(dirHandle: FileSystemDirectoryHandle): Promise<number> {
     let count = 0
@@ -134,12 +134,12 @@ async function countImagesInDirectory(dirHandle: FileSystemDirectoryHandle): Pro
 }
 
 /**
- * 处理单个导入项，生成 ExpressionFrame 数据
- * @param item 导入预览项
+ * Process single import item, generating ExpressionFrame data
+ * @param item Import preview item
  */
 export async function processImportItem(item: ImportPreviewItem): Promise<ImportResultItem> {
     if (item.type === 'static' && item.fileHandle && item.filePath) {
-        // 静态表情：单张图片
+        // Static expression: single image
         const frame: ExpressionFrame = {
             id: generateFrameId(),
             url: item.filePath
@@ -150,12 +150,12 @@ export async function processImportItem(item: ImportPreviewItem): Promise<Import
             speakingFrames: []
         }
     } else if (item.type === 'animation' && item.dirHandle && item.dirPath) {
-        // 动画表情：文件夹内所有图片
+        // Animated expression: all images in folder
         const frames = await loadFramesFromDirectory(item.dirHandle, item.dirPath)
         if (frames.length === 0) {
-            throw new Error(`文件夹 "${item.name}" 中没有有效的图片文件`)
+            throw new Error(`Directory "${item.name}" does not contain any valid image files`)
         }
-        // frames.length > 0 已确保，使用非空断言
+        // frames.length > 0 guaranteed, safe assertion
         const firstFrame = frames[0]!
         return {
             name: item.name,
@@ -163,12 +163,12 @@ export async function processImportItem(item: ImportPreviewItem): Promise<Import
             speakingFrames: frames
         }
     } else {
-        throw new Error(`无效的导入项: ${item.name}`)
+        throw new Error(`Invalid import item: ${item.name}`)
     }
 }
 
 /**
- * 从目录加载所有图片帧
+ * Load all image frames from directory
  */
 async function loadFramesFromDirectory(
     dirHandle: FileSystemDirectoryHandle,
@@ -182,10 +182,10 @@ async function loadFramesFromDirectory(
         }
     }
 
-    // 按文件名自然排序
+    // Sort naturally by filename
     imageFiles.sort((a, b) => naturalCompare(a.name, b.name))
 
-    // 生成 ExpressionFrame 列表
+    // Generate ExpressionFrame list
     return imageFiles.map((file, index) => ({
         id: generateFrameId(index),
         url: `${dirPath}/${file.name}`
@@ -193,7 +193,7 @@ async function loadFramesFromDirectory(
 }
 
 /**
- * 生成帧 ID
+ * Generate frame ID
  */
 function generateFrameId(index?: number): string {
     const base = `frame_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`

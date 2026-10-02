@@ -7,13 +7,13 @@ import type { ExportResult, ExportSettings, VideoExportConfig, VideoExportProgre
 import { checkWebCodecsSupport, DEFAULT_EXPORT_CONFIG, DEFAULT_SUBTITLE_STYLE, ERROR_CODES, QUALITY_PRESETS, RESOLUTION_PRESETS, VideoExporter } from '@/utils/videoExport'
 
 /**
- * 视频导出 Composable
+ * Video export Composable
  */
 export function useVideoExport() {
     const episodeStore = useEpisodeStore()
     const projectStore = useProjectStore()
 
-    // 导出状态
+    // Export state
     const exportState = ref<VideoExportState>({
         status: 'idle',
         progress: {
@@ -27,32 +27,32 @@ export function useVideoExport() {
         }
     })
 
-    // 显示确认对话框
+    // Show confirmation dialog
     const showConfirmDialog = ref(false)
 
-    // 显示进度对话框
+    // Show progress dialog
     const showProgressDialog = ref(false)
 
-    // 显示结果对话框
+    // Show result dialog
     const showResultDialog = ref(false)
 
-    // 导出结果
+    // Export result
     const exportResult = ref<ExportResult | null>(null)
 
-    // 当前导出的剧集 ID
+    // Currently exporting episode ID
     const currentEpisodeId = ref<string | null>(null)
 
-    // 导出开始时间
+    // Export start time
     let exportStartTime = 0
 
-    // 导出设置（用户可配置）
+    // Export settings (user-configurable)
     const exportSettings = ref<ExportSettings>(loadExportSettings())
 
-    // 取消控制器
+    // Abort controller
     let abortController: AbortController | null = null
 
     /**
-     * 从 localStorage 加载导出设置
+     * Load export settings from localStorage
      */
     function loadExportSettings(): ExportSettings {
         const defaults: ExportSettings = {
@@ -69,7 +69,7 @@ export function useVideoExport() {
         if (stored) {
             try {
                 const parsed = JSON.parse(stored) as Partial<ExportSettings>
-                // 帧率固定为 60，旧的本地设置不再影响导出帧率
+                // Frame rate fixed at 60, legacy local settings no longer affect export frame rate
                 return {
                     ...defaults,
                     ...parsed,
@@ -88,7 +88,7 @@ export function useVideoExport() {
     }
 
     /**
-     * 保存导出设置到 localStorage
+     * Save export settings to localStorage
      */
     function saveExportSettings(settings: ExportSettings) {
         localStorage.setItem('animeStudio_exportSettings', JSON.stringify(settings))
@@ -96,37 +96,37 @@ export function useVideoExport() {
     }
 
     /**
-     * 开始导出
+     * Start export
      */
     const startExport = async (episodeId: string) => {
-        // 检查浏览器支持
+        // Check browser support
         await Promise.resolve()
         const support = checkWebCodecsSupport()
         if (!support.supported) {
-            alert(support.error ?? '当前浏览器不支持视频导出功能')
+            alert(support.error ?? 'Current browser does not support video export')
             return
         }
 
-        // 获取剧集数据
+        // Get episode data
         const episode = episodeStore.getEpisode(episodeId)
         if (!episode) {
-            alert('剧集不存在')
+            alert('Episode does not exist')
             return
         }
 
         if (!episode.scenes || episode.scenes.length === 0) {
-            alert('剧本必须至少包含一个场景')
+            alert('Screenplay must contain at least one scene')
             return
         }
 
         currentEpisodeId.value = episodeId
 
-        // 显示确认对话框
+        // Show confirmation dialog
         showConfirmDialog.value = true
     }
 
     /**
-     * 确认导出
+     * Confirm export
      */
     const confirmExport = async (settings?: ExportSettings) => {
         if (!currentEpisodeId.value) return
@@ -135,45 +135,45 @@ export function useVideoExport() {
         const episode = episodeStore.getEpisode(episodeId)
         if (!episode) return
 
-        // 如果传入了设置，保存到 localStorage
+        // If settings provided, save to localStorage
         if (settings) {
             saveExportSettings(settings)
         }
 
-        // 关闭确认对话框，打开进度对话框
+        // Close confirmation dialog, open progress dialog
         showConfirmDialog.value = false
         showProgressDialog.value = true
 
-        // 重置状态
+        // Reset state
         exportState.value.status = 'preparing'
         delete (exportState.value as { error?: unknown }).error
         delete (exportState.value as { outputBlob?: unknown }).outputBlob
         exportResult.value = null
         exportStartTime = Date.now()
 
-        // 使用用户选择的设置（在 try 外部定义，以便 catch 块也能访问）
+        // Use user-selected settings (defined outside try so catch block can access)
         const currentSettings = exportSettings.value
 
-        // 获取分辨率预设
+        // Get resolution preset
         const resolutionPreset = RESOLUTION_PRESETS.find((p: typeof RESOLUTION_PRESETS[number]) => p.id === currentSettings.resolution)
         if (!resolutionPreset) {
-            alert('无效的分辨率设置')
+            alert('Invalid resolution setting')
             showProgressDialog.value = false
             return
         }
 
         try {
-            // 创建取消控制器
+            // Create abort controller
             abortController = new AbortController()
 
-            // ── TTS 预处理 ──────────────────────────────────────
+            // ── TTS Preprocessing ──────────────────────────────────────
             exportState.value.progress = {
                 ...exportState.value.progress,
                 stage: 'preparing',
-                stageMessage: '正在检查并生成语音...'
+                stageMessage: 'Checking and generating speech...'
             }
 
-            // 深拷贝 Episode 用于 TTS 处理（避免导出器使用的副本被修改）
+            // Deep copy Episode for TTS processing (prevent mutation of exporter copy)
             const episodeCopy = JSON.parse(JSON.stringify(episode)) as typeof episode
 
             try {
@@ -190,15 +190,15 @@ export function useVideoExport() {
             } catch (ttsErr) {
                 const ttsError = ttsErr as Error & { errorCode?: string }
                 if (ttsError.errorCode === 'TTS_PROVIDER_NOT_CONFIGURED') {
-                    throw new Error('本地 TTS Provider 尚未配置。请先为台词导入本地音频，或配置本地 TTS Provider。')
+                    throw new Error('Local TTS Provider is not configured yet. Please import local audio for dialogue or configure a local TTS Provider.')
                 }
                 throw ttsErr
             }
 
-            // TTS 完成后，使用最新的 episode 数据（已持久化到 Store）
+            // After TTS completes, use fresh episode data (persisted to Store)
             const freshEpisode = episodeStore.getEpisode(episodeId) ?? episode
 
-            // 获取质量对应的码率
+            // Get bitrate for quality preset
             const qualityPreset = QUALITY_PRESETS.find((p: typeof QUALITY_PRESETS[number]) => p.id === currentSettings.quality)
             const videoBitrate = qualityPreset?.videoBitrate ?? DEFAULT_EXPORT_CONFIG.videoBitrate
 
@@ -207,7 +207,7 @@ export function useVideoExport() {
                 resolution: {
                     width: resolutionPreset.width,
                     height: resolutionPreset.height,
-                    scale: 1 // 使用预设分辨率，不需要缩放
+                    scale: 1 // Use preset resolution, no scaling needed
                 },
                 frameRate: 60,
                 videoBitrate: videoBitrate,
@@ -216,27 +216,27 @@ export function useVideoExport() {
                 videoCodec: DEFAULT_EXPORT_CONFIG.videoCodec,
                 audioCodec: DEFAULT_EXPORT_CONFIG.audioCodec,
                 hardwareAcceleration: currentSettings.encoder === 'software' ? 'prefer-software' : 'prefer-hardware',
-                showWatermark: currentSettings.showWatermark,  // 传递水印设置
+                showWatermark: currentSettings.showWatermark,  // Pass watermark setting
                 showSubtitles: currentSettings.showSubtitles,
                 subtitleStyle: currentSettings.subtitleStyle
             }
 
-            // 记录视频编码阶段的总帧数（因为音频编码和封装阶段会覆盖为 0）
+            // Record total frames during video encoding (as audio encoding and muxing will overwrite to 0)
             let videoTotalFrames = 0
 
-            // 创建导出器
+            // Create exporter
             const exporter = new VideoExporter(freshEpisode, config, {
                 signal: abortController.signal,
                 onProgress: (progress: VideoExportProgress) => {
 
-                    // 保存视频编码阶段的总帧数
+                    // Save video encoding total frames
                     if (progress.stage === 'encoding' && progress.totalFrames > 0) {
                         videoTotalFrames = progress.totalFrames
                     }
 
                     exportState.value.progress = progress
 
-                    // 更新状态
+                    // Update status
                     if (progress.stage === 'preparing') {
                         exportState.value.status = 'preparing'
                     } else if (progress.stage === 'encoding') {
@@ -247,19 +247,19 @@ export function useVideoExport() {
                 }
             })
 
-            // 执行导出
+            // Execute export
             const blob = await exporter.export()
 
-            // 导出成功
+            // Export successful
             exportState.value.status = 'completed'
             exportState.value.outputBlob = blob
-            exportState.value.outputFileName = `${episode.name ?? '未命名剧本'}_${new Date().toISOString().slice(0, 10)}.mp4`
+            exportState.value.outputFileName = `${episode.name ?? 'Untitled_Script'}_${new Date().toISOString().slice(0, 10)}.mp4`
 
-            // 收集导出结果信息
+            // Collect export result info
             const duration = Date.now() - exportStartTime
             const qualityLabel = QUALITY_PRESETS.find(p => p.id === currentSettings.quality)?.label ?? currentSettings.quality
 
-            // 使用视频编码阶段保存的总帧数（音频/封装阶段会把 progress.totalFrames 覆盖为 0）
+            // Use video encoding total frames (audio/muxing stages overwrite progress.totalFrames to 0)
             const totalFrames = videoTotalFrames || exportState.value.progress.totalFrames || exportState.value.progress.currentFrame || 0
 
 
@@ -277,34 +277,34 @@ export function useVideoExport() {
                 quality: qualityLabel
             }
 
-            // 自动下载
+            // Auto download
             downloadBlob(blob, exportState.value.outputFileName)
 
-            // 关闭进度对话框，显示结果对话框
+            // Close progress dialog, show results dialog
             showProgressDialog.value = false
             showResultDialog.value = true
 
         } catch (error: unknown) {
             const err = error as { message?: string, stack?: string }
             if (err.message === ERROR_CODES.CANCELLED) {
-                // 用户取消是正常操作,不记录为错误
+                // User cancellation is normal operation, do not log as error
                 exportState.value.status = 'cancelled'
                 exportState.value.error = {
                     code: ERROR_CODES.CANCELLED,
-                    message: '导出已取消'
+                    message: 'Export cancelled'
                 }
-                // 取消时不显示结果对话框
+                // Do not show results dialog on cancellation
             } else {
-                // 真正的错误才记录日志
-                console.error('[useVideoExport] 导出失败:', error)
+                // Only log genuine errors
+                console.error('[useVideoExport] Export failed:', error)
                 exportState.value.status = 'error'
                 exportState.value.error = {
                     code: ERROR_CODES.UNKNOWN_ERROR,
-                    message: err.message ?? '导出失败',
+                    message: err.message ?? 'Export failed',
                     details: error
                 }
 
-                // 收集错误结果信息
+                // Collect error result information
                 const duration = Date.now() - exportStartTime
                 const qualityLabel = QUALITY_PRESETS.find(p => p.id === currentSettings.quality)?.label ?? currentSettings.quality
                 const resolutionPreset = RESOLUTION_PRESETS.find(p => p.id === currentSettings.resolution)
@@ -320,11 +320,11 @@ export function useVideoExport() {
                     },
                     frameRate: 60,
                     quality: qualityLabel,
-                    errorMessage: err.message ?? '导出失败',
+                    errorMessage: err.message ?? 'Export failed',
                     errorDetails: err.stack ?? JSON.stringify(error, null, 2)
                 }
 
-                // 关闭进度对话框，显示结果对话框
+                // Close progress dialog, show results dialog
                 showProgressDialog.value = false
                 showResultDialog.value = true
             }
@@ -334,7 +334,7 @@ export function useVideoExport() {
     }
 
     /**
-     * 取消导出
+     * Cancel export
      */
     const cancelExport = () => {
         if (abortController) {
@@ -348,7 +348,7 @@ export function useVideoExport() {
     }
 
     /**
-     * 下载 Blob
+     * Download Blob
      */
     const downloadBlob = (blob: Blob, filename: string) => {
         const url = URL.createObjectURL(blob)
@@ -362,7 +362,7 @@ export function useVideoExport() {
     }
 
     /**
-     * 关闭结果对话框
+     * Close result dialog
      */
     const closeResultDialog = () => {
         showResultDialog.value = false
@@ -370,7 +370,7 @@ export function useVideoExport() {
     }
 
     /**
-     * 再次导出
+     * Export again
      */
     const exportAgain = () => {
         closeResultDialog()
@@ -380,7 +380,7 @@ export function useVideoExport() {
     }
 
     /**
-     * 重试导出
+     * Retry export
      */
     const retryExport = () => {
         closeResultDialog()

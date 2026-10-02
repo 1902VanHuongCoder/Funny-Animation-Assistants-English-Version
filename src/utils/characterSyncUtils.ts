@@ -1,78 +1,78 @@
 /**
- * 人物间结构/动画同步复制工具
+ * Cross-character structure / animation sync and copy utility
  *
- * 「拍扁→重组」策略：
- * 1. 将目标人物拍扁为叶节点
- * 2. 按名称（alias）与源人物的叶节点匹配
- * 3. 复制源人物的 composite 骨架结构
- * 4. 将匹配的叶节点填入骨架
- * 5. 复制动画定义，重映射所有 ID 引用
+ * "Flatten -> Recompose" strategy:
+ * 1. Flatten target character into leaf nodes
+ * 2. Match names (alias) with source character leaf nodes
+ * 3. Copy source character's composite skeleton structure
+ * 4. Fill matched leaf nodes into skeleton
+ * 5. Copy animation definitions, remapping all ID references
  */
 
 import type { AnimationDefinition, AnimationTrack, TrackAnimationDefinition } from '@/types/animation'
 import type { CompositeObject, SceneObject } from '@/types/sceneObject'
 import { generateId } from '@/utils/uuid'
 
-// ===== 公共类型 =====
+// ===== Public Types =====
 
-/** 名称匹配结果 */
+/** Name match result */
 export interface NameMatchResult {
-    /** 源叶节点 ID → 目标叶节点 ID */
+    /** Source leaf ID -> Target leaf ID */
     leafIdMap: Map<string, string>
-    /** 源 composite ID → 新生成的 composite ID */
+    /** Source composite ID -> newly generated composite ID */
     compositeIdMap: Map<string, string>
-    /** 综合映射：源任意对象 ID → 目标对象 ID（leafIdMap + compositeIdMap 的并集） */
+    /** Comprehensive mapping: source any object ID -> target object ID (union of leafIdMap + compositeIdMap) */
     fullIdMap: Map<string, string>
-    /** 仅源有的叶节点别名列表 */
+    /** Leaf node aliases present only in source */
     sourceOnly: string[]
-    /** 仅目标有的叶节点别名列表 */
+    /** Leaf node aliases present only in target */
     targetOnly: string[]
-    /** 匹配成功的别名列表 */
+    /** Successfully matched aliases */
     matched: string[]
 }
 
-/** 同步结果 */
+/** Synchronization result */
 export interface CharacterSyncResult {
-    /** 重组后的完整对象列表（直接替换 CompositeCharacter.objects） */
+    /** Recomposed full object list (directly replaces CompositeCharacter.objects) */
     objects: SceneObject[]
-    /** 匹配信息（用于 UI 预览） */
+    /** Match information (for UI preview) */
     matchResult: NameMatchResult
-    /** 被跳过的动画名（因所有轨道目标都不可映射） */
+    /** Names of skipped animations (when all track targets cannot be mapped) */
     skippedAnimations: string[]
-    /** 被部分裁剪的动画名（部分轨道目标不可映射，已移除无效轨道） */
+    /** Names of partially trimmed animations (unmappable tracks removed) */
     trimmedAnimations: string[]
 }
 
-// ===== 辅助工具 =====
+// ===== Helper Utilities =====
 
-/** 判断是否为 composite 对象 */
+/** Determine whether object is composite */
 function isComposite(obj: SceneObject): obj is CompositeObject {
     return obj.type === 'composite'
 }
 
-/** 获取对象的匹配用名称（优先 alias，回退 name） */
+/** Get matching name for object (prefers alias, falls back to name) */
 function getMatchName(obj: SceneObject): string {
     const trimmed = obj.alias?.trim()
     return (trimmed && trimmed.length > 0) ? trimmed : obj.name
 }
 
-/** 生成新的 SceneObject ID */
+/** Generate new SceneObject ID */
 function newObjectId(): string {
     return generateId('sceneobject')
 }
 
-/** 生成新的 Animation ID */
+/** Generate new Animation ID */
 function newAnimationId(): string {
     return generateId('animation')
 }
 
-// ===== 核心函数 =====
+// ===== Core Functions =====
 
 /**
- * 收集所有叶节点（非 composite 的 SceneObject）
+ * Collect all leaf nodes (non-composite SceneObjects)
  *
- * @param objects 平坦的 SceneObject 列表
- * @returns alias → SceneObject 映射（重复 alias 仅保留第一个）
+ * @param objects Flat SceneObject list
+ * @returns alias -> SceneObject map (duplicate aliases keep first occurrence only)
  */
 export function collectLeafNodes(objects: readonly SceneObject[]): Map<string, SceneObject> {
     const result = new Map<string, SceneObject>()
@@ -87,18 +87,18 @@ export function collectLeafNodes(objects: readonly SceneObject[]): Map<string, S
 }
 
 /**
- * 收集所有 composite 节点
+ * Collect all composite nodes
  */
 function collectCompositeNodes(objects: readonly SceneObject[]): CompositeObject[] {
     return objects.filter(isComposite)
 }
 
 /**
- * 建立名称匹配
+ * Build name matching
  *
- * @param sourceObjects 源人物的 objects 列表
- * @param targetObjects 目标人物的 objects 列表
- * @returns 匹配结果
+ * @param sourceObjects Source character objects list
+ * @param targetObjects Target character objects list
+ * @returns Matching result
  */
 export function buildNameMatch(
     sourceObjects: readonly SceneObject[],
@@ -113,7 +113,7 @@ export function buildNameMatch(
     const sourceOnly: string[] = []
     const targetOnly: string[] = []
 
-    // 1. 按别名匹配叶节点
+    // 1. Match leaf nodes by alias
     for (const [alias, sourceObj] of sourceLeaves) {
         const targetObj = targetLeaves.get(alias)
         if (targetObj) {
@@ -124,20 +124,20 @@ export function buildNameMatch(
         }
     }
 
-    // 2. 找出仅目标有的叶节点
+    // 2. Find leaf nodes present only in target
     for (const alias of targetLeaves.keys()) {
         if (!sourceLeaves.has(alias)) {
             targetOnly.push(alias)
         }
     }
 
-    // 3. 为源的每个 composite 生成新 ID
+    // 3. Generate new ID for each source composite
     const compositeIdMap = new Map<string, string>()
     for (const comp of sourceComposites) {
         compositeIdMap.set(comp.id, newObjectId())
     }
 
-    // 4. 合并映射
+    // 4. Merge mappings
     const fullIdMap = new Map<string, string>([
         ...leafIdMap.entries(),
         ...compositeIdMap.entries(),
@@ -154,11 +154,11 @@ export function buildNameMatch(
 }
 
 /**
- * 重映射动画定义中的所有 ID 引用
+ * Remap all ID references in animation definitions
  *
- * @param animations 源动画记录
- * @param idMap 综合 ID 映射表
- * @returns 重映射后的动画记录和被跳过/裁剪的动画名
+ * @param animations Source animation dictionary
+ * @param idMap Full ID mapping table
+ * @returns Remapped animations and list of skipped/trimmed animation names
  */
 export function remapAnimationDefinitions(
     animations: Record<string, AnimationDefinition>,
@@ -188,7 +188,7 @@ export function remapAnimationDefinitions(
     return { remapped, skipped, trimmed }
 }
 
-/** 重映射轨道动画 */
+/** Remap track animation */
 function remapTrackAnimation(
     anim: TrackAnimationDefinition,
     newId: string,
@@ -201,7 +201,7 @@ function remapTrackAnimation(
     for (const track of anim.tracks) {
         const targetId = track.targetObjectId
         if (targetId === undefined || targetId === '_self') {
-            // 无目标或自身引用 → 直接复制
+            // No target or self reference -> copy directly
             newTracks.push(deepCopyTrack(track))
         } else {
             const mappedId = idMap.get(targetId)
@@ -210,14 +210,14 @@ function remapTrackAnimation(
                 newTrack.targetObjectId = mappedId
                 newTracks.push(newTrack)
             } else {
-                // 目标不可映射 → 移除此轨道
+                // Target unmappable -> remove track
                 trimmedCount++
             }
         }
     }
 
     if (newTracks.length === 0) {
-        return null // 所有轨道都不可映射 → 跳过整个动画
+        return null // All tracks unmappable -> skip entire animation
     }
 
     return {
@@ -232,14 +232,12 @@ function remapTrackAnimation(
     }
 }
 
-
-
-/** 深拷贝单个轨道 */
+/** Deep copy single track */
 function deepCopyTrack(track: AnimationTrack): AnimationTrack {
     const copied = JSON.parse(JSON.stringify(track)) as AnimationTrack
-    // 跨人物导入时，transform track 的 pivot 是源对象本地像素坐标。
-    // 新人物的部件尺寸/局部坐标往往不同，保留会导致旋转/缩放轴心错误；
-    // 清除后运行时回退到目标对象自己的默认变换点。
+    // When importing across characters, transform track pivot uses source object local pixel coordinates.
+    // Different characters have different part sizes/offsets; retaining it causes pivot misalignments.
+    // Deleting it lets runtime fall back to target object's own default transform origin.
     if (copied.trackType === 'transform') {
         delete copied.pivot
     }
@@ -247,102 +245,102 @@ function deepCopyTrack(track: AnimationTrack): AnimationTrack {
 }
 
 /**
- * 执行人物间结构/动画同步复制（主流程）
+ * Execute cross-character structure/animation sync copy (main pipeline)
  *
- * 坐标处理策略（保持目标人物各部位画布位置不变）：
- * 1. 拍扁阶段：将目标叶节点的局部坐标转为全局坐标
- * 2. 骨架复制：复制源的 composite 层级结构（不复制坐标）
- * 3. 重建阶段：自底向上计算 composite 质心位置，将子对象全局坐标转为局部坐标
+ * Coordinate handling strategy (preserves target character part canvas positions):
+ * 1. Flatten stage: convert target leaf local coordinates to global coordinates
+ * 2. Skeleton copy: duplicate source composite hierarchy (without coordinates)
+ * 3. Rebuild stage: bottom-up calculation of composite centroid, converting child global coords to local
  *
- * @param sourceObjects 源人物的 objects 列表
- * @param targetObjects 目标人物的 objects 列表
- * @returns 同步结果（包含重组后的对象列表）
+ * @param sourceObjects Source character objects list
+ * @param targetObjects Target character objects list
+ * @returns Sync result (including recomposed objects list)
  */
 export function syncCharacterStructure(
     sourceObjects: readonly SceneObject[],
     targetObjects: readonly SceneObject[],
 ): CharacterSyncResult {
-    // Step 1: 名称匹配
+    // Step 1: Name matching
     const matchResult = buildNameMatch(sourceObjects, targetObjects)
 
-    // Step 2: 拍扁目标 → 叶节点池（按 alias 索引），坐标转为全局
+    // Step 2: Flatten target -> leaf node pool (indexed by alias), convert coordinates to global
     const targetLeafPool = collectLeafNodes(targetObjects)
     const targetObjMap = new Map<string, SceneObject>()
     for (const obj of targetObjects) {
         targetObjMap.set(obj.id, obj)
     }
 
-    // 将所有叶节点坐标转为全局坐标
+    // Convert all leaf coordinates to global coordinates
     const worldCoords = new Map<string, { x: number; y: number; scaleX: number; scaleY: number; rotation: number }>()
     for (const [alias, leaf] of targetLeafPool) {
         const world = computeWorldTransform(leaf, targetObjMap)
         worldCoords.set(alias, world)
     }
 
-    // Step 3: 复制源的 composite 骨架（不复制坐标，坐标后面自底向上计算）
+    // Step 3: Copy source composite skeleton (coordinates calculated bottom-up later)
     const sourceComposites = collectCompositeNodes(sourceObjects)
     const newComposites: CompositeObject[] = []
 
     for (const sourceComp of sourceComposites) {
         const newId = matchResult.compositeIdMap.get(sourceComp.id)
         if (newId === undefined) {
-            throw new Error(`[characterSyncUtils] composite ID ${sourceComp.id} 未在映射中找到`)
+            throw new Error(`[characterSyncUtils] composite ID ${sourceComp.id} not found in mapping`)
         }
 
-        // 深拷贝 composite，替换 ID
+        // Deep copy composite, replace ID
         const newComp = JSON.parse(JSON.stringify(sourceComp)) as CompositeObject
 
         newComp.id = newId
 
-        // 坐标先清零（后面自底向上重算）
+        // Zero out coordinates (recomputed bottom-up later)
         newComp.x = 0
         newComp.y = 0
         newComp.scaleX = 1
         newComp.scaleY = 1
         newComp.rotation = 0
 
-        // 替换 parentId
+        // Replace parentId
         if (newComp.parentId) {
             const mappedParent = matchResult.fullIdMap.get(newComp.parentId)
             if (mappedParent !== undefined) {
                 newComp.parentId = mappedParent
             } else {
-                // 父级不可映射 → 清除 parentId（变成顶层）
+                // Parent unmappable -> clear parentId (make top-level)
                 delete newComp.parentId
             }
         }
 
-        // 替换 childIds — 只保留可映射的
+        // Replace childIds — keep only mappable ones
         newComp.childIds = sourceComp.childIds
             .map(childId => matchResult.fullIdMap.get(childId))
             .filter((id): id is string => id !== undefined)
 
-        // 替换 renderChain
+        // Replace renderChain
         if (sourceComp.renderChain) {
             newComp.renderChain = sourceComp.renderChain
                 .map(id => matchResult.fullIdMap.get(id))
                 .filter((id): id is string => id !== undefined)
         }
 
-        // 清除源 composite 上的动画（后面统一复制重映射后的）
+        // Clear animations on source composite (copied later with remapping)
         delete newComp.animations
 
         newComposites.push(newComp)
     }
 
-    // Step 4: 将匹配成功的叶节点填入新骨架（使用全局坐标）
+    // Step 4: Populate matched leaf nodes into new skeleton (using global coordinates)
     const sourceLeaves = collectLeafNodes(sourceObjects)
     const placedLeaves: SceneObject[] = []
     const placedLeafAliases = new Set<string>()
 
     for (const [alias, sourceLeaf] of sourceLeaves) {
         const targetLeaf = targetLeafPool.get(alias)
-        if (!targetLeaf) continue // sourceOnly → 跳过
+        if (!targetLeaf) continue // sourceOnly -> skip
 
-        // 深拷贝目标叶节点（保留素材等数据）
+        // Deep copy target leaf node (preserving assets and styling)
         const newLeaf = JSON.parse(JSON.stringify(targetLeaf)) as SceneObject
 
-        // 先写入全局坐标（后面自底向上时再转局部）
+        // Write global coordinates first (converted to local during bottom-up step)
         const world = worldCoords.get(alias)
         if (world) {
             newLeaf.x = world.x
@@ -352,7 +350,7 @@ export function syncCharacterStructure(
             newLeaf.rotation = world.rotation
         }
 
-        // 更新 parentId 为重组后的父级
+        // Update parentId to recomposed parent
         if (sourceLeaf.parentId) {
             const mappedParent = matchResult.fullIdMap.get(sourceLeaf.parentId)
             if (mappedParent !== undefined) {
@@ -368,7 +366,7 @@ export function syncCharacterStructure(
         placedLeafAliases.add(alias)
     }
 
-    // Step 5: 复制源 composite 节点上的动画（带 ID 重映射）
+    // Step 5: Copy animations on source composite nodes (with ID remapping)
     const allSkipped: string[] = []
     const allTrimmed: string[] = []
 
@@ -391,7 +389,7 @@ export function syncCharacterStructure(
         allTrimmed.push(...trimmed)
     }
 
-    // Step 6: 处理仅目标有的叶节点 → 追加到 root composite
+    // Step 6: Handle target-only leaf nodes -> append to root composite
     const targetOnlyLeaves: SceneObject[] = []
     for (const alias of matchResult.targetOnly) {
         const leaf = targetLeafPool.get(alias)
@@ -399,7 +397,7 @@ export function syncCharacterStructure(
 
         const newLeaf = JSON.parse(JSON.stringify(leaf)) as SceneObject
 
-        // 写入全局坐标
+        // Write global coordinates
         const world = worldCoords.get(alias)
         if (world) {
             newLeaf.x = world.x
@@ -412,10 +410,10 @@ export function syncCharacterStructure(
         targetOnlyLeaves.push(newLeaf)
     }
 
-    // 找到 root composite（无 parentId 的 composite）
+    // Find root composite (composite without parentId)
     const rootComposite = newComposites.find(c => !c.parentId)
     if (rootComposite && targetOnlyLeaves.length > 0) {
-        // 追加到 root composite 的 childIds 和 renderChain 末尾（保持单根）
+        // Append to root composite childIds and renderChain (preserving single root)
         for (const leaf of targetOnlyLeaves) {
             leaf.parentId = rootComposite.id
             rootComposite.childIds.push(leaf.id)
@@ -424,25 +422,25 @@ export function syncCharacterStructure(
             }
         }
     } else if (targetOnlyLeaves.length > 0) {
-        // 源本身是多根 → targetOnly 叶节点也作为顶层
+        // Source itself has multiple roots -> targetOnly leaves also become top-level
         for (const leaf of targetOnlyLeaves) {
             delete leaf.parentId
         }
     }
 
-    // Step 7: 自底向上坐标转换 —— 计算 composite 质心位置，子对象全局→局部
-    // 构建 id→object 索引
+    // Step 7: Bottom-up coordinate transform — calculate composite centroid, child global -> local
+    // Build id -> object index
     const allObjects = [...newComposites, ...placedLeaves, ...targetOnlyLeaves]
     const objIndex = new Map<string, SceneObject>()
     for (const obj of allObjects) {
         objIndex.set(obj.id, obj)
     }
 
-    // 拓扑排序（自底向上）：叶节点和无子 composite 先处理
+    // Topological sort (bottom-up): leaf nodes and childless composites processed first
     const sortedComposites = topologicalSortBottomUp(newComposites)
 
     for (const comp of sortedComposites) {
-        // 收集直接子对象（此时子对象坐标已经是全局坐标）
+        // Collect direct children (currently possessing global coordinates)
         const children: SceneObject[] = []
         for (const childId of comp.childIds) {
             const child = objIndex.get(childId)
@@ -451,7 +449,7 @@ export function syncCharacterStructure(
 
         if (children.length === 0) continue
 
-        // 计算 composite 位置 = 子对象全局坐标的质心
+        // Calculate composite position = centroid of children global coordinates
         let sumX = 0
         let sumY = 0
         for (const child of children) {
@@ -460,18 +458,18 @@ export function syncCharacterStructure(
         }
         comp.x = sumX / children.length
         comp.y = sumY / children.length
-        // composite 自身 scale/rotation 保持 1/0（纯结构容器）
+        // Composite scale/rotation remains 1/0 (pure structural container)
 
-        // 将子对象的全局坐标转为相对于 composite 的局部坐标
+        // Convert child global coordinates to local coordinates relative to composite
         for (const child of children) {
             child.x -= comp.x
             child.y -= comp.y
-            // scale/rotation 不变（composite 是 scale=1, rotation=0 的纯容器）
+            // scale/rotation invariant (composite has scale=1, rotation=0)
         }
     }
 
-    // Step 8: 组装最终对象列表
-    // 顺序：composites 在前，叶节点在后（与人物数据存储惯例一致）
+    // Step 8: Assemble final objects list
+    // Order: composites first, leaves second (matches character storage convention)
     const finalObjects: SceneObject[] = [
         ...newComposites,
         ...placedLeaves,
@@ -487,13 +485,13 @@ export function syncCharacterStructure(
 }
 
 /**
- * 计算对象的全局变换（沿 parentId 链向上累积）
+ * Calculate object global transform (accumulated upward along parentId chain)
  */
 function computeWorldTransform(
     obj: SceneObject,
     objMap: Map<string, SceneObject>,
 ): { x: number; y: number; scaleX: number; scaleY: number; rotation: number } {
-    // 收集从子到根的父级链
+    // Collect parent chain from child to root
     const chain: SceneObject[] = []
     let current: SceneObject | undefined = obj
     while (current) {
@@ -501,15 +499,15 @@ function computeWorldTransform(
         current = current.parentId ? objMap.get(current.parentId) : undefined
     }
 
-    // 从根到子累积变换
-    // chain[chain.length-1] 是根（无 parent），chain[0] 是目标对象
+    // Accumulate transform from root to child
+    // chain[chain.length-1] is root (no parent), chain[0] is target object
     let worldX = 0
     let worldY = 0
     let worldScaleX = 1
     let worldScaleY = 1
     let worldRotation = 0
 
-    // 从根到叶遍历
+    // Traverse root to leaf
     for (let i = chain.length - 1; i >= 0; i--) {
         const node = chain[i]!
         // localToGlobal: globalPos = parentPos + rotate(parentRot, scale(parentScale, localPos))
@@ -531,14 +529,14 @@ function computeWorldTransform(
 }
 
 /**
- * 将 composite 列表按拓扑排序（自底向上）
- * 叶级 composite（无子 composite）排在前面，根级排在后面
+ * Topologically sort composite list (bottom-up)
+ * Leaf-level composites (no child composites) come first, root comes last
  */
 function topologicalSortBottomUp(composites: CompositeObject[]): CompositeObject[] {
     const idSet = new Set(composites.map(c => c.id))
     const childCompositeCount = new Map<string, number>()
 
-    // 统计每个 composite 有多少个子 composite（排除叶节点）
+    // Count how many child composites each composite has (excluding leaf nodes)
     for (const comp of composites) {
         let count = 0
         for (const childId of comp.childIds) {
@@ -550,7 +548,7 @@ function topologicalSortBottomUp(composites: CompositeObject[]): CompositeObject
     const result: CompositeObject[] = []
     const processed = new Set<string>()
 
-    // BFS：从叶级开始
+    // BFS: starting from leaf level
     const queue = composites.filter(c => childCompositeCount.get(c.id) === 0)
 
     while (queue.length > 0) {
@@ -559,7 +557,7 @@ function topologicalSortBottomUp(composites: CompositeObject[]): CompositeObject
         processed.add(comp.id)
         result.push(comp)
 
-        // 更新父级的计数
+        // Update parent count
         if (comp.parentId && idSet.has(comp.parentId)) {
             const parentCount = (childCompositeCount.get(comp.parentId) ?? 1) - 1
             childCompositeCount.set(comp.parentId, parentCount)

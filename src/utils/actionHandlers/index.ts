@@ -1,15 +1,15 @@
 /**
- * Action Handlers 统一导出
- * v8.6 P2: 统一 Action 处理逻辑
- * v9.3: 添加 SetVisualHandler 和 SetLifecycleHandler
+ * Action Handlers unified export
+ * v8.6 P2: Unified Action handling logic
+ * v9.3: Added SetVisualHandler and SetLifecycleHandler
  * v10.0: TriggerAnimHandler → SetAnimHandler
  */
 
-// 类型导出
+// Type exports
 export * from './registry'
 export * from './types'
 
-// Handler 导出
+// Handler exports
 export { CameraCutHandler } from './handlers/CameraCutHandler'
 export { CameraMoveHandler } from './handlers/CameraMoveHandler'
 export { SetCompositeHandler } from './handlers/SetCompositeHandler'
@@ -26,7 +26,7 @@ export { TweenScreenEffectHandler } from './handlers/TweenScreenEffectHandler'
 export { TweenTextHandler } from './handlers/TweenTextHandler'
 export { TweenTransformHandler } from './handlers/TweenTransformHandler'
 
-// 自动注册所有 Handler
+// Auto-register all Handlers
 import { CameraCutHandler } from './handlers/CameraCutHandler'
 import { CameraMoveHandler } from './handlers/CameraMoveHandler'
 import { SetCompositeHandler } from './handlers/SetCompositeHandler'
@@ -44,20 +44,20 @@ import { TweenTextHandler } from './handlers/TweenTextHandler'
 import { TweenTransformHandler } from './handlers/TweenTransformHandler'
 import { registerHandler } from './registry'
 
-// 注册 Handler
+// Register Handlers
 registerHandler(SetTransformHandler)
-registerHandler(SetVisualHandler)      // v9.3 新增
+registerHandler(SetVisualHandler)      // Added in v9.3
 registerHandler(SetLifecycleHandler)   // v9.3
 registerHandler(SetCompositeHandler)   // P2
 registerHandler(SetMaskHandler)        // Clip-Mask Phase 1
 
 registerHandler(TweenTransformHandler)
-registerHandler(SetScreenEffectHandler)   // Phase 1 新增
-registerHandler(SetLightHandler)          // 点光源 PRD Phase 0.5
-registerHandler(SetMaterialHandler)       // v16 新增
+registerHandler(SetScreenEffectHandler)   // Added in Phase 1
+registerHandler(SetLightHandler)          // Point light PRD Phase 0.5
+registerHandler(SetMaterialHandler)       // Added in v16
 registerHandler(SetTextHandler)           // Text PRD Phase 0
-registerHandler(TweenScreenEffectHandler) // Phase 1 新增
-registerHandler(TweenLightHandler)        // 点光源 PRD Phase 0.5
+registerHandler(TweenScreenEffectHandler) // Added in Phase 1
+registerHandler(TweenLightHandler)        // Point light PRD Phase 0.5
 registerHandler(TweenTextHandler)         // Text PRD Phase 1
 registerHandler(CameraCutHandler)
 registerHandler(CameraMoveHandler)

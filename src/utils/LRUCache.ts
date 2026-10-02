@@ -1,6 +1,6 @@
 /**
- * LRU (Least Recently Used) 缓存
- * 用于控制显存中纹理的数量
+ * LRU (Least Recently Used) Cache
+ * Used to control texture memory footprint
  */
 
 export interface CacheNode<K, V> {
@@ -25,29 +25,29 @@ export class LRUCache<K, V> {
   }
 
   /**
-   * 获取缓存值，并将该节点移到最前面（最近使用）
+   * Get cached value and move node to head (most recently used)
    */
   get(key: K): V | undefined {
     const node = this.cache.get(key)
     if (!node) return undefined
 
-    // 将节点移到头部
+    // Move node to head
     this.moveToHead(node)
     return node.value
   }
 
   /**
-   * 设置缓存值
+   * Set cached value
    */
   set(key: K, value: V): void {
     const existingNode = this.cache.get(key)
 
     if (existingNode) {
-      // 更新已存在的节点
+      // Update existing node
       existingNode.value = value
       this.moveToHead(existingNode)
     } else {
-      // 创建新节点
+      // Create new node
       const newNode: CacheNode<K, V> = {
         key,
         value,
@@ -59,14 +59,14 @@ export class LRUCache<K, V> {
       this.addToHead(newNode)
       this.currentSize++
 
-      // 超出容量，删除最久未使用的节点
+      // Capacity exceeded, evict least recently used node
       if (this.currentSize > this.capacity) {
         const removed = this.removeTail()
         if (removed) {
           this.cache.delete(removed.key)
           this.currentSize--
           
-          // 触发驱逐回调
+          // Trigger eviction callback
           if (this.onEvict) {
             this.onEvict(removed.key, removed.value)
           }
@@ -76,7 +76,7 @@ export class LRUCache<K, V> {
   }
 
   /**
-   * 删除指定键
+   * Delete specified key
    */
   delete(key: K): boolean {
     const node = this.cache.get(key)
@@ -86,7 +86,7 @@ export class LRUCache<K, V> {
     this.cache.delete(key)
     this.currentSize--
 
-    // 触发驱逐回调
+    // Trigger eviction callback
     if (this.onEvict) {
       this.onEvict(node.key, node.value)
     }
@@ -95,17 +95,17 @@ export class LRUCache<K, V> {
   }
 
   /**
-   * 检查键是否存在
+   * Check whether key exists
    */
   has(key: K): boolean {
     return this.cache.has(key)
   }
 
   /**
-   * 清空缓存
+   * Clear cache
    */
   clear(): void {
-    // 触发所有节点的驱逐回调
+    // Trigger eviction callback for all nodes
     if (this.onEvict) {
       this.cache.forEach((node) => {
         this.onEvict!(node.key, node.value)
@@ -119,21 +119,21 @@ export class LRUCache<K, V> {
   }
 
   /**
-   * 获取当前缓存大小
+   * Get current cache size
    */
   get size(): number {
     return this.currentSize
   }
 
   /**
-   * 获取所有键
+   * Get all keys
    */
   keys(): K[] {
     return Array.from(this.cache.keys())
   }
 
   /**
-   * 将节点添加到头部
+   * Add node to head
    */
   private addToHead(node: CacheNode<K, V>): void {
     node.prev = null
@@ -149,7 +149,7 @@ export class LRUCache<K, V> {
   }
 
   /**
-   * 移除指定节点
+   * Remove specified node
    */
   private removeNode(node: CacheNode<K, V>): void {
     if (node.prev) {
@@ -166,7 +166,7 @@ export class LRUCache<K, V> {
   }
 
   /**
-   * 将节点移到头部
+   * Move node to head
    */
   private moveToHead(node: CacheNode<K, V>): void {
     this.removeNode(node)
@@ -174,7 +174,7 @@ export class LRUCache<K, V> {
   }
 
   /**
-   * 移除尾部节点
+   * Remove tail node
    */
   private removeTail(): CacheNode<K, V> | null {
     if (!this.tail) return null

@@ -1,14 +1,14 @@
 /**
  * Composite Object Container Factory & Lifecycle Hooks
  *
- * P2: 组合对象的 PIXI 容器创建 + 生命周期钩子。
+ * P2: PIXI container creation + lifecycle hooks for composite objects.
  *
- * 容器工厂：创建一个父 PIXI.Container（sortableChildren = true），
- * 递归查找 childIds 对应的子对象，为每个子对象创建子容器并嵌套。
+ * Container factory: creates a parent PIXI.Container (sortableChildren = false),
+ * child containers are created and attached by renderObjects.
  *
- * 生命周期钩子：
- * - onBeforeDelete: 级联删除子对象
- * - onAfterDuplicate: 递归复制子对象，更新 childIds/parentId
+ * Lifecycle hooks:
+ * - onBeforeDelete: cascade delete or bubble child objects depending on compositeMode
+ * - onAfterDuplicate: recursively duplicate child objects, updating childIds/parentId
  */
 
 import * as PIXI from 'pixi.js'
@@ -21,52 +21,52 @@ import {
 import type { WriteableState } from '@/utils/actionHandlers/types'
 
 /**
- * 注册 composite 类型的容器工厂 + 生命周期钩子
+ * Register composite container factory + lifecycle hooks
  *
- * @param getObjects 获取所有场景对象的回调（注入依赖，避免循环引用 Store）
+ * @param getObjects Callback to retrieve all scene objects (injected dependency to avoid circular Store imports)
  */
 export function registerCompositeContainerFactory(
     _getObjects: () => SceneObject[],
 ): void {
-    // v2.0.0: 容器工厂 — composite 只创建一个空的变换容器
-    // 子对象的容器由 renderObjects 统一创建并挂载到此容器
-    // sortableChildren = false: 渲染顺序由调用方手动控制（按 childIds 排列 + 显式排序）
+    // v2.0.0: Container factory — composite only creates an empty transform container
+    // Child containers are uniformly created by renderObjects and attached to this container
+    // sortableChildren = false: render order controlled manually by caller (arranged by childIds + explicit sort)
     registerContainerFactory('composite', (_obj: SceneObject): Promise<PIXI.Container | null> => {
         const container = new PIXI.Container()
         container.name = `composite_${_obj.id}`
         container.sortableChildren = false
 
-        // v20: union 容器不再设置 renderable=false。
-        // 旧架构中子对象平铺到上级容器，union 本身不渲染所以设 renderable=false。
-        // 新架构中子对象 addChild 到 union 容器内，renderable=false 会阻止整个子树渲染。
-        // union 容器本身无可视内容（仅 Container），不会产生多余绘制。
+        // v20: union containers no longer set renderable=false.
+        // In old architecture, children flattened into upper container; union itself not rendered so renderable=false was set.
+        // In new architecture, children are added to union container; renderable=false would block entire subtree.
+        // Union container has no visual content itself (pure Container), causing no extra draw calls.
         return Promise.resolve(container)
     })
 
-    // 生命周期钩子（独立注册以便测试和 Store 调用）
+    // Lifecycle hooks (registered separately for testing and Store invocation)
     registerCompositeLifecycleHooks()
 }
 
 /**
- * 单独注册 composite 的生命周期钩子（无 PIXI 依赖）
+ * Register composite lifecycle hooks separately (no PIXI dependency)
  *
- * 可在 registerAll.ts 中直接调用，确保 Store 的 removeObject/duplicateObject
- * 在测试环境中也能正确分发到 composite 钩子。
+ * Can be called directly in registerAll.ts to ensure Store removeObject/duplicateObject
+ * properly dispatches to composite hooks in test environments.
  */
 export function registerCompositeLifecycleHooks(): void {
     registerLifecycleHooks('composite', {
         /**
-         * 删除前处理：根据 compositeMode 决定子对象命运
-         * - entity: 级联删除所有子对象
-         * - union: 子对象冒泡（清除 parentId，从 childIds 移除）
+         * Pre-deletion handling: decides child fate based on compositeMode
+         * - entity: cascades deletion to all children
+         * - union: children bubble up (clears parentId, removed from childIds)
          */
         onBeforeDelete(obj, store) {
             const composite = obj as CompositeObject
             const childIds = [...(composite.childIds ?? [])]
 
             if (composite.compositeMode === 'union') {
-                // union 模式：子对象冒泡，恢复为独立对象
-                // 使用 resolveWorldMatrix 递归计算完整的坐标变换链（与 SetParentHandler 一致）
+                // union mode: children bubble up, restoring as independent objects
+                // Uses resolveWorldMatrix to recursively calculate full coordinate transform chain (consistent with SetParentHandler)
                 const bubbleTargetId = composite.parentId
                 const getObjectState = (id: string): WriteableState | undefined => {
                     const o = store.getObject(id)
@@ -77,13 +77,13 @@ export function registerCompositeLifecycleHooks(): void {
                     const child = store.getObject(childId)
                     if (child) {
                         const childState = { ...child } as WriteableState
-                        // 递归计算子对象的世界坐标矩阵
+                        // Recursively compute child world matrix
                         const worldMatrix = resolveWorldMatrix(
                             childState, getObjectState
                         )
 
                         if (bubbleTargetId) {
-                            // 有上级 parent → 转换到上级的本地坐标系
+                            // Has parent ancestor -> convert to parent local coordinate space
                             const parentState = getObjectState(bubbleTargetId)
                             if (parentState) {
                                 const parentWorld = resolveWorldMatrix(parentState, getObjectState)
@@ -96,7 +96,7 @@ export function registerCompositeLifecycleHooks(): void {
                                     parentId: bubbleTargetId,
                                 })
                             } else {
-                                // 上级不存在，fallback 到世界坐标
+                                // Ancestor does not exist, fallback to world coordinates
                                 const d = decomposeMatrixForState(worldMatrix, childState)
                                 store.updateObject(childId, {
                                     x: d.x, y: d.y,
@@ -106,7 +106,7 @@ export function registerCompositeLifecycleHooks(): void {
                                 })
                             }
                         } else {
-                            // 无上级 parent → 使用世界坐标
+                            // No parent ancestor -> use world coordinates
                             const d = decomposeMatrixForState(worldMatrix, childState)
                             store.updateObject(childId, {
                                 x: d.x, y: d.y,
@@ -116,7 +116,7 @@ export function registerCompositeLifecycleHooks(): void {
                             })
                         }
                     }
-                    // 将冒泡子对象加入上级的 childIds
+                    // Add bubbling child to parent's childIds
                     if (bubbleTargetId) {
                         const bubbleTarget = store.getObject(bubbleTargetId)
                         if (bubbleTarget?.type === 'composite') {
@@ -127,12 +127,12 @@ export function registerCompositeLifecycleHooks(): void {
                         }
                     }
                 }
-                // 清空 childIds（避免 removeObject 再次处理）
+                // Clear childIds (prevent redundant processing in removeObject)
                 composite.childIds = []
             } else {
-                // entity 模式：级联删除所有后代（深度优先）
-                // 先递归收集所有后代 ID 并清空每个 composite 的 childIds，
-                // 防止嵌套 union composite 的冒泡行为导致孤儿对象
+                // entity mode: cascade delete all descendants (depth-first)
+                // Recursively collect all descendant IDs and clear each composite's childIds first,
+                // preventing bubbling behavior in nested union composites from leaving orphans
                 const allDescendantIds: string[] = []
                 function collectDescendants(comp: CompositeObject) {
                     for (const cid of [...(comp.childIds ?? [])]) {
@@ -154,7 +154,7 @@ export function registerCompositeLifecycleHooks(): void {
         },
 
         /**
-         * 递归复制：为每个子对象创建副本，更新 childIds 和 parentId
+         * Recursive duplication: creates copy for each child, updating childIds and parentId
          */
         onAfterDuplicate(original, duplicate, store) {
             const compositeOriginal = original as CompositeObject
@@ -163,7 +163,7 @@ export function registerCompositeLifecycleHooks(): void {
             for (const childId of compositeOriginal.childIds ?? []) {
                 const childDup = store.duplicateObject(childId)
                 if (childDup) {
-                    // 恢复位置（duplicateObject 默认 +50 偏移，子对象不应偏移）
+                    // Restore position (duplicateObject default +50 offset; children should not offset)
                     const originalChild = store.getObject(childId)
                     if (originalChild) {
                         store.updateObject(childDup.id, {
@@ -176,7 +176,7 @@ export function registerCompositeLifecycleHooks(): void {
                 }
             }
 
-            // 直接修改 duplicate 的 childIds
+            // Directly modify duplicate childIds
             ; (duplicate as CompositeObject).childIds = newChildIds
         },
     })

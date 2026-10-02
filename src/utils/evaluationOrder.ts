@@ -1,26 +1,26 @@
 /**
- * 对象评估顺序工具
- * v17: 按 parentId 拓扑排序，确保 parent 先于 child 被评估
+ * Object evaluation order utilities
+ * v17: Topological sort by parentId to ensure parent is evaluated before child
  *
- * 当 child 的坐标转换依赖 parent 的当前帧状态时，
- * 必须保证 parent 已经完成评估，context.getObjectState(parentId) 才能返回最新值。
+ * When child coordinate transforms depend on current frame state of the parent,
+ * we must ensure parent evaluation has completed so context.getObjectState(parentId) returns latest values.
  */
 
 /**
- * 按 parentId 拓扑排序对象列表
+ * Topologically sort object list by parentId
  *
- * 排序规则：
- * - 无 parentId 的对象排在最前
- * - 有 parentId 的对象排在其 parent 之后
- * - 多层嵌套时递归处理深度
+ * Sorting rules:
+ * - Objects without parentId come first
+ * - Objects with parentId come after their parent
+ * - Recursively handle depth in multi-level nesting
  *
- * @param objects 对象列表（需包含 id 和 parentId 属性）
- * @returns 拓扑排序后的新数组（不修改原数组）
+ * @param objects Object list (must include id and parentId properties)
+ * @returns New topologically sorted array (does not mutate original array)
  */
 export function topologicalSortByParent<T extends { id: string; parentId?: string | null | undefined }>(
     objects: readonly T[]
 ): T[] {
-    // 构建 id → depth 映射
+    // Build id -> object mapping
     const idMap = new Map<string, T>()
     for (const obj of objects) {
         idMap.set(obj.id, obj)
@@ -43,10 +43,10 @@ export function topologicalSortByParent<T extends { id: string; parentId?: strin
             return 0
         }
 
-        // Fail-Fast: 检测循环 parentId 链
+        // Fail-Fast: Detect circular parentId chain
         const chain = visiting ?? new Set<string>()
         if (chain.has(obj.id)) {
-            throw new Error(`[topologicalSortByParent] 检测到循环的父子对象关系: ${[...chain, obj.id].join(' → ')}`)
+            throw new Error(`[topologicalSortByParent] Circular parent-child relationship detected: ${[...chain, obj.id].join(' → ')}`)
         }
         chain.add(obj.id)
 
@@ -55,12 +55,12 @@ export function topologicalSortByParent<T extends { id: string; parentId?: strin
         return depth
     }
 
-    // 计算所有深度
+    // Compute all depths
     for (const obj of objects) {
         getDepth(obj)
     }
 
-    // 稳定排序：按深度升序，深度相同保持原序
+    // Stable sort: ascending by depth, preserving original order when depths match
     return [...objects].sort((a, b) => {
         const da = depthCache.get(a.id) ?? 0
         const db = depthCache.get(b.id) ?? 0

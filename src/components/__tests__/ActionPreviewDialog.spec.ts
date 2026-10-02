@@ -1,7 +1,7 @@
 /**
- * ActionPreviewDialog 渲染逻辑测试
+ * ActionPreviewDialog Rendering Logic Tests
  * 
- * 测试预览对话框的场景对象渲染功能
+ * Tests scene object rendering in preview dialog
  */
 
 // import { usePropStore } from '@/stores/propStore'
@@ -174,7 +174,7 @@ describe('ActionPreviewDialog Rendering Tests', () => {
 
     // =========================================================================
     // TC-RENDER-01: Background Rendering with Scale
-    // 验证背景渲染
+    // Verify background rendering
     // =========================================================================
     it('TC-RENDER-01: Background Rendering with Scale', () => {
         const backgrounds = backgroundStore.backgrounds || []
@@ -187,20 +187,20 @@ describe('ActionPreviewDialog Rendering Tests', () => {
         const bg = backgrounds[0]
         console.log(`TC-RENDER-01: Testing background "${bg.name}"`)
 
-        // 验证背景数据结构
+        // Verify background data structure
         expect(bg).toBeDefined()
         expect(bg.id).toBeDefined()
 
-        // 验证背景渲染逻辑 - 背景zIndex通常为负值
+    // Verify background rendering logic - background zIndex is typically negative
         const backgroundZIndex = -10
         expect(backgroundZIndex).toBeLessThan(0)
 
-        // 验证背景anchor设置为左上角 (0, 0)
+        // Verify background anchor set to top-left (0, 0)
         const mockAnchor = { x: 0, y: 0 }
         expect(mockAnchor.x).toBe(0)
         expect(mockAnchor.y).toBe(0)
 
-        // 验证缩放逻辑 - 目标高度为物理画布高度
+        // Verify scaling logic - target height is physical canvas height
         const targetHeight = 2800
         console.log(`TC-RENDER-01: Target height for scaling: ${targetHeight}`)
         expect(targetHeight).toBe(2800)
@@ -210,10 +210,10 @@ describe('ActionPreviewDialog Rendering Tests', () => {
 
     // =========================================================================
     // TC-RENDER-02: Character Rendering with Transform
-    // 验证角色渲染
+    // Verify character rendering
     // =========================================================================
     it('TC-RENDER-02: Object Rendering with Transform', () => {
-        // 模拟transform应用
+        // Simulate transform application
         const mockObj = {
             x: 500,
             y: 300,
@@ -226,7 +226,7 @@ describe('ActionPreviewDialog Rendering Tests', () => {
             visible: true
         }
 
-        // 验证transform计算逻辑
+        // Verify transform calculation logic
         const effectiveScaleX = mockObj.scaleX * (mockObj.flipX ? -1 : 1)
         const rotationRad = mockObj.rotation * (Math.PI / 180)
 
@@ -236,7 +236,7 @@ describe('ActionPreviewDialog Rendering Tests', () => {
         expect(mockObj.zIndex).toBe(10)
         expect(mockObj.visible).toBe(true)
 
-        // 测试flipX为true的情况
+        // Test flipX=true case
         const flipXScale = mockObj.scaleX * (true ? -1 : 1)
         expect(flipXScale).toBe(-1.2)
 
@@ -245,17 +245,17 @@ describe('ActionPreviewDialog Rendering Tests', () => {
 
     // =========================================================================
     // TC-RENDER-03: Prop Static and Animation Rendering
-    // 验证道具渲染
+    // Verify prop rendering
     // =========================================================================
     it('TC-RENDER-03: Prop Static and Animation Rendering', () => {
-        // 测试静态道具渲染逻辑
+        // Test static prop rendering logic
         console.log('TC-RENDER-03: Testing prop rendering')
 
-        // 验证静态道具使用中心锚点
+        // Verify static prop uses center anchor
         const propAnchor = 0.5
         expect(propAnchor).toBe(0.5)
 
-        // 验证动画道具帧数和FPS计算
+        // Verify animated prop frame count and FPS calculation
         const mockFrames = [
             { url: 'frame1.png' },
             { url: 'frame2.png' },
@@ -263,12 +263,12 @@ describe('ActionPreviewDialog Rendering Tests', () => {
         ]
         expect(mockFrames.length).toBe(3)
 
-        // 验证FPS到animationSpeed转换 (FPS / 60)
+        // Verify FPS to animationSpeed conversion (FPS / 60)
         const fps = 25
         const animationSpeed = fps / 60
         expect(animationSpeed).toBeCloseTo(25 / 60)
 
-        // 验证loop属性
+        // Verify loop property
         const loop = true
         expect(loop).toBe(true)
 
@@ -277,26 +277,26 @@ describe('ActionPreviewDialog Rendering Tests', () => {
 
     // =========================================================================
     // TC-RENDER-04: Camera Transform and Mask
-    // 验证相机变换
+    // Verify camera transform
     // =========================================================================
     it('TC-RENDER-04: Camera Transform and Viewport', () => {
-        // 使用导入的画布常量
+        // Use imported canvas constants
         expect(CANVAS_WIDTH).toBe(6720)
         expect(CANVAS_HEIGHT).toBe(2800)
         expect(CAMERA_BASE_WIDTH).toBe(1456)
         expect(CAMERA_BASE_HEIGHT).toBe(819)
 
-        // v12: Direct Projection 架构 - 视口中心点是相机视口中心
+        // v12: Direct Projection architecture - viewport center is camera viewport center
         const viewportCenterX = CAMERA_BASE_WIDTH / 2
         const viewportCenterY = CAMERA_BASE_HEIGHT / 2
         expect(viewportCenterX).toBe(728)
         expect(viewportCenterY).toBe(409.5)
 
-        // 验证画布中心（用于相机边界限制计算）
+        // Verify canvas center (used for camera bounds constraint calculation)
         expect(CANVAS_CENTER_X).toBe(3360)
         expect(CANVAS_CENTER_Y).toBe(1400)
 
-        // 验证相机zoom变换
+        // Verify camera zoom transform
         const mockCamera = { x: 1000, y: 600, zoom: 1.5 }
         expect(mockCamera.zoom).toBe(1.5)
 
@@ -306,16 +306,16 @@ describe('ActionPreviewDialog Rendering Tests', () => {
 
     // =========================================================================
     // TC-RENDER-05: Z-Index Sorting Across Object Types
-    // 验证zIndex排序
+    // Verify zIndex sorting
     // =========================================================================
     it('TC-RENDER-05: Z-Index Sorting Across Object Types', async () => {
         const PIXI = await import('pixi.js')
 
-        // 创建舞台
+        // Create stage
         const stage = new PIXI.Container()
         stage.sortableChildren = true
 
-        // 创建不同类型的对象，zIndex交错
+        // Create different object types with interleaved zIndex
         const objects = [
             { name: 'character_1', type: 'character', zIndex: 10 },
             { name: 'background_1', type: 'background', zIndex: -10 },
@@ -324,7 +324,7 @@ describe('ActionPreviewDialog Rendering Tests', () => {
             { name: 'prop_2', type: 'prop', zIndex: 8 }
         ]
 
-        // 按随机顺序添加
+        // Add in random order
         const shuffled = [...objects].sort(() => Math.random() - 0.5)
         shuffled.forEach(obj => {
             const container = new PIXI.Container()
@@ -333,19 +333,19 @@ describe('ActionPreviewDialog Rendering Tests', () => {
             stage.addChild(container)
         })
 
-        // 排序
+        // Sort
         stage.sortChildren()
 
-        // 验证排序被调用
+        // Verify sort was invoked
         expect(stage.sortChildren).toHaveBeenCalled()
 
-        // 验证添加了正确数量的对象
+        // Verify correct number of objects added
         expect(stage.children.length).toBe(5)
 
         console.log('TC-RENDER-05: Objects added:', objects.map(o => `${o.name}(z=${o.zIndex})`).join(', '))
         console.log('TC-RENDER-05: sortChildren() called to order by zIndex')
 
-        // 预期顺序 (从低到高): background(-10), character_2(5), prop_2(8), character_1(10), prop_1(15)
+        // Expected order (ascending): background(-10), character_2(5), prop_2(8), character_1(10), prop_1(15)
         const expectedOrder = ['background_1', 'character_2', 'prop_2', 'character_1', 'prop_1']
         console.log('TC-RENDER-05: Expected render order:', expectedOrder.join(' -> '))
     })

@@ -1,9 +1,9 @@
 /**
- * 可插拔 TTS Provider 客户端。
+ * Pluggable TTS Provider client.
  *
- * 开源版默认不连接任何私有云端服务。需要语音合成时，可通过
- * registerTTSProvider / configureLocalHttpTTSProvider 显式接入本地模型、
- * 自托管服务或第三方适配器。
+ * Open-source edition does not connect to any private cloud services by default. When speech synthesis is needed,
+ * connect local models, self-hosted services, or third-party adapters explicitly via
+ * registerTTSProvider / configureLocalHttpTTSProvider.
  */
 
 import type { TTSEngine } from '@/constants/voiceOptions'
@@ -72,7 +72,7 @@ export class TTSProviderNotConfiguredError extends Error {
   readonly errorCode = 'TTS_PROVIDER_NOT_CONFIGURED'
 
   constructor() {
-    super('本地 TTS Provider 尚未配置。请先为台词导入本地音频，或在 Phase 2 TTS Provider 中接入本地语音服务。')
+    super('Local TTS Provider is not configured. Please import local audio for the dialogue first, or connect a local voice service in Phase 2 TTS Provider.')
     this.name = 'TTSProviderNotConfiguredError'
   }
 }
@@ -81,7 +81,7 @@ export class TTSProviderNotFoundError extends Error {
   readonly errorCode = 'TTS_PROVIDER_NOT_FOUND'
 
   constructor(providerId: string) {
-    super(`未找到 TTS Provider: ${providerId}`)
+    super(`TTS Provider not found: ${providerId}`)
     this.name = 'TTSProviderNotFoundError'
   }
 }
@@ -91,7 +91,7 @@ export class TTSProviderRegistry {
 
   register(provider: TTSProvider): void {
     if (!provider.id.trim()) {
-      throw new Error('TTS Provider id 不能为空')
+      throw new Error('TTS Provider id cannot be empty')
     }
     this.providers.set(provider.id, provider)
   }
@@ -206,8 +206,8 @@ export function estimateDurationLocally(text: string, speed = 0): number {
 export function createManualTTSProvider(): TTSProvider {
   return {
     id: DEFAULT_PROVIDER_ID,
-    label: '手动导入音频',
-    description: '默认 Provider，不自动合成语音；请为台词导入本地音频。',
+    label: 'Manual Audio Import',
+    description: 'Default Provider, does not automatically synthesize speech; please import local audio for dialogue.',
     synthesize: () => Promise.reject(new TTSProviderNotConfiguredError()),
     preview: () => Promise.reject(new TTSProviderNotConfiguredError()),
     estimateDuration: (text, speed) => Promise.resolve(estimateDurationLocally(text, speed)),
@@ -233,7 +233,7 @@ export function createLocalHttpTTSProvider(config: LocalHttpTTSProviderConfig): 
     })
 
     if (!res.ok) {
-      throw new Error(`本地 TTS Provider 请求失败: HTTP ${res.status}`)
+      throw new Error(`Local TTS Provider request failed: HTTP ${res.status}`)
     }
 
     const payload = await res.json() as LocalHttpTTSPayload
@@ -242,8 +242,8 @@ export function createLocalHttpTTSProvider(config: LocalHttpTTSProviderConfig): 
 
   return {
     id: LOCAL_HTTP_PROVIDER_ID,
-    label: '本地 HTTP TTS',
-    description: '通过本机或自托管 HTTP 服务合成语音。',
+    label: 'Local HTTP TTS',
+    description: 'Synthesize speech via local or self-hosted HTTP service.',
     synthesize: request => post(synthesizeEndpoint, request),
     preview: request => post(previewEndpoint, request),
     estimateDuration: (text, speed) => Promise.resolve(estimateDurationLocally(text, speed)),
@@ -283,17 +283,25 @@ function createDefaultRegistry(): TTSProviderRegistry {
 }
 
 function bootstrapConfiguredProvider(client: TTSClient): void {
-  const envBaseUrl = import.meta.env.VITE_TTS_PROVIDER_URL
+  const env = (import.meta as unknown as {
+    env?: {
+      VITE_TTS_PROVIDER_URL?: string
+      VITE_TTS_SYNTHESIZE_ENDPOINT?: string
+      VITE_TTS_PREVIEW_ENDPOINT?: string
+      VITE_TTS_VOICES_ENDPOINT?: string
+    }
+  }).env
+  const envBaseUrl = env?.VITE_TTS_PROVIDER_URL
   if (envBaseUrl) {
     const config: LocalHttpTTSProviderConfig = { baseUrl: envBaseUrl }
-    if (import.meta.env.VITE_TTS_SYNTHESIZE_ENDPOINT) {
-      config.synthesizeEndpoint = import.meta.env.VITE_TTS_SYNTHESIZE_ENDPOINT
+    if (env?.VITE_TTS_SYNTHESIZE_ENDPOINT) {
+      config.synthesizeEndpoint = env.VITE_TTS_SYNTHESIZE_ENDPOINT
     }
-    if (import.meta.env.VITE_TTS_PREVIEW_ENDPOINT) {
-      config.previewEndpoint = import.meta.env.VITE_TTS_PREVIEW_ENDPOINT
+    if (env?.VITE_TTS_PREVIEW_ENDPOINT) {
+      config.previewEndpoint = env.VITE_TTS_PREVIEW_ENDPOINT
     }
-    if (import.meta.env.VITE_TTS_VOICES_ENDPOINT) {
-      config.voicesEndpoint = import.meta.env.VITE_TTS_VOICES_ENDPOINT
+    if (env?.VITE_TTS_VOICES_ENDPOINT) {
+      config.voicesEndpoint = env.VITE_TTS_VOICES_ENDPOINT
     }
 
     client.registerProvider(
@@ -315,7 +323,7 @@ function normalizeLocalHttpResponse(payload: LocalHttpTTSPayload): TTSResponse {
   const audioUrl = audio ?? (audioBase64 ? toAudioDataUrl(audioBase64) : '')
 
   if (!audioUrl) {
-    throw new Error('本地 TTS Provider 响应缺少 audio 或 audioBase64')
+    throw new Error('Local TTS Provider response missing audio or audioBase64')
   }
 
   const response: TTSResponse = { audio: audioUrl }
@@ -337,7 +345,7 @@ function extractBase64FromDataUrl(audio: string): string | undefined {
 function normalizeBaseUrl(baseUrl: string): string {
   const trimmed = baseUrl.trim().replace(/\/+$/u, '')
   if (!trimmed) {
-    throw new Error('本地 TTS Provider baseUrl 不能为空')
+    throw new Error('Local TTS Provider baseUrl cannot be empty')
   }
   return trimmed
 }

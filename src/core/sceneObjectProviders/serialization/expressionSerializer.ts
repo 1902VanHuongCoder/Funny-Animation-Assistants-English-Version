@@ -1,9 +1,9 @@
 /**
- * Expression 序列化器
+ * Expression serializer
  *
- * 处理 ExpressionObject 的子类型特化字段。
- * ExpressionObject 的 refId 已由基类 toSetupObject 统一序列化，
- * 此序列化器仅需处理反序列化创建逻辑。
+ * Handles subtype-specialized fields of ExpressionObject.
+ * refId of ExpressionObject is serialized uniformly by base class toSetupObject;
+ * this serializer only needs to handle deserialization creation logic.
  */
 
 import type { ExpressionObject, SceneObject } from '@/types/sceneObject'
@@ -22,11 +22,11 @@ const expressionSerializer: TypeSerializer = {
     deserialize(objData: SceneObject, ctx: DeserializeContext): void {
         const exprObj = ctx.createExpressionObject(
             objData.refId ?? '',
-            objData.alias ?? objData.name ?? '表情',
+            objData.alias ?? objData.name ?? 'Expression',
             objData.id,
             objData.alias ?? '',
         )
-        // 旧数据兼容：缺失 defaultRefId 时 fallback 为 refId
+        // Legacy data compatibility: fallback to refId when defaultRefId is missing
         const rawData = objData as ExpressionObject
         const defaultRefId = rawData.defaultRefId ?? objData.refId ?? ''
         ctx.updateObject(exprObj.id, {

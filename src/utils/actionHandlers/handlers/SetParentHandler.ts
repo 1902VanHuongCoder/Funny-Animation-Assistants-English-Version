@@ -8,9 +8,9 @@
 
 import type { WriteableState } from '../types'
 
-// ==================== 矩阵变换工具 ====================
+// ==================== Transform Matrix Utilities ====================
 
-/** 2D 仿射变换矩阵 [a, b, c, d, tx, ty] */
+/** 2D affine transformation matrix [a, b, c, d, tx, ty] */
 interface Transform2D {
     a: number   // scaleX * cos(rotation)
     b: number   // scaleX * sin(rotation)
@@ -21,8 +21,8 @@ interface Transform2D {
 }
 
 /**
- * 从 WriteableState 构建仿射矩阵
- * 变换顺序：Scale → Rotate → Translate
+ * Build affine matrix from WriteableState
+ * Transformation order: Scale → Rotate → Translate
  */
 export function buildTransformMatrix(state: WriteableState): Transform2D {
     const x = state.x ?? 0
@@ -30,7 +30,7 @@ export function buildTransformMatrix(state: WriteableState): Transform2D {
     const rawScaleX = state.scaleX ?? 1
     const scaleY = state.scaleY ?? 1
     const rotation = state.rotation ?? 0
-    // v19.2: 将 flipX 烘焙到 scaleX（与 compositeTransform.ts 一致）
+    // v19.2: Bake flipX into scaleX (consistent with compositeTransform.ts)
     const flipX = (state.flipX) ?? false
     const effScaleX = rawScaleX * (flipX ? -1 : 1)
 
@@ -56,7 +56,7 @@ export function buildTransformMatrix(state: WriteableState): Transform2D {
 }
 
 /**
- * 矩阵乘法：parent * child → world
+ * Matrix multiplication: parent * child → world
  */
 export function multiplyMatrix(parent: Transform2D, child: Transform2D): Transform2D {
     return {
@@ -70,12 +70,12 @@ export function multiplyMatrix(parent: Transform2D, child: Transform2D): Transfo
 }
 
 /**
- * 矩阵求逆
+ * Matrix inversion
  */
 export function invertMatrix(m: Transform2D): Transform2D {
     const det = m.a * m.d - m.b * m.c
     if (Math.abs(det) < 1e-10) {
-        // 奇异矩阵（缩放为 0），返回恒等矩阵
+        // Singular matrix (scale is 0), return identity matrix
         return { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 }
     }
     const invDet = 1 / det
@@ -90,11 +90,11 @@ export function invertMatrix(m: Transform2D): Transform2D {
 }
 
 /**
- * 从仿射矩阵提取 x, y, scaleX, scaleY, rotation
+ * Extract x, y, scaleX, scaleY, rotation from affine matrix
  *
- * v19.2: 当 det < 0（反射）时，负号放到 scaleX 上，旋转角用 atan2(-b, -a) 修正。
- * 这避免将纯 X 翻转误解为 180° 旋转（atan2(0, -1) = π 的陷阱）。
- * 与 compositeTransform.ts 的 decomposeMatrix 保持一致。
+ * v19.2: When det < 0 (reflection), the negative sign is placed on scaleX, and rotation angle is corrected using atan2(-b, -a).
+ * This avoids misinterpreting pure X flip as a 180° rotation (the atan2(0, -1) = π pitfall).
+ * Kept consistent with decomposeMatrix in compositeTransform.ts.
  */
 export function decomposeMatrix(m: Transform2D): {
     x: number; y: number; scaleX: number; scaleY: number; rotation: number
@@ -109,10 +109,10 @@ export function decomposeMatrix(m: Transform2D): {
     let rotation: number
 
     if (det < 0) {
-        // 负行列式 = 反射（flipX），将负号放在 scaleX 上
+        // Negative determinant = reflection (flipX), put negative sign on scaleX
         scaleX = -scaleXRaw
-        // atan2(b, a) 在 a<0 时会多出 π（将 flipX 误解为 180° 旋转）
-        // 用 atan2(-b, -a) 补偿
+        // atan2(b, a) has extra π when a<0 (misinterpreting flipX as 180° rotation)
+        // Compensate with atan2(-b, -a)
         rotation = Math.atan2(-m.b, -m.a)
     } else {
         scaleX = scaleXRaw
@@ -123,11 +123,12 @@ export function decomposeMatrix(m: Transform2D): {
 }
 
 /**
- * 将渲染矩阵拆回 WriteableState 坐标。
+ * Decomposes render matrix back into WriteableState coordinates.
  *
- * buildTransformMatrix 与 SceneObjectRenderer 一样会把 transformOriginX/Y
- * 转成 PIXI pivot + position 补偿；直接 decomposeMatrix 会把补偿后的 tx/ty
- * 当作 state.x/y，导致 renderer 再补偿一次。这里按同一公式反解回 state 坐标。
+ * Like SceneObjectRenderer, buildTransformMatrix converts transformOriginX/Y
+ * into PIXI pivot + position compensation; directly calling decomposeMatrix would treat
+ * compensated tx/ty as state.x/y, causing the renderer to compensate a second time.
+ * Here we invert back to state coordinates using the identical formula.
  */
 export function decomposeMatrixForState(
     m: Transform2D,
@@ -158,8 +159,8 @@ export function decomposeMatrixForState(
 }
 
 /**
- * 递归计算对象的世界变换矩阵
- * 沿 parentId 链向上遍历，逐层组合变换
+ * Recursively resolves world transform matrix of an object
+ * Traverses up the parentId chain, combining transformations layer by layer
  */
 export function resolveWorldMatrix(
     state: WriteableState,

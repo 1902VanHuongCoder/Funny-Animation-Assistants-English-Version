@@ -1,7 +1,7 @@
 /**
  * TweenText Action Handler (Text PRD Phase 1)
- * 处理文本属性的持续渐变：颜色/字号/字距/描边粗细
- * 遵循 TweenScreenEffectHandler 模式
+ * Handles continuous easing of text properties: color/fontSize/letterSpacing/strokeThickness
+ * Follows TweenScreenEffectHandler pattern
  */
 
 import type { TweenTextAction } from '@/types/screenplay'
@@ -9,17 +9,17 @@ import type { TweenTextAction } from '@/types/screenplay'
 import type { ActionHandler, ActionHandlerContext, WriteableState } from '../types'
 
 /**
- * 线性插值
+ * Linear interpolation
  */
 function lerp(start: number, end: number, t: number): number {
     return start + (end - start) * t
 }
 
 /**
- * 颜色 hex 插值
- * @param startHex 起始颜色 (如 '#ff0000')
- * @param endHex 目标颜色
- * @param t 进度 0~1
+ * Color hex interpolation
+ * @param startHex Start color (e.g. '#ff0000')
+ * @param endHex Target color
+ * @param t Progress 0~1
  */
 function lerpColor(startHex: string, endHex: string, t: number): string {
     const parseHex = (hex: string) => {
@@ -45,7 +45,7 @@ export const TweenTextHandler: ActionHandler<TweenTextAction> = {
     affectsObjectState: true,
 
     applyToState(state: WriteableState, action: TweenTextAction, _context?: ActionHandlerContext): void {
-        // 瞬时应用：直接设置为目标值
+        // Instantaneous application: directly set to target values
         const { params } = action
         if (params.color !== undefined) state.color = params.color
         if (params.fontSize !== undefined) state.fontSize = params.fontSize
@@ -61,7 +61,7 @@ export const TweenTextHandler: ActionHandler<TweenTextAction> = {
     ): void {
         const { params } = action
 
-        // 数值型属性做线性插值
+        // Numeric properties linear interpolation
         if (params.fontSize !== undefined && startState.fontSize !== undefined) {
             state.fontSize = lerp(startState.fontSize, params.fontSize, progress)
         }
@@ -72,14 +72,14 @@ export const TweenTextHandler: ActionHandler<TweenTextAction> = {
             state.strokeThickness = lerp(startState.strokeThickness, params.strokeThickness, progress)
         }
 
-        // 颜色做 hex 插值
+        // Color hex interpolation
         if (params.color !== undefined && startState.color !== undefined) {
             state.color = lerpColor(startState.color, params.color, progress)
         }
     },
 
     getTargetState(state: WriteableState, action: TweenTextAction): void {
-        // 与 applyToState 相同
+        // Same as applyToState
         this.applyToState(state, action)
     },
 }
